@@ -1,0 +1,12 @@
+node_modules/
+dist/
+uploads/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# AI 문서
+.claude/
+CLAUDE.md
+docs/

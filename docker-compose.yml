@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: findthem
+      POSTGRES_PASSWORD: findthem
+      POSTGRES_DB: findthem
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U findthem"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

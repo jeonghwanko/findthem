@@ -1,0 +1,56 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── CI: 타입체크 → 테스트 → 빌드 ──
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 타입체크
+        run: |
+          cd apps/api && npx tsc --noEmit
+          cd ../../apps/web && npx tsc --noEmit
+
+      - name: 테스트
+        run: npm test
+
+      - name: 빌드
+        run: npm run build
+
+  # ── CD: main 머지 시 서버 자동 배포 ──
+  deploy:
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 서버 배포
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ~/findthem
+            git pull origin main
+            npm ci
+            npm run build
+            npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+            pm2 restart findthem-api || pm2 start apps/api/dist/index.js --name findthem-api
