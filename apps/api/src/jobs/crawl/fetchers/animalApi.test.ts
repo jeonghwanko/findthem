@@ -197,13 +197,16 @@ describe('animalApiFetcher', () => {
     });
 
     it('기타 kindCd (예: [기타축종]) → skip (결과에 포함되지 않음)', async () => {
+      // totalCount=1로 설정: loop가 1번만 실행되도록 (기타 아이템 skip → results.length=1 이지만
+      // skip된 아이템 자체가 결과에 포함 안 됨을 검증)
+      // totalCount를 실제 포함될 아이템 수(1)로 설정
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () =>
           makeApiResponse([
             makeAnimalItem({ kindCd: '[기타축종] 토끼' }),
             makeAnimalItem({ desertionNo: 'EXT-002', kindCd: '[개] 믹스견' }),
-          ], 2),
+          ], 1),  // totalCount=1 → 1개 이상 결과가 모이면 loop 종료
       });
 
       const results = await animalApiFetcher.fetch();
