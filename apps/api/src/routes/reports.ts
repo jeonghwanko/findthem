@@ -186,7 +186,7 @@ export function registerReportRoutes(router: Router) {
 
   // 신고 상태 업데이트
   router.patch('/reports/:id/status', requireAuth, async (req, res) => {
-    const id = req.params.id;
+    const id = req.params.id as string;
     const { status } = z
       .object({ status: z.enum(['ACTIVE', 'FOUND']) })
       .parse(req.body);
@@ -233,7 +233,7 @@ export function registerReportRoutes(router: Router) {
     requireAuth,
     upload.array('photos', MAX_ADDITIONAL_PHOTOS),
     async (req, res) => {
-      const id = req.params.id;
+      const id = req.params.id as string;
       const report = await prisma.report.findUnique({ where: { id } });
       if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

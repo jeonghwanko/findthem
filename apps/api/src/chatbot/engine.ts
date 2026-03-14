@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { askClaude } from '../ai/claudeClient.js';
 import { prisma } from '../db/client.js';
 import { imageQueue } from '../jobs/queues.js';
@@ -438,7 +439,7 @@ export class ChatbotEngine {
         sessionId,
         role,
         content,
-        metadata: metadata ?? undefined,
+        metadata: (metadata ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });
   }

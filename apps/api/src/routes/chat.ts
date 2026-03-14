@@ -12,7 +12,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new ApiError(400, 'IMAGE_ONLY') as unknown as null);
+    else cb(new ApiError(400, 'IMAGE_ONLY') as unknown as Error);
   },
 });
 
@@ -72,7 +72,7 @@ export function registerChatRoutes(router: Router) {
 
   // 메시지 전송
   router.post('/chat/sessions/:id/messages', optionalAuth, async (req, res) => {
-    const sessionId = req.params.id;
+    const sessionId = req.params.id as string;
     const { message, locale: bodyLocale } = sendMessageSchema.parse(req.body);
     const locale = resolveLocale(
       req.headers['accept-language'],
@@ -90,7 +90,7 @@ export function registerChatRoutes(router: Router) {
     optionalAuth,
     upload.single('photo'),
     async (req, res) => {
-      const sessionId = req.params.id;
+      const sessionId = req.params.id as string;
       const file = req.file;
       if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
 
