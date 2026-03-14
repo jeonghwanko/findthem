@@ -12,6 +12,9 @@ import {
   NOTIFY_THRESHOLD,
   MAX_CANDIDATES,
 } from '@findthem/shared';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('matchingJob');
 
 async function processMatchingJob(job: Job<MatchingJobData>) {
   const { type, sightingId, reportId } = job.data;
@@ -147,8 +150,9 @@ async function comparePairDirect(
         },
       });
 
-      console.log(
-        `Match found: report=${report.id} sighting=${sighting.id} confidence=${result.confidence}`,
+      log.info(
+        { reportId: report.id, sightingId: sighting.id, confidence: result.confidence },
+        'Match found',
       );
 
       if (result.confidence >= NOTIFY_THRESHOLD) {
@@ -159,12 +163,12 @@ async function comparePairDirect(
       }
     }
   } catch (err) {
-    console.error(`Matching failed for report=${report.id} sighting=${sighting.id}:`, err);
+    log.error({ err, reportId: report.id, sightingId: sighting.id }, 'Matching failed');
   }
 }
 
 export function startMatchingWorker() {
-  console.log('Matching worker started');
+  log.info('Matching worker started');
   createWorker<MatchingJobData>('matching', processMatchingJob, {
     concurrency: 2,
   });

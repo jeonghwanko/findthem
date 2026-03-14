@@ -4,6 +4,9 @@ import path from 'path';
 import { config } from '../config.js';
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
 import { storageService } from '../services/storageService.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('twitter');
 
 /** OAuth 1.0a 서명 생성 */
 function generateOAuthSignature(
@@ -68,7 +71,7 @@ export class TwitterAdapter implements PlatformAdapter {
 
   async post(text: string, imagePaths: string[]): Promise<PlatformPostResult> {
     if (!config.twitterApiKey || !config.twitterAccessToken) {
-      console.warn('Twitter API keys not configured, skipping');
+      log.warn('Twitter API keys not configured, skipping');
       return { postId: null, postUrl: null };
     }
 

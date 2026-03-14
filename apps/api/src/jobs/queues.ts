@@ -1,6 +1,9 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import { config } from '../config.js';
 import { QUEUE_NAMES } from '@findthem/shared';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('queues');
 
 // Re-export job data types from shared
 export type {
@@ -9,6 +12,10 @@ export type {
   MatchingJobData,
   NotificationJobData,
   CleanupJobData,
+  PromotionMonitorJobData,
+  PromotionRepostJobData,
+  CrawlDispatchJobData,
+  CrawlSourceJobData,
 } from '@findthem/shared';
 
 import type {
@@ -17,6 +24,10 @@ import type {
   MatchingJobData,
   NotificationJobData,
   CleanupJobData,
+  PromotionMonitorJobData,
+  PromotionRepostJobData,
+  CrawlDispatchJobData,
+  CrawlSourceJobData,
 } from '@findthem/shared';
 
 // BullMQ는 자체 ioredis를 사용하므로 URL 문자열로 전달
@@ -29,6 +40,10 @@ export const promotionQueue = new Queue<PromotionJobData>(QUEUE_NAMES.PROMOTION,
 export const matchingQueue = new Queue<MatchingJobData>(QUEUE_NAMES.MATCHING, { connection });
 export const notificationQueue = new Queue<NotificationJobData>(QUEUE_NAMES.NOTIFICATION, { connection });
 export const cleanupQueue = new Queue<CleanupJobData>(QUEUE_NAMES.CLEANUP, { connection });
+export const promotionMonitorQueue = new Queue<PromotionMonitorJobData>(QUEUE_NAMES.PROMOTION_MONITOR, { connection });
+export const promotionRepostQueue = new Queue<PromotionRepostJobData>(QUEUE_NAMES.PROMOTION_REPOST, { connection });
+export const crawlSchedulerQueue = new Queue<CrawlDispatchJobData>(QUEUE_NAMES.CRAWL_SCHEDULER, { connection });
+export const crawlQueue = new Queue<CrawlSourceJobData>(QUEUE_NAMES.CRAWL, { connection });
 
 // ── Worker 생성 헬퍼 ──
 
@@ -43,11 +58,11 @@ export function createWorker<T>(
   });
 
   worker.on('completed', (job) => {
-    console.log(`[${queueName}] Job ${job.id} completed`);
+    log.info({ queueName, jobId: job.id }, 'Job completed');
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[${queueName}] Job ${job?.id} failed:`, err.message);
+    log.error({ err, queueName, jobId: job?.id }, 'Job failed');
   });
 
   return worker;

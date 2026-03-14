@@ -1,6 +1,9 @@
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
 import { TwitterAdapter } from './twitter.js';
 import { KakaoChannelAdapter } from './kakaoChannel.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('platformManager');
 
 const adapters: PlatformAdapter[] = [
   new TwitterAdapter(),
@@ -58,7 +61,7 @@ export async function deleteFromAllPlatforms(
       try {
         await adapter.deletePost(postId);
       } catch (err) {
-        console.error(`Failed to delete post ${postId} from ${platform}:`, err);
+        log.error({ err, postId, platform }, `Failed to delete post from platform`);
       }
     }
   }

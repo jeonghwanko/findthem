@@ -1,6 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('storageService');
 
 const UPLOAD_ROOT = path.resolve(config.uploadDir);
 
@@ -36,7 +39,7 @@ export const storageService = {
       await fs.unlink(fullPath);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.error(`[STORAGE] 파일 삭제 실패: ${relativePath}`, err);
+        log.error({ err, relativePath }, '[STORAGE] 파일 삭제 실패');
       }
     }
   },

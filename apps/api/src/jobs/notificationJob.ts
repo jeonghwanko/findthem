@@ -3,6 +3,9 @@ import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { sendMatchNotification } from '../services/notificationService.js';
 import { createWorker, type NotificationJobData } from './queues.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('notificationJob');
 
 async function processNotificationJob(job: Job<NotificationJobData>) {
   const { matchId, reportId } = job.data;
@@ -19,18 +22,18 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
   ]);
 
   if (!match || !report) {
-    console.warn(`[NOTIFICATION] match(${matchId}) 또는 report(${reportId})를 찾을 수 없음`);
+    log.warn({ matchId, reportId }, 'match 또는 report를 찾을 수 없음');
     return;
   }
 
   if (!report.user) {
-    console.warn(`[NOTIFICATION] Report ${reportId}에 연결된 사용자 없음, 건너뜀`);
+    log.warn({ reportId }, 'Report에 연결된 사용자 없음, 건너뜀');
     return;
   }
 
   // 이미 알림 전송된 경우 중복 방지
   if (match.status === 'NOTIFIED') {
-    console.log(`[NOTIFICATION] Match ${matchId} 이미 알림 전송됨, 건너뜀`);
+    log.info({ matchId }, 'Match 이미 알림 전송됨, 건너뜀');
     return;
   }
 
@@ -53,7 +56,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
 }
 
 export function startNotificationWorker() {
-  console.log('Notification worker started');
+  log.info('Notification worker started');
   createWorker<NotificationJobData>('notification', processNotificationJob, {
     concurrency: 5,
   });

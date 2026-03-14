@@ -1,12 +1,15 @@
 import { config } from '../config.js';
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('kakaoChannel');
 
 export class KakaoChannelAdapter implements PlatformAdapter {
   readonly name = 'kakao_channel';
 
   async post(text: string, _imagePaths: string[]): Promise<PlatformPostResult> {
     if (!config.kakaoAdminKey || !config.kakaoChannelId) {
-      console.warn('Kakao API keys not configured, skipping');
+      log.warn('Kakao API keys not configured, skipping');
       return { postId: null, postUrl: null };
     }
 
@@ -38,20 +41,20 @@ export class KakaoChannelAdapter implements PlatformAdapter {
 
       if (!res.ok) {
         const err = await res.text();
-        console.error('Kakao post failed:', err);
+        log.error({ err }, 'Kakao post failed');
         return { postId: null, postUrl: null };
       }
 
       // 카카오 채널 메시지는 별도 postId를 반환하지 않을 수 있음
       return { postId: `kakao_${Date.now()}`, postUrl: null };
     } catch (err) {
-      console.error('Kakao post error:', err);
+      log.error({ err }, 'Kakao post error');
       return { postId: null, postUrl: null };
     }
   }
 
   async deletePost(_postId: string): Promise<void> {
     // 카카오톡 채널 메시지는 삭제 API가 제한적
-    console.warn('Kakao channel message deletion not supported');
+    log.warn('Kakao channel message deletion not supported');
   }
 }

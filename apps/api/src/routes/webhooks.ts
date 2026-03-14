@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { prisma } from '../db/client.js';
 import { chatbotEngine } from '../chatbot/engine.js';
+import { sightingAgent } from '../agent/sightingAgent.js';
 import { config } from '../config.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('webhooks');
 
 export function registerWebhookRoutes(router: Router) {
   // 카카오톡 채널 웹훅
@@ -25,20 +29,76 @@ export function registerWebhookRoutes(router: Router) {
     }
 
     try {
-      // 기존 활성 세션 찾기 또는 새로 생성
+      // 기존 활성 세션 찾기 (engineVersion 포함)
       let session = await prisma.chatSession.findFirst({
         where: {
           platformUserId: kakaoUserId,
           platform: 'KAKAO',
           status: 'ACTIVE',
         },
+        select: {
+          id: true,
+          engineVersion: true,
+          platform: true,
+          platformUserId: true,
+          status: true,
+          state: true,
+          context: true,
+          updatedAt: true,
+        },
         orderBy: { updatedAt: 'desc' },
       });
 
+      const isReset = utterance === '시작' || utterance === '처음';
+
+      // v2 분기: 새 세션이거나 v2 세션인 경우
+      if (!session || session.engineVersion === 'v2' || isReset) {
+        if (!session || isReset) {
+          // 모든 새 세션은 v2로 생성
+          session = await prisma.chatSession.create({
+            data: {
+              platform: 'KAKAO',
+              platformUserId: kakaoUserId,
+              state: { currentStep: 'GREETING' },
+              context: {},
+              engineVersion: 'v2',
+            },
+            select: {
+              id: true,
+              engineVersion: true,
+              platform: true,
+              platformUserId: true,
+              status: true,
+              state: true,
+              context: true,
+              updatedAt: true,
+            },
+          });
+        }
+
+        // 4초 타임아웃 적용 (카카오 5초 제한 대응)
+        const agentResult = await Promise.race([
+          sightingAgent.processMessage(
+            { sessionId: session.id, platform: 'KAKAO' },
+            utterance || '안녕하세요',
+            photoUrl,
+          ),
+          new Promise<{ text: string; timeout: true }>((resolve) =>
+            setTimeout(
+              () => resolve({ text: '분석 중입니다. 잠시만 기다려주세요.', timeout: true }),
+              4000,
+            )
+          ),
+        ]);
+
+        res.json(buildKakaoResponse(agentResult.text));
+        return;
+      }
+
+      // v1 세션: 기존 로직 유지
       let response;
 
-      if (!session || utterance === '시작' || utterance === '처음') {
-        // 새 세션
+      if (isReset) {
         const result = await chatbotEngine.startSession(
           'KAKAO',
           undefined,
@@ -46,7 +106,6 @@ export function registerWebhookRoutes(router: Router) {
         );
         response = result.response;
       } else {
-        // 기존 세션에 메시지 처리
         response = await chatbotEngine.processMessage(
           session.id,
           utterance,
@@ -58,7 +117,7 @@ export function registerWebhookRoutes(router: Router) {
         buildKakaoResponse(response.text, response.quickReplies),
       );
     } catch (err) {
-      console.error('Kakao webhook error:', err);
+      log.error({ err }, 'Kakao webhook error');
       res.json(buildKakaoResponse('처리 중 오류가 발생했습니다. 다시 시도해주세요.'));
     }
   });

@@ -16,12 +16,19 @@
     "test:api": "npm run test -w apps/api",
     "test:web": "npm run test -w apps/web",
     "test:shared": "npm run test -w packages/shared",
-    "test:e2e": "npm run test:e2e -w apps/api"
+    "test:e2e": "npm run test:e2e -w apps/api",
+    "lint": "eslint apps/api/src apps/web/src packages/shared/src",
+    "lint:fix": "eslint --fix apps/api/src apps/web/src packages/shared/src"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
     "vitest": "^4.0.18"
   }
 }

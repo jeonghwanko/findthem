@@ -8,6 +8,9 @@ import {
   matchingQueue,
   type ImageJobData,
 } from './queues.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('imageProcessingJob');
 
 async function processImageJob(job: Job<ImageJobData>) {
   const { type, reportId, sightingId } = job.data;
@@ -28,7 +31,7 @@ async function processReportPhotos(reportId: string) {
   });
   if (!report) return;
   if (report.photos.length === 0) {
-    console.warn(`[IMAGE] Report ${reportId} has no photos, skipping`);
+    log.warn({ reportId }, 'Report has no photos, skipping');
     return;
   }
 
@@ -45,7 +48,7 @@ async function processReportPhotos(reportId: string) {
         data: { aiAnalysis: analysis as object },
       });
     } catch (err) {
-      console.error(`Photo analysis failed for ${photo.id}:`, err);
+      log.error({ err, photoId: photo.id }, 'Photo analysis failed');
     }
   }
 
@@ -86,7 +89,7 @@ async function processSightingPhotos(sightingId: string) {
   });
   if (!sighting) return;
   if (sighting.photos.length === 0) {
-    console.warn(`[IMAGE] Sighting ${sightingId} has no photos, skipping`);
+    log.warn({ sightingId }, 'Sighting has no photos, skipping');
     return;
   }
 
@@ -111,7 +114,7 @@ async function processSightingPhotos(sightingId: string) {
         data: { aiAnalysis: analysis as object },
       });
     } catch (err) {
-      console.error(`Sighting photo analysis failed for ${photo.id}:`, err);
+      log.error({ err, photoId: photo.id }, 'Sighting photo analysis failed');
     }
   }
 
@@ -129,7 +132,7 @@ async function processSightingPhotos(sightingId: string) {
 }
 
 export function startImageWorker() {
-  console.log('Image processing worker started');
+  log.info('Image processing worker started');
   createWorker<ImageJobData>('image-processing', processImageJob, {
     concurrency: 2,
   });
