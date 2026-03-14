@@ -8,7 +8,7 @@ import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES } from '@findthem/shared';
 import { cleanupQueue } from '../jobs/queues.js';
 
 const upload = multer({
@@ -95,10 +95,11 @@ export function registerReportRoutes(router: Router) {
       });
 
       // 이미지 분석 + 홍보 작업 enqueue
+      // RACE-08: jobId로 중복 job 방지
       await imageQueue.add(
         'process-report-photos',
         { type: 'report', reportId: report.id },
-        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-report-${report.id}` },
       );
 
       res.status(201).json({ ...report, photos });
@@ -138,16 +139,30 @@ export function registerReportRoutes(router: Router) {
   });
 
   // 내 신고 목록 (⚠️ /reports/:id 보다 먼저 등록)
-  router.get('/reports/mine', requireAuth, async (req, res) => {
-    const reports = await prisma.report.findMany({
-      where: { userId: req.user!.userId },
-      include: {
-        photos: { where: { isPrimary: true }, take: 1 },
-        _count: { select: { sightings: true, matches: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(reports);
+  const mineQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  });
+
+  router.get('/reports/mine', requireAuth, validateQuery(mineQuerySchema), async (req, res) => {
+    const { page, limit } = req.query as unknown as z.infer<typeof mineQuerySchema>;
+    const where = { userId: req.user!.userId };
+
+    const [reports, total] = await Promise.all([
+      prisma.report.findMany({
+        where,
+        include: {
+          photos: { where: { isPrimary: true }, take: 1 },
+          _count: { select: { sightings: true, matches: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.report.count({ where }),
+    ]);
+
+    res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 실종 신고 상세
@@ -179,10 +194,21 @@ export function registerReportRoutes(router: Router) {
       throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
-    const updated = await prisma.report.update({
-      where: { id },
+    // RACE-02: where 조건에 현재 상태를 포함하여 원자적 업데이트
+    // EXPIRED, SUSPENDED 상태는 사용자가 변경할 수 없으므로 notIn 조건으로 필터링
+    const updateResult = await prisma.report.updateMany({
+      where: { id, status: { notIn: ['EXPIRED', 'SUSPENDED'] } },
       data: { status },
     });
+
+    // 이미 EXPIRED/SUSPENDED 상태이거나 다른 워커가 먼저 변경한 경우
+    if (updateResult.count === 0) {
+      const current = await prisma.report.findUnique({ where: { id } });
+      res.json(current);
+      return;
+    }
+
+    const updated = await prisma.report.findUnique({ where: { id } });
 
     // FOUND 처리 시 SNS 게시물 삭제
     if (status === 'FOUND') {
@@ -210,14 +236,29 @@ export function registerReportRoutes(router: Router) {
       }
 
       const files = (req.files as Express.Multer.File[]) || [];
-      const photos = await Promise.all(
+
+      // 파일 I/O는 트랜잭션 밖에서 먼저 처리
+      const processedPhotos = await Promise.all(
         files.map(async (file) => {
           const { photoUrl, thumbnailUrl } = await imageService.processAndSave('reports', file);
-          return prisma.reportPhoto.create({
-            data: { reportId: report.id, photoUrl, thumbnailUrl },
-          });
+          return { photoUrl, thumbnailUrl };
         }),
       );
+
+      // RACE-01: 현재 사진 수 조회와 사진 생성을 트랜잭션으로 묶어 원자적으로 체크
+      const photos = await prisma.$transaction(async (tx) => {
+        const currentCount = await tx.reportPhoto.count({ where: { reportId: id } });
+        if (currentCount + files.length > MAX_REPORT_PHOTOS) {
+          throw new ApiError(400, ERROR_CODES.REPORT_PHOTO_LIMIT);
+        }
+        return Promise.all(
+          processedPhotos.map((p) =>
+            tx.reportPhoto.create({
+              data: { reportId: id, photoUrl: p.photoUrl, thumbnailUrl: p.thumbnailUrl },
+            }),
+          ),
+        );
+      });
 
       res.status(201).json(photos);
     },

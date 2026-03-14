@@ -29,6 +29,11 @@ export function registerWebhookRoutes(router: Router) {
     }
 
     try {
+      // RACE-07: TODO — ChatSession에 @@unique([platformUserId, platform]) 제약이 없어서
+      // prisma.chatSession.upsert 패턴을 적용할 수 없음.
+      // 적용하려면 schema.prisma의 ChatSession 모델에 아래를 추가하고 마이그레이션 필요:
+      //   @@unique([platformUserId, platform])
+      // 현재는 findFirst fallback 패턴 유지.
       // 기존 활성 세션 찾기 (engineVersion 포함)
       let session = await prisma.chatSession.findFirst({
         where: {

@@ -45,4 +45,6 @@ export const config = {
   smsFrom: process.env.SMS_FROM || '',
 
   publicDataApiKey: process.env.PUBLIC_DATA_API_KEY || '',
+  safe182EsntlId: process.env.SAFE182_ESNTL_ID || '',
+  safe182ApiKey: process.env.SAFE182_API_KEY || '',
 } as const;

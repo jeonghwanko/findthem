@@ -1,19 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { ERROR_CODES } from '@findthem/shared';
+import { ApiError, ERROR_CODES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('errors');
+export { ApiError } from '@findthem/shared';
 
-export class ApiError extends Error {
-  constructor(
-    public statusCode: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+const log = createLogger('errors');
 
 export function errorHandler(
   err: Error,

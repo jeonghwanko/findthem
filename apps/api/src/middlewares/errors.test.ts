@@ -64,7 +64,7 @@ describe('errorHandler', () => {
     errorHandler(err, {} as Request, res, vi.fn() as NextFunction);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: '서버 오류가 발생했습니다.' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'SERVER_ERROR' });
 
     consoleError.mockRestore();
   });

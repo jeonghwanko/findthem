@@ -137,8 +137,9 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
     if (!result) continue;
 
     // 재게시: 새 레코드 생성 (@@unique 제약 때문에 기존이 DELETED가 된 후 새로 생성)
+    let savedPromotion: { id: string };
     if (isRepost) {
-      await prisma.promotion.create({
+      savedPromotion = await prisma.promotion.create({
         data: {
           reportId,
           platform: tPlatform,
@@ -151,10 +152,11 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
           postedAt: result.success ? new Date() : null,
           version,
         },
+        select: { id: true },
       });
     } else {
       // 최초 게시: upsert (멱등성 보장)
-      await prisma.promotion.upsert({
+      savedPromotion = await prisma.promotion.upsert({
         where: { reportId_platform: { reportId, platform: tPlatform } },
         create: {
           reportId,
@@ -177,33 +179,26 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
           postedAt: result.success ? new Date() : null,
           version: 1,
         },
+        select: { id: true },
       });
     }
 
-    // 게시 성공 시 메트릭 수집 job 등록 (1시간 후)
+    // 게시 성공 시 메트릭 수집 job 등록 (1시간 후) — 반환값 id 직접 사용
     if (result.success && result.postId) {
-      const promotion = await prisma.promotion.findFirst({
-        where: { reportId, platform: tPlatform, status: 'POSTED' },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true },
-      });
-
-      if (promotion) {
-        await promotionMonitorQueue.add(
-          'collect-metrics',
-          {
-            reportId,
-            promotionId: promotion.id,
-            platform: tPlatform,
-            postId: result.postId,
-          },
-          {
-            delay: 60 * 60 * 1000, // 1시간 후
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 30_000 },
-          },
-        );
-      }
+      await promotionMonitorQueue.add(
+        'collect-metrics',
+        {
+          reportId,
+          promotionId: savedPromotion.id,
+          platform: tPlatform,
+          postId: result.postId,
+        },
+        {
+          delay: 60 * 60 * 1000, // 1시간 후
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 30_000 },
+        },
+      );
     }
   }
 

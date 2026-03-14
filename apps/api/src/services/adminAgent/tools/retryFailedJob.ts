@@ -8,7 +8,7 @@ import {
   promotionMonitorQueue,
   promotionRepostQueue,
 } from '../../../jobs/queues.js';
-import { ApiError } from '../../../middlewares/errors.js';
+import { ApiError, ERROR_CODES } from '@findthem/shared';
 
 export interface RetryFailedJobInput {
   queueName:
@@ -35,12 +35,12 @@ const QUEUE_MAP: Record<string, Queue> = {
 export async function retryFailedJob(input: RetryFailedJobInput): Promise<unknown> {
   const queue = QUEUE_MAP[input.queueName];
   if (!queue) {
-    throw new ApiError(400, `존재하지 않는 큐입니다: ${input.queueName}`);
+    throw new ApiError(400, ERROR_CODES.PLATFORM_NOT_SUPPORTED);
   }
 
   const job = await queue.getJob(input.jobId);
   if (!job) {
-    throw new ApiError(404, `job을 찾을 수 없습니다: ${input.jobId} (큐: ${input.queueName})`);
+    throw new ApiError(404, ERROR_CODES.INVALID_JOB_DATA);
   }
 
   const state = await job.getState();

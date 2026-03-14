@@ -3,8 +3,17 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config.js';
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
-import { storageService } from '../services/storageService.js';
 import { createLogger } from '../logger.js';
+
+const UPLOAD_ROOT = path.resolve(config.uploadDir);
+
+function getAbsolutePath(relativePath: string): string {
+  const fullPath = path.resolve(UPLOAD_ROOT, relativePath.replace(/^\/uploads\//, ''));
+  if (!fullPath.startsWith(UPLOAD_ROOT + path.sep) && fullPath !== UPLOAD_ROOT) {
+    throw new Error('PATH_TRAVERSAL');
+  }
+  return fullPath;
+}
 
 const log = createLogger('twitter');
 
@@ -125,7 +134,7 @@ export class TwitterAdapter implements PlatformAdapter {
 
   private async uploadMedia(imagePath: string): Promise<string | null> {
     try {
-      const absPath = storageService.getAbsolutePath(imagePath);
+      const absPath = getAbsolutePath(imagePath);
       const buffer = await fs.readFile(absPath);
       const base64Data = buffer.toString('base64');
 

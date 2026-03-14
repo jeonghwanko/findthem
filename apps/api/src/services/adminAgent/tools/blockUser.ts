@@ -1,5 +1,5 @@
 import { prisma } from '../../../db/client.js';
-import { ApiError } from '../../../middlewares/errors.js';
+import { ApiError, ERROR_CODES } from '@findthem/shared';
 
 export interface BlockUserInput {
   userId: string;
@@ -14,7 +14,7 @@ export async function blockUser(input: BlockUserInput): Promise<unknown> {
   });
 
   if (!user) {
-    throw new ApiError(404, `사용자를 찾을 수 없습니다: ${input.userId}`);
+    throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
   }
 
   if (user.isBlocked === input.blocked) {

@@ -6,6 +6,7 @@ import { ApiError } from '../middlewares/errors.js';
 import { validateBody } from '../middlewares/validate.js';
 import { promotionQueue } from '../jobs/queues.js';
 import type { PromoPlatform } from '@findthem/shared';
+import { ERROR_CODES } from '@findthem/shared';
 
 const repostBodySchema = z.object({
   platforms: z.array(z.enum(['TWITTER', 'KAKAO_CHANNEL'])).optional(),
@@ -23,8 +24,8 @@ export function registerPromotionRoutes(router: Router) {
       select: { id: true, userId: true },
     });
 
-    if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
-    if (report.userId !== userId) throw new ApiError(403, '본인의 신고만 조회할 수 있습니다.');
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+    if (report.userId !== userId) throw new ApiError(403, ERROR_CODES.REPORT_OWNER_ONLY);
 
     const [strategy, promotions, logs] = await Promise.all([
       prisma.promotionStrategy.findUnique({
@@ -59,10 +60,10 @@ export function registerPromotionRoutes(router: Router) {
         select: { id: true, userId: true, status: true },
       });
 
-      if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
-      if (report.userId !== userId) throw new ApiError(403, '본인의 신고만 재홍보할 수 있습니다.');
+      if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+      if (report.userId !== userId) throw new ApiError(403, ERROR_CODES.REPORT_OWNER_ONLY);
       if (report.status !== 'ACTIVE') {
-        throw new ApiError(400, 'ACTIVE 상태의 신고만 재홍보할 수 있습니다.');
+        throw new ApiError(400, ERROR_CODES.REPORT_STATUS_INVALID);
       }
 
       // 현재 버전 파악 (가장 최신 POSTED/DELETED promotion의 version)
@@ -100,6 +101,7 @@ export function registerPromotionRoutes(router: Router) {
       });
 
       // promotionQueue에 재게시 job 등록
+      // RACE-05: jobId로 동일 버전의 중복 job 방지
       await promotionQueue.add(
         'manual-repost',
         {
@@ -109,7 +111,11 @@ export function registerPromotionRoutes(router: Router) {
           platforms: targetPlatforms,
           regenerateContent,
         },
-        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 30_000 },
+          jobId: `repost-${reportId}-v${nextVersion}`,
+        },
       );
 
       // 수동 재게시 로그 기록

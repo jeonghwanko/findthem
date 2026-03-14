@@ -1,11 +1,11 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AGENT_MAX_TOOL_ROUNDS } from '@findthem/shared';
+import { AGENT_MAX_TOOL_ROUNDS, ERROR_CODES } from '@findthem/shared';
 import type { AgentResponse, AgentToolCall, ChatPlatform, SubjectType } from '@findthem/shared';
 import { getClaudeClient } from '../ai/claudeClient.js';
 import { config } from '../config.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
-import { ApiError } from '../middlewares/errors.js';
+import { ApiError } from '@findthem/shared';
 import { loadAsClaudeMessages, saveRound } from './conversationManager.js';
 import { SIGHTING_AGENT_SYSTEM_PROMPT } from './systemPrompt.js';
 import { SIGHTING_TOOLS, dispatchTool } from './tools/index.js';
@@ -30,7 +30,7 @@ export class SightingAgent {
   ): Promise<AgentResponse> {
     // 입력 검증
     if (userMessage.length > 2000) {
-      throw new ApiError(400, '메시지가 너무 깁니다. 2000자 이하로 입력해주세요.');
+      throw new ApiError(400, ERROR_CODES.MESSAGE_TOO_LONG);
     }
 
     const claude = getClaudeClient();
@@ -40,7 +40,7 @@ export class SightingAgent {
 
     // 세션 메시지 수 제한
     if (history.length > 50) {
-      throw new ApiError(400, '대화가 너무 길어졌습니다.');
+      throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
     }
 
     // 2. 새 사용자 메시지 구성
@@ -142,7 +142,7 @@ export class SightingAgent {
           toolResult = { error: err instanceof Error ? err.message : '도구 실행 중 오류가 발생했습니다' };
         }
 
-        toolCalls.push({ name: block.name, input: toolInput, result: toolResult });
+        toolCalls.push({ name: block.name, input: toolInput, result: (toolResult ?? {}) as Record<string, unknown> });
 
         toolResultContents.push({
           type: 'tool_result',

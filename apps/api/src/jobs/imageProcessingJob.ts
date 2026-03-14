@@ -35,38 +35,36 @@ async function processReportPhotos(reportId: string) {
     return;
   }
 
-  // 각 사진에 대해 AI 분석
-  for (const photo of report.photos) {
-    if (photo.aiAnalysis) continue; // 이미 분석됨
+  // 각 사진에 대해 AI 분석 — 병렬 처리
+  const updatedPhotos = await Promise.all(
+    report.photos.map(async (photo) => {
+      if (photo.aiAnalysis) return photo; // 이미 분석됨
 
-    try {
-      const base64 = await imageService.toBase64(photo.photoUrl);
-      const analysis = await analyzeImage(base64, report.subjectType);
+      try {
+        const base64 = await imageService.toBase64(photo.photoUrl);
+        const analysis = await analyzeImage(base64, report.subjectType);
 
-      await prisma.reportPhoto.update({
-        where: { id: photo.id },
-        data: { aiAnalysis: analysis as object },
-      });
-    } catch (err) {
-      log.error({ err, photoId: photo.id }, 'Photo analysis failed');
-    }
-  }
+        return await prisma.reportPhoto.update({
+          where: { id: photo.id },
+          data: { aiAnalysis: analysis as object },
+        });
+      } catch (err) {
+        log.error({ err, photoId: photo.id }, 'Photo analysis failed');
+        return photo;
+      }
+    }),
+  );
 
-  // 대표 사진의 분석 결과를 report.aiDescription에 저장
-  const primaryPhoto = report.photos.find((p) => p.isPrimary) || report.photos[0];
-  if (primaryPhoto) {
-    const updated = await prisma.reportPhoto.findUnique({
-      where: { id: primaryPhoto.id },
+  // 대표 사진의 분석 결과를 report.aiDescription에 저장 (재조회 없이 반환값 직접 사용)
+  const primaryPhoto = updatedPhotos.find((p) => p.isPrimary) || updatedPhotos[0];
+  if (primaryPhoto?.aiAnalysis) {
+    const analysis = primaryPhoto.aiAnalysis as Record<string, unknown>;
+    await prisma.report.update({
+      where: { id: reportId },
+      data: {
+        aiDescription: (analysis.description as string) || JSON.stringify(analysis),
+      },
     });
-    if (updated?.aiAnalysis) {
-      const analysis = updated.aiAnalysis as Record<string, unknown>;
-      await prisma.report.update({
-        where: { id: reportId },
-        data: {
-          aiDescription: (analysis.description as string) || JSON.stringify(analysis),
-        },
-      });
-    }
   }
 
   // 홍보 작업 enqueue
@@ -85,7 +83,10 @@ async function processReportPhotos(reportId: string) {
 async function processSightingPhotos(sightingId: string) {
   const sighting = await prisma.sighting.findUnique({
     where: { id: sightingId },
-    include: { photos: true },
+    include: {
+      photos: true,
+      report: { select: { subjectType: true } },
+    },
   });
   if (!sighting) return;
   if (sighting.photos.length === 0) {
@@ -93,30 +94,27 @@ async function processSightingPhotos(sightingId: string) {
     return;
   }
 
-  // 제보와 연결된 report의 subjectType 확인 (없으면 일반 동물/사람 분석)
-  let subjectType = 'PERSON'; // reportId 없는 일반 제보의 기본값
-  if (sighting.reportId) {
-    const report = await prisma.report.findUnique({
-      where: { id: sighting.reportId },
-    });
-    if (report) subjectType = report.subjectType;
-  }
+  // 제보와 연결된 report의 subjectType 확인 (없으면 일반 동물/사람 분석) — 별도 조회 제거
+  const subjectType = sighting.report?.subjectType ?? 'PERSON';
 
-  for (const photo of sighting.photos) {
-    if (photo.aiAnalysis) continue;
+  // 각 사진에 대해 AI 분석 — 병렬 처리
+  await Promise.all(
+    sighting.photos.map(async (photo) => {
+      if (photo.aiAnalysis) return;
 
-    try {
-      const base64 = await imageService.toBase64(photo.photoUrl);
-      const analysis = await analyzeImage(base64, subjectType);
+      try {
+        const base64 = await imageService.toBase64(photo.photoUrl);
+        const analysis = await analyzeImage(base64, subjectType);
 
-      await prisma.sightingPhoto.update({
-        where: { id: photo.id },
-        data: { aiAnalysis: analysis as object },
-      });
-    } catch (err) {
-      log.error({ err, photoId: photo.id }, 'Sighting photo analysis failed');
-    }
-  }
+        await prisma.sightingPhoto.update({
+          where: { id: photo.id },
+          data: { aiAnalysis: analysis as object },
+        });
+      } catch (err) {
+        log.error({ err, photoId: photo.id }, 'Sighting photo analysis failed');
+      }
+    }),
+  );
 
   // 제보 상태 업데이트
   await prisma.sighting.update({

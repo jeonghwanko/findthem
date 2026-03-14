@@ -189,6 +189,9 @@ export class ChatbotEngine {
       return { text: ENGINE_MESSAGES[locale].sessionExpired };
     }
 
+    // RACE-06: 낙관적 잠금용으로 현재 updatedAt 저장
+    const sessionUpdatedAt = session.updatedAt;
+
     const state = session.state as unknown as ConversationState;
     const context = session.context as unknown as CollectedInfo;
 
@@ -203,6 +206,7 @@ export class ChatbotEngine {
       userMessage,
       photoUrl,
       locale,
+      sessionUpdatedAt,
     );
 
     // 봇 응답 저장
@@ -218,6 +222,7 @@ export class ChatbotEngine {
     userMessage: string,
     photoUrl: string | undefined,
     locale: Locale,
+    sessionUpdatedAt?: Date,
   ): Promise<BotResponse> {
     const step = state.currentStep;
     const msgs = ENGINE_MESSAGES[locale];
@@ -235,7 +240,7 @@ export class ChatbotEngine {
           };
         }
         context.subjectType = type;
-        await this.updateSession(sessionId, 'PHOTO', context);
+        await this.updateSession(sessionId, 'PHOTO', context, sessionUpdatedAt);
         return {
           text: STEP_MESSAGES[locale].PHOTO,
           quickReplies: STEP_QUICK_REPLIES[locale]?.PHOTO,
@@ -245,11 +250,11 @@ export class ChatbotEngine {
       case 'PHOTO': {
         if (photoUrl) {
           context.photoUrls = [...(context.photoUrls || []), photoUrl];
-          await this.updateSession(sessionId, 'DESCRIPTION', context);
+          await this.updateSession(sessionId, 'DESCRIPTION', context, sessionUpdatedAt);
           return { text: msgs.photoRegistered + '\n' + STEP_MESSAGES[locale].DESCRIPTION };
         }
         if (keywords.skip.some((kw) => lower.includes(kw))) {
-          await this.updateSession(sessionId, 'DESCRIPTION', context);
+          await this.updateSession(sessionId, 'DESCRIPTION', context, sessionUpdatedAt);
           return { text: STEP_MESSAGES[locale].DESCRIPTION };
         }
         return {
@@ -265,7 +270,7 @@ export class ChatbotEngine {
         // Claude로 설명 보강
         const enhanced = await this.enhanceDescription(userMessage, context.subjectType || 'DOG', locale);
         context.description = enhanced;
-        await this.updateSession(sessionId, 'LOCATION', context);
+        await this.updateSession(sessionId, 'LOCATION', context, sessionUpdatedAt);
         return { text: STEP_MESSAGES[locale].LOCATION };
       }
 
@@ -274,14 +279,14 @@ export class ChatbotEngine {
           return { text: msgs.locationMore };
         }
         context.address = userMessage;
-        await this.updateSession(sessionId, 'TIME', context);
+        await this.updateSession(sessionId, 'TIME', context, sessionUpdatedAt);
         return { text: STEP_MESSAGES[locale].TIME };
       }
 
       case 'TIME': {
         const parsed = parseTimeExpression(userMessage, locale);
         context.sightedAt = parsed;
-        await this.updateSession(sessionId, 'CONTACT', context);
+        await this.updateSession(sessionId, 'CONTACT', context, sessionUpdatedAt);
         return {
           text: STEP_MESSAGES[locale].CONTACT,
           quickReplies: STEP_QUICK_REPLIES[locale]?.CONTACT,
@@ -299,7 +304,7 @@ export class ChatbotEngine {
             context.tipsterName = userMessage;
           }
         }
-        await this.updateSession(sessionId, 'CONFIRM', context);
+        await this.updateSession(sessionId, 'CONFIRM', context, sessionUpdatedAt);
 
         const summary = buildSightingSummary(context, locale);
         return {
@@ -312,7 +317,7 @@ export class ChatbotEngine {
         if (keywords.confirm.some((kw) => lower.includes(kw))) {
           // 제보 생성
           await this.createSighting(sessionId, context);
-          await this.updateSession(sessionId, 'SUBMITTED', context);
+          await this.updateSession(sessionId, 'SUBMITTED', context, sessionUpdatedAt);
 
           await prisma.chatSession.update({
             where: { id: sessionId },
@@ -325,7 +330,7 @@ export class ChatbotEngine {
           };
         }
         // 수정 요청 → 처음부터
-        await this.updateSession(sessionId, 'SUBJECT_TYPE', {});
+        await this.updateSession(sessionId, 'SUBJECT_TYPE', {}, sessionUpdatedAt);
         return {
           text: msgs.restartFromBeginning + '\n' + STEP_MESSAGES[locale].SUBJECT_TYPE,
           quickReplies: STEP_QUICK_REPLIES[locale]?.SUBJECT_TYPE,
@@ -378,13 +383,11 @@ export class ChatbotEngine {
       },
     });
 
-    // 챗봇에서 받은 사진이 있으면 연결
+    // 챗봇에서 받은 사진이 있으면 연결 — createMany로 일괄 삽입
     if (context.photoUrls?.length) {
-      for (const url of context.photoUrls) {
-        await prisma.sightingPhoto.create({
-          data: { sightingId: sighting.id, photoUrl: url },
-        });
-      }
+      await prisma.sightingPhoto.createMany({
+        data: context.photoUrls.map((url) => ({ sightingId: sighting.id, photoUrl: url })),
+      });
 
       // 이미지 분석 + 매칭 큐
       await imageQueue.add(
@@ -401,7 +404,24 @@ export class ChatbotEngine {
     sessionId: string,
     nextStep: ConversationStep,
     context: CollectedInfo,
+    expectedUpdatedAt?: Date,
   ): Promise<void> {
+    // RACE-06: 낙관적 잠금 — updatedAt이 일치하는 경우에만 업데이트
+    if (expectedUpdatedAt) {
+      const result = await prisma.chatSession.updateMany({
+        where: { id: sessionId, updatedAt: expectedUpdatedAt },
+        data: {
+          state: { currentStep: nextStep } as object,
+          context: context as object,
+        },
+      });
+      if (result.count === 0) {
+        // 다른 요청이 먼저 세션을 변경함 — 현재 메시지 무시
+        const log = (await import('../logger.js')).createLogger('chatbot-engine');
+        log.warn({ sessionId }, '세션 낙관적 잠금 충돌 — 현재 메시지 처리 건너뜀');
+      }
+      return;
+    }
     await prisma.chatSession.update({
       where: { id: sessionId },
       data: {

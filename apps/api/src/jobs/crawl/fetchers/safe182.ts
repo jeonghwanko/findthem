@@ -49,8 +49,9 @@ export const safe182Fetcher: Fetcher = {
   source: 'safe182',
 
   async fetch(): Promise<ExternalReport[]> {
-    if (!config.publicDataApiKey) {
-      log.warn('PUBLIC_DATA_API_KEY not set, skipping safe182 crawl');
+    const apiKey = config.safe182ApiKey || config.publicDataApiKey;
+    if (!apiKey) {
+      log.warn('SAFE182_API_KEY not set, skipping safe182 crawl');
       return [];
     }
 
@@ -60,7 +61,7 @@ export const safe182Fetcher: Fetcher = {
 
     while (results.length < totalCount && pageNo <= 10) {
       const url = new URL(BASE_URL);
-      url.searchParams.set('serviceKey', config.publicDataApiKey);
+      url.searchParams.set('serviceKey', apiKey);
       url.searchParams.set('_type', 'json');
       url.searchParams.set('numOfRows', String(PAGE_SIZE));
       url.searchParams.set('pageNo', String(pageNo));

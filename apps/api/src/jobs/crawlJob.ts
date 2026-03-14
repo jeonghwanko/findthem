@@ -1,6 +1,6 @@
 import { QUEUE_NAMES } from '@findthem/shared';
 import type { Prisma } from '@prisma/client';
-import { createWorker, crawlSchedulerQueue, crawlQueue, imageQueue } from './queues.js';
+import { createWorker, crawlSchedulerQueue, crawlQueue, crawlAgentQueue, imageQueue } from './queues.js';
 import type { CrawlDispatchJobData, CrawlSourceJobData } from './queues.js';
 import { fetchers, getFetcher } from './crawl/fetcherRegistry.js';
 import type { ExternalReport } from './crawl/types.js';
@@ -26,9 +26,16 @@ function startCrawlSchedulerWorker() {
           crawlQueue.add(
             'crawl-source',
             { source },
-            { attempts: 2, backoff: { type: 'fixed', delay: 60_000 } },
+            // RACE-12: jobId로 동일 소스의 중복 crawl job 방지
+            { attempts: 2, backoff: { type: 'fixed', delay: 60_000 }, jobId: `crawl-${source}` },
           ),
         ),
+      );
+
+      await crawlAgentQueue.add(
+        'crawl-agent-run',
+        { triggeredBy: 'scheduler' },
+        { attempts: 1 },
       );
     },
     { concurrency: 1 },
@@ -76,11 +83,12 @@ async function saveNewReport(item: ExternalReport, source: string): Promise<bool
     });
 
     // 트랜잭션 커밋 후 AI 분석 큐 등록
+    // RACE-11: jobId로 동일 report의 중복 image job 방지
     if (item.photoUrl) {
       await imageQueue.add(
         'process-report-photos',
         { type: 'report', reportId: report.id },
-        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-report-${report.id}` },
       );
     }
 

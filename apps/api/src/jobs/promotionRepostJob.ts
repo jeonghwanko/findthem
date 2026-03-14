@@ -24,21 +24,27 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
 
   let enqueued = 0;
 
+  // N+1 제거: 모든 reportId에 대한 최신 Promotion을 2 쿼리로 일괄 조회
+  const reportIds = strategies.map((s) => s.reportId);
+  const promotions = await prisma.promotion.findMany({
+    where: {
+      reportId: { in: reportIds },
+      status: { in: ['POSTED', 'DELETED'] },
+    },
+    orderBy: { postedAt: 'desc' },
+    select: { reportId: true, postedAt: true, version: true, platform: true },
+    distinct: ['reportId'],
+  });
+  const promotionMap = new Map(promotions.map((p) => [p.reportId, p]));
+
   for (const strategy of strategies) {
     const { reportId, repostIntervalH, maxReposts, targetPlatforms } = strategy;
     const report = strategy.report;
 
     if (report.status !== 'ACTIVE') continue;
 
-    // 해당 신고의 POSTED Promotion 중 가장 최근 게시 시각 조회
-    const latestPromotion = await prisma.promotion.findFirst({
-      where: {
-        reportId,
-        status: { in: ['POSTED', 'DELETED'] },
-      },
-      orderBy: { postedAt: 'desc' },
-      select: { postedAt: true, version: true },
-    });
+    // promotionMap에서 직접 조회 (별도 DB 쿼리 없음)
+    const latestPromotion = promotionMap.get(reportId);
 
     // 게시된 기록이 없으면 스킵 (promotionJob에서 최초 게시 담당)
     if (!latestPromotion?.postedAt) continue;

@@ -10,30 +10,31 @@ const log = createLogger('notificationJob');
 async function processNotificationJob(job: Job<NotificationJobData>) {
   const { matchId, reportId } = job.data;
 
-  const [match, report] = await Promise.all([
-    prisma.match.findUnique({
-      where: { id: matchId },
-      include: { sighting: { include: { photos: true } } },
-    }),
-    prisma.report.findUnique({
-      where: { id: reportId },
-      include: { user: true },
-    }),
-  ]);
+  // RACE-04: 알림 발송 전 상태를 원자적으로 선점
+  // update where { status: { not: 'NOTIFIED' } } 로 한 워커만 성공하도록 보장
+  const claimedMatch = await prisma.match.update({
+    where: { id: matchId, status: { not: 'NOTIFIED' } },
+    data: { status: 'NOTIFIED' },
+    include: {
+      sighting: { include: { photos: true } },
+      report: { include: { user: true } },
+    },
+  }).catch(() => null);
 
-  if (!match || !report) {
-    log.warn({ matchId, reportId }, 'match 또는 report를 찾을 수 없음');
+  if (!claimedMatch) {
+    log.info({ matchId }, 'Match 이미 알림 전송됨 또는 존재하지 않음, 건너뜀');
+    return;
+  }
+
+  const report = claimedMatch.report;
+
+  if (!report) {
+    log.warn({ matchId, reportId }, 'report를 찾을 수 없음');
     return;
   }
 
   if (!report.user) {
     log.warn({ reportId }, 'Report에 연결된 사용자 없음, 건너뜀');
-    return;
-  }
-
-  // 이미 알림 전송된 경우 중복 방지
-  if (match.status === 'NOTIFIED') {
-    log.info({ matchId }, 'Match 이미 알림 전송됨, 건너뜀');
     return;
   }
 
@@ -44,14 +45,9 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
     recipientName: report.user.name,
     reportName: report.name,
     subjectType: report.subjectType,
-    confidence: match.confidence,
+    confidence: claimedMatch.confidence,
     matchId,
     sightingUrl,
-  });
-
-  await prisma.match.update({
-    where: { id: matchId },
-    data: { status: 'NOTIFIED' },
   });
 }
 

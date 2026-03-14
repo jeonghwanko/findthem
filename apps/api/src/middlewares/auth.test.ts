@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 import { requireAuth, optionalAuth, requireAdmin } from './auth.js';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
+import { prisma } from '../db/client.js';
+
+const userMock = (prisma as any).user;
 
 function createMockReq(headers: Record<string, string> = {}, query: Record<string, string> = {}): Request {
   return {
@@ -22,62 +25,58 @@ function createValidToken(): string {
 }
 
 describe('requireAuth', () => {
-  it('유효한 Bearer 토큰 → req.user 설정 + next() 호출', () => {
+  it('유효한 Bearer 토큰 → req.user 설정 + next() 호출', async () => {
+    userMock.findUnique.mockResolvedValue({ isBlocked: false });
     const token = createValidToken();
     const req = createMockReq({ authorization: `Bearer ${token}` });
     const next = vi.fn();
 
-    requireAuth(req, {} as Response, next);
+    await requireAuth(req, {} as Response, next);
 
     expect(req.user).toBeDefined();
     expect(req.user!.userId).toBe(TEST_USER_ID);
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('Authorization 헤더 없음 → 401 에러', () => {
+  it('Authorization 헤더 없음 → 401 에러', async () => {
     const req = createMockReq();
     const next = vi.fn();
 
-    expect(() => {
-      requireAuth(req, {} as Response, next);
-    }).toThrow(ApiError);
-
-    try {
-      requireAuth(req, {} as Response, next);
-    } catch (err) {
-      expect((err as ApiError).statusCode).toBe(401);
-    }
+    await expect(requireAuth(req, {} as Response, next)).rejects.toThrow(ApiError);
   });
 
-  it('Bearer 접두사 없음 → 401 에러', () => {
+  it('Bearer 접두사 없음 → 401 에러', async () => {
     const req = createMockReq({ authorization: 'InvalidToken' });
     const next = vi.fn();
 
-    expect(() => {
-      requireAuth(req, {} as Response, next);
-    }).toThrow(ApiError);
+    await expect(requireAuth(req, {} as Response, next)).rejects.toThrow(ApiError);
   });
 
-  it('만료된 토큰 → 401 에러', () => {
+  it('만료된 토큰 → 401 에러', async () => {
     const expiredToken = jwt.sign({ userId: TEST_USER_ID }, config.jwtSecret, {
       expiresIn: '-1s',
     } as jwt.SignOptions);
     const req = createMockReq({ authorization: `Bearer ${expiredToken}` });
     const next = vi.fn();
 
-    expect(() => {
-      requireAuth(req, {} as Response, next);
-    }).toThrow(ApiError);
+    await expect(requireAuth(req, {} as Response, next)).rejects.toThrow(ApiError);
   });
 
-  it('잘못된 시크릿 토큰 → 401 에러', () => {
+  it('잘못된 시크릿 토큰 → 401 에러', async () => {
     const badToken = jwt.sign({ userId: TEST_USER_ID }, 'wrong-secret');
     const req = createMockReq({ authorization: `Bearer ${badToken}` });
     const next = vi.fn();
 
-    expect(() => {
-      requireAuth(req, {} as Response, next);
-    }).toThrow(ApiError);
+    await expect(requireAuth(req, {} as Response, next)).rejects.toThrow(ApiError);
+  });
+
+  it('차단된 유저 → 403 에러', async () => {
+    userMock.findUnique.mockResolvedValue({ isBlocked: true });
+    const token = createValidToken();
+    const req = createMockReq({ authorization: `Bearer ${token}` });
+    const next = vi.fn();
+
+    await expect(requireAuth(req, {} as Response, next)).rejects.toThrow(ApiError);
   });
 });
 

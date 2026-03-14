@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
+import { ERROR_CODES } from '@findthem/shared';
 import { prisma } from '../db/client.js';
 
 export interface JwtPayload {
@@ -35,7 +36,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     select: { isBlocked: true },
   });
   if (user?.isBlocked) {
-    throw new ApiError(403, '차단된 계정입니다.');
+    throw new ApiError(403, ERROR_CODES.USER_BLOCKED);
   }
 
   req.user = payload;

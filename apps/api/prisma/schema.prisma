@@ -137,6 +137,7 @@ model ReportPhoto {
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
+  @@index([reportId])
   @@map("report_photo")
 }
 
@@ -198,6 +199,7 @@ model SightingPhoto {
 
   sighting Sighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
 
+  @@index([sightingId])
   @@map("sighting_photo")
 }
 
@@ -260,6 +262,7 @@ model Promotion {
 
   @@unique([reportId, platform])
   @@index([status])
+  @@index([reportId, status, postedAt])
   @@map("promotion")
 }
 
@@ -300,6 +303,7 @@ model ChatSession {
   messages ChatMessage[]
 
   @@index([platformUserId, platform])
+  @@index([platformUserId, platform, status])
   @@map("chat_session")
 }
 
@@ -389,6 +393,7 @@ model AdminAuditLog {
 
   @@index([targetType, targetId])
   @@index([createdAt])
+  @@index([source, createdAt])
   @@map("admin_audit_log")
 }
 

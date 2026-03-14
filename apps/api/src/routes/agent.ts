@@ -7,7 +7,7 @@ import { agentLimiter } from '../middlewares/rateLimit.js';
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
-import { MAX_FILE_SIZE } from '@findthem/shared';
+import { MAX_FILE_SIZE, ERROR_CODES } from '@findthem/shared';
 import type { ChatMessage } from '@prisma/client';
 
 const upload = multer({
@@ -69,8 +69,8 @@ export function registerAgentRoutes(router: Router) {
     const { message } = sendMessageSchema.parse(req.body);
 
     const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
-    if (!session) throw new ApiError(404, '세션을 찾을 수 없습니다.');
-    if (session.status !== 'ACTIVE') throw new ApiError(400, '이미 완료된 세션입니다.');
+    if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
+    if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
 
     const response = await sightingAgent.processMessage(
       {
@@ -97,8 +97,8 @@ export function registerAgentRoutes(router: Router) {
       if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
 
       const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
-      if (!session) throw new ApiError(404, '세션을 찾을 수 없습니다.');
-      if (session.status !== 'ACTIVE') throw new ApiError(400, '이미 완료된 세션입니다.');
+      if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
+      if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
 
       const { photoUrl } = await imageService.processAndSave('sightings', file);
 
@@ -134,7 +134,7 @@ export function registerAgentRoutes(router: Router) {
       }),
     ]);
 
-    if (!session) throw new ApiError(404, '세션을 찾을 수 없습니다.');
+    if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
 
     res.json({
       id: session.id,

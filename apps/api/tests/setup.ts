@@ -128,4 +128,6 @@ vi.mock('../src/jobs/queues.js', () => ({
 // ── 각 테스트 전 모든 mock 초기화 ──
 beforeEach(() => {
   vi.clearAllMocks();
+  // requireAuth가 isBlocked 체크를 위해 user.findUnique를 호출하므로 기본값 설정
+  prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
 });

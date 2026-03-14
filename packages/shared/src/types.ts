@@ -242,6 +242,11 @@ export interface CrawlSourceJobData {
   source: string;
 }
 
+export interface CrawlAgentJobData {
+  triggeredBy?: 'scheduler' | 'manual';
+  sources?: string[];
+}
+
 // ── 정보 수집 에이전트 타입 ──
 
 export type EngineVersion = 'v1' | 'v2';

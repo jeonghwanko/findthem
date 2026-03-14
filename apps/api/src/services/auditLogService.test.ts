@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { AdminActionSource } from '@findthem/shared';
 import { createAuditLog, listAuditLogs } from './auditLogService.js';
 
 // setup.ts에서 전역으로 vi.mock('../src/db/client.js')이 등록되어 있음
@@ -44,7 +45,7 @@ describe('createAuditLog', () => {
       targetType: 'User',
       targetId: 'user-456',
       detail: { reason: '스팸' },
-      source: 'ADMIN',
+      source: 'ADMIN' as AdminActionSource,
       agentSessionId: 'session-789',
     });
 
@@ -68,7 +69,7 @@ describe('createAuditLog', () => {
       action: 'REPORT_ACTIVATE',
       targetType: 'Report',
       targetId: 'report-001',
-      source: 'ADMIN',
+      source: 'ADMIN' as AdminActionSource,
     });
 
     const callArg = auditLogMock.create.mock.calls[0][0];
@@ -173,7 +174,7 @@ describe('listAuditLogs', () => {
     auditLogMock.findMany.mockResolvedValue([]);
     auditLogMock.count.mockResolvedValue(0);
 
-    await listAuditLogs({ source: 'ADMIN' });
+    await listAuditLogs({ source: 'ADMIN' as AdminActionSource });
 
     expect(auditLogMock.findMany).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -1,5 +1,5 @@
 import { prisma } from '../../../db/client.js';
-import { ApiError } from '../../../middlewares/errors.js';
+import { ApiError, ERROR_CODES } from '@findthem/shared';
 
 export interface UpdateMatchStatusInput {
   matchId: string;
@@ -21,7 +21,7 @@ export async function updateMatchStatus(input: UpdateMatchStatusInput): Promise<
   });
 
   if (!match) {
-    throw new ApiError(404, `매칭을 찾을 수 없습니다: ${input.matchId}`);
+    throw new ApiError(404, ERROR_CODES.MATCH_NOT_FOUND);
   }
 
   if (match.status === input.newStatus) {

@@ -7,7 +7,8 @@ import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE } from '@findthem/shared';
+import { MAX_FILE_SIZE, ERROR_CODES } from '@findthem/shared';
+import type { Prisma } from '@prisma/client';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -48,24 +49,26 @@ export function registerSightingRoutes(router: Router) {
         typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body,
       );
 
-      // reportId 유효성 확인 + 상태 체크
-      if (body.reportId) {
-        const report = await prisma.report.findUnique({
-          where: { id: body.reportId },
-          select: { status: true },
-        });
-        if (!report) throw new ApiError(404, 'SIGHTING_REPORT_NOT_FOUND');
-        if (report.status !== 'ACTIVE') {
-          throw new ApiError(400, 'REPORT_CLOSED');
+      // RACE-03: reportId 유효성 확인 + 상태 체크 + 제보 생성을 트랜잭션으로 원자화
+      const sighting = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        if (body.reportId) {
+          const report = await tx.report.findUnique({
+            where: { id: body.reportId },
+            select: { status: true },
+          });
+          if (!report) throw new ApiError(404, 'SIGHTING_REPORT_NOT_FOUND');
+          if (report.status !== 'ACTIVE') {
+            throw new ApiError(400, ERROR_CODES.REPORT_NOT_ACTIVE);
+          }
         }
-      }
 
-      const sighting = await prisma.sighting.create({
-        data: {
-          ...body,
-          userId: req.user?.userId,
-          source: 'WEB',
-        },
+        return tx.sighting.create({
+          data: {
+            ...body,
+            userId: req.user?.userId,
+            source: 'WEB',
+          },
+        });
       });
 
       // 사진 처리
@@ -80,11 +83,12 @@ export function registerSightingRoutes(router: Router) {
       );
 
       // 이미지 분석 + 매칭 작업 enqueue
+      // RACE-08: jobId로 중복 job 방지
       if (photos.length > 0) {
         await imageQueue.add(
           'process-sighting-photos',
           { type: 'sighting', sightingId: sighting.id },
-          { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+          { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-sighting-${sighting.id}` },
         );
       }
 

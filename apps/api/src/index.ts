@@ -7,6 +7,7 @@ import { startMatchingWorker } from './jobs/matchingJob.js';
 import { startNotificationWorker } from './jobs/notificationJob.js';
 import { startCleanupWorker } from './jobs/cleanupJob.js';
 import { startCrawlWorker, scheduleCrawlJob } from './jobs/crawlJob.js';
+import { startCrawlAgentWorker } from './jobs/crawlAgentJob.js';
 import { startPromotionMonitorWorker } from './jobs/promotionMonitorJob.js';
 import { startPromotionRepostWorker } from './jobs/promotionRepostJob.js';
 import { createLogger } from './logger.js';
@@ -25,6 +26,7 @@ async function main() {
   startNotificationWorker();
   startCleanupWorker();
   startCrawlWorker();
+  startCrawlAgentWorker();
   startPromotionMonitorWorker();
   startPromotionRepostWorker();
   await scheduleCrawlJob();

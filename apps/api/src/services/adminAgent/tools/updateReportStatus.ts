@@ -1,5 +1,5 @@
 import { prisma } from '../../../db/client.js';
-import { ApiError } from '../../../middlewares/errors.js';
+import { ApiError, ERROR_CODES } from '@findthem/shared';
 
 export interface UpdateReportStatusInput {
   reportId: string;
@@ -14,7 +14,7 @@ export async function updateReportStatus(input: UpdateReportStatusInput): Promis
   });
 
   if (!report) {
-    throw new ApiError(404, `신고를 찾을 수 없습니다: ${input.reportId}`);
+    throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
   }
 
   if (report.status === input.newStatus) {
@@ -25,9 +25,19 @@ export async function updateReportStatus(input: UpdateReportStatusInput): Promis
     };
   }
 
-  const updated = await prisma.report.update({
-    where: { id: input.reportId },
+  // RACE-10: 조건부 update — EXPIRED/SUSPENDED는 관리자 에이전트도 임의 변경 불가
+  // updateMany로 원자적 처리 후 count === 0이면 상태 충돌 에러
+  const updateResult = await prisma.report.updateMany({
+    where: { id: input.reportId, status: { notIn: ['EXPIRED', 'SUSPENDED'] } },
     data: { status: input.newStatus },
+  });
+
+  if (updateResult.count === 0) {
+    throw new ApiError(409, ERROR_CODES.REPORT_STATUS_CONFLICT);
+  }
+
+  const updated = await prisma.report.findUniqueOrThrow({
+    where: { id: input.reportId },
     select: { id: true, status: true, name: true, subjectType: true, updatedAt: true },
   });
 

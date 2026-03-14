@@ -16,6 +16,7 @@ export type {
   PromotionRepostJobData,
   CrawlDispatchJobData,
   CrawlSourceJobData,
+  CrawlAgentJobData,
 } from '@findthem/shared';
 
 import type {
@@ -28,6 +29,7 @@ import type {
   PromotionRepostJobData,
   CrawlDispatchJobData,
   CrawlSourceJobData,
+  CrawlAgentJobData,
 } from '@findthem/shared';
 
 // BullMQ는 자체 ioredis를 사용하므로 URL 문자열로 전달
@@ -44,6 +46,7 @@ export const promotionMonitorQueue = new Queue<PromotionMonitorJobData>(QUEUE_NA
 export const promotionRepostQueue = new Queue<PromotionRepostJobData>(QUEUE_NAMES.PROMOTION_REPOST, { connection });
 export const crawlSchedulerQueue = new Queue<CrawlDispatchJobData>(QUEUE_NAMES.CRAWL_SCHEDULER, { connection });
 export const crawlQueue = new Queue<CrawlSourceJobData>(QUEUE_NAMES.CRAWL, { connection });
+export const crawlAgentQueue = new Queue<CrawlAgentJobData>(QUEUE_NAMES.CRAWL_AGENT, { connection });
 
 // ── Worker 생성 헬퍼 ──
 

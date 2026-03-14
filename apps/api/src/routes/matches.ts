@@ -1,13 +1,21 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
+import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 
+const matchesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
 export function registerMatchRoutes(router: Router) {
   // 내 신고에 대한 매칭 결과 조회
-  router.get('/reports/:id/matches', requireAuth, async (req, res) => {
+  router.get('/reports/:id/matches', requireAuth, validateQuery(matchesQuerySchema), async (req, res) => {
     const id = req.params.id as string;
+    const { page, limit } = req.query as unknown as z.infer<typeof matchesQuerySchema>;
+
     const report = await prisma.report.findUnique({
       where: { id },
     });
@@ -16,15 +24,20 @@ export function registerMatchRoutes(router: Router) {
       throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
-    const matches = await prisma.match.findMany({
-      where: { reportId: id },
-      include: {
-        sighting: { include: { photos: true } },
-      },
-      orderBy: { confidence: 'desc' },
-    });
+    const [matches, total] = await Promise.all([
+      prisma.match.findMany({
+        where: { reportId: id },
+        include: {
+          sighting: { include: { photos: true } },
+        },
+        orderBy: { confidence: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.match.count({ where: { reportId: id } }),
+    ]);
 
-    res.json(matches);
+    res.json({ matches, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 매칭 결과 확인/거부

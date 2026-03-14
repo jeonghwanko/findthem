@@ -18,11 +18,13 @@ interface MessageMetadata {
 export async function loadAsClaudeMessages(
   sessionId: string,
 ): Promise<Anthropic.Messages.MessageParam[]> {
-  const messages = await prisma.chatMessage.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: 'asc' },
-    take: AGENT_MAX_HISTORY_MESSAGES,
-  });
+  const messages = (
+    await prisma.chatMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: 'desc' },
+      take: AGENT_MAX_HISTORY_MESSAGES,
+    })
+  ).reverse();
 
   const result: Anthropic.Messages.MessageParam[] = [];
 

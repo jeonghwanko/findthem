@@ -3,10 +3,10 @@ import { Prisma } from '@prisma/client';
 import { getClaudeClient } from '../../ai/claudeClient.js';
 import { config } from '../../config.js';
 import { prisma } from '../../db/client.js';
-import { ApiError } from '../../middlewares/errors.js';
+import { ApiError } from '@findthem/shared';
 import { createLogger } from '../../logger.js';
 import { createAuditLog } from '../auditLogService.js';
-import { ADMIN_AGENT_MAX_TURNS, ADMIN_AGENT_MAX_TOKENS } from '@findthem/shared';
+import { ADMIN_AGENT_MAX_TURNS, ADMIN_AGENT_MAX_TOKENS, ERROR_CODES } from '@findthem/shared';
 import { ADMIN_AGENT_SYSTEM_PROMPT } from './systemPrompt.js';
 import { ADMIN_TOOL_DEFINITIONS } from './toolDefinitions.js';
 import { TOOL_HANDLERS, WRITE_TOOLS } from './tools/index.js';
@@ -42,7 +42,7 @@ export class AdminAgentService {
   }> {
     // 입력 검증
     if (userMessage.length > 2000) {
-      throw new ApiError(400, '메시지가 너무 깁니다. 2000자 이하로 입력해주세요.');
+      throw new ApiError(400, ERROR_CODES.MESSAGE_TOO_LONG);
     }
 
     // 1. 세션 로드 또는 생성
@@ -53,7 +53,7 @@ export class AdminAgentService {
         where: { id: sessionId },
         select: { id: true, messages: true },
       });
-      if (!found) throw new ApiError(404, '세션을 찾을 수 없습니다.');
+      if (!found) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
       session = found;
     } else {
       session = await prisma.adminAgentSession.create({
@@ -67,7 +67,7 @@ export class AdminAgentService {
 
     // 세션 메시지 수 제한
     if (history.length > 100) {
-      throw new ApiError(400, '대화가 너무 길어졌습니다.');
+      throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
     }
 
     const messages: Anthropic.Messages.MessageParam[] = [
