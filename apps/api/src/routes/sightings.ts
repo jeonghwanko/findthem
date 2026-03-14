@@ -14,7 +14,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('이미지 파일만 업로드 가능합니다.'));
+    else cb(new Error('IMAGE_ONLY'));
   },
 });
 
@@ -54,9 +54,9 @@ export function registerSightingRoutes(router: Router) {
           where: { id: body.reportId },
           select: { status: true },
         });
-        if (!report) throw new ApiError(404, '해당 실종 신고를 찾을 수 없습니다.');
+        if (!report) throw new ApiError(404, 'SIGHTING_REPORT_NOT_FOUND');
         if (report.status !== 'ACTIVE') {
-          throw new ApiError(400, '종료된 신고에는 제보할 수 없습니다.');
+          throw new ApiError(400, 'REPORT_CLOSED');
         }
       }
 

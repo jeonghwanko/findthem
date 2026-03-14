@@ -5,45 +5,83 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
+import type { Locale } from '@findthem/shared';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new ApiError(400, '이미지 파일만 업로드 가능합니다.') as any);
+    else cb(new ApiError(400, 'IMAGE_ONLY') as any);
   },
 });
 
 const createSessionSchema = z.object({
   reportId: z.string().optional(),
+  locale: z.enum(['ko', 'ja', 'zh-TW', 'en']).optional(),
 });
 
 const sendMessageSchema = z.object({
   message: z.string().min(1),
+  locale: z.enum(['ko', 'ja', 'zh-TW', 'en']).optional(),
 });
+
+/** Accept-Language 헤더 또는 쿼리 파라미터에서 locale 추출 */
+function resolveLocale(
+  headerValue: string | undefined,
+  queryValue: unknown,
+  bodyValue: unknown,
+): Locale {
+  // 1. body/query에 명시된 locale 우선
+  const explicit = (bodyValue || queryValue) as string | undefined;
+  if (explicit && (SUPPORTED_LOCALES as readonly string[]).includes(explicit)) {
+    return explicit as Locale;
+  }
+  // 2. Accept-Language 헤더 파싱 (예: "ko-KR,ko;q=0.9,en;q=0.8")
+  if (headerValue) {
+    const primary = headerValue.split(',')[0]?.split(';')[0]?.trim().toLowerCase();
+    if (primary?.startsWith('ko')) return 'ko';
+    if (primary?.startsWith('ja')) return 'ja';
+    if (primary === 'zh-tw') return 'zh-TW';
+    if (primary?.startsWith('zh')) return 'zh-TW';
+    if (primary?.startsWith('en')) return 'en';
+  }
+  return DEFAULT_LOCALE;
+}
 
 export function registerChatRoutes(router: Router) {
   // 새 챗봇 세션 생성
   router.post('/chat/sessions', optionalAuth, async (req, res) => {
-    const { reportId } = createSessionSchema.parse(req.body);
+    const { reportId, locale: bodyLocale } = createSessionSchema.parse(req.body);
+    const locale = resolveLocale(
+      req.headers['accept-language'],
+      req.query.locale,
+      bodyLocale,
+    );
 
     const { sessionId, response } = await chatbotEngine.startSession(
       'WEB',
       req.user?.userId,
       undefined,
       reportId,
+      locale,
     );
 
-    res.status(201).json({ sessionId, ...response });
+    res.status(201).json({ sessionId, locale, ...response });
   });
 
   // 메시지 전송
   router.post('/chat/sessions/:id/messages', optionalAuth, async (req, res) => {
     const sessionId = req.params.id as string;
-    const { message } = sendMessageSchema.parse(req.body);
+    const { message, locale: bodyLocale } = sendMessageSchema.parse(req.body);
+    const locale = resolveLocale(
+      req.headers['accept-language'],
+      req.query.locale,
+      bodyLocale,
+    );
 
-    const response = await chatbotEngine.processMessage(sessionId, message);
+    const response = await chatbotEngine.processMessage(sessionId, message, undefined, locale);
     res.json(response);
   });
 
@@ -55,15 +93,29 @@ export function registerChatRoutes(router: Router) {
     async (req, res) => {
       const sessionId = req.params.id as string;
       const file = req.file;
-      if (!file) throw new ApiError(400, '사진을 첨부해주세요.');
+      if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
+
+      const locale = resolveLocale(
+        req.headers['accept-language'],
+        req.query.locale,
+        req.body?.locale,
+      );
 
       const { photoUrl } = await imageService.processAndSave('sightings', file);
 
-      // 사진을 메시지로 처리
+      // 사진을 메시지로 처리 (locale별 "사진 첨부" 문구 사용)
+      const photoAttachMsg = {
+        ko: '사진 첨부',
+        en: 'Photo attached',
+        ja: '写真添付',
+        'zh-TW': '照片附件',
+      }[locale];
+
       const response = await chatbotEngine.processMessage(
         sessionId,
-        '사진 첨부',
+        photoAttachMsg,
         photoUrl,
+        locale,
       );
 
       res.json({ photoUrl, ...response });

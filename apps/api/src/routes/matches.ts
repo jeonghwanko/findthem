@@ -11,9 +11,9 @@ export function registerMatchRoutes(router: Router) {
     const report = await prisma.report.findUnique({
       where: { id },
     });
-    if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
+    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
     if (report.userId !== req.user!.userId) {
-      throw new ApiError(403, '본인의 신고만 조회할 수 있습니다.');
+      throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
     const matches = await prisma.match.findMany({
@@ -39,9 +39,9 @@ export function registerMatchRoutes(router: Router) {
       include: { report: true },
     });
 
-    if (!match) throw new ApiError(404, '매칭 결과를 찾을 수 없습니다.');
+    if (!match) throw new ApiError(404, 'MATCH_NOT_FOUND');
     if (match.report.userId !== req.user!.userId) {
-      throw new ApiError(403, '본인의 신고에 대한 매칭만 수정할 수 있습니다.');
+      throw new ApiError(403, 'MATCH_OWNER_ONLY');
     }
 
     const updated = await prisma.match.update({

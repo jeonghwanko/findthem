@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { validateBody } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { requireAuth } from '../middlewares/auth.js';
+import { authLimiter } from '../middlewares/rateLimit.js';
 
 const registerSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요'),
@@ -28,12 +29,12 @@ function signToken(userId: string): string {
 
 export function registerAuthRoutes(router: Router) {
   // 회원가입
-  router.post('/auth/register', validateBody(registerSchema), async (req, res) => {
+  router.post('/auth/register', authLimiter, validateBody(registerSchema), async (req, res) => {
     const { name, phone, password, email } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { phone } });
     if (existing) {
-      throw new ApiError(409, '이미 등록된 전화번호입니다.');
+      throw new ApiError(409, 'PHONE_ALREADY_EXISTS');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -49,17 +50,17 @@ export function registerAuthRoutes(router: Router) {
   });
 
   // 로그인
-  router.post('/auth/login', validateBody(loginSchema), async (req, res) => {
+  router.post('/auth/login', authLimiter, validateBody(loginSchema), async (req, res) => {
     const { phone, password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { phone } });
     if (!user || !user.passwordHash) {
-      throw new ApiError(401, '전화번호 또는 비밀번호가 올바르지 않습니다.');
+      throw new ApiError(401, 'INVALID_CREDENTIALS');
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      throw new ApiError(401, '전화번호 또는 비밀번호가 올바르지 않습니다.');
+      throw new ApiError(401, 'INVALID_CREDENTIALS');
     }
 
     const token = signToken(user.id);
@@ -75,7 +76,7 @@ export function registerAuthRoutes(router: Router) {
       where: { id: req.user!.userId },
       select: { id: true, name: true, phone: true, email: true, createdAt: true },
     });
-    if (!user) throw new ApiError(404, '사용자를 찾을 수 없습니다.');
+    if (!user) throw new ApiError(404, 'USER_NOT_FOUND');
     res.json(user);
   });
 }

@@ -1,5 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { ERROR_CODES } from '@findthem/shared';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('errors');
 
 export class ApiError extends Error {
   constructor(
@@ -31,6 +35,6 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  log.error({ err }, 'Unhandled error');
+  res.status(500).json({ error: ERROR_CODES.SERVER_ERROR });
 }

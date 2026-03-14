@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import PhotoUpload from '../components/PhotoUpload';
 
 export default function SightingSubmitPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const reportId = searchParams.get('reportId') || '';
 
@@ -44,7 +46,7 @@ export default function SightingSubmitPage() {
         navigate('/');
       }
     } catch (err: any) {
-      setError(err.message || '제보에 실패했습니다.');
+      setError(err.message || t('sighting.submitError'));
     } finally {
       setLoading(false);
     }
@@ -52,33 +54,33 @@ export default function SightingSubmitPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">목격 제보</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('sighting.title')}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            사진 (선택)
+            {t('sighting.photoOptional')}
           </label>
           <PhotoUpload maxFiles={5} onChange={setPhotos} />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            목격 내용 *
+            {t('sighting.description')}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none resize-none"
-            placeholder="어디서 무엇을 목격하셨나요? 가능한 상세히 적어주세요."
+            placeholder={t('sighting.descriptionPlaceholder')}
             required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            목격 일시 *
+            {t('sighting.sightedAt')}
           </label>
           <input
             type="datetime-local"
@@ -91,13 +93,13 @@ export default function SightingSubmitPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            목격 장소 *
+            {t('sighting.sightedPlace')}
           </label>
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-            placeholder="서울시 강남구 역삼동 스타벅스 앞"
+            placeholder={t('sighting.sightedPlacePlaceholder')}
             required
           />
         </div>
@@ -105,7 +107,7 @@ export default function SightingSubmitPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              제보자 이름 (선택)
+              {t('sighting.tipsterName')}
             </label>
             <input
               value={tipsterName}
@@ -115,7 +117,7 @@ export default function SightingSubmitPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              연락처 (선택)
+              {t('sighting.tipsterPhone')}
             </label>
             <input
               type="tel"
@@ -134,7 +136,7 @@ export default function SightingSubmitPage() {
           disabled={loading || !description || !sightedAt || !address}
           className="w-full bg-accent-500 hover:bg-accent-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
         >
-          {loading ? '제출 중...' : '제보 제출'}
+          {loading ? t('sighting.submitting') : t('sighting.submit')}
         </button>
       </form>
     </div>

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PhotoUploadProps {
   maxFiles?: number;
@@ -6,6 +7,7 @@ interface PhotoUploadProps {
 }
 
 export default function PhotoUpload({ maxFiles = 5, onChange }: PhotoUploadProps) {
+  const { t } = useTranslation();
   const [previews, setPreviews] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +60,7 @@ export default function PhotoUpload({ maxFiles = 5, onChange }: PhotoUploadProps
             className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary-400 hover:text-primary-500 transition-colors"
           >
             <span className="text-2xl">+</span>
-            <span className="text-xs mt-1">사진 추가</span>
+            <span className="text-xs mt-1">{t('upload.addPhoto')}</span>
           </button>
         )}
       </div>
@@ -73,7 +75,7 @@ export default function PhotoUpload({ maxFiles = 5, onChange }: PhotoUploadProps
       />
 
       <p className="text-xs text-gray-400 mt-2">
-        최대 {maxFiles}장, 장당 10MB 이하
+        {t('upload.limit', { max: maxFiles })}
       </p>
     </div>
   );

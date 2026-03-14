@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
+import { prisma } from '../db/client.js';
 
 export interface JwtPayload {
   userId: string;
@@ -15,20 +16,30 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
-    throw new ApiError(401, '로그인이 필요합니다.');
+    throw new ApiError(401, 'AUTH_REQUIRED');
   }
 
   const token = header.slice(7);
+  let payload: JwtPayload;
   try {
-    const payload = jwt.verify(token, config.jwtSecret) as JwtPayload;
-    req.user = payload;
-    next();
+    payload = jwt.verify(token, config.jwtSecret) as JwtPayload;
   } catch {
-    throw new ApiError(401, '유효하지 않은 토큰입니다.');
+    throw new ApiError(401, 'INVALID_TOKEN');
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { isBlocked: true },
+  });
+  if (user?.isBlocked) {
+    throw new ApiError(403, '차단된 계정입니다.');
+  }
+
+  req.user = payload;
+  next();
 }
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
@@ -53,7 +64,7 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   const apiKey = req.headers['x-api-key'] as string | undefined;
 
   if (apiKey !== config.adminApiKey) {
-    throw new ApiError(403, '관리자 권한이 필요합니다.');
+    throw new ApiError(403, 'ADMIN_REQUIRED');
   }
   next();
 }

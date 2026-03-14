@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import type { ReportDetail, Sighting, SightingListResponse } from '../api/client';
-import { SUBJECT_TYPE_LABELS } from '@findthem/shared';
 
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: '찾는 중',
-  FOUND: '찾았습니다',
-  EXPIRED: '만료',
-  SUSPENDED: '중지',
+const STATUS_MAP: Record<string, string> = {
+  ACTIVE: 'statusActive',
+  FOUND: 'statusFound',
+  EXPIRED: 'statusExpired',
+  SUSPENDED: 'statusSuspended',
 };
 
 export default function ReportDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t, i18n } = useTranslation();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [sightings, setSightings] = useState<Sighting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,11 +34,11 @@ export default function ReportDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-400">로딩 중...</div>;
+    return <div className="text-center py-20 text-gray-400">{t('loading')}</div>;
   }
 
   if (!report) {
-    return <div className="text-center py-20 text-gray-400">신고를 찾을 수 없습니다</div>;
+    return <div className="text-center py-20 text-gray-400">{t('detail.notFound')}</div>;
   }
 
   return (
@@ -45,7 +46,7 @@ export default function ReportDetailPage() {
       {/* 상태 배지 */}
       <div className="flex items-center gap-3 mb-4">
         <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-          {SUBJECT_TYPE_LABELS[report.subjectType]}
+          {t(`subjectType.${report.subjectType}`)}
         </span>
         <span
           className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -56,7 +57,7 @@ export default function ReportDetailPage() {
                 : 'bg-gray-100 text-gray-700'
           }`}
         >
-          {STATUS_LABELS[report.status]}
+          {t(`detail.${STATUS_MAP[report.status]}`)}
         </span>
       </div>
 
@@ -96,48 +97,48 @@ export default function ReportDetailPage() {
 
       {/* 상세 정보 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="font-semibold text-lg mb-4">상세 정보</h2>
+        <h2 className="font-semibold text-lg mb-4">{t('detail.detailInfo')}</h2>
         <dl className="grid grid-cols-2 gap-4 text-sm">
           {report.species && (
             <>
-              <dt className="text-gray-500">품종</dt>
+              <dt className="text-gray-500">{t('detail.species')}</dt>
               <dd className="text-gray-900">{report.species}</dd>
             </>
           )}
           {report.gender && (
             <>
-              <dt className="text-gray-500">성별</dt>
+              <dt className="text-gray-500">{t('detail.gender')}</dt>
               <dd className="text-gray-900">
-                {report.gender === 'MALE' ? '수컷/남성' : report.gender === 'FEMALE' ? '암컷/여성' : '모름'}
+                {report.gender === 'MALE' ? t('detail.genderMale') : report.gender === 'FEMALE' ? t('detail.genderFemale') : t('detail.genderUnknown')}
               </dd>
             </>
           )}
           {report.age && (
             <>
-              <dt className="text-gray-500">나이</dt>
+              <dt className="text-gray-500">{t('detail.age')}</dt>
               <dd className="text-gray-900">{report.age}</dd>
             </>
           )}
           {report.color && (
             <>
-              <dt className="text-gray-500">색상</dt>
+              <dt className="text-gray-500">{t('detail.color')}</dt>
               <dd className="text-gray-900">{report.color}</dd>
             </>
           )}
-          <dt className="text-gray-500">마지막 목격</dt>
+          <dt className="text-gray-500">{t('detail.lastSeen')}</dt>
           <dd className="text-gray-900">
-            {new Date(report.lastSeenAt).toLocaleString('ko-KR')}
+            {new Date(report.lastSeenAt).toLocaleString(i18n.language)}
           </dd>
-          <dt className="text-gray-500">목격 장소</dt>
+          <dt className="text-gray-500">{t('detail.lastSeenPlace')}</dt>
           <dd className="text-gray-900">{report.lastSeenAddress}</dd>
         </dl>
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <h3 className="text-sm text-gray-500 mb-1">특징</h3>
+          <h3 className="text-sm text-gray-500 mb-1">{t('detail.features')}</h3>
           <p className="text-gray-900">{report.features}</p>
         </div>
         {report.clothingDesc && (
           <div className="mt-3">
-            <h3 className="text-sm text-gray-500 mb-1">의상</h3>
+            <h3 className="text-sm text-gray-500 mb-1">{t('detail.clothing')}</h3>
             <p className="text-gray-900">{report.clothingDesc}</p>
           </div>
         )}
@@ -150,7 +151,7 @@ export default function ReportDetailPage() {
 
       {/* 연락처 */}
       <div className="bg-primary-50 rounded-xl p-6 mb-6">
-        <h2 className="font-semibold text-lg mb-2">연락처</h2>
+        <h2 className="font-semibold text-lg mb-2">{t('detail.contact')}</h2>
         <p className="text-gray-700">{report.contactName}</p>
         <a
           href={`tel:${report.contactPhone}`}
@@ -161,18 +162,29 @@ export default function ReportDetailPage() {
       </div>
 
       {/* 제보 버튼 */}
-      <Link
-        to={`/sightings/new?reportId=${report.id}`}
-        className="block w-full text-center bg-accent-500 hover:bg-accent-600 text-white py-3 rounded-xl font-semibold text-lg transition-colors mb-8"
-      >
-        이 {SUBJECT_TYPE_LABELS[report.subjectType]}을(를) 목격했습니다
-      </Link>
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <Link
+          to={`/sightings/new?reportId=${report.id}`}
+          className="flex-1 text-center bg-accent-500 hover:bg-accent-600 text-white py-3 rounded-xl font-semibold text-lg transition-colors"
+        >
+          {t('detail.sightedThis', { type: t(`subjectType.${report.subjectType}`) })}
+        </Link>
+        <button
+          onClick={() => {
+            const btn = document.querySelector<HTMLButtonElement>('[aria-label="AI 제보 도우미 열기"]');
+            btn?.click();
+          }}
+          className="flex-1 text-center bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl font-semibold text-lg transition-colors"
+        >
+          🤖 AI로 제보하기
+        </button>
+      </div>
 
       {/* 제보 목록 */}
       {sightings.length > 0 && (
         <div>
           <h2 className="font-semibold text-lg mb-4">
-            제보 {sightings.length}건
+            {t('detail.sightingCount', { count: sightings.length })}
           </h2>
           <div className="space-y-4">
             {sightings.map((s) => (
@@ -188,7 +200,7 @@ export default function ReportDetailPage() {
                   <div>
                     <p className="text-gray-900">{s.description}</p>
                     <p className="text-sm text-gray-500 mt-1">
-                      📍 {s.address} · {new Date(s.sightedAt).toLocaleString('ko-KR')}
+                      📍 {s.address} · {new Date(s.sightedAt).toLocaleString(i18n.language)}
                     </p>
                   </div>
                 </div>

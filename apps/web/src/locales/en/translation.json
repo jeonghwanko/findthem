@@ -1,0 +1,172 @@
+{
+  "brand": "FindThem",
+  "loading": "Loading...",
+  "footer": "FindThem - AI-powered missing person/pet finder",
+
+  "nav": {
+    "browse": "Browse All",
+    "myReports": "My Reports",
+    "newReport": "New Report",
+    "logout": "Logout",
+    "login": "Login"
+  },
+
+  "home": {
+    "heroTitle": "We help you find your beloved family",
+    "heroDesc": "AI automatically promotes on social media, analyzes sightings, and finds matches",
+    "newReport": "Report Missing",
+    "submitSighting": "Submit Sighting",
+    "featurePromo": "AI Auto Promotion",
+    "featurePromoDesc": "AI generates promotional posts and auto-publishes to KakaoTalk, X, and more",
+    "featureChatbot": "Chatbot Sighting Collection",
+    "featureChatbotDesc": "Easily report sightings through web/KakaoTalk chatbot like a conversation",
+    "featureMatching": "AI Image Matching",
+    "featureMatchingDesc": "AI automatically compares sighting photos with missing photos and sends match alerts",
+    "recentReports": "Recent Missing Reports",
+    "viewAll": "View All →",
+    "noReports": "No reports registered yet"
+  },
+
+  "auth": {
+    "login": "Login",
+    "register": "Sign Up",
+    "name": "Name",
+    "phone": "Phone Number",
+    "password": "Password",
+    "processing": "Processing...",
+    "hasAccount": "Already have an account? ",
+    "noAccount": "Don't have an account? ",
+    "errorFallback": "An error occurred"
+  },
+
+  "browse": {
+    "title": "Missing Reports",
+    "all": "All",
+    "searchPlaceholder": "Search by name, features, location...",
+    "noResults": "No results found",
+    "prev": "Previous",
+    "next": "Next"
+  },
+
+  "report": {
+    "title": "File a Missing Report",
+    "selectType": "Select the type of missing subject",
+    "next": "Next",
+    "prev": "Previous",
+    "photo": "Photos *",
+    "nameLabel": "Name *",
+    "namePlaceholderPerson": "John Doe",
+    "namePlaceholderAnimal": "Buddy",
+    "species": "Breed",
+    "speciesPlaceholder": "Golden Retriever",
+    "gender": "Gender",
+    "genderSelect": "Select",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderUnknown": "Unknown",
+    "age": "Age",
+    "agePlaceholderPerson": "30s male",
+    "agePlaceholderAnimal": "3 years old",
+    "color": "Color/Fur Color",
+    "colorPlaceholderAnimal": "Brown",
+    "features": "Features * (Describe distinguishing features in detail)",
+    "featuresPlaceholderPerson": "170cm tall, black glasses, blue jacket",
+    "featuresPlaceholderAnimal": "White spot on left ear, wearing red collar",
+    "clothing": "Clothing when last seen",
+    "clothingPlaceholder": "Black puffer jacket, jeans, white sneakers",
+    "lastSeenTime": "Last Seen Date/Time *",
+    "lastSeenPlace": "Last Seen Location *",
+    "lastSeenPlaceholder": "123 Main St, near the park",
+    "contactName": "Contact Name *",
+    "contactPhone": "Contact Phone *",
+    "reward": "Reward (Optional)",
+    "rewardPlaceholder": "A reward will be offered",
+    "photoRequired": "Please add at least one photo.",
+    "submitError": "Failed to register report.",
+    "submitting": "Registering...",
+    "submit": "Submit Missing Report"
+  },
+
+  "detail": {
+    "statusActive": "Searching",
+    "statusFound": "Found",
+    "statusExpired": "Expired",
+    "statusSuspended": "Suspended",
+    "detailInfo": "Details",
+    "species": "Breed",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderUnknown": "Unknown",
+    "age": "Age",
+    "color": "Color",
+    "lastSeen": "Last Seen",
+    "lastSeenPlace": "Last Seen Location",
+    "features": "Features",
+    "clothing": "Clothing",
+    "contact": "Contact",
+    "sightedThis": "I saw this {{type}}",
+    "sightingCount": "{{count}} sightings",
+    "notFound": "Report not found",
+    "found": "Found!"
+  },
+
+  "sighting": {
+    "title": "Report a Sighting",
+    "photoOptional": "Photos (Optional)",
+    "description": "Sighting Details *",
+    "descriptionPlaceholder": "What did you see and where? Please describe in detail.",
+    "sightedAt": "Sighting Date/Time *",
+    "sightedPlace": "Sighting Location *",
+    "sightedPlacePlaceholder": "Near 123 Main St, in front of Starbucks",
+    "tipsterName": "Your Name (Optional)",
+    "tipsterPhone": "Your Phone (Optional)",
+    "submitting": "Submitting...",
+    "submit": "Submit Sighting",
+    "submitError": "Failed to submit sighting."
+  },
+
+  "chat": {
+    "title": "Sighting Report Chatbot",
+    "subtitle": "Report sightings easily through chat",
+    "typing": "Typing...",
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "photoAttach": "Attach Photo",
+    "openChat": "Open Chat"
+  },
+
+  "card": {
+    "found": "Found!",
+    "sightingCount": "{{count}} sightings"
+  },
+
+  "upload": {
+    "addPhoto": "Add Photo",
+    "limit": "Max {{max}} photos, 10MB each"
+  },
+
+  "subjectType": {
+    "PERSON": "Person",
+    "DOG": "Dog",
+    "CAT": "Cat"
+  },
+
+  "errors": {
+    "AUTH_REQUIRED": "Login is required.",
+    "INVALID_TOKEN": "Invalid token.",
+    "ADMIN_REQUIRED": "Admin access required.",
+    "PHONE_ALREADY_EXISTS": "This phone number is already registered.",
+    "INVALID_CREDENTIALS": "Invalid phone number or password.",
+    "USER_NOT_FOUND": "User not found.",
+    "REPORT_NOT_FOUND": "Report not found.",
+    "REPORT_OWNER_ONLY": "Only the owner can modify this report.",
+    "PHOTO_REQUIRED": "At least one photo is required.",
+    "MATCH_NOT_FOUND": "Match result not found.",
+    "MATCH_OWNER_ONLY": "You can only modify matches for your own reports.",
+    "SIGHTING_REPORT_NOT_FOUND": "The referenced missing report was not found.",
+    "REPORT_CLOSED": "Cannot submit a sighting for a closed report.",
+    "IMAGE_ONLY": "Only image files can be uploaded.",
+    "SERVER_ERROR": "A server error occurred."
+  }
+}

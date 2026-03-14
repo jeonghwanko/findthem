@@ -1,0 +1,172 @@
+{
+  "brand": "FindThem",
+  "loading": "読み込み中...",
+  "footer": "FindThem - AI搭載 行方不明者・ペット検索サービス",
+
+  "nav": {
+    "browse": "一覧",
+    "myReports": "マイ届出",
+    "newReport": "届出登録",
+    "logout": "ログアウト",
+    "login": "ログイン"
+  },
+
+  "home": {
+    "heroTitle": "大切な家族を見つけるお手伝いをします",
+    "heroDesc": "AIが自動でSNSに宣伝し、目撃情報を分析してマッチングします",
+    "newReport": "届出を登録",
+    "submitSighting": "目撃情報を提供",
+    "featurePromo": "AI自動宣伝",
+    "featurePromoDesc": "届出登録時にAIが宣伝文を作成し、KakaoTalk、Xなどに自動投稿します",
+    "featureChatbot": "チャットボット情報収集",
+    "featureChatbotDesc": "Web/KakaoTalkチャットボットで会話するように簡単に目撃情報を提供できます",
+    "featureMatching": "AI画像マッチング",
+    "featureMatchingDesc": "提供された写真と行方不明者の写真をAIが自動比較してマッチング通知を送ります",
+    "recentReports": "最近の行方不明届",
+    "viewAll": "すべて見る →",
+    "noReports": "まだ届出がありません"
+  },
+
+  "auth": {
+    "login": "ログイン",
+    "register": "会員登録",
+    "name": "名前",
+    "phone": "電話番号",
+    "password": "パスワード",
+    "processing": "処理中...",
+    "hasAccount": "アカウントをお持ちですか？",
+    "noAccount": "アカウントがありませんか？",
+    "errorFallback": "エラーが発生しました"
+  },
+
+  "browse": {
+    "title": "行方不明届一覧",
+    "all": "すべて",
+    "searchPlaceholder": "名前、特徴、場所で検索...",
+    "noResults": "検索結果がありません",
+    "prev": "前へ",
+    "next": "次へ"
+  },
+
+  "report": {
+    "title": "行方不明届の登録",
+    "selectType": "対象の種類を選択してください",
+    "next": "次へ",
+    "prev": "前へ",
+    "photo": "写真 *",
+    "nameLabel": "名前 *",
+    "namePlaceholderPerson": "山田太郎",
+    "namePlaceholderAnimal": "ポチ",
+    "species": "品種",
+    "speciesPlaceholder": "ゴールデンレトリバー",
+    "gender": "性別",
+    "genderSelect": "選択",
+    "genderMale": "オス/男性",
+    "genderFemale": "メス/女性",
+    "genderUnknown": "不明",
+    "age": "年齢",
+    "agePlaceholderPerson": "30代男性",
+    "agePlaceholderAnimal": "3歳",
+    "color": "色/毛色",
+    "colorPlaceholderAnimal": "茶色",
+    "features": "特徴 * (識別可能な特徴を詳しく記入してください)",
+    "featuresPlaceholderPerson": "身長170cm、黒い眼鏡、青いジャケット",
+    "featuresPlaceholderAnimal": "左耳に白い斑点、赤い首輪着用",
+    "clothing": "行方不明時の服装",
+    "clothingPlaceholder": "黒いダウンジャケット、ジーンズ、白いスニーカー",
+    "lastSeenTime": "最終目撃日時 *",
+    "lastSeenPlace": "最終目撃場所 *",
+    "lastSeenPlaceholder": "東京都渋谷区渋谷駅前",
+    "contactName": "連絡先名 *",
+    "contactPhone": "連絡先電話番号 *",
+    "reward": "謝礼（任意）",
+    "rewardPlaceholder": "謝礼をお渡しします",
+    "photoRequired": "少なくとも1枚の写真を登録してください。",
+    "submitError": "登録に失敗しました。",
+    "submitting": "登録中...",
+    "submit": "届出を登録"
+  },
+
+  "detail": {
+    "statusActive": "捜索中",
+    "statusFound": "見つかりました",
+    "statusExpired": "期限切れ",
+    "statusSuspended": "一時停止",
+    "detailInfo": "詳細情報",
+    "species": "品種",
+    "gender": "性別",
+    "genderMale": "オス/男性",
+    "genderFemale": "メス/女性",
+    "genderUnknown": "不明",
+    "age": "年齢",
+    "color": "色",
+    "lastSeen": "最終目撃",
+    "lastSeenPlace": "目撃場所",
+    "features": "特徴",
+    "clothing": "服装",
+    "contact": "連絡先",
+    "sightedThis": "この{{type}}を目撃しました",
+    "sightingCount": "{{count}}件の目撃情報",
+    "notFound": "届出が見つかりません",
+    "found": "見つかりました！"
+  },
+
+  "sighting": {
+    "title": "目撃情報の提供",
+    "photoOptional": "写真（任意）",
+    "description": "目撃内容 *",
+    "descriptionPlaceholder": "どこで何を目撃しましたか？できるだけ詳しく記入してください。",
+    "sightedAt": "目撃日時 *",
+    "sightedPlace": "目撃場所 *",
+    "sightedPlacePlaceholder": "東京都渋谷区スターバックス前",
+    "tipsterName": "通報者名（任意）",
+    "tipsterPhone": "連絡先（任意）",
+    "submitting": "送信中...",
+    "submit": "目撃情報を送信",
+    "submitError": "送信に失敗しました。"
+  },
+
+  "chat": {
+    "title": "目撃情報チャットボット",
+    "subtitle": "チャットで簡単に情報提供",
+    "typing": "入力中...",
+    "placeholder": "メッセージを入力...",
+    "send": "送信",
+    "photoAttach": "写真添付",
+    "openChat": "チャットを開く"
+  },
+
+  "card": {
+    "found": "見つかりました！",
+    "sightingCount": "{{count}}件の情報"
+  },
+
+  "upload": {
+    "addPhoto": "写真追加",
+    "limit": "最大{{max}}枚、1枚10MBまで"
+  },
+
+  "subjectType": {
+    "PERSON": "人",
+    "DOG": "犬",
+    "CAT": "猫"
+  },
+
+  "errors": {
+    "AUTH_REQUIRED": "ログインが必要です。",
+    "INVALID_TOKEN": "無効なトークンです。",
+    "ADMIN_REQUIRED": "管理者権限が必要です。",
+    "PHONE_ALREADY_EXISTS": "既に登録済みの電話番号です。",
+    "INVALID_CREDENTIALS": "電話番号またはパスワードが正しくありません。",
+    "USER_NOT_FOUND": "ユーザーが見つかりません。",
+    "REPORT_NOT_FOUND": "届出が見つかりません。",
+    "REPORT_OWNER_ONLY": "本人の届出のみ変更できます。",
+    "PHOTO_REQUIRED": "少なくとも1枚の写真が必要です。",
+    "MATCH_NOT_FOUND": "マッチング結果が見つかりません。",
+    "MATCH_OWNER_ONLY": "本人の届出に対するマッチングのみ変更できます。",
+    "SIGHTING_REPORT_NOT_FOUND": "該当する行方不明届が見つかりません。",
+    "REPORT_CLOSED": "終了した届出には情報を提供できません。",
+    "IMAGE_ONLY": "画像ファイルのみアップロード可能です。",
+    "SERVER_ERROR": "サーバーエラーが発生しました。"
+  }
+}

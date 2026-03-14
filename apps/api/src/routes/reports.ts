@@ -16,7 +16,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('이미지 파일만 업로드 가능합니다.'));
+    else cb(new Error('IMAGE_ONLY'));
   },
 });
 
@@ -61,7 +61,7 @@ export function registerReportRoutes(router: Router) {
 
       const files = (req.files as Express.Multer.File[]) || [];
       if (files.length === 0) {
-        throw new ApiError(400, '최소 1장의 사진이 필요합니다.');
+        throw new ApiError(400, 'PHOTO_REQUIRED');
       }
 
       // 파일 I/O는 트랜잭션 밖에서 처리
@@ -162,7 +162,7 @@ export function registerReportRoutes(router: Router) {
       },
     });
 
-    if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
+    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
     res.json(report);
   });
 
@@ -174,9 +174,9 @@ export function registerReportRoutes(router: Router) {
       .parse(req.body);
 
     const report = await prisma.report.findUnique({ where: { id } });
-    if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
+    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
     if (report.userId !== req.user!.userId) {
-      throw new ApiError(403, '본인의 신고만 수정할 수 있습니다.');
+      throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
     const updated = await prisma.report.update({
@@ -204,9 +204,9 @@ export function registerReportRoutes(router: Router) {
     async (req, res) => {
       const id = req.params.id as string;
       const report = await prisma.report.findUnique({ where: { id } });
-      if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다.');
+      if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
       if (report.userId !== req.user!.userId) {
-        throw new ApiError(403, '본인의 신고만 수정할 수 있습니다.');
+        throw new ApiError(403, 'REPORT_OWNER_ONLY');
       }
 
       const files = (req.files as Express.Multer.File[]) || [];

@@ -1,3 +1,9 @@
+// ── 다국어 (i18n) ──
+
+export type Locale = 'ko' | 'ja' | 'zh-TW' | 'en';
+export const SUPPORTED_LOCALES: Locale[] = ['ko', 'ja', 'zh-TW', 'en'];
+export const DEFAULT_LOCALE: Locale = 'ko';
+
 // ── 엔티티 공통 타입 (Prisma enum과 1:1 매핑) ──
 
 export type SubjectType = 'PERSON' | 'DOG' | 'CAT';
@@ -153,6 +159,10 @@ export interface ImageJobData {
 
 export interface PromotionJobData {
   reportId: string;
+  isRepost?: boolean;
+  version?: number;
+  platforms?: PromoPlatform[];
+  regenerateContent?: boolean;
 }
 
 export interface MatchingJobData {
@@ -194,4 +204,146 @@ export interface PlatformAdapter {
   readonly name: string;
   post(text: string, imagePaths: string[]): Promise<PlatformPostResult>;
   deletePost(postId: string): Promise<void>;
+  getMetrics?(postId: string): Promise<PromotionMetrics>;
+}
+
+// ── 홍보 에이전트 타입 ──
+
+export type PromoUrgency = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface PromotionMetrics {
+  views: number;
+  likes: number;
+  retweets: number;
+  shares: number;
+  replies: number;
+}
+
+export interface PromotionMonitorJobData {
+  reportId: string;
+  promotionId: string;
+  platform: PromoPlatform;
+  postId: string;
+}
+
+export interface PromotionRepostJobData {
+  reportId: string;
+  reason: 'scheduled' | 'low_performance' | 'manual';
+  platforms?: PromoPlatform[];
+  regenerateContent: boolean;
+}
+
+export interface CrawlDispatchJobData {
+  // 특정 소스만 실행 (없으면 전체)
+  sources?: string[];
+}
+
+export interface CrawlSourceJobData {
+  source: string;
+}
+
+// ── 정보 수집 에이전트 타입 ──
+
+export type EngineVersion = 'v1' | 'v2';
+
+export interface AgentToolCall {
+  name: string;
+  input: Record<string, unknown>;
+  result: Record<string, unknown>;
+}
+
+export interface AgentResponse {
+  text: string;
+  completed: boolean;
+  toolsUsed: string[];
+  photoAnalysis?: {
+    description: string;
+    features: string[];
+    subjectType?: SubjectType;
+  };
+  similarReports?: {
+    id: string;
+    name: string;
+    features: string;
+    photoUrl?: string;
+    similarity: string;
+  }[];
+  sightingId?: string;
+}
+
+// ── 운영 에이전트 타입 ──
+
+export type AdminActionSource = 'DASHBOARD' | 'AGENT' | 'API';
+
+export interface QueueStatusSummary {
+  name: string;
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  paused: boolean;
+}
+
+export interface AdminOverviewStats {
+  reports: {
+    total: number;
+    active: number;
+    found: number;
+    suspended: number;
+    todayNew: number;
+    weekNew: number;
+  };
+  sightings: {
+    total: number;
+    todayNew: number;
+    weekNew: number;
+    bySource: Record<SightingSource, number>;
+  };
+  matches: {
+    total: number;
+    confirmed: number;
+    pending: number;
+    avgConfidence: number;
+    highConfidenceCount: number;
+  };
+  users: {
+    total: number;
+    todayNew: number;
+    blocked: number;
+  };
+  queues: QueueStatusSummary[];
+}
+
+export interface TimelineDataPoint {
+  date: string;
+  count: number;
+}
+
+export interface AdminAgentChatRequest {
+  sessionId?: string;
+  message: string;
+}
+
+export interface AdminAgentToolResult {
+  tool: string;
+  input: unknown;
+  output: unknown;
+}
+
+export interface AdminAgentChatResponse {
+  sessionId: string;
+  reply: string;
+  toolResults?: AdminAgentToolResult[];
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  detail: unknown;
+  source: AdminActionSource;
+  agentSessionId?: string | null;
+  createdAt: string;
 }

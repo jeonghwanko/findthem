@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { Report } from '../api/client';
-import { SUBJECT_TYPE_LABELS, formatTimeAgo } from '@findthem/shared';
+import { formatTimeAgo } from '@findthem/shared';
 
 const TYPE_COLORS: Record<string, string> = {
   PERSON: 'bg-blue-100 text-blue-700',
@@ -13,6 +14,7 @@ interface ReportCardProps {
 }
 
 export default function ReportCard({ report }: ReportCardProps) {
+  const { t } = useTranslation();
   const primaryPhoto = report.photos?.[0];
   const timeAgo = formatTimeAgo(report.createdAt);
 
@@ -36,11 +38,11 @@ export default function ReportCard({ report }: ReportCardProps) {
         <span
           className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[report.subjectType]}`}
         >
-          {SUBJECT_TYPE_LABELS[report.subjectType]}
+          {t(`subjectType.${report.subjectType}`)}
         </span>
         {report.status === 'FOUND' && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white text-lg font-bold">찾았습니다!</span>
+            <span className="text-white text-lg font-bold">{t('card.found')}</span>
           </div>
         )}
       </div>
@@ -54,7 +56,7 @@ export default function ReportCard({ report }: ReportCardProps) {
         <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
           <span>{timeAgo}</span>
           {report._count && (
-            <span>제보 {report._count.sightings}건</span>
+            <span>{t('card.sightingCount', { count: report._count.sightings })}</span>
           )}
         </div>
       </div>

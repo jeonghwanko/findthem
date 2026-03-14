@@ -1,23 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
-import { SUBJECT_TYPE_LABELS } from '@findthem/shared';
 import PhotoUpload from '../components/PhotoUpload';
-
-const SUBJECT_TYPE_ICONS: Record<string, string> = {
-  PERSON: '👤',
-  DOG: '🐕',
-  CAT: '🐈',
-};
-
-const SUBJECT_TYPES = Object.entries(SUBJECT_TYPE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-  icon: SUBJECT_TYPE_ICONS[value] || '❓',
-}));
 
 export default function RegisterReportPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,9 +26,15 @@ export default function RegisterReportPage() {
   const [reward, setReward] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
 
+  const SUBJECT_TYPES = [
+    { value: 'PERSON', label: t('subjectType.PERSON'), icon: '👤' },
+    { value: 'DOG', label: t('subjectType.DOG'), icon: '🐕' },
+    { value: 'CAT', label: t('subjectType.CAT'), icon: '🐈' },
+  ];
+
   async function handleSubmit() {
     if (photos.length === 0) {
-      setError('최소 1장의 사진을 등록하세요.');
+      setError(t('report.photoRequired'));
       return;
     }
 
@@ -71,7 +66,7 @@ export default function RegisterReportPage() {
       const result = await api.post<{ id: string }>('/reports', formData);
       navigate(`/reports/${result.id}`);
     } catch (err: any) {
-      setError(err.message || '등록에 실패했습니다.');
+      setError(err.message || t('report.submitError'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +76,7 @@ export default function RegisterReportPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">실종 신고 등록</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('report.title')}</h1>
 
       {/* 단계 표시 */}
       <div className="flex items-center gap-2 mb-8">
@@ -106,22 +101,22 @@ export default function RegisterReportPage() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              실종 유형을 선택하세요
+              {t('report.selectType')}
             </label>
             <div className="grid grid-cols-3 gap-3">
-              {SUBJECT_TYPES.map((t) => (
+              {SUBJECT_TYPES.map((item) => (
                 <button
-                  key={t.value}
+                  key={item.value}
                   type="button"
-                  onClick={() => setSubjectType(t.value)}
+                  onClick={() => setSubjectType(item.value)}
                   className={`p-4 rounded-xl border-2 text-center transition-colors ${
-                    subjectType === t.value
+                    subjectType === item.value
                       ? 'border-primary-500 bg-primary-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className="text-3xl mb-1">{t.icon}</div>
-                  <div className="text-sm font-medium">{t.label}</div>
+                  <div className="text-3xl mb-1">{item.icon}</div>
+                  <div className="text-sm font-medium">{item.label}</div>
                 </button>
               ))}
             </div>
@@ -132,7 +127,7 @@ export default function RegisterReportPage() {
             disabled={!subjectType}
             className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
-            다음
+            {t('report.next')}
           </button>
         </div>
       )}
@@ -142,7 +137,7 @@ export default function RegisterReportPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              사진 *
+              {t('report.photo')}
             </label>
             <PhotoUpload maxFiles={5} onChange={setPhotos} />
           </div>
@@ -150,13 +145,13 @@ export default function RegisterReportPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                이름 *
+                {t('report.nameLabel')}
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                placeholder={isPerson ? '홍길동' : '초코'}
+                placeholder={isPerson ? t('report.namePlaceholderPerson') : t('report.namePlaceholderAnimal')}
                 required
               />
             </div>
@@ -164,61 +159,61 @@ export default function RegisterReportPage() {
             {!isPerson && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  품종
+                  {t('report.species')}
                 </label>
                 <input
                   value={species}
                   onChange={(e) => setSpecies(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                  placeholder="골든리트리버"
+                  placeholder={t('report.speciesPlaceholder')}
                 />
               </div>
             )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                성별
+                {t('report.gender')}
               </label>
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
               >
-                <option value="">선택</option>
-                <option value="MALE">수컷/남성</option>
-                <option value="FEMALE">암컷/여성</option>
-                <option value="UNKNOWN">모름</option>
+                <option value="">{t('report.genderSelect')}</option>
+                <option value="MALE">{t('report.genderMale')}</option>
+                <option value="FEMALE">{t('report.genderFemale')}</option>
+                <option value="UNKNOWN">{t('report.genderUnknown')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                나이
+                {t('report.age')}
               </label>
               <input
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                placeholder={isPerson ? '30대 남성' : '3살'}
+                placeholder={isPerson ? t('report.agePlaceholderPerson') : t('report.agePlaceholderAnimal')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                색상/털색
+                {t('report.color')}
               </label>
               <input
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                placeholder={isPerson ? '' : '갈색'}
+                placeholder={isPerson ? '' : t('report.colorPlaceholderAnimal')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              특징 * (구별 가능한 특징을 상세히 적어주세요)
+              {t('report.features')}
             </label>
             <textarea
               value={features}
@@ -227,8 +222,8 @@ export default function RegisterReportPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none resize-none"
               placeholder={
                 isPerson
-                  ? '키 170cm, 검은 안경, 파란 점퍼'
-                  : '왼쪽 귀에 흰 반점, 빨간 목줄 착용'
+                  ? t('report.featuresPlaceholderPerson')
+                  : t('report.featuresPlaceholderAnimal')
               }
               required
             />
@@ -237,13 +232,13 @@ export default function RegisterReportPage() {
           {isPerson && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                실종 당시 의상
+                {t('report.clothing')}
               </label>
               <input
                 value={clothingDesc}
                 onChange={(e) => setClothingDesc(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                placeholder="검정 패딩, 청바지, 흰 운동화"
+                placeholder={t('report.clothingPlaceholder')}
               />
             </div>
           )}
@@ -253,14 +248,14 @@ export default function RegisterReportPage() {
               onClick={() => setStep(1)}
               className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              이전
+              {t('report.prev')}
             </button>
             <button
               onClick={() => name && features ? setStep(3) : null}
               disabled={!name || !features}
               className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-medium disabled:opacity-50 transition-colors"
             >
-              다음
+              {t('report.next')}
             </button>
           </div>
         </div>
@@ -271,7 +266,7 @@ export default function RegisterReportPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              마지막 목격 일시 *
+              {t('report.lastSeenTime')}
             </label>
             <input
               type="datetime-local"
@@ -284,13 +279,13 @@ export default function RegisterReportPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              마지막 목격 장소 *
+              {t('report.lastSeenPlace')}
             </label>
             <input
               value={lastSeenAddress}
               onChange={(e) => setLastSeenAddress(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              placeholder="서울시 강남구 역삼동 123"
+              placeholder={t('report.lastSeenPlaceholder')}
               required
             />
           </div>
@@ -298,7 +293,7 @@ export default function RegisterReportPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                연락처 이름 *
+                {t('report.contactName')}
               </label>
               <input
                 value={contactName}
@@ -309,7 +304,7 @@ export default function RegisterReportPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                연락처 전화번호 *
+                {t('report.contactPhone')}
               </label>
               <input
                 type="tel"
@@ -324,13 +319,13 @@ export default function RegisterReportPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              사례금 (선택)
+              {t('report.reward')}
             </label>
             <input
               value={reward}
               onChange={(e) => setReward(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              placeholder="소정의 사례금 드립니다"
+              placeholder={t('report.rewardPlaceholder')}
             />
           </div>
 
@@ -341,14 +336,14 @@ export default function RegisterReportPage() {
               onClick={() => setStep(2)}
               className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              이전
+              {t('report.prev')}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading || !lastSeenAt || !lastSeenAddress || !contactPhone || !contactName}
               className="flex-1 bg-accent-500 hover:bg-accent-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
             >
-              {loading ? '등록 중...' : '실종 신고 등록'}
+              {loading ? t('report.submitting') : t('report.submit')}
             </button>
           </div>
         </div>

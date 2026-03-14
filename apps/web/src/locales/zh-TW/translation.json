@@ -1,0 +1,172 @@
+{
+  "brand": "FindThem",
+  "loading": "載入中...",
+  "footer": "FindThem - AI 驅動的失蹤人口/寵物搜尋服務",
+
+  "nav": {
+    "browse": "瀏覽全部",
+    "myReports": "我的報案",
+    "newReport": "報案登記",
+    "logout": "登出",
+    "login": "登入"
+  },
+
+  "home": {
+    "heroTitle": "幫您找回摯愛的家人",
+    "heroDesc": "AI 自動在社群媒體宣傳，分析目擊報告並進行比對",
+    "newReport": "報案登記",
+    "submitSighting": "提供目擊線索",
+    "featurePromo": "AI 自動宣傳",
+    "featurePromoDesc": "報案時 AI 自動生成宣傳文並發布到 KakaoTalk、X 等平台",
+    "featureChatbot": "聊天機器人線索收集",
+    "featureChatbotDesc": "透過網頁/KakaoTalk 聊天機器人，像對話一樣輕鬆提供目擊資訊",
+    "featureMatching": "AI 影像比對",
+    "featureMatchingDesc": "AI 自動比對目擊照片與失蹤照片，並發送配對通知",
+    "recentReports": "最近的失蹤報案",
+    "viewAll": "查看全部 →",
+    "noReports": "尚無報案記錄"
+  },
+
+  "auth": {
+    "login": "登入",
+    "register": "註冊",
+    "name": "姓名",
+    "phone": "電話號碼",
+    "password": "密碼",
+    "processing": "處理中...",
+    "hasAccount": "已有帳號？",
+    "noAccount": "沒有帳號？",
+    "errorFallback": "發生錯誤"
+  },
+
+  "browse": {
+    "title": "失蹤報案列表",
+    "all": "全部",
+    "searchPlaceholder": "依姓名、特徵、地點搜尋...",
+    "noResults": "查無結果",
+    "prev": "上一頁",
+    "next": "下一頁"
+  },
+
+  "report": {
+    "title": "失蹤報案登記",
+    "selectType": "請選擇失蹤類型",
+    "next": "下一步",
+    "prev": "上一步",
+    "photo": "照片 *",
+    "nameLabel": "姓名 *",
+    "namePlaceholderPerson": "王大明",
+    "namePlaceholderAnimal": "小花",
+    "species": "品種",
+    "speciesPlaceholder": "黃金獵犬",
+    "gender": "性別",
+    "genderSelect": "選擇",
+    "genderMale": "公/男",
+    "genderFemale": "母/女",
+    "genderUnknown": "不明",
+    "age": "年齡",
+    "agePlaceholderPerson": "30多歲男性",
+    "agePlaceholderAnimal": "3歲",
+    "color": "顏色/毛色",
+    "colorPlaceholderAnimal": "棕色",
+    "features": "特徵 * (請詳細描述可識別的特徵)",
+    "featuresPlaceholderPerson": "身高170cm，黑框眼鏡，藍色外套",
+    "featuresPlaceholderAnimal": "左耳白斑，戴紅色項圈",
+    "clothing": "失蹤時穿著",
+    "clothingPlaceholder": "黑色羽絨衣、牛仔褲、白色運動鞋",
+    "lastSeenTime": "最後目擊時間 *",
+    "lastSeenPlace": "最後目擊地點 *",
+    "lastSeenPlaceholder": "台北市信義區101大樓附近",
+    "contactName": "聯絡人姓名 *",
+    "contactPhone": "聯絡電話 *",
+    "reward": "懸賞金（選填）",
+    "rewardPlaceholder": "提供酬謝金",
+    "photoRequired": "請至少上傳一張照片。",
+    "submitError": "登記失敗。",
+    "submitting": "登記中...",
+    "submit": "提交失蹤報案"
+  },
+
+  "detail": {
+    "statusActive": "搜尋中",
+    "statusFound": "已尋獲",
+    "statusExpired": "已過期",
+    "statusSuspended": "已暫停",
+    "detailInfo": "詳細資訊",
+    "species": "品種",
+    "gender": "性別",
+    "genderMale": "公/男",
+    "genderFemale": "母/女",
+    "genderUnknown": "不明",
+    "age": "年齡",
+    "color": "顏色",
+    "lastSeen": "最後目擊",
+    "lastSeenPlace": "目擊地點",
+    "features": "特徵",
+    "clothing": "穿著",
+    "contact": "聯絡方式",
+    "sightedThis": "我目擊了這個{{type}}",
+    "sightingCount": "{{count}}則目擊線索",
+    "notFound": "找不到報案記錄",
+    "found": "已尋獲！"
+  },
+
+  "sighting": {
+    "title": "提供目擊線索",
+    "photoOptional": "照片（選填）",
+    "description": "目擊內容 *",
+    "descriptionPlaceholder": "您在哪裡看到了什麼？請盡可能詳細描述。",
+    "sightedAt": "目擊時間 *",
+    "sightedPlace": "目擊地點 *",
+    "sightedPlacePlaceholder": "台北市信義區星巴克前",
+    "tipsterName": "提供者姓名（選填）",
+    "tipsterPhone": "聯絡電話（選填）",
+    "submitting": "提交中...",
+    "submit": "提交目擊線索",
+    "submitError": "提交失敗。"
+  },
+
+  "chat": {
+    "title": "目擊線索聊天機器人",
+    "subtitle": "透過對話輕鬆提供線索",
+    "typing": "輸入中...",
+    "placeholder": "輸入訊息...",
+    "send": "傳送",
+    "photoAttach": "附加照片",
+    "openChat": "開啟聊天"
+  },
+
+  "card": {
+    "found": "已尋獲！",
+    "sightingCount": "{{count}}則線索"
+  },
+
+  "upload": {
+    "addPhoto": "新增照片",
+    "limit": "最多{{max}}張，每張10MB以下"
+  },
+
+  "subjectType": {
+    "PERSON": "人",
+    "DOG": "狗",
+    "CAT": "貓"
+  },
+
+  "errors": {
+    "AUTH_REQUIRED": "需要登入。",
+    "INVALID_TOKEN": "無效的令牌。",
+    "ADMIN_REQUIRED": "需要管理員權限。",
+    "PHONE_ALREADY_EXISTS": "此電話號碼已註冊。",
+    "INVALID_CREDENTIALS": "電話號碼或密碼不正確。",
+    "USER_NOT_FOUND": "找不到使用者。",
+    "REPORT_NOT_FOUND": "找不到報案記錄。",
+    "REPORT_OWNER_ONLY": "只有本人可以修改報案。",
+    "PHOTO_REQUIRED": "至少需要一張照片。",
+    "MATCH_NOT_FOUND": "找不到比對結果。",
+    "MATCH_OWNER_ONLY": "只能修改自己報案的比對結果。",
+    "SIGHTING_REPORT_NOT_FOUND": "找不到對應的失蹤報案。",
+    "REPORT_CLOSED": "無法對已結案的報案提供線索。",
+    "IMAGE_ONLY": "只能上傳圖片檔案。",
+    "SERVER_ERROR": "伺服器發生錯誤。"
+  }
+}

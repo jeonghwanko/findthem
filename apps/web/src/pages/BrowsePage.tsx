@@ -1,21 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import type { Report, ReportListResponse } from '../api/client';
-import { SUBJECT_TYPE_LABELS } from '@findthem/shared';
 import ReportCard from '../components/ReportCard';
 
-const TYPES = [
-  { value: '', label: '전체' },
-  ...Object.entries(SUBJECT_TYPE_LABELS).map(([value, label]) => ({ value, label })),
-];
-
 export default function BrowsePage() {
+  const { t } = useTranslation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const TYPES = [
+    { value: '', label: t('browse.all') },
+    { value: 'PERSON', label: t('subjectType.PERSON') },
+    { value: 'DOG', label: t('subjectType.DOG') },
+    { value: 'CAT', label: t('subjectType.CAT') },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -41,22 +44,22 @@ export default function BrowsePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">실종 신고 목록</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {TYPES.map((t) => (
+          {TYPES.map((item) => (
             <button
-              key={t.value}
-              onClick={() => { setType(t.value); setPage(1); }}
+              key={item.value}
+              onClick={() => { setType(item.value); setPage(1); }}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                type === t.value
+                type === item.value
                   ? 'bg-white text-primary-700 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {t.label}
+              {item.label}
             </button>
           ))}
         </div>
@@ -65,7 +68,7 @@ export default function BrowsePage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="이름, 특징, 장소로 검색..."
+            placeholder={t('browse.searchPlaceholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
           />
         </form>
@@ -73,10 +76,10 @@ export default function BrowsePage() {
 
       {/* 목록 */}
       {loading ? (
-        <div className="text-center py-20 text-gray-400">로딩 중...</div>
+        <div className="text-center py-20 text-gray-400">{t('loading')}</div>
       ) : reports.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
-          검색 결과가 없습니다
+          {t('browse.noResults')}
         </div>
       ) : (
         <>
@@ -94,7 +97,7 @@ export default function BrowsePage() {
                 disabled={page === 1}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
               >
-                이전
+                {t('browse.prev')}
               </button>
               <span className="text-sm text-gray-600">
                 {page} / {totalPages}
@@ -104,7 +107,7 @@ export default function BrowsePage() {
                 disabled={page === totalPages}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
               >
-                다음
+                {t('browse.next')}
               </button>
             </div>
           )}

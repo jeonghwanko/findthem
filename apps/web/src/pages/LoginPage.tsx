@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface LoginPageProps {
   onLogin: (phone: string, password: string) => Promise<unknown>;
@@ -8,6 +9,7 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,7 +30,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
       }
       navigate('/');
     } catch (err: any) {
-      setError(err.message || '오류가 발생했습니다');
+      setError(err.message || t('auth.errorFallback'));
     } finally {
       setLoading(false);
     }
@@ -38,14 +40,14 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-center mb-8">
-          {isRegister ? '회원가입' : '로그인'}
+          {isRegister ? t('auth.register') : t('auth.login')}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                이름
+                {t('auth.name')}
               </label>
               <input
                 type="text"
@@ -59,7 +61,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              전화번호
+              {t('auth.phone')}
             </label>
             <input
               type="tel"
@@ -73,7 +75,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호
+              {t('auth.password')}
             </label>
             <input
               type="password"
@@ -94,12 +96,12 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
             disabled={loading}
             className="w-full bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
-            {loading ? '처리 중...' : isRegister ? '회원가입' : '로그인'}
+            {loading ? t('auth.processing') : isRegister ? t('auth.register') : t('auth.login')}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-4">
-          {isRegister ? '이미 계정이 있나요? ' : '계정이 없나요? '}
+          {isRegister ? t('auth.hasAccount') : t('auth.noAccount')}
           <button
             onClick={() => {
               setIsRegister(!isRegister);
@@ -107,7 +109,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
             }}
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
-            {isRegister ? '로그인' : '회원가입'}
+            {isRegister ? t('auth.login') : t('auth.register')}
           </button>
         </p>
       </div>

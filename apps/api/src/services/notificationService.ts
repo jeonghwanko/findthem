@@ -1,4 +1,9 @@
 import { config } from '../config.js';
+import type { Locale } from '@findthem/shared';
+import { DEFAULT_LOCALE } from '@findthem/shared';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('notificationService');
 
 export interface MatchNotificationParams {
   recipientPhone: string;
@@ -8,7 +13,68 @@ export interface MatchNotificationParams {
   confidence: number;
   matchId: string;
   sightingUrl: string;
+  locale?: Locale;
 }
+
+// ── SMS 본문 다국어 맵 ──
+
+const SMS_MESSAGES: Record<Locale, (recipientName: string, reportName: string, confidencePct: number, sightingUrl: string) => string> = {
+  ko: (recipientName, reportName, confidencePct, sightingUrl) =>
+    `[FindThem] ${recipientName}님, "${reportName}" 실종 신고와 ` +
+    `유사한 목격 제보가 접수되었습니다. (일치도 ${confidencePct}%)\n` +
+    `확인: ${sightingUrl}`,
+  en: (recipientName, reportName, confidencePct, sightingUrl) =>
+    `[FindThem] Hi ${recipientName}, a sighting matching your missing report "${reportName}" has been received. ` +
+    `(Confidence: ${confidencePct}%)\n` +
+    `View: ${sightingUrl}`,
+  ja: (recipientName, reportName, confidencePct, sightingUrl) =>
+    `[FindThem] ${recipientName}様、「${reportName}」の行方不明届に類似した目撃情報が届きました。` +
+    `（一致度：${confidencePct}%）\n` +
+    `確認：${sightingUrl}`,
+  'zh-TW': (recipientName, reportName, confidencePct, sightingUrl) =>
+    `[FindThem] ${recipientName}您好，與您的失蹤通報「${reportName}」相似的目擊報告已收到。` +
+    `（相符度：${confidencePct}%）\n` +
+    `查看：${sightingUrl}`,
+};
+
+// ── 로그 메시지 다국어 맵 ──
+
+const LOG_MESSAGES: Record<Locale, {
+  alimtalkSent: string;
+  smsSent: string;
+  notifyWarningPrefix: string;
+  recipient: string;
+  content: string;
+}> = {
+  ko: {
+    alimtalkSent: '알림톡 발송 완료',
+    smsSent: 'SMS 발송 완료',
+    notifyWarningPrefix: '알림 수단 미설정 — 수동 확인 필요',
+    recipient: '수신자',
+    content: '내용',
+  },
+  en: {
+    alimtalkSent: 'Alimtalk sent',
+    smsSent: 'SMS sent',
+    notifyWarningPrefix: 'Notification method not configured — manual check required',
+    recipient: 'Recipient',
+    content: 'Content',
+  },
+  ja: {
+    alimtalkSent: 'アリムトーク送信完了',
+    smsSent: 'SMS送信完了',
+    notifyWarningPrefix: '通知手段未設定 — 手動確認が必要',
+    recipient: '受信者',
+    content: '内容',
+  },
+  'zh-TW': {
+    alimtalkSent: 'Alimtalk 發送完成',
+    smsSent: 'SMS 發送完成',
+    notifyWarningPrefix: '通知方式未設定 — 需要手動確認',
+    recipient: '收件者',
+    content: '內容',
+  },
+};
 
 /**
  * 카카오 알림톡 전송
@@ -45,12 +111,12 @@ async function sendAlimtalk(
 
     if (!res.ok) {
       const err = await res.text();
-      console.warn(`[NOTIFICATION] 알림톡 발송 실패: ${err}`);
+      log.warn({ err }, '[NOTIFICATION] 알림톡 발송 실패');
       return false;
     }
     return true;
   } catch (err) {
-    console.warn(`[NOTIFICATION] 알림톡 오류:`, err);
+    log.warn({ err }, '[NOTIFICATION] 알림톡 오류');
     return false;
   }
 }
@@ -88,12 +154,12 @@ async function sendSms(phone: string, text: string): Promise<boolean> {
 
     if (!res.ok) {
       const err = await res.text();
-      console.warn(`[NOTIFICATION] SMS 발송 실패: ${err}`);
+      log.warn({ err }, '[NOTIFICATION] SMS 발송 실패');
       return false;
     }
     return true;
   } catch (err) {
-    console.warn(`[NOTIFICATION] SMS 오류:`, err);
+    log.warn({ err }, '[NOTIFICATION] SMS 오류');
     return false;
   }
 }
@@ -109,13 +175,12 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
     reportName,
     confidence,
     sightingUrl,
+    locale = DEFAULT_LOCALE,
   } = params;
 
   const confidencePct = Math.round(confidence * 100);
-  const smsText =
-    `[FindThem] ${recipientName}님, "${reportName}" 실종 신고와 ` +
-    `유사한 목격 제보가 접수되었습니다. (일치도 ${confidencePct}%)\n` +
-    `확인: ${sightingUrl}`;
+  const smsText = SMS_MESSAGES[locale](recipientName, reportName, confidencePct, sightingUrl);
+  const logMessages = LOG_MESSAGES[locale];
 
   // 1. 카카오 알림톡 시도
   const alimtalkSent = await sendAlimtalk(recipientPhone, 'MATCH_NOTIFY', {
@@ -126,21 +191,20 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
   });
 
   if (alimtalkSent) {
-    console.log(`[NOTIFICATION] 알림톡 발송 완료 → ${recipientPhone}`);
+    log.info({ recipientPhone }, `[NOTIFICATION] ${logMessages.alimtalkSent}`);
     return;
   }
 
   // 2. SMS 시도
   const smsSent = await sendSms(recipientPhone, smsText);
   if (smsSent) {
-    console.log(`[NOTIFICATION] SMS 발송 완료 → ${recipientPhone}`);
+    log.info({ recipientPhone }, `[NOTIFICATION] ${logMessages.smsSent}`);
     return;
   }
 
   // 3. 미설정 시 로그 (알림 미전송 명시)
-  console.warn(
-    `[NOTIFICATION] 알림 수단 미설정 — 수동 확인 필요\n` +
-    `수신자: ${recipientName}(${recipientPhone})\n` +
-    `내용: ${smsText}`,
+  log.warn(
+    { recipientName, recipientPhone, smsText },
+    `[NOTIFICATION] ${logMessages.notifyWarningPrefix}`,
   );
 }
