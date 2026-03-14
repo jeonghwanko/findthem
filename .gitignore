@@ -6,6 +6,12 @@ uploads/
 .DS_Store
 Thumbs.db
 
+# TypeScript build artifacts in test dirs
+apps/api/tests/**/*.js
+apps/api/tests/**/*.js.map
+apps/api/tests/**/*.d.ts
+apps/api/tests/**/*.d.ts.map
+
 # AI 문서
 .claude/
 CLAUDE.md
