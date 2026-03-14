@@ -1,6 +1,21 @@
 import '@testing-library/jest-dom/vitest';
-import { vi, afterEach } from 'vitest';
+import { vi, afterEach, beforeAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import ko from '../src/locales/ko/translation.json';
+
+// i18n 동기 초기화 (테스트 환경용)
+beforeAll(async () => {
+  if (!i18n.isInitialized) {
+    await i18n.use(initReactI18next).init({
+      lng: 'ko',
+      fallbackLng: 'ko',
+      resources: { ko: { translation: ko } },
+      interpolation: { escapeValue: false },
+    });
+  }
+});
 
 // 각 테스트 후 DOM 정리
 afterEach(() => {
