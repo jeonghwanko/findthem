@@ -60,5 +60,5 @@ jobs:
             npm run build
             cd apps/api && npx prisma migrate deploy && cd ~/findthem
             cp -r apps/web/dist/. /var/www/union/
-            pm2 restart findthem-api || pm2 start ecosystem.config.js --env production
+            pm2 restart findthem-api || pm2 start ecosystem.config.cjs --env production
             pm2 save
