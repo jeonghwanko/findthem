@@ -308,9 +308,9 @@ describe('safe182Fetcher', () => {
       const d = results[0].lastSeenAt;
 
       expect(d).toBeInstanceOf(Date);
-      expect(d.getFullYear()).toBe(2025);
-      expect(d.getMonth()).toBe(0);
-      expect(d.getDate()).toBe(15);
+      expect(d.getUTCFullYear()).toBe(2025);
+      expect(d.getUTCMonth()).toBe(0);
+      expect(d.getUTCDate()).toBe(15);
     });
   });
 

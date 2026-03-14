@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { createTestApp, authHeader, testUser } from '../helpers.js';
-import { prismaMock } from '../setup.js';
+import { prisma } from '../../src/db/client.js';
+
+// setup.ts의 vi.mock 팩토리가 생성한 실제 mock 객체를 사용
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prismaMock = prisma as any;
 
 describe('Auth E2E', () => {
   const app = createTestApp();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      return callback(prismaMock);
+    });
   });
 
   // ── POST /api/auth/register ──
@@ -44,7 +52,7 @@ describe('Auth E2E', () => {
         .send({ name: '중복', phone: '01012345678', password: 'pass123' });
 
       expect(res.status).toBe(409);
-      expect(res.body.error).toContain('이미 등록된');
+      expect(res.body.error).toBe('PHONE_ALREADY_EXISTS');
     });
 
     it('유효성 실패 (잘못된 전화번호) → 400', async () => {
@@ -104,13 +112,17 @@ describe('Auth E2E', () => {
   // ── GET /api/auth/me ──
   describe('GET /api/auth/me', () => {
     it('유효한 토큰 → 200 + 유저 정보', async () => {
-      prismaMock.user.findUnique.mockResolvedValue({
-        id: testUser.id,
-        name: testUser.name,
-        phone: testUser.phone,
-        email: testUser.email,
-        createdAt: testUser.createdAt,
-      });
+      // requireAuth의 findUnique(select: {isBlocked}) 호출과
+      // /auth/me의 findUnique(select: {id,name,...}) 호출을 순서대로 처리
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce({ isBlocked: false })   // requireAuth용
+        .mockResolvedValueOnce({                        // /auth/me 핸들러용
+          id: testUser.id,
+          name: testUser.name,
+          phone: testUser.phone,
+          email: testUser.email,
+          createdAt: testUser.createdAt,
+        });
 
       const res = await app
         .get('/api/auth/me')

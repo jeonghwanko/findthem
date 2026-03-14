@@ -350,9 +350,9 @@ describe('animalApiFetcher', () => {
       const d = results[0].lastSeenAt;
 
       expect(d).toBeInstanceOf(Date);
-      expect(d.getFullYear()).toBe(2025);
-      expect(d.getMonth()).toBe(0); // 0-indexed
-      expect(d.getDate()).toBe(15);
+      expect(d.getUTCFullYear()).toBe(2025);
+      expect(d.getUTCMonth()).toBe(0); // 0-indexed
+      expect(d.getUTCDate()).toBe(15);
     });
 
     it('happenDt 비어있으면 현재 날짜 근처 반환', async () => {

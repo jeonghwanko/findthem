@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestApp, authHeader, testReport, testSighting } from '../helpers.js';
-import { prismaMock } from '../setup.js';
+import { prisma } from '../../src/db/client.js';
+
+// setup.ts의 vi.mock 팩토리가 생성한 실제 mock 객체를 사용
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prismaMock = prisma as any;
 
 describe('Sightings E2E', () => {
   const app = createTestApp();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      return callback(prismaMock);
+    });
   });
 
   // ── POST /api/sightings ──

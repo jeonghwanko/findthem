@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestApp, authHeader, testReport, testMatch, testSighting } from '../helpers.js';
-import { prismaMock } from '../setup.js';
+import { prisma } from '../../src/db/client.js';
+
+// setup.ts의 vi.mock 팩토리가 생성한 실제 mock 객체를 사용
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prismaMock = prisma as any;
 
 describe('Matches E2E', () => {
   const app = createTestApp();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      return callback(prismaMock);
+    });
   });
 
   // ── GET /api/reports/:id/matches ──
@@ -25,8 +33,8 @@ describe('Matches E2E', () => {
         .set('Authorization', authHeader());
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body[0].confidence).toBe(0.85);
+      expect(Array.isArray(res.body.matches)).toBe(true);
+      expect(res.body.matches[0].confidence).toBe(0.85);
     });
 
     it('비인증 → 401', async () => {

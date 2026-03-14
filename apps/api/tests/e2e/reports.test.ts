@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import path from 'path';
 import { createTestApp, authHeader, testUser, testReport } from '../helpers.js';
-import { prismaMock } from '../setup.js';
+import { prisma } from '../../src/db/client.js';
 import { cleanupQueue } from '../../src/jobs/queues.js';
+
+// setup.ts의 vi.mock 팩토리가 생성한 실제 mock 객체를 사용
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prismaMock = prisma as any;
 
 describe('Reports E2E', () => {
   const app = createTestApp();
@@ -12,6 +15,9 @@ describe('Reports E2E', () => {
     // setup.ts의 beforeEach가 먼저 실행된 후 clearAllMocks()가 호출되므로
     // user.findUnique mock을 다시 설정하여 requireAuth가 정상 동작하도록 함
     prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      return callback(prismaMock);
+    });
   });
 
   // ── POST /api/reports ──

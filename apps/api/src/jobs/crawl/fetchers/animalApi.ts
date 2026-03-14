@@ -42,7 +42,7 @@ function parseHappenDt(dt: string): Date {
   const y = dt.slice(0, 4);
   const m = dt.slice(4, 6);
   const d = dt.slice(6, 8);
-  const date = new Date(`${y}-${m}-${d}T00:00:00+09:00`);
+  const date = new Date(`${y}-${m}-${d}T00:00:00Z`);
   return isNaN(date.getTime()) ? new Date() : date;
 }
 

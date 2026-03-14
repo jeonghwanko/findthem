@@ -1,46 +1,50 @@
 import { vi, beforeEach } from 'vitest';
 
 // ── Prisma Mock ──
-function createModelMock() {
-  return {
-    findUnique: vi.fn(),
-    findFirst: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    count: vi.fn(),
-    upsert: vi.fn(),
-    deleteMany: vi.fn(),
-    updateMany: vi.fn(),
-    aggregate: vi.fn(),
+// vi.mock은 호이스팅되므로 팩토리 함수 내부에서 독립적으로 mock 객체를 생성.
+// 각 테스트 파일에서는 `import { prisma } from '../src/db/client.js'`로 이 mock을 가져온다.
+vi.mock('../src/db/client.js', () => {
+  function createModelMock() {
+    return {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+      upsert: vi.fn(),
+      deleteMany: vi.fn(),
+      updateMany: vi.fn(),
+      aggregate: vi.fn(),
+    };
+  }
+
+  const mock = {
+    user: createModelMock(),
+    report: createModelMock(),
+    reportPhoto: createModelMock(),
+    sighting: createModelMock(),
+    sightingPhoto: createModelMock(),
+    match: createModelMock(),
+    promotion: createModelMock(),
+    chatSession: createModelMock(),
+    chatMessage: createModelMock(),
+    adminAuditLog: createModelMock(),
+    $connect: vi.fn(),
+    $disconnect: vi.fn(),
+    $queryRaw: vi.fn(),
+    $queryRawUnsafe: vi.fn(),
+    $transaction: vi.fn(),
   };
-}
 
-export const prismaMock = {
-  user: createModelMock(),
-  report: createModelMock(),
-  reportPhoto: createModelMock(),
-  sighting: createModelMock(),
-  sightingPhoto: createModelMock(),
-  match: createModelMock(),
-  promotion: createModelMock(),
-  chatSession: createModelMock(),
-  chatMessage: createModelMock(),
-  adminAuditLog: createModelMock(),
-  $connect: vi.fn(),
-  $disconnect: vi.fn(),
-  $queryRaw: vi.fn(),
-  $queryRawUnsafe: vi.fn(),
-  // 트랜잭션 mock: callback에 self를 tx로 전달
-  $transaction: vi.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
-    return callback(prismaMock);
-  }),
-};
+  // $transaction: callback에 self를 tx로 전달
+  mock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+    return callback(mock);
+  });
 
-vi.mock('../src/db/client.js', () => ({
-  prisma: prismaMock,
-}));
+  return { prisma: mock };
+});
 
 // ── BullMQ Mock ──
 vi.mock('bullmq', () => {
@@ -82,6 +86,17 @@ vi.mock('@anthropic-ai/sdk', () => {
   }));
   return { default: Anthropic };
 });
+
+// ── Sighting Agent Mock ──
+vi.mock('../src/agent/sightingAgent.js', () => ({
+  sightingAgent: {
+    processMessage: vi.fn().mockResolvedValue({
+      text: '제보 내용을 수집하겠습니다.',
+      completed: false,
+      toolsUsed: [],
+    }),
+  },
+}));
 
 // ── Chatbot Engine Mock ──
 vi.mock('../src/chatbot/engine.js', () => ({
@@ -126,8 +141,8 @@ vi.mock('../src/jobs/queues.js', () => ({
 }));
 
 // ── 각 테스트 전 모든 mock 초기화 ──
-beforeEach(() => {
-  vi.clearAllMocks();
-  // requireAuth가 isBlocked 체크를 위해 user.findUnique를 호출하므로 기본값 설정
-  prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
-});
+// 각 테스트 파일에서 `import { prisma } from '../src/db/client.js'`로 mock 접근
+// beforeEach에서 기본 mock 설정 (특히 requireAuth용 user.findUnique)
+// 주의: 이 beforeEach는 setup.ts의 module-scope prisma를 쓰지 않음.
+// 실제 초기화는 각 테스트 파일의 beforeEach에서 수행한다.
+// (setup.ts의 prisma import는 테스트 파일과 다른 module instance이므로 사용 불가)
