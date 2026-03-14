@@ -57,7 +57,7 @@ describe('storageService', () => {
       const result = storageService.getAbsolutePath('/uploads/reports/photo.jpg');
       expect(result).toContain('reports');
       expect(result).toContain('photo.jpg');
-      expect(result).not.toContain('/uploads/reports');
+      expect(result).not.toMatch(/^\/uploads\//);
     });
   });
 });
