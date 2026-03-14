@@ -10,8 +10,7 @@ import {
   promotionMonitorQueue,
   type PromotionJobData,
 } from './queues.js';
-import type { PromoPlatform } from '@findthem/shared';
-import type { PromotionMetrics } from '@findthem/shared';
+import type { PromoPlatform, PromotionMetrics } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('promotionJob');

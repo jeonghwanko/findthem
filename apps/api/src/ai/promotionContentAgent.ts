@@ -1,6 +1,5 @@
 import { askClaude, askClaudeWithImage } from './claudeClient.js';
-import { getSubjectTypeLabel } from '@findthem/shared';
-import type { PlatformPromoTexts, PromotionMetrics } from '@findthem/shared';
+import { getSubjectTypeLabel, type PlatformPromoTexts, type PromotionMetrics } from '@findthem/shared';
 
 // 기존 generatePromoTexts re-export
 export { generatePromoTexts } from './promotionAgent.js';

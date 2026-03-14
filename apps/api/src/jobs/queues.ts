@@ -1,6 +1,18 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import { config } from '../config.js';
-import { QUEUE_NAMES } from '@findthem/shared';
+import {
+  QUEUE_NAMES,
+  type ImageJobData,
+  type PromotionJobData,
+  type MatchingJobData,
+  type NotificationJobData,
+  type CleanupJobData,
+  type PromotionMonitorJobData,
+  type PromotionRepostJobData,
+  type CrawlDispatchJobData,
+  type CrawlSourceJobData,
+  type CrawlAgentJobData,
+} from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('queues');
@@ -19,18 +31,6 @@ export type {
   CrawlAgentJobData,
 } from '@findthem/shared';
 
-import type {
-  ImageJobData,
-  PromotionJobData,
-  MatchingJobData,
-  NotificationJobData,
-  CleanupJobData,
-  PromotionMonitorJobData,
-  PromotionRepostJobData,
-  CrawlDispatchJobData,
-  CrawlSourceJobData,
-  CrawlAgentJobData,
-} from '@findthem/shared';
 
 // BullMQ는 자체 ioredis를 사용하므로 URL 문자열로 전달
 const connection = { url: config.redisUrl };

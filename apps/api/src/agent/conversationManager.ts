@@ -1,6 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AGENT_MAX_HISTORY_MESSAGES } from '@findthem/shared';
-import type { AgentToolCall } from '@findthem/shared';
+import { AGENT_MAX_HISTORY_MESSAGES, type AgentToolCall } from '@findthem/shared';
 import { Prisma } from '@prisma/client'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';

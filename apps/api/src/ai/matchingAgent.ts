@@ -1,7 +1,5 @@
 import { askClaudeWithImage, compareImages } from './claudeClient.js';
-import { getSubjectTypeLabel } from '@findthem/shared';
-import type { MatchResult, Locale } from '@findthem/shared';
-import { DEFAULT_LOCALE } from '@findthem/shared';
+import { getSubjectTypeLabel, DEFAULT_LOCALE, type MatchResult, type Locale } from '@findthem/shared';
 
 // ── analyzeImage 시스템 프롬프트 다국어 ──
 

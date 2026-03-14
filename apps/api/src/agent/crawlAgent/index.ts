@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../../config.js';
 import { createLogger } from '../../logger.js';
-import { CRAWL_AGENT_MAX_ROUNDS } from '@findthem/shared';
-import type { CrawlAgentJobData } from '@findthem/shared';
+import { CRAWL_AGENT_MAX_ROUNDS, type CrawlAgentJobData } from '@findthem/shared';
 import { CRAWL_AGENT_SYSTEM_PROMPT } from './systemPrompt.js';
 import { CRAWL_TOOL_DEFINITIONS } from './toolDefinitions.js';
 import { TOOL_HANDLERS } from './tools/index.js';

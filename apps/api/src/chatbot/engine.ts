@@ -1,24 +1,20 @@
 import { askClaude } from '../ai/claudeClient.js';
 import { prisma } from '../db/client.js';
 import { imageQueue } from '../jobs/queues.js';
-import type {
-  ConversationStep,
-  ConversationState,
-  CollectedInfo,
-  BotResponse,
-  ChatPlatform,
-  Locale,
-  SubjectType,
-} from '@findthem/shared';
 import {
   STEP_MESSAGES,
   STEP_QUICK_REPLIES,
   DEFAULT_LOCALE,
-} from '@findthem/shared';
-import {
   parseSubjectType,
   parseTimeExpression,
   buildSightingSummary,
+  type ConversationStep,
+  type ConversationState,
+  type CollectedInfo,
+  type BotResponse,
+  type ChatPlatform,
+  type Locale,
+  type SubjectType,
 } from '@findthem/shared';
 
 // ── 다국어 키워드 맵 ──

@@ -1,12 +1,13 @@
 import { askClaude, askClaudeWithImage } from './claudeClient.js';
-import { getSubjectTypeLabel } from '@findthem/shared';
 import {
+  getSubjectTypeLabel,
   REPOST_INTERVAL_HIGH,
   REPOST_INTERVAL_MEDIUM,
   REPOST_INTERVAL_LOW,
   REPOST_MAX_DEFAULT,
+  type PromoUrgency,
+  type PromoPlatform,
 } from '@findthem/shared';
-import type { PromoUrgency, PromoPlatform } from '@findthem/shared';
 
 export interface StrategyReportInput {
   subjectType: string;

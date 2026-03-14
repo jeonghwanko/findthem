@@ -1,11 +1,9 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AGENT_MAX_TOOL_ROUNDS, ERROR_CODES } from '@findthem/shared';
-import type { AgentResponse, AgentToolCall, ChatPlatform, SubjectType } from '@findthem/shared';
+import { AGENT_MAX_TOOL_ROUNDS, ERROR_CODES, ApiError, type AgentResponse, type AgentToolCall, type ChatPlatform } from '@findthem/shared';
 import { getClaudeClient } from '../ai/claudeClient.js';
 import { config } from '../config.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
-import { ApiError } from '@findthem/shared';
 import { loadAsClaudeMessages, saveRound } from './conversationManager.js';
 import { SIGHTING_AGENT_SYSTEM_PROMPT } from './systemPrompt.js';
 import { SIGHTING_TOOLS, dispatchTool } from './tools/index.js';

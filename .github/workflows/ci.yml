@@ -25,6 +25,9 @@ jobs:
       - name: 의존성 설치
         run: npm ci
 
+      - name: shared 패키지 빌드
+        run: npm run build -w packages/shared
+
       - name: Prisma 클라이언트 생성
         run: cd apps/api && npx prisma generate
 

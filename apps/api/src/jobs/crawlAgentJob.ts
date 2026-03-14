@@ -1,6 +1,5 @@
 import { createWorker } from './queues.js';
-import { QUEUE_NAMES } from '@findthem/shared';
-import type { CrawlAgentJobData } from '@findthem/shared';
+import { QUEUE_NAMES, type CrawlAgentJobData } from '@findthem/shared';
 import { CrawlAgentService } from '../agent/crawlAgent/index.js';
 import { createLogger } from '../logger.js';
 

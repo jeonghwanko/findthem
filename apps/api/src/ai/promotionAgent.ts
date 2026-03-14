@@ -1,7 +1,5 @@
 import { askClaudeWithImage } from './claudeClient.js';
-import { getSubjectTypeLabel } from '@findthem/shared';
-import type { PlatformPromoTexts, Locale } from '@findthem/shared';
-import { DEFAULT_LOCALE } from '@findthem/shared';
+import { getSubjectTypeLabel, DEFAULT_LOCALE, type PlatformPromoTexts, type Locale } from '@findthem/shared';
 
 interface ReportInfo {
   subjectType: string;

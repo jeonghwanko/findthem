@@ -1,7 +1,6 @@
 import { QUEUE_NAMES } from '@findthem/shared';
 import type { Prisma } from '@prisma/client';
-import { createWorker, crawlSchedulerQueue, crawlQueue, crawlAgentQueue, imageQueue } from './queues.js';
-import type { CrawlDispatchJobData, CrawlSourceJobData } from './queues.js';
+import { createWorker, crawlSchedulerQueue, crawlQueue, crawlAgentQueue, imageQueue, type CrawlDispatchJobData, type CrawlSourceJobData } from './queues.js';
 import { fetchers, getFetcher } from './crawl/fetcherRegistry.js';
 import type { ExternalReport } from './crawl/types.js';
 import { prisma } from '../db/client.js';

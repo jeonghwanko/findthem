@@ -1,6 +1,5 @@
 import { askClaude } from './claudeClient.js';
-import { MIN_VIEWS_FOR_GOOD_PERFORMANCE } from '@findthem/shared';
-import type { PromotionMetrics, PromoPlatform } from '@findthem/shared';
+import { MIN_VIEWS_FOR_GOOD_PERFORMANCE, type PromotionMetrics, type PromoPlatform } from '@findthem/shared';
 
 export interface PerformanceAnalysisResult {
   shouldRepost: boolean;
