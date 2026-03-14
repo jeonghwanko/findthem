@@ -257,12 +257,12 @@ export function parseTimeExpression(msg: string, locale: Locale = DEFAULT_LOCALE
 
 const SUMMARY_LABELS: Record<Locale, {
   type: string; desc: string; place: string; time: string;
-  photo: string; photos: string; reporter: string; contact: string; none: string;
+  photo: string; photos: string; reporter: string; contact: string; none: string; noPhoto: string;
 }> = {
-  ko: { type: '유형', desc: '설명', place: '장소', time: '시간', photo: '사진', photos: '장', reporter: '제보자', contact: '연락처', none: '(없음)' },
-  en: { type: 'Type', desc: 'Description', place: 'Location', time: 'Time', photo: 'Photos', photos: '', reporter: 'Reporter', contact: 'Contact', none: '(none)' },
-  ja: { type: '種類', desc: '説明', place: '場所', time: '時間', photo: '写真', photos: '枚', reporter: '通報者', contact: '連絡先', none: '（なし）' },
-  'zh-TW': { type: '類型', desc: '描述', place: '地點', time: '時間', photo: '照片', photos: '張', reporter: '報告者', contact: '聯絡方式', none: '（無）' },
+  ko: { type: '유형', desc: '설명', place: '장소', time: '시간', photo: '사진', photos: '장', reporter: '제보자', contact: '연락처', none: '(없음)', noPhoto: '없음' },
+  en: { type: 'Type', desc: 'Description', place: 'Location', time: 'Time', photo: 'Photos', photos: '', reporter: 'Reporter', contact: 'Contact', none: '(none)', noPhoto: 'none' },
+  ja: { type: '種類', desc: '説明', place: '場所', time: '時間', photo: '写真', photos: '枚', reporter: '通報者', contact: '連絡先', none: '（なし）', noPhoto: 'なし' },
+  'zh-TW': { type: '類型', desc: '描述', place: '地點', time: '時間', photo: '照片', photos: '張', reporter: '報告者', contact: '聯絡方式', none: '（無）', noPhoto: '無' },
 };
 
 /** 제보 요약 텍스트 생성 (다국어) */
@@ -274,7 +274,7 @@ export function buildSightingSummary(context: CollectedInfo, locale: Locale = DE
   const photoCount = context.photoUrls?.length;
   const photoText = photoCount
     ? (locale === 'en' ? `${photoCount}` : `${photoCount}${l.photos}`)
-    : l.none;
+    : l.noPhoto;
 
   const lines = [
     `${l.type}: ${typeLabel}`,
