@@ -85,7 +85,7 @@ describe('animalApiFetcher', () => {
     it('올바른 URL과 파라미터로 fetch 호출', async () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem()]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem()])),
       });
       global.fetch = fetchSpy;
 
@@ -109,7 +109,7 @@ describe('animalApiFetcher', () => {
       const item = makeAnimalItem();
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([item]),
+        json: () => Promise.resolve(makeApiResponse([item])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -142,7 +142,7 @@ describe('animalApiFetcher', () => {
       };
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => singleItemResponse,
+        json: () => Promise.resolve(singleItemResponse),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -153,7 +153,7 @@ describe('animalApiFetcher', () => {
     it('name 필드: 개는 "유기견 {desertionNo}" 형식', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-999', kindCd: '[개] 비글' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-999', kindCd: '[개] 비글' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -164,7 +164,7 @@ describe('animalApiFetcher', () => {
     it('name 필드: 고양이는 "유기묘 {desertionNo}" 형식', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-888', kindCd: '[고양이] 코리안숏헤어' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-888', kindCd: '[고양이] 코리안숏헤어' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -177,7 +177,7 @@ describe('animalApiFetcher', () => {
     it('[개] 접두사 → DOG', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ kindCd: '[개] 푸들' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ kindCd: '[개] 푸들' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -188,7 +188,7 @@ describe('animalApiFetcher', () => {
     it('[고양이] 접두사 → CAT', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ kindCd: '[고양이] 페르시안' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ kindCd: '[고양이] 페르시안' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -202,11 +202,10 @@ describe('animalApiFetcher', () => {
       // totalCount를 실제 포함될 아이템 수(1)로 설정
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () =>
-          makeApiResponse([
+        json: () => Promise.resolve(makeApiResponse([
             makeAnimalItem({ kindCd: '[기타축종] 토끼' }),
             makeAnimalItem({ desertionNo: 'EXT-002', kindCd: '[개] 믹스견' }),
-          ], 1),  // totalCount=1 → 1개 이상 결과가 모이면 loop 종료
+          ], 1)),  // totalCount=1 → 1개 이상 결과가 모이면 loop 종료
       });
 
       const results = await animalApiFetcher.fetch();
@@ -221,7 +220,7 @@ describe('animalApiFetcher', () => {
     it('sexCd "M" → MALE', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ sexCd: 'M' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ sexCd: 'M' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -232,7 +231,7 @@ describe('animalApiFetcher', () => {
     it('sexCd "F" → FEMALE', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ sexCd: 'F' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ sexCd: 'F' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -243,7 +242,7 @@ describe('animalApiFetcher', () => {
     it('sexCd "Q" (중성) → UNKNOWN', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ sexCd: 'Q' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ sexCd: 'Q' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -254,7 +253,7 @@ describe('animalApiFetcher', () => {
     it('sexCd 알 수 없는 값 → UNKNOWN', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ sexCd: 'X' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ sexCd: 'X' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -267,7 +266,7 @@ describe('animalApiFetcher', () => {
     it('popfile 있으면 photoUrl 설정', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ popfile: 'https://example.com/img.jpg' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile: 'https://example.com/img.jpg' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -278,7 +277,7 @@ describe('animalApiFetcher', () => {
     it('popfile 빈 문자열이면 photoUrl이 undefined', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ popfile: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile: '' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -292,7 +291,7 @@ describe('animalApiFetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
-        json: async () => ({}),
+        json: () => Promise.resolve(({})),
       });
 
       await expect(animalApiFetcher.fetch()).resolves.toEqual([]);
@@ -302,7 +301,7 @@ describe('animalApiFetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        json: async () => ({}),
+        json: () => Promise.resolve(({})),
       });
 
       await expect(animalApiFetcher.fetch()).resolves.toEqual([]);
@@ -317,7 +316,7 @@ describe('animalApiFetcher', () => {
     it('items가 없는 응답 → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
+        json: () => Promise.resolve({
           response: {
             body: {
               totalCount: 0,
@@ -333,7 +332,7 @@ describe('animalApiFetcher', () => {
     it('예상치 못한 응답 구조 → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ unexpected: 'structure' }),
+        json: () => Promise.resolve(({ unexpected: 'structure' })),
       });
 
       await expect(animalApiFetcher.fetch()).resolves.toEqual([]);
@@ -344,7 +343,7 @@ describe('animalApiFetcher', () => {
     it('happenDt "20250115" → 2025-01-15 Date 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ happenDt: '20250115' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ happenDt: '20250115' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -359,7 +358,7 @@ describe('animalApiFetcher', () => {
     it('happenDt 비어있으면 현재 날짜 근처 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeAnimalItem({ happenDt: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ happenDt: '' })])),
       });
 
       const before = Date.now();

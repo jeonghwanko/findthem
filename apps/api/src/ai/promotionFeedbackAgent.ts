@@ -58,7 +58,7 @@ export async function analyzePerformance(
     return {
       shouldRepost: typeof parsed.shouldRepost === 'boolean' ? parsed.shouldRepost : false,
       improvementSuggestions: Array.isArray(parsed.improvementSuggestions)
-        ? (parsed.improvementSuggestions as string[])
+        ? parsed.improvementSuggestions.map(String)
         : [],
       suggestedChanges:
         typeof parsed.suggestedChanges === 'string' ? parsed.suggestedChanges : '',

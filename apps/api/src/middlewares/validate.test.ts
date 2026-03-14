@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import { validateBody, validateQuery } from './validate.js';
 import { ApiError } from './errors.js';
 

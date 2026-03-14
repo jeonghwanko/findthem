@@ -3,7 +3,6 @@ import { prisma } from '../db/client.js';
 import { deleteFromAllPlatforms, postToAllPlatforms } from '../platforms/platformManager.js';
 import { generateThankYouMessage } from '../ai/promotionContentAgent.js';
 import { createWorker, type CleanupJobData } from './queues.js';
-import { imageService } from '../services/imageService.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('cleanupJob');
@@ -36,10 +35,10 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
   // SNS 게시물 삭제
   if (promotions.length > 0) {
     const deletionTargets = promotions
-      .filter((p) => p.postId !== null)
+      .filter((p): p is typeof p & { postId: string } => p.postId !== null)
       .map((p) => ({
         platform: p.platform.toLowerCase(),
-        postId: p.postId!,
+        postId: p.postId,
       }));
 
     await deleteFromAllPlatforms(deletionTargets);

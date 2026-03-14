@@ -43,7 +43,7 @@ function formatDate(iso: string) {
 }
 
 function truncate(str: string, n: number) {
-  return str.length > n ? str.slice(0, n) + '...' : str;
+  return str.length > n ? `${str.slice(0, n)}...` : str;
 }
 
 export default function MatchesManagePage() {
@@ -76,7 +76,7 @@ export default function MatchesManagePage() {
   }, [status, minConfidence, page]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   async function handleAction(matchId: string, action: 'CONFIRMED' | 'REJECTED') {
@@ -128,7 +128,7 @@ export default function MatchesManagePage() {
         </div>
 
         <button
-          onClick={fetchData}
+          onClick={() => { void fetchData(); }}
           disabled={loading}
           className="ml-auto border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
         >
@@ -212,14 +212,14 @@ export default function MatchesManagePage() {
                     {match.status === 'PENDING' && (
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => handleAction(match.id, 'CONFIRMED')}
+                          onClick={() => { void handleAction(match.id, 'CONFIRMED'); }}
                           disabled={actionLoading === match.id}
                           className="rounded px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
                         >
                           확인
                         </button>
                         <button
-                          onClick={() => handleAction(match.id, 'REJECTED')}
+                          onClick={() => { void handleAction(match.id, 'REJECTED'); }}
                           disabled={actionLoading === match.id}
                           className="rounded px-2.5 py-1 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
                         >

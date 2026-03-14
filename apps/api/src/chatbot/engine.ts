@@ -247,7 +247,7 @@ export class ChatbotEngine {
         if (photoUrl) {
           context.photoUrls = [...(context.photoUrls || []), photoUrl];
           await this.updateSession(sessionId, 'DESCRIPTION', context, sessionUpdatedAt);
-          return { text: msgs.photoRegistered + '\n' + STEP_MESSAGES[locale].DESCRIPTION };
+          return { text: `${msgs.photoRegistered}\n${STEP_MESSAGES[locale].DESCRIPTION}` };
         }
         if (keywords.skip.some((kw) => lower.includes(kw))) {
           await this.updateSession(sessionId, 'DESCRIPTION', context, sessionUpdatedAt);
@@ -328,7 +328,7 @@ export class ChatbotEngine {
         // 수정 요청 → 처음부터
         await this.updateSession(sessionId, 'SUBJECT_TYPE', {}, sessionUpdatedAt);
         return {
-          text: msgs.restartFromBeginning + '\n' + STEP_MESSAGES[locale].SUBJECT_TYPE,
+          text: `${msgs.restartFromBeginning}\n${STEP_MESSAGES[locale].SUBJECT_TYPE}`,
           quickReplies: STEP_QUICK_REPLIES[locale]?.SUBJECT_TYPE,
         };
       }
@@ -438,7 +438,7 @@ export class ChatbotEngine {
         sessionId,
         role,
         content,
-        metadata: metadata ? (metadata as object) : undefined,
+        metadata: metadata ?? undefined,
       },
     });
   }

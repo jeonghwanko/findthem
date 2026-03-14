@@ -1,5 +1,4 @@
-import type { SubjectType, CollectedInfo, Locale } from './types.js';
-import { DEFAULT_LOCALE } from './types.js';
+import { DEFAULT_LOCALE, type SubjectType, type CollectedInfo, type Locale } from './types.js';
 import { SUBJECT_TYPE_LABELS } from './constants.js';
 
 /** SubjectType 라벨 반환 (다국어) */

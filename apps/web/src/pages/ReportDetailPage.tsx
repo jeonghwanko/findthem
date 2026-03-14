@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client';
-import type { ReportDetail, Sighting, SightingListResponse } from '../api/client';
+import { api, type ReportDetail, type Sighting, type SightingListResponse } from '../api/client';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',

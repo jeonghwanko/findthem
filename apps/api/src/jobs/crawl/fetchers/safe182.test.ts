@@ -81,7 +81,7 @@ describe('safe182Fetcher', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem()]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
       });
 
       const result = await safe182Fetcher.fetch();
@@ -94,7 +94,7 @@ describe('safe182Fetcher', () => {
     it('올바른 URL과 파라미터로 fetch 호출', async () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem()]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
       });
       global.fetch = fetchSpy;
 
@@ -117,7 +117,7 @@ describe('safe182Fetcher', () => {
     it('실종아동 API 응답을 ExternalReport[]로 변환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem()]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -137,11 +137,10 @@ describe('safe182Fetcher', () => {
     it('모든 항목의 subjectType은 PERSON', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () =>
-          makeApiResponse([
+        json: () => Promise.resolve(makeApiResponse([
             makeMissingChildItem({ msspsnIdntfccd: 'P-001' }),
             makeMissingChildItem({ msspsnIdntfccd: 'P-002' }),
-          ], 2),
+          ], 2)),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -163,7 +162,7 @@ describe('safe182Fetcher', () => {
       };
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => singleItemResponse,
+        json: () => Promise.resolve(singleItemResponse),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -174,7 +173,7 @@ describe('safe182Fetcher', () => {
     it('이름 없으면 "이름 미상" 사용', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ msspsnNm: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ msspsnNm: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -185,7 +184,7 @@ describe('safe182Fetcher', () => {
     it('장소 없으면 "장소 미상" 사용', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ mssgnArCn: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ mssgnArCn: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -198,12 +197,11 @@ describe('safe182Fetcher', () => {
     it('각 항목의 externalId는 msspsnIdntfccd 값', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () =>
-          makeApiResponse([
+        json: () => Promise.resolve(makeApiResponse([
             makeMissingChildItem({ msspsnIdntfccd: 'ID-AAA' }),
             makeMissingChildItem({ msspsnIdntfccd: 'ID-BBB' }),
             makeMissingChildItem({ msspsnIdntfccd: 'ID-CCC' }),
-          ], 3),
+          ], 3)),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -219,7 +217,7 @@ describe('safe182Fetcher', () => {
     it('sexdstnCode "M" → MALE', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ sexdstnCode: 'M' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'M' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -230,7 +228,7 @@ describe('safe182Fetcher', () => {
     it('sexdstnCode "F" → FEMALE', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ sexdstnCode: 'F' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'F' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -241,7 +239,7 @@ describe('safe182Fetcher', () => {
     it('알 수 없는 sexdstnCode → UNKNOWN', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ sexdstnCode: 'X' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'X' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -254,8 +252,7 @@ describe('safe182Fetcher', () => {
     it('filePathNm 있으면 photoUrl 설정', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () =>
-          makeApiResponse([makeMissingChildItem({ filePathNm: 'https://img.safe182.go.kr/img.jpg' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ filePathNm: 'https://img.safe182.go.kr/img.jpg' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -266,7 +263,7 @@ describe('safe182Fetcher', () => {
     it('filePathNm 빈 문자열이면 photoUrl이 undefined', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ filePathNm: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ filePathNm: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -279,7 +276,7 @@ describe('safe182Fetcher', () => {
     it('birthYmd로 나이 계산 (예: 2010년생 → "16세" 근처)', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ birthYmd: '20100515' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ birthYmd: '20100515' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -291,7 +288,7 @@ describe('safe182Fetcher', () => {
     it('birthYmd 비어있으면 age가 undefined', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ birthYmd: '' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ birthYmd: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -304,7 +301,7 @@ describe('safe182Fetcher', () => {
     it('mssgnYmd "20250115" → 2025-01-15 Date', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => makeApiResponse([makeMissingChildItem({ mssgnYmd: '20250115' })]),
+        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ mssgnYmd: '20250115' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -322,7 +319,7 @@ describe('safe182Fetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 403,
-        json: async () => ({}),
+        json: () => Promise.resolve(({})),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
@@ -332,7 +329,7 @@ describe('safe182Fetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 503,
-        json: async () => ({}),
+        json: () => Promise.resolve(({})),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
@@ -347,7 +344,7 @@ describe('safe182Fetcher', () => {
     it('items가 없는 응답 → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({
+        json: () => Promise.resolve({
           response: {
             body: {
               totalCount: 0,
@@ -363,7 +360,7 @@ describe('safe182Fetcher', () => {
     it('예상치 못한 응답 구조 → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ error: 'SERVICE_KEY_IS_NOT_REGISTERED_ERROR' }),
+        json: () => Promise.resolve(({ error: 'SERVICE_KEY_IS_NOT_REGISTERED_ERROR' })),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);

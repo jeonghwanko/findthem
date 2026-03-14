@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client';
-import type { Report, ReportListResponse } from '../api/client';
+import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 
 export default function BrowsePage() {

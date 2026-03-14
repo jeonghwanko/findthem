@@ -78,7 +78,7 @@ export default function ReportsManagePage() {
   }, [status, subjectType, q, page]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   function handleSearch() {
@@ -163,7 +163,7 @@ export default function ReportsManagePage() {
         </div>
 
         <button
-          onClick={fetchData}
+          onClick={() => { void fetchData(); }}
           disabled={loading}
           className="ml-auto border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
         >
@@ -232,7 +232,7 @@ export default function ReportsManagePage() {
                   <td className="px-4 py-3">
                     {(report.status === 'ACTIVE' || report.status === 'SUSPENDED') && (
                       <button
-                        onClick={() => handleStatusChange(report)}
+                        onClick={() => { void handleStatusChange(report); }}
                         disabled={actionLoading === report.id}
                         className={`rounded px-3 py-1 text-xs font-medium disabled:opacity-50 ${
                           report.status === 'SUSPENDED'

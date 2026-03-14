@@ -20,14 +20,16 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
           <h2 className="text-xl font-bold mb-4 text-center">관리자 인증</h2>
           <form
-            onSubmit={async (e) => {
+            onSubmit={(e) => {
               e.preventDefault();
               setError('');
-              try {
-                await login(key);
-              } catch (err: unknown) {
-                setError(err instanceof Error ? err.message : '인증에 실패했습니다.');
-              }
+              void (async () => {
+                try {
+                  await login(key);
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : '인증에 실패했습니다.');
+                }
+              })();
             }}
           >
             <input

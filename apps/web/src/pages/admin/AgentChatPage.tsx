@@ -91,7 +91,7 @@ export default function AgentChatPage() {
   }, []);
 
   useEffect(() => {
-    fetchSessions();
+    void fetchSessions();
   }, [fetchSessions]);
 
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function AgentChatPage() {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   }
 
@@ -192,7 +192,7 @@ export default function AgentChatPage() {
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
         <div className="p-3 border-b border-gray-100">
           <button
-            onClick={handleNewSession}
+            onClick={() => { void handleNewSession(); }}
             disabled={sending}
             className="w-full bg-indigo-600 text-white rounded px-3 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
           >
@@ -209,7 +209,7 @@ export default function AgentChatPage() {
             sessions.map((session) => (
               <button
                 key={session.id}
-                onClick={() => handleSelectSession(session)}
+                onClick={() => { void handleSelectSession(session); }}
                 className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-gray-50 transition-colors ${
                   activeSessionId === session.id ? 'bg-indigo-50 border-l-2 border-l-indigo-600' : ''
                 }`}
@@ -293,7 +293,7 @@ export default function AgentChatPage() {
               className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none disabled:opacity-50"
             />
             <button
-              onClick={handleSend}
+              onClick={() => { void handleSend(); }}
               disabled={!inputText.trim() || sending}
               className="bg-indigo-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 self-end"
             >

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User } from '../api/client';
+import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {

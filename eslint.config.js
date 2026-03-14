@@ -124,7 +124,7 @@ const webConfig = {
       {
         patterns: [
           {
-            group: ['@findthem/api', '@findthem/api/*', '../../api/*', '../../../api/*'],
+            group: ['@findthem/api', '@findthem/api/*'],
             message: 'Web must not import from API package.',
           },
         ],

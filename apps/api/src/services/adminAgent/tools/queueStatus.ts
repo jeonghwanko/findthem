@@ -1,4 +1,4 @@
-import { Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 import {
   imageQueue,
   promotionQueue,

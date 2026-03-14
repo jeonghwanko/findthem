@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../api/client';
-import type { User } from '../api/client';
+import { api, type User } from '../api/client';
 import { TOKEN_STORAGE_KEY } from '@findthem/shared';
 
 interface AuthState {

@@ -47,7 +47,7 @@ export function useChat(reportId?: string) {
         completed: false,
         quickReplies: res.quickReplies || [],
       });
-    } catch (err: any) {
+    } catch {
       setSession((s) => ({
         ...s,
         loading: false,

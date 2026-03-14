@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
@@ -14,13 +14,15 @@ export function registerMatchRoutes(router: Router) {
   // 내 신고에 대한 매칭 결과 조회
   router.get('/reports/:id/matches', requireAuth, validateQuery(matchesQuerySchema), async (req, res) => {
     const id = req.params.id as string;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!; // requireAuth가 보장
     const { page, limit } = req.query as unknown as z.infer<typeof matchesQuerySchema>;
 
     const report = await prisma.report.findUnique({
       where: { id },
     });
     if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
-    if (report.userId !== req.user!.userId) {
+    if (report.userId !== userId) {
       throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
@@ -53,7 +55,9 @@ export function registerMatchRoutes(router: Router) {
     });
 
     if (!match) throw new ApiError(404, 'MATCH_NOT_FOUND');
-    if (match.report.userId !== req.user!.userId) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId: matchUserId } = req.user!; // requireAuth가 보장
+    if (match.report.userId !== matchUserId) {
       throw new ApiError(403, 'MATCH_OWNER_ONLY');
     }
 

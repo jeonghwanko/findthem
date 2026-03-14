@@ -16,7 +16,7 @@ export default function AdminLayout() {
 
   function handleLogout() {
     clearAdminKey();
-    navigate('/admin/login');
+    void navigate('/admin/login');
   }
 
   return (

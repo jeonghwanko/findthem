@@ -129,8 +129,8 @@ export async function determineStrategy(
           : parseIntervalH(urgency),
       maxReposts:
         typeof parsed.maxReposts === 'number' ? parsed.maxReposts : REPOST_MAX_DEFAULT,
-      keywords: Array.isArray(parsed.keywords) ? (parsed.keywords as string[]) : ['실종'],
-      hashtags: Array.isArray(parsed.hashtags) ? (parsed.hashtags as string[]) : ['#실종'],
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords.map(String) : ['실종'],
+      hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags.map(String) : ['#실종'],
       reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : '',
     };
   } catch {

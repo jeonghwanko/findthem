@@ -13,7 +13,7 @@ export default function LanguageSwitcher() {
   return (
     <select
       value={i18n.language}
-      onChange={(e) => i18n.changeLanguage(e.target.value)}
+      onChange={(e) => { void i18n.changeLanguage(e.target.value); }}
       className="bg-white/20 text-white text-xs px-2 py-1 rounded border border-white/30 outline-none cursor-pointer"
     >
       {LANGUAGES.map((lang) => (

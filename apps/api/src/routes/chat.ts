@@ -1,19 +1,18 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import type { Locale } from '@findthem/shared';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@findthem/shared';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new ApiError(400, 'IMAGE_ONLY') as any);
+    else cb(new ApiError(400, 'IMAGE_ONLY') as unknown as null);
   },
 });
 
@@ -73,7 +72,7 @@ export function registerChatRoutes(router: Router) {
 
   // 메시지 전송
   router.post('/chat/sessions/:id/messages', optionalAuth, async (req, res) => {
-    const sessionId = req.params.id as string;
+    const sessionId = req.params.id;
     const { message, locale: bodyLocale } = sendMessageSchema.parse(req.body);
     const locale = resolveLocale(
       req.headers['accept-language'],
@@ -91,7 +90,7 @@ export function registerChatRoutes(router: Router) {
     optionalAuth,
     upload.single('photo'),
     async (req, res) => {
-      const sessionId = req.params.id as string;
+      const sessionId = req.params.id;
       const file = req.file;
       if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
 
@@ -123,8 +122,8 @@ export function registerChatRoutes(router: Router) {
   );
 
   // SSE 스트림 (실시간 응답용 - 향후 확장)
-  router.get('/chat/sessions/:id/stream', async (req, res) => {
-    const sessionId = req.params.id as string;
+  router.get('/chat/sessions/:id/stream', (req, res) => {
+    const sessionId = req.params.id;
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',

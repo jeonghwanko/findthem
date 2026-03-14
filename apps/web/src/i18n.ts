@@ -7,7 +7,7 @@ import en from './locales/en/translation.json';
 import ja from './locales/ja/translation.json';
 import zhTW from './locales/zh-TW/translation.json';
 
-i18n
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

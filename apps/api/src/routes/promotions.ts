@@ -1,12 +1,11 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { validateBody } from '../middlewares/validate.js';
 import { promotionQueue } from '../jobs/queues.js';
-import type { PromoPlatform } from '@findthem/shared';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, type PromoPlatform } from '@findthem/shared';
 
 const repostBodySchema = z.object({
   platforms: z.array(z.enum(['TWITTER', 'KAKAO_CHANNEL'])).optional(),
@@ -17,7 +16,8 @@ export function registerPromotionRoutes(router: Router) {
   // GET /reports/:id/promotions — 신고의 홍보 이력 조회 (본인 신고만)
   router.get('/reports/:id/promotions', requireAuth, async (req, res) => {
     const reportId = req.params['id'] as string;
-    const userId = req.user!.userId;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!; // requireAuth가 보장
 
     const report = await prisma.report.findUnique({
       where: { id: reportId },
@@ -52,7 +52,8 @@ export function registerPromotionRoutes(router: Router) {
     validateBody(repostBodySchema),
     async (req, res) => {
       const reportId = req.params['id'] as string;
-      const userId = req.user!.userId;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { userId } = req.user!; // requireAuth가 보장
       const { platforms, regenerateContent } = req.body as z.infer<typeof repostBodySchema>;
 
       const report = await prisma.report.findUnique({

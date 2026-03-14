@@ -41,7 +41,7 @@ function formatDateTime(iso: string) {
 
 function JsonToggle({ data }: { data: unknown }) {
   const [open, setOpen] = useState(false);
-  if (!data || (typeof data === 'object' && Object.keys(data as object).length === 0)) {
+  if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
     return <span className="text-gray-400 text-xs">-</span>;
   }
   return (
@@ -89,7 +89,7 @@ export default function AuditLogPage() {
   }, [targetType, source, from, to, page]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   const logs = data?.logs ?? [];
@@ -100,7 +100,7 @@ export default function AuditLogPage() {
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-gray-900">감사 로그</h1>
         <button
-          onClick={fetchData}
+          onClick={() => { void fetchData(); }}
           disabled={loading}
           className="border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
         >

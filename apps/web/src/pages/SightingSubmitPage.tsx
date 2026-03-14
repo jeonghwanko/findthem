@@ -41,12 +41,12 @@ export default function SightingSubmitPage() {
       await api.post('/sightings', formData);
 
       if (reportId) {
-        navigate(`/reports/${reportId}`);
+        void navigate(`/reports/${reportId}`);
       } else {
-        navigate('/');
+        void navigate('/');
       }
-    } catch (err: any) {
-      setError(err.message || t('sighting.submitError'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('sighting.submitError'));
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function SightingSubmitPage() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('sighting.title')}</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t('sighting.photoOptional')}

@@ -64,9 +64,9 @@ export default function RegisterReportPage() {
       formData.append('data', JSON.stringify(data));
 
       const result = await api.post<{ id: string }>('/reports', formData);
-      navigate(`/reports/${result.id}`);
-    } catch (err: any) {
-      setError(err.message || t('report.submitError'));
+      void navigate(`/reports/${result.id}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('report.submitError'));
     } finally {
       setLoading(false);
     }
@@ -339,7 +339,7 @@ export default function RegisterReportPage() {
               {t('report.prev')}
             </button>
             <button
-              onClick={handleSubmit}
+              onClick={() => { void handleSubmit(); }}
               disabled={loading || !lastSeenAt || !lastSeenAddress || !contactPhone || !contactName}
               className="flex-1 bg-accent-500 hover:bg-accent-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
             >

@@ -1,6 +1,5 @@
 import { config } from '../config.js';
-import type { Locale } from '@findthem/shared';
-import { DEFAULT_LOCALE } from '@findthem/shared';
+import { DEFAULT_LOCALE, type Locale } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('notificationService');

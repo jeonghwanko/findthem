@@ -45,7 +45,6 @@ export function useAdminData<T>(path: string, deps: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -57,10 +56,11 @@ export function useAdminData<T>(path: string, deps: unknown[] = []) {
     } finally {
       setLoading(false);
     }
-  }, [path, ...deps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, ...deps]); // deps는 호출자가 제어하는 spread 배열
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   return { data, loading, error, refresh };

@@ -58,7 +58,7 @@ function formatTimestamp(ts: number) {
 }
 
 function truncate(str: string, n: number) {
-  return str.length > n ? str.slice(0, n) + '...' : str;
+  return str.length > n ? `${str.slice(0, n)}...` : str;
 }
 
 export default function QueuesPage() {
@@ -79,8 +79,8 @@ export default function QueuesPage() {
   const [retryLoading, setRetryLoading] = useState<string | null>(null);
 
   function handleRefreshAll() {
-    refreshQueues();
-    refreshFailed();
+    void refreshQueues();
+    void refreshFailed();
   }
 
   async function handleRetry(job: FailedJob) {
@@ -91,7 +91,7 @@ export default function QueuesPage() {
       await adminApi.post(
         `/admin/stats/failed-jobs/${job.queueName}/${job.id}/retry`,
       );
-      refreshFailed();
+      void refreshFailed();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : '재시도 실패');
     } finally {
@@ -201,7 +201,7 @@ export default function QueuesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleRetry(job)}
+                        onClick={() => { void handleRetry(job); }}
                         disabled={retryLoading === job.id}
                         className="rounded px-2.5 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 disabled:opacity-50"
                       >

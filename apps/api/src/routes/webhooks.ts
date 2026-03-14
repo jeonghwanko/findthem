@@ -1,8 +1,7 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { prisma } from '../db/client.js';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
-import { config } from '../config.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('webhooks');

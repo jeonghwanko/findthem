@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import type { Prisma } from '@prisma/client';
@@ -7,9 +7,8 @@ import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import { imageQueue } from '../jobs/queues.js';
+import { imageQueue, cleanupQueue } from '../jobs/queues.js';
 import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES } from '@findthem/shared';
-import { cleanupQueue } from '../jobs/queues.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -73,9 +72,11 @@ export function registerReportRoutes(router: Router) {
       );
 
       // DB 쓰기는 트랜잭션으로 원자성 보장
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { userId } = req.user!; // requireAuth가 보장
       const { report, photos } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const report = await tx.report.create({
-          data: { userId: req.user!.userId, ...body },
+          data: { userId, ...body },
         });
 
         const photos = await Promise.all(
@@ -146,7 +147,9 @@ export function registerReportRoutes(router: Router) {
 
   router.get('/reports/mine', requireAuth, validateQuery(mineQuerySchema), async (req, res) => {
     const { page, limit } = req.query as unknown as z.infer<typeof mineQuerySchema>;
-    const where = { userId: req.user!.userId };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId: mineUserId } = req.user!; // requireAuth가 보장
+    const where = { userId: mineUserId };
 
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
@@ -167,7 +170,7 @@ export function registerReportRoutes(router: Router) {
 
   // 실종 신고 상세
   router.get('/reports/:id', async (req, res) => {
-    const id = req.params.id as string;
+    const id = req.params.id;
     const report = await prisma.report.findUnique({
       where: { id },
       include: {
@@ -183,14 +186,16 @@ export function registerReportRoutes(router: Router) {
 
   // 신고 상태 업데이트
   router.patch('/reports/:id/status', requireAuth, async (req, res) => {
-    const id = req.params.id as string;
+    const id = req.params.id;
     const { status } = z
       .object({ status: z.enum(['ACTIVE', 'FOUND']) })
       .parse(req.body);
 
     const report = await prisma.report.findUnique({ where: { id } });
     if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
-    if (report.userId !== req.user!.userId) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId: statusUserId } = req.user!; // requireAuth가 보장
+    if (report.userId !== statusUserId) {
       throw new ApiError(403, 'REPORT_OWNER_ONLY');
     }
 
@@ -228,10 +233,12 @@ export function registerReportRoutes(router: Router) {
     requireAuth,
     upload.array('photos', MAX_ADDITIONAL_PHOTOS),
     async (req, res) => {
-      const id = req.params.id as string;
+      const id = req.params.id;
       const report = await prisma.report.findUnique({ where: { id } });
       if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
-      if (report.userId !== req.user!.userId) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { userId: photosUserId } = req.user!; // requireAuth가 보장
+      if (report.userId !== photosUserId) {
         throw new ApiError(403, 'REPORT_OWNER_ONLY');
       }
 

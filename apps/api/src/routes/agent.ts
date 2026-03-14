@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import { optionalAuth } from '../middlewares/auth.js';

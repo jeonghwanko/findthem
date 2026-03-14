@@ -13,9 +13,9 @@ export default function ChatWidget() {
   // 채팅창 열 때 세션 시작
   useEffect(() => {
     if (open && !chat.sessionId && !chat.loading) {
-      chat.startSession();
+      void chat.startSession();
     }
-  }, [open, chat.sessionId, chat.loading]);
+  }, [open, chat.sessionId, chat.loading, chat]);
 
   // 새 메시지 시 스크롤
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function ChatWidget() {
     const msg = input.trim();
     if (!msg) return;
     setInput('');
-    chat.sendMessage(msg);
+    void chat.sendMessage(msg);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -41,7 +41,7 @@ export default function ChatWidget() {
 
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) chat.sendPhoto(file);
+    if (file) void chat.sendPhoto(file);
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -107,7 +107,7 @@ export default function ChatWidget() {
           {chat.quickReplies.map((reply) => (
             <button
               key={reply}
-              onClick={() => chat.sendMessage(reply)}
+              onClick={() => { void chat.sendMessage(reply); }}
               className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm hover:bg-primary-100 transition-colors border border-primary-200"
             >
               {reply}

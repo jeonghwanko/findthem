@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import { rateLimit } from './rateLimit.js';
 
 // rateLimit은 모듈 레벨의 Map(store)을 사용하므로

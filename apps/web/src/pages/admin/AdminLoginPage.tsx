@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
     setError(null);
     try {
       await login(key.trim());
-      navigate('/admin');
+      void navigate('/admin');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '로그인 실패');
     } finally {
@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
         <h1 className="text-xl font-bold text-gray-900 mb-1">관리자 로그인</h1>
         <p className="text-sm text-gray-500 mb-6">API Key를 입력하세요.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
           <input
             type="password"
             value={key}

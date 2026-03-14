@@ -10,9 +10,9 @@ export default function AgentChatWidget() {
 
   useEffect(() => {
     if (open && !chat.sessionId && !chat.loading) {
-      chat.startSession();
+      void chat.startSession();
     }
-  }, [open, chat.sessionId, chat.loading]);
+  }, [open, chat.sessionId, chat.loading, chat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,7 +22,7 @@ export default function AgentChatWidget() {
     const msg = input.trim();
     if (!msg) return;
     setInput('');
-    chat.sendMessage(msg);
+    void chat.sendMessage(msg);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -34,7 +34,7 @@ export default function AgentChatWidget() {
 
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) chat.sendPhoto(file);
+    if (file) void chat.sendPhoto(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 

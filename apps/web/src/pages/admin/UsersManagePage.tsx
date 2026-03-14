@@ -64,7 +64,7 @@ export default function UsersManagePage() {
   }, [q, blocked, page]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   function handleSearch() {
@@ -146,7 +146,7 @@ export default function UsersManagePage() {
         </select>
 
         <button
-          onClick={fetchData}
+          onClick={() => { void fetchData(); }}
           disabled={loading}
           className="ml-auto border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
         >
@@ -219,7 +219,7 @@ export default function UsersManagePage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => handleToggleBlock(user)}
+                      onClick={() => { void handleToggleBlock(user); }}
                       disabled={actionLoading === user.id}
                       className={`rounded px-3 py-1 text-xs font-medium disabled:opacity-50 ${
                         user.blockedAt

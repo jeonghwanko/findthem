@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -72,8 +72,10 @@ export function registerAuthRoutes(router: Router) {
 
   // 내 정보
   router.get('/auth/me', requireAuth, async (req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!; // requireAuth가 보장
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.userId },
+      where: { id: userId },
       select: { id: true, name: true, phone: true, email: true, createdAt: true },
     });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND');

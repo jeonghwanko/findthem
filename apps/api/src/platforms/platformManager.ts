@@ -1,4 +1,4 @@
-import type { PlatformAdapter, PlatformPostResult } from './types.js';
+import type { PlatformAdapter } from './types.js';
 import { TwitterAdapter } from './twitter.js';
 import { KakaoChannelAdapter } from './kakaoChannel.js';
 import { createLogger } from '../logger.js';
@@ -26,7 +26,7 @@ export async function postToAllPlatforms(
 
   for (const adapter of adapters) {
     const platformText =
-      (text as Record<string, string>)[adapter.name] ||
+      text[adapter.name] ||
       text.general ||
       Object.values(text)[0];
 
@@ -38,13 +38,13 @@ export async function postToAllPlatforms(
         postId: result.postId,
         postUrl: result.postUrl,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       results.push({
         platform: adapter.name,
         success: false,
         postId: null,
         postUrl: null,
-        error: err.message,
+        error: err instanceof Error ? err.message : String(err),
       });
     }
   }

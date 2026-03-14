@@ -47,7 +47,7 @@ vi.mock('./crawl/fetcherRegistry.js', () => ({
 
 import { prisma } from '../db/client.js';
 import { imageQueue } from './queues.js';
-import { getFetcher } from './crawl/fetcherRegistry.js';
+import { getFetcher as _getFetcher } from './crawl/fetcherRegistry.js';
 import type { ExternalReport } from './crawl/types.js';
 
 // prisma 편의 타입

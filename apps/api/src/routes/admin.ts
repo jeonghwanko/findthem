@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { requireAdmin } from '../middlewares/auth.js';

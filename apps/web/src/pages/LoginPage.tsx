@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 interface LoginPageProps {
@@ -28,9 +28,9 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
       } else {
         await onLogin(phone, password);
       }
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || t('auth.errorFallback'));
+      void navigate('/');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('auth.errorFallback'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
           {isRegister ? t('auth.register') : t('auth.login')}
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
           {isRegister && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

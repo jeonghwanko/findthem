@@ -53,8 +53,9 @@ export class KakaoChannelAdapter implements PlatformAdapter {
     }
   }
 
-  async deletePost(_postId: string): Promise<void> {
+  deletePost(_postId: string): Promise<void> {
     // 카카오톡 채널 메시지는 삭제 API가 제한적
     log.warn('Kakao channel message deletion not supported');
+    return Promise.resolve();
   }
 }

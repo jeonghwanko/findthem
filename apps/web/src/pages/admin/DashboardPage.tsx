@@ -68,7 +68,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-gray-900">대시보드</h1>
         <button
-          onClick={refresh}
+          onClick={() => { void refresh(); }}
           disabled={loading}
           className="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm hover:bg-indigo-700 disabled:opacity-50"
         >
