@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import type { Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth, optionalAuth } from '../middlewares/auth.js';
@@ -73,7 +74,7 @@ export function registerReportRoutes(router: Router) {
       );
 
       // DB 쓰기는 트랜잭션으로 원자성 보장
-      const { report, photos } = await prisma.$transaction(async (tx) => {
+      const { report, photos } = await prisma.$transaction(async (tx: PrismaClient) => {
         const report = await tx.report.create({
           data: { userId: req.user!.userId, ...body },
         });
