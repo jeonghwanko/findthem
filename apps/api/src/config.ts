@@ -43,4 +43,6 @@ export const config = {
   smsApiKey: process.env.SMS_API_KEY || '',
   smsApiSecret: process.env.SMS_API_SECRET || '',
   smsFrom: process.env.SMS_FROM || '',
+
+  publicDataApiKey: process.env.PUBLIC_DATA_API_KEY || '',
 } as const;

@@ -34,10 +34,19 @@ export const imageService = {
     return { photoUrl, thumbnailUrl };
   },
 
-  /** Base64 인코딩 (Claude Vision용) */
-  async toBase64(filePath: string): Promise<string> {
-    const absPath = storageService.getAbsolutePath(filePath);
-    const buffer = await sharp(absPath)
+  /** Base64 인코딩 (Claude Vision용) - 로컬 경로 또는 외부 URL 모두 처리 */
+  async toBase64(filePathOrUrl: string): Promise<string> {
+    const isExternal = filePathOrUrl.startsWith('http://') || filePathOrUrl.startsWith('https://');
+
+    const sharpInput = isExternal
+      ? Buffer.from(await (async () => {
+          const res = await fetch(filePathOrUrl, { signal: AbortSignal.timeout(10_000) });
+          if (!res.ok) throw new Error(`External image fetch failed: ${res.status}`);
+          return res.arrayBuffer();
+        })())
+      : storageService.getAbsolutePath(filePathOrUrl);
+
+    const buffer = await sharp(sharpInput)
       .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toBuffer();

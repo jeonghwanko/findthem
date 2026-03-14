@@ -18,8 +18,15 @@ model User {
   provider     AuthProvider @default(LOCAL)
   providerId   String?
   isVerified   Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  locale       String       @default("ko")
+
+  // 관리자 차단
+  isBlocked   Boolean   @default(false)
+  blockedAt   DateTime?
+  blockReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   reports      Report[]
   sightings    Sighting[]
@@ -38,21 +45,21 @@ enum AuthProvider {
 // ── Report (실종 신고) ──
 
 model Report {
-  id              String       @id @default(cuid())
-  userId          String
-  subjectType     SubjectType
-  status          ReportStatus @default(ACTIVE)
+  id          String       @id @default(cuid())
+  userId      String?
+  subjectType SubjectType
+  status      ReportStatus @default(ACTIVE)
 
   // 대상 정보
-  name            String
-  species         String?
-  gender          Gender?
-  age             String?
-  weight          String?
-  height          String?
-  color           String?
-  features        String
-  clothingDesc    String?
+  name         String
+  species      String?
+  gender       Gender?
+  age          String?
+  weight       String?
+  height       String?
+  color        String?
+  features     String
+  clothingDesc String?
 
   // 위치/시간
   lastSeenAt      DateTime
@@ -61,26 +68,34 @@ model Report {
   lastSeenLng     Float?
 
   // 연락처
-  contactPhone    String
-  contactName     String
-  reward          String?
+  contactPhone String
+  contactName  String
+  reward       String?
 
   // AI 생성 필드
-  aiDescription   String?
-  aiPromoText     String?
+  aiDescription String?
+  aiPromoText   String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // 외부 수집 데이터 식별 (크롤링 중복 방지)
+  externalId     String?
+  externalSource String?
 
-  user         User          @relation(fields: [userId], references: [id])
-  photos       ReportPhoto[]
-  sightings    Sighting[]
-  matches      Match[]
-  promotions   Promotion[]
-  chatSessions ChatSession[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  user              User?              @relation(fields: [userId], references: [id])
+  photos            ReportPhoto[]
+  sightings         Sighting[]
+  matches           Match[]
+  promotions        Promotion[]
+  chatSessions      ChatSession[]
+  promotionStrategy PromotionStrategy?
+  promotionLogs     PromotionLog[]
+
+  @@unique([externalId, externalSource])
   @@index([status])
   @@index([subjectType, status])
+  @@index([externalSource])
   @@map("report")
 }
 
@@ -128,10 +143,11 @@ model ReportPhoto {
 // ── Sighting (목격 제보) ──
 
 model Sighting {
-  id           String         @id @default(cuid())
-  reportId     String?
-  userId       String?
-  source       SightingSource @default(WEB)
+  id          String         @id @default(cuid())
+  reportId    String?
+  userId      String?
+  source      SightingSource @default(WEB)
+  subjectType SubjectType?
 
   description  String
   sightedAt    DateTime
@@ -141,12 +157,12 @@ model Sighting {
   tipsterPhone String?
   tipsterName  String?
 
-  aiAnalysis   Json?
-  status       SightingStatus @default(PENDING)
-  createdAt    DateTime       @default(now())
+  aiAnalysis Json?
+  status     SightingStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
 
-  report  Report?        @relation(fields: [reportId], references: [id])
-  user    User?          @relation(fields: [userId], references: [id])
+  report  Report?         @relation(fields: [reportId], references: [id])
+  user    User?           @relation(fields: [userId], references: [id])
   photos  SightingPhoto[]
   matches Match[]
 
@@ -229,11 +245,21 @@ model Promotion {
   status       PromoStatus   @default(PENDING)
   errorMessage String?
   postedAt     DateTime?
-  createdAt    DateTime      @default(now())
 
-  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  // 재게시 지원
+  version   Int       @default(1)
+  parentId  String?
+  metrics   Json?
+  metricsAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  report  Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  parent  Promotion?  @relation("RepostChain", fields: [parentId], references: [id])
+  reposts Promotion[] @relation("RepostChain")
 
   @@unique([reportId, platform])
+  @@index([status])
   @@map("promotion")
 }
 
@@ -264,6 +290,8 @@ model ChatSession {
   state          Json
   context        Json
   status         ChatStatus   @default(ACTIVE)
+  locale         String       @default("ko")
+  engineVersion  String       @default("v1")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -302,4 +330,84 @@ model ChatMessage {
 
   @@index([sessionId, createdAt])
   @@map("chat_message")
+}
+
+// ── Promotion Strategy (홍보 전략) ──
+
+model PromotionStrategy {
+  id              String          @id @default(cuid())
+  reportId        String          @unique
+  urgency         PromoUrgency    @default(MEDIUM)
+  targetPlatforms PromoPlatform[]
+  repostIntervalH Int             @default(72)
+  maxReposts      Int             @default(3)
+  keywords        String[]
+  hashtags        String[]
+  aiReasoning     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("promotion_strategy")
+}
+
+enum PromoUrgency {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("promo_urgency")
+}
+
+// ── Promotion Log (홍보 행동 로그) ──
+
+model PromotionLog {
+  id        String   @id @default(cuid())
+  reportId  String
+  action    String
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+  @@map("promotion_log")
+}
+
+// ── Admin Audit Log (관리자 감사 로그) ──
+
+model AdminAuditLog {
+  id             String            @id @default(cuid())
+  action         String
+  targetType     String
+  targetId       String
+  detail         Json?
+  source         AdminActionSource
+  agentSessionId String?
+  createdAt      DateTime          @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
+}
+
+enum AdminActionSource {
+  DASHBOARD
+  AGENT
+  API
+
+  @@map("admin_action_source")
+}
+
+// ── Admin Agent Session (운영 에이전트 세션) ──
+
+model AdminAgentSession {
+  id        String   @id @default(cuid())
+  messages  Json
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_agent_session")
 }
