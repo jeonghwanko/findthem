@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   # ── CI: 타입체크 → 테스트 → 빌드 ──
@@ -36,7 +36,7 @@ jobs:
   # ── CD: main 머지 시 서버 자동 배포 ──
   deploy:
     needs: ci
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -49,8 +49,9 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ~/findthem
-            git pull origin main
-            npm ci
+            git pull origin master
+            npm ci --omit=dev
             npm run build
-            npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
-            pm2 restart findthem-api || pm2 start apps/api/dist/index.js --name findthem-api
+            cd apps/api && npx prisma migrate deploy
+            cd ~/findthem
+            pm2 restart findthem-api || pm2 start apps/api/dist/index.js --name findthem-api --env production
