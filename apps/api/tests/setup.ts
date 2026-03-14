@@ -27,8 +27,11 @@ export const prismaMock = {
   promotion: createModelMock(),
   chatSession: createModelMock(),
   chatMessage: createModelMock(),
+  adminAuditLog: createModelMock(),
   $connect: vi.fn(),
   $disconnect: vi.fn(),
+  $queryRaw: vi.fn(),
+  $queryRawUnsafe: vi.fn(),
   // 트랜잭션 mock: callback에 self를 tx로 전달
   $transaction: vi.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
     return callback(prismaMock);
@@ -115,6 +118,10 @@ vi.mock('../src/jobs/queues.js', () => ({
   matchingQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
   notificationQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
   cleanupQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
+  promotionMonitorQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
+  promotionRepostQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
+  crawlSchedulerQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
+  crawlQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
   createWorker: vi.fn(),
 }));
 

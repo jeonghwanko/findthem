@@ -5,6 +5,9 @@ import { registerSightingRoutes } from './sightings.js';
 import { registerMatchRoutes } from './matches.js';
 import { registerChatRoutes } from './chat.js';
 import { registerWebhookRoutes } from './webhooks.js';
+import { registerAdminRoutes } from './admin.js';
+import { registerAgentRoutes } from './agent.js';
+import { registerPromotionRoutes } from './promotions.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -15,6 +18,9 @@ export function createRouter(): Router {
   registerMatchRoutes(router);
   registerChatRoutes(router);
   registerWebhookRoutes(router);
+  registerAdminRoutes(router);
+  registerAgentRoutes(router);
+  registerPromotionRoutes(router);
 
   return router;
 }
