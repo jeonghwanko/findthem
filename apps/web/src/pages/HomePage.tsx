@@ -1,12 +1,56 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, MessageSquare, ScanFace } from 'lucide-react';
+import { Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import type { SubjectType } from '@findthem/shared';
 
 const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
+
+interface Feature {
+  key: string;
+  Icon: LucideIcon;
+  tagCls: string;       // inactive tag style
+  activeCls: string;    // active tag style
+  iconCls: string;      // icon color in description panel
+  iconBg: string;       // icon bg in description panel
+  titleKey: string;
+  descKey: string;
+}
+
+const FEATURES: Feature[] = [
+  {
+    key: 'promo',
+    Icon: Megaphone,
+    tagCls: 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200',
+    activeCls: 'bg-blue-50 text-blue-700 border-blue-200',
+    iconCls: 'text-blue-500',
+    iconBg: 'bg-blue-50',
+    titleKey: 'home.featurePromo',
+    descKey: 'home.featurePromoDesc',
+  },
+  {
+    key: 'chatbot',
+    Icon: MessageSquare,
+    tagCls: 'hover:bg-green-50 hover:text-green-700 hover:border-green-200',
+    activeCls: 'bg-green-50 text-green-700 border-green-200',
+    iconCls: 'text-green-500',
+    iconBg: 'bg-green-50',
+    titleKey: 'home.featureChatbot',
+    descKey: 'home.featureChatbotDesc',
+  },
+  {
+    key: 'matching',
+    Icon: ScanFace,
+    tagCls: 'hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200',
+    activeCls: 'bg-purple-50 text-purple-700 border-purple-200',
+    iconCls: 'text-purple-500',
+    iconBg: 'bg-purple-50',
+    titleKey: 'home.featureMatching',
+    descKey: 'home.featureMatchingDesc',
+  },
+];
 
 interface Stats {
   total: number;
@@ -19,6 +63,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<SubjectType>('DOG');
   const [stats, setStats] = useState<Stats | null>(null);
+  const [activeFeature, setActiveFeature] = useState(FEATURES[0].key);
 
   useEffect(() => {
     Promise.all([
@@ -114,36 +159,40 @@ export default function HomePage() {
       </section>
 
       {/* 기능 소개 */}
-      <section className="max-w-5xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-              <Megaphone className="w-6 h-6 text-blue-500" aria-hidden="true" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">{t('home.featurePromo')}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {t('home.featurePromoDesc')}
-            </p>
-          </div>
-          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-              <MessageSquare className="w-6 h-6 text-green-500" aria-hidden="true" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">{t('home.featureChatbot')}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {t('home.featureChatbotDesc')}
-            </p>
-          </div>
-          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
-            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-              <ScanFace className="w-6 h-6 text-purple-500" aria-hidden="true" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">{t('home.featureMatching')}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {t('home.featureMatchingDesc')}
-            </p>
-          </div>
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        {/* 태그 행 */}
+        <div className="flex flex-wrap gap-2 justify-center mb-6">
+          {FEATURES.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setActiveFeature(f.key)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                activeFeature === f.key
+                  ? f.activeCls
+                  : `bg-white text-gray-500 border-gray-200 ${f.tagCls}`
+              }`}
+            >
+              <f.Icon className="w-4 h-4" aria-hidden="true" />
+              {t(f.titleKey)}
+            </button>
+          ))}
         </div>
+
+        {/* 설명 패널 */}
+        {FEATURES.map((f) => (
+          activeFeature === f.key && (
+            <div key={f.key} className="flex items-start gap-4 max-w-lg mx-auto bg-gray-50 rounded-2xl px-6 py-5">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${f.iconBg}`}>
+                <f.Icon className={`w-5 h-5 ${f.iconCls}`} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 mb-1">{t(f.titleKey)}</p>
+                <p className="text-sm text-gray-500 leading-relaxed">{t(f.descKey)}</p>
+              </div>
+            </div>
+          )
+        ))}
       </section>
 
       {/* 최근 실종 신고 */}
