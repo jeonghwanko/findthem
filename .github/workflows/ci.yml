@@ -68,5 +68,5 @@ jobs:
             pm2 save
 
             # Nginx 설정 업데이트 (Ghost /devlog 포함)
-            sudo cp ~/findthem/deploy/nginx.conf /etc/nginx/sites-available/union.pryzm.gg
+            sudo cp ~/findthem/deploy/nginx.conf /etc/nginx/sites-available/yoonion
             sudo nginx -t && sudo systemctl reload nginx
