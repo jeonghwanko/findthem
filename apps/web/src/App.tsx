@@ -21,6 +21,7 @@ import UsersManagePage from './pages/admin/UsersManagePage';
 import QueuesPage from './pages/admin/QueuesPage';
 import AuditLogPage from './pages/admin/AuditLogPage';
 import AgentChatPage from './pages/admin/AgentChatPage';
+import DevlogPage from './pages/admin/DevlogPage';
 
 export default function App() {
   const { user, loading, login, register, logout } = useAuth();
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="queues" element={<QueuesPage />} />
         <Route path="audit-logs" element={<AuditLogPage />} />
         <Route path="agent" element={<AgentChatPage />} />
+        <Route path="devlog" element={<DevlogPage />} />
       </Route>
 
       {/* 일반 사용자 라우트 — 공통 Header/Footer */}

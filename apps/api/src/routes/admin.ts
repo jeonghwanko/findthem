@@ -25,6 +25,10 @@ import {
 } from '../services/adminStatsService.js';
 import { createAuditLog, listAuditLogs } from '../services/auditLogService.js';
 import { adminAgentService } from '../services/adminAgent/index.js';
+import { getRecentDiff } from '../services/gitDiffService.js';
+import { generateDevlogArticle } from '../services/devlogService.js';
+import { createGhostPost } from '../services/ghostService.js';
+import { config } from '../config.js';
 import type { AdminActionSource } from '@findthem/shared';
 
 export function registerAdminRoutes(router: Router) {
@@ -480,5 +484,100 @@ export function registerAdminRoutes(router: Router) {
       select: { createdAt: true, externalSource: true },
     });
     res.json({ total, bySource, latestAt: latest?.createdAt, latestSource: latest?.externalSource });
+  });
+
+  // ── 데브로그 API ──
+
+  interface DevlogRequestBody {
+    context?: unknown;
+    commitCount?: unknown;
+    publishStatus?: unknown;
+    tags?: unknown;
+  }
+
+  function parseDevlogBody(body: DevlogRequestBody) {
+    const { context, commitCount, publishStatus, tags } = body;
+
+    if (typeof context !== 'string' || context.trim().length < 10) {
+      throw new ApiError(400, 'DEVLOG_CONTEXT_REQUIRED');
+    }
+
+    const resolvedCommitCount =
+      typeof commitCount === 'number' && commitCount >= 1 && commitCount <= 20
+        ? Math.floor(commitCount)
+        : 5;
+
+    const resolvedPublishStatus: 'draft' | 'published' =
+      publishStatus === 'published' ? 'published' : 'draft';
+
+    const resolvedTags: Array<{ name: string }> =
+      Array.isArray(tags) && tags.every((t) => typeof t === 'string')
+        ? (tags as string[]).map((t) => ({ name: t }))
+        : [{ name: 'devlog' }];
+
+    return {
+      context: context.trim(),
+      commitCount: resolvedCommitCount,
+      publishStatus: resolvedPublishStatus,
+      tags: resolvedTags,
+    };
+  }
+
+  // POST /admin/devlog/preview — diff 추출 + AI 생성 (Ghost 포스팅 없이)
+  router.post('/admin/devlog/preview', requireAdmin, async (req, res) => {
+    res.setTimeout(60000);
+
+    const { context, commitCount } = parseDevlogBody(req.body as DevlogRequestBody);
+
+    const diffResult = await getRecentDiff(config.devlogRepoPath, commitCount);
+    const { title, markdown, html, excerpt } = await generateDevlogArticle({ context, diffResult });
+
+    res.json({
+      title,
+      markdown,
+      html,
+      excerpt,
+      commitsSummary: diffResult.commitsSummary,
+      diffStats: diffResult.diffStats,
+    });
+  });
+
+  // POST /admin/devlog/generate — preview + Ghost CMS 포스팅
+  router.post('/admin/devlog/generate', requireAdmin, async (req, res) => {
+    res.setTimeout(60000);
+
+    const { context, commitCount, publishStatus, tags } = parseDevlogBody(
+      req.body as DevlogRequestBody,
+    );
+
+    const diffResult = await getRecentDiff(config.devlogRepoPath, commitCount);
+    const { title, markdown, html, excerpt } = await generateDevlogArticle({ context, diffResult });
+
+    const ghostResult = await createGhostPost({
+      title,
+      html,
+      custom_excerpt: excerpt,
+      tags,
+      status: publishStatus,
+    });
+
+    await createAuditLog({
+      action: 'devlog.generate',
+      targetType: 'Devlog',
+      targetId: ghostResult.id,
+      detail: { title, ghostUrl: ghostResult.url, commitCount },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json({
+      title,
+      markdown,
+      html,
+      excerpt,
+      ghostUrl: ghostResult.url,
+      ghostPostId: ghostResult.id,
+      commitsSummary: diffResult.commitsSummary,
+      diffStats: diffResult.diffStats,
+    });
   });
 }
