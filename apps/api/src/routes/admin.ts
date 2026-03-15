@@ -30,8 +30,24 @@ import { adminAgentService } from '../services/adminAgent/index.js';
 import { getRecentDiff } from '../services/gitDiffService.js';
 import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost } from '../services/ghostService.js';
+import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
 import type { AdminActionSource } from '@findthem/shared';
+
+// ── 데브로그 트윗 헬퍼 ──
+
+const twitterAdapter = new TwitterAdapter();
+
+/** Twitter 280자 제한을 맞춰 데브로그 트윗 문구 생성 */
+function buildDevlogTweet(title: string, excerpt: string, url: string): string {
+  // Twitter가 URL을 항상 23자로 계산함
+  const URL_COST = 23;
+  const hashtags = '#FindThem #개발로그';
+  const fixed = `📝 ${title}\n\n\n\n${hashtags}`;
+  const budget = 280 - URL_COST - 1 - fixed.length; // URL + 개행 1칸
+  const trimmedExcerpt = budget > 10 ? excerpt.slice(0, budget) + (excerpt.length > budget ? '…' : '') : '';
+  return `📝 ${title}\n\n${trimmedExcerpt}\n\n${url}\n${hashtags}`;
+}
 
 // ── Query / Body 스키마 ──
 
@@ -455,10 +471,11 @@ export function registerAdminRoutes(router: Router) {
     commitCount?: unknown;
     publishStatus?: unknown;
     tags?: unknown;
+    twitterShare?: unknown;
   }
 
   function parseDevlogBody(body: DevlogRequestBody) {
-    const { context, commitCount, publishStatus, tags } = body;
+    const { context, commitCount, publishStatus, tags, twitterShare } = body;
 
     if (typeof context !== 'string' || context.trim().length < 10) {
       throw new ApiError(400, 'DEVLOG_CONTEXT_REQUIRED');
@@ -482,6 +499,7 @@ export function registerAdminRoutes(router: Router) {
       commitCount: resolvedCommitCount,
       publishStatus: resolvedPublishStatus,
       tags: resolvedTags,
+      twitterShare: twitterShare === true,
     };
   }
 
@@ -504,11 +522,11 @@ export function registerAdminRoutes(router: Router) {
     });
   });
 
-  // POST /admin/devlog/generate — preview + Ghost CMS 포스팅
+  // POST /admin/devlog/generate — preview + Ghost CMS 포스팅 (+ 선택적 Twitter)
   router.post('/admin/devlog/generate', requireAdmin, async (req, res) => {
     res.setTimeout(60000);
 
-    const { context, commitCount, publishStatus, tags } = parseDevlogBody(
+    const { context, commitCount, publishStatus, tags, twitterShare } = parseDevlogBody(
       req.body as DevlogRequestBody,
     );
 
@@ -523,11 +541,21 @@ export function registerAdminRoutes(router: Router) {
       status: publishStatus,
     });
 
+    // Twitter 게시 (published 상태 + twitterShare 플래그)
+    let tweetId: string | null = null;
+    let tweetUrl: string | null = null;
+    if (twitterShare && publishStatus === 'published' && ghostResult.url) {
+      const tweetText = buildDevlogTweet(title, excerpt, ghostResult.url);
+      const tweetResult = await twitterAdapter.post(tweetText, []);
+      tweetId = tweetResult.postId;
+      tweetUrl = tweetResult.postUrl;
+    }
+
     await createAuditLog({
       action: 'devlog.generate',
       targetType: 'Devlog',
       targetId: ghostResult.id,
-      detail: { title, ghostUrl: ghostResult.url, commitCount },
+      detail: { title, ghostUrl: ghostResult.url, commitCount, tweetId },
       source: 'DASHBOARD' as AdminActionSource,
     });
 
@@ -538,8 +566,43 @@ export function registerAdminRoutes(router: Router) {
       excerpt,
       ghostUrl: ghostResult.url,
       ghostPostId: ghostResult.id,
+      tweetId,
+      tweetUrl,
       commitsSummary: diffResult.commitsSummary,
       diffStats: diffResult.diffStats,
     });
   });
+
+  // POST /admin/devlog/tweet — 기존 Ghost 아티클을 Twitter에 직접 게시 (수동 + 테스트용)
+  router.post(
+    '/admin/devlog/tweet',
+    requireAdmin,
+    validateBody(
+      z.object({
+        url: z.string().url(),
+        title: z.string().min(1).max(200),
+        excerpt: z.string().max(500).default(''),
+      }),
+    ),
+    async (req, res) => {
+      const { url, title, excerpt } = req.body as { url: string; title: string; excerpt: string };
+
+      const tweetText = buildDevlogTweet(title, excerpt, url);
+      const result = await twitterAdapter.post(tweetText, []);
+
+      if (!result.postId) {
+        throw new ApiError(502, 'TWITTER_POST_FAILED');
+      }
+
+      await createAuditLog({
+        action: 'devlog.tweet',
+        targetType: 'Devlog',
+        targetId: result.postId,
+        detail: { title, url, tweetUrl: result.postUrl },
+        source: 'DASHBOARD' as AdminActionSource,
+      });
+
+      res.json({ tweetId: result.postId, tweetUrl: result.postUrl, text: tweetText });
+    },
+  );
 }
