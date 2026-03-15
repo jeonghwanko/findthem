@@ -56,7 +56,7 @@ function generateOAuthHeader(method, url) {
 
 const isDryRun = process.argv.includes('--dry-run');
 const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
-const tweetText = `[FindThem 테스트] 트위터 연동 확인 (${now})\n\nhttps://findthem.app\n#FindThem #개발로그`;
+const tweetText = `[FindThem 테스트] 트위터 연동 확인 (${now})\n\nhttps://union.pryzm.gg\n#FindThem #개발로그`;
 
 console.log('─'.repeat(60));
 console.log('Tweet 내용:');

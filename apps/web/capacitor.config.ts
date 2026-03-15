@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'FindThem',
   webDir: 'dist',
   server: {
-    url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://findthem.app',
+    url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://union.pryzm.gg',
     cleartext: false,
   },
   plugins: {
