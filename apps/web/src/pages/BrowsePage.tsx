@@ -7,16 +7,15 @@ export default function BrowsePage() {
   const { t } = useTranslation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [type, setType] = useState('');
+  const [type, setType] = useState('DOG');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const TYPES = [
-    { value: '', label: t('browse.all') },
-    { value: 'PERSON', label: t('subjectType.PERSON') },
     { value: 'DOG', label: t('subjectType.DOG') },
     { value: 'CAT', label: t('subjectType.CAT') },
+    { value: 'PERSON', label: t('subjectType.PERSON') },
   ];
 
   useEffect(() => {
@@ -24,7 +23,7 @@ export default function BrowsePage() {
     const params = new URLSearchParams();
     params.set('page', String(page));
     params.set('limit', '12');
-    if (type) params.set('type', type);
+    params.set('type', type);
     if (search) params.set('q', search);
 
     api.get<ReportListResponse>(`/reports?${params}`)

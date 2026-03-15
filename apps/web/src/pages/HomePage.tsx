@@ -4,19 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 
-type FilterType = 'ALL' | 'PERSON' | 'DOG' | 'CAT';
+type FilterType = 'DOG' | 'CAT' | 'PERSON';
 
-const FILTERS: FilterType[] = ['ALL', 'PERSON', 'DOG', 'CAT'];
+const FILTERS: FilterType[] = ['DOG', 'CAT', 'PERSON'];
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterType>('ALL');
+  const [filter, setFilter] = useState<FilterType>('DOG');
 
   useEffect(() => {
     setLoading(true);
-    const query = filter === 'ALL' ? '/reports?limit=8' : `/reports?limit=8&type=${filter}`;
+    const query = `/reports?limit=8&type=${filter}`;
     api.get<ReportListResponse>(query)
       .then((data) => setReports(data.reports))
       .catch(console.error)
@@ -94,7 +94,7 @@ export default function HomePage() {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {f === 'ALL' ? t('browse.all') : t(`subjectType.${f}`)}
+                  {t(`subjectType.${f}`)}
                 </button>
               ))}
             </div>
