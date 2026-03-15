@@ -208,5 +208,14 @@
     "send": "Send",
     "placeholder": "Type a message...",
     "photoAttach": "Attach photo"
+  },
+  "share": {
+    "button": "Share",
+    "twitter": "Share on X (Twitter)",
+    "kakao": "Share on KakaoTalk",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "copyPrompt": "Copy this link:",
+    "kakaoButton": "View report"
   }
 }

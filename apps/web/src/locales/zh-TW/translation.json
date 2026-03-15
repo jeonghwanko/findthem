@@ -208,5 +208,14 @@
     "send": "發送",
     "placeholder": "輸入訊息...",
     "photoAttach": "附加照片"
+  },
+  "share": {
+    "button": "分享",
+    "twitter": "分享到 X（Twitter）",
+    "kakao": "分享到 KakaoTalk",
+    "copyLink": "複製連結",
+    "copied": "已複製！",
+    "copyPrompt": "請複製此連結：",
+    "kakaoButton": "查看報案"
   }
 }

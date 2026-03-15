@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type ReportDetail, type Sighting, type SightingListResponse } from '../api/client';
+import ShareButton from '../components/ShareButton';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',
@@ -28,7 +29,7 @@ export default function ReportDetailPage() {
         setReport(r);
         setSightings(s.sightings);
       })
-      .catch(console.error)
+      .catch(() => setLoading(false))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -42,22 +43,29 @@ export default function ReportDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* 상태 배지 */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-          {t(`subjectType.${report.subjectType}`)}
-        </span>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            report.status === 'ACTIVE'
-              ? 'bg-red-100 text-red-700'
-              : report.status === 'FOUND'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          {t(`detail.${STATUS_MAP[report.status]}`)}
-        </span>
+      {/* 상태 배지 + 공유 버튼 */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
+            {t(`subjectType.${report.subjectType}`)}
+          </span>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              report.status === 'ACTIVE'
+                ? 'bg-red-100 text-red-700'
+                : report.status === 'FOUND'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            {t(`detail.${STATUS_MAP[report.status]}`)}
+          </span>
+        </div>
+        <ShareButton
+          title={`[FindThem] ${report.name}`}
+          description={report.features}
+          imageUrl={report.photos[0]?.photoUrl}
+        />
       </div>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-6">{report.name}</h1>

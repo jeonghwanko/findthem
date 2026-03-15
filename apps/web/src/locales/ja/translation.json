@@ -208,5 +208,14 @@
     "send": "送信",
     "placeholder": "メッセージを入力...",
     "photoAttach": "写真添付"
+  },
+  "share": {
+    "button": "共有する",
+    "twitter": "X（Twitter）でシェア",
+    "kakao": "カカオトークでシェア",
+    "copyLink": "リンクをコピー",
+    "copied": "コピーしました！",
+    "copyPrompt": "リンクをコピーしてください：",
+    "kakaoButton": "届出を見る"
   }
 }
