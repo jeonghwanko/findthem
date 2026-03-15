@@ -24,6 +24,9 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <Link to="/browse" className="hover:text-primary-200 transition-colors">
             {t('nav.browse')}
           </Link>
+          <a href="/devlog" className="hover:text-primary-200 transition-colors">
+            데브로그
+          </a>
           {user ? (
             <>
               <Link to="/my-reports" className="hover:text-primary-200 transition-colors">
