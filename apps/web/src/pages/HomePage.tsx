@@ -167,51 +167,56 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 기능 소개 */}
-      <section className="max-w-5xl mx-auto px-4 py-12">
-        {/* 태그 행 */}
-        <div className="flex flex-wrap gap-2 justify-center mb-6">
+      {/* 기능 소개 - 인디고 틴트 밴드 */}
+      <div className="bg-primary-50/50 border-y border-primary-100/70 py-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          {/* 태그 행 */}
+          <div className="flex flex-wrap gap-2 justify-center mb-6">
+            {FEATURES.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setActiveFeature(f.key)}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                  activeFeature === f.key
+                    ? f.activeCls
+                    : `bg-white text-gray-500 border-gray-200 ${f.tagCls}`
+                }`}
+              >
+                <f.Icon className="w-4 h-4" aria-hidden="true" />
+                {t(f.titleKey)}
+              </button>
+            ))}
+          </div>
+
+          {/* 설명 패널 */}
           {FEATURES.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setActiveFeature(f.key)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                activeFeature === f.key
-                  ? f.activeCls
-                  : `bg-white text-gray-500 border-gray-200 ${f.tagCls}`
-              }`}
-            >
-              <f.Icon className="w-4 h-4" aria-hidden="true" />
-              {t(f.titleKey)}
-            </button>
+            activeFeature === f.key && (
+              <div
+                key={activeFeature}
+                className={`animate-fade-slide-in flex items-start gap-4 max-w-lg mx-auto bg-white/80 border ${f.panelBorder} rounded-2xl px-6 py-5 shadow-sm`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${f.iconBg}`}>
+                  <f.Icon className={`w-5 h-5 ${f.iconCls}`} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 mb-1">{t(f.titleKey)}</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">{t(f.descKey)}</p>
+                </div>
+              </div>
+            )
           ))}
         </div>
-
-        {/* 설명 패널 */}
-        {FEATURES.map((f) => (
-          activeFeature === f.key && (
-            <div
-              key={activeFeature}
-              className={`animate-fade-slide-in flex items-start gap-4 max-w-lg mx-auto bg-gradient-to-br ${f.panelGradient} border ${f.panelBorder} rounded-2xl px-6 py-5`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${f.iconBg}`}>
-                <f.Icon className={`w-5 h-5 ${f.iconCls}`} aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-800 mb-1">{t(f.titleKey)}</p>
-                <p className="text-sm text-gray-500 leading-relaxed">{t(f.descKey)}</p>
-              </div>
-            </div>
-          )
-        ))}
-      </section>
+      </div>
 
       {/* 최근 실종 신고 */}
-      <section className="max-w-5xl mx-auto px-4 pb-16">
+      <section className="max-w-5xl mx-auto px-4 pt-12 pb-16">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl font-bold text-gray-900">{t('home.recentReports')}</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2.5">
+              <span className="block w-1 h-5 bg-primary-600 rounded-full" aria-hidden="true" />
+              {t('home.recentReports')}
+            </h2>
             <div className="flex gap-1">
               {FILTERS.map((f) => (
                 <button
