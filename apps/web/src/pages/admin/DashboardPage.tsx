@@ -68,6 +68,13 @@ interface CrawlTriggerResponse {
   jobIds: string[];
 }
 
+interface CrawlStats {
+  total: number;
+  bySource: { externalSource: string; _count: { id: number } }[];
+  latestAt: string | null;
+  latestSource: string | null;
+}
+
 function CrawlSection() {
   const { t } = useTranslation();
   const [sources, setSources] = useState<string[]>(ALL_SOURCES);
@@ -75,6 +82,27 @@ function CrawlSection() {
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   );
+  const [stats, setStats] = useState<CrawlStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  async function loadStats() {
+    setStatsLoading(true);
+    setStatsError(null);
+    try {
+      const result = await adminApi.get<CrawlStats>('/admin/crawl/stats');
+      setStats(result);
+    } catch (e: unknown) {
+      setStatsError(e instanceof Error ? e.message : t('admin.crawl.statsError'));
+    } finally {
+      setStatsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!statusMsg) return;
@@ -95,6 +123,7 @@ function CrawlSection() {
     try {
       await adminApi.post<CrawlTriggerResponse>('/admin/crawl/trigger', { sources });
       setStatusMsg({ type: 'success', text: t('admin.crawl.triggerSuccess') });
+      await loadStats();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('admin.crawl.triggerError');
       setStatusMsg({ type: 'error', text: msg });
@@ -103,11 +132,47 @@ function CrawlSection() {
     }
   }
 
+  function formatLatestAt(isoString: string): string {
+    const date = new Date(isoString);
+    return date.toLocaleString();
+  }
+
   return (
     <div className="mb-6">
       <h2 className="text-base font-semibold text-gray-700 mb-3">{t('admin.crawl.title')}</h2>
       <div className="bg-white rounded-lg shadow p-5">
         <p className="text-sm text-gray-500 mb-4">{t('admin.crawl.description')}</p>
+
+        {/* 수집 현황 */}
+        <div className="bg-gray-50 rounded-md px-4 py-3 mb-4 text-sm">
+          {statsLoading ? (
+            <span className="text-gray-400">{t('admin.crawl.statsLoading')}</span>
+          ) : statsError ? (
+            <span className="text-red-500">{statsError}</span>
+          ) : stats && stats.total > 0 ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="font-semibold text-gray-800">
+                {t('admin.crawl.statsTotal', { count: stats.total })}
+              </span>
+              {stats.bySource.map((s) => (
+                <span key={s.externalSource} className="text-gray-500">
+                  {s.externalSource}: {s._count.id.toLocaleString()}건
+                </span>
+              ))}
+              {stats.latestAt && (
+                <span className="text-gray-400 text-xs ml-auto">
+                  {t('admin.crawl.statsLastAt', {
+                    time: formatLatestAt(stats.latestAt),
+                    source: stats.latestSource ?? '-',
+                  })}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">{t('admin.crawl.statsNoData')}</span>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-4 mb-4">
           {ALL_SOURCES.map((source) => (
             <label key={source} className="flex items-center gap-2 cursor-pointer select-none">

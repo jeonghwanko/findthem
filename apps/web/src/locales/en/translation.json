@@ -180,7 +180,12 @@
       "triggerBtn": "Collect Now",
       "triggering": "Collecting...",
       "triggerSuccess": "Collection jobs have been queued.",
-      "triggerError": "Failed to trigger data collection."
+      "triggerError": "Failed to trigger data collection.",
+      "statsTotal": "{{count}} records collected in total",
+      "statsLastAt": "Last collected: {{time}} ({{source}})",
+      "statsNoData": "No data collected yet.",
+      "statsLoading": "Loading stats...",
+      "statsError": "Failed to load stats"
     }
   },
 

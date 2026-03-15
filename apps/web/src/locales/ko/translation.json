@@ -180,7 +180,12 @@
       "triggerBtn": "지금 수집하기",
       "triggering": "수집 중...",
       "triggerSuccess": "수집 작업이 큐에 등록되었습니다.",
-      "triggerError": "수집 요청에 실패했습니다."
+      "triggerError": "수집 요청에 실패했습니다.",
+      "statsTotal": "총 {{count}}건 수집됨",
+      "statsLastAt": "마지막 수집: {{time}} ({{source}})",
+      "statsNoData": "아직 수집된 데이터가 없습니다.",
+      "statsLoading": "현황 불러오는 중...",
+      "statsError": "현황 로드 실패"
     }
   },
 

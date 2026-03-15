@@ -180,7 +180,12 @@
       "triggerBtn": "立即收集",
       "triggering": "收集中...",
       "triggerSuccess": "收集任務已加入佇列。",
-      "triggerError": "資料收集請求失敗。"
+      "triggerError": "資料收集請求失敗。",
+      "statsTotal": "共收集 {{count}} 筆資料",
+      "statsLastAt": "最後收集: {{time}} ({{source}})",
+      "statsNoData": "尚無收集的資料。",
+      "statsLoading": "載入現況中...",
+      "statsError": "載入現況失敗"
     }
   },
 

@@ -411,4 +411,23 @@ export function registerAdminRoutes(router: Router) {
     );
     res.json({ jobId: job.id, sources: sources ?? fetchers.map((f) => f.source) });
   });
+
+  // GET /admin/crawl/stats — 크롤 결과 통계 (최근 수집 현황)
+  router.get('/admin/crawl/stats', requireAdmin, async (_req, res) => {
+    const [total, bySource] = await Promise.all([
+      prisma.report.count({ where: { externalSource: { not: null } } }),
+      prisma.report.groupBy({
+        by: ['externalSource'],
+        where: { externalSource: { not: null } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      }),
+    ]);
+    const latest = await prisma.report.findFirst({
+      where: { externalSource: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, externalSource: true },
+    });
+    res.json({ total, bySource, latestAt: latest?.createdAt, latestSource: latest?.externalSource });
+  });
 }

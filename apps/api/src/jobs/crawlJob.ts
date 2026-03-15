@@ -20,13 +20,14 @@ function startCrawlSchedulerWorker() {
       const targetSources = job.data.sources ?? fetchers.map((f) => f.source);
       log.info({ sources: targetSources }, 'Dispatching crawl jobs');
 
+      // jobId에 타임스탬프 포함 → 수동/cron 재실행 시 중복 방지 없이 항상 실행
+      const runId = Date.now();
       await Promise.all(
         targetSources.map((source) =>
           crawlQueue.add(
             'crawl-source',
             { source },
-            // RACE-12: jobId로 동일 소스의 중복 crawl job 방지
-            { attempts: 2, backoff: { type: 'fixed', delay: 60_000 }, jobId: `crawl-${source}` },
+            { attempts: 2, backoff: { type: 'fixed', delay: 60_000 }, jobId: `crawl-${source}-${runId}` },
           ),
         ),
       );

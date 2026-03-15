@@ -8,6 +8,8 @@ import {
   cleanupQueue,
   promotionMonitorQueue,
   promotionRepostQueue,
+  crawlSchedulerQueue,
+  crawlQueue,
 } from '../jobs/queues.js';
 import type { QueueStatusSummary, AdminOverviewStats } from '@findthem/shared';
 
@@ -42,6 +44,8 @@ async function getQueueStatusSingle(queue: Queue): Promise<QueueStatusSummary> {
 
 export async function getQueueStatuses(): Promise<QueueStatusSummary[]> {
   const queues: Queue[] = [
+    crawlSchedulerQueue,
+    crawlQueue,
     imageQueue,
     promotionQueue,
     matchingQueue,
