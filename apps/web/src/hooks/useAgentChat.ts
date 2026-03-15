@@ -17,6 +17,7 @@ export function useAgentChat(reportId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const addUserMessage = (content: string, photoUrl?: string) => {
     setMessages((prev) => [
@@ -42,10 +43,13 @@ export function useAgentChat(reportId?: string) {
 
   const startSession = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await createAgentSession(reportId);
       setSessionId(res.sessionId);
       addBotMessage(res as AgentResponse);
+    } catch {
+      setError('연결에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -82,5 +86,5 @@ export function useAgentChat(reportId?: string) {
     [sessionId],
   );
 
-  return { sessionId, messages, loading, completed, startSession, sendMessage, sendPhoto };
+  return { sessionId, messages, loading, completed, error, startSession, sendMessage, sendPhoto };
 }

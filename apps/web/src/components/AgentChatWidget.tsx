@@ -8,11 +8,13 @@ export default function AgentChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { sessionId, loading, error, startSession } = chat;
+
   useEffect(() => {
-    if (open && !chat.sessionId && !chat.loading) {
-      void chat.startSession();
+    if (open && !sessionId && !loading && !error) {
+      void startSession();
     }
-  }, [open, chat.sessionId, chat.loading, chat]);
+  }, [open, sessionId, loading, error, startSession]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -160,6 +162,20 @@ export default function AgentChatWidget() {
           <div className="flex justify-start">
             <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-xl rounded-bl-sm text-sm">
               분석 중...
+            </div>
+          </div>
+        )}
+
+        {chat.error && !chat.loading && (
+          <div className="flex justify-start">
+            <div className="bg-red-50 text-red-600 px-3 py-2 rounded-xl rounded-bl-sm text-sm flex items-center gap-2">
+              <span>{chat.error}</span>
+              <button
+                onClick={() => void chat.startSession()}
+                className="underline text-red-700 hover:text-red-800 font-medium"
+              >
+                재시도
+              </button>
             </div>
           </div>
         )}
