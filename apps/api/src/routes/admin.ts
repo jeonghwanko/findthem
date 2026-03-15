@@ -1,7 +1,17 @@
 import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
-import { crawlSchedulerQueue } from '../jobs/queues.js';
+import {
+  crawlSchedulerQueue,
+  crawlQueue,
+  promotionQueue,
+  promotionMonitorQueue,
+  promotionRepostQueue,
+  imageQueue,
+  matchingQueue,
+  notificationQueue,
+  cleanupQueue,
+} from '../jobs/queues.js';
 import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
 import { requireAdmin } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
@@ -68,6 +78,47 @@ export function registerAdminRoutes(router: Router) {
     const { queueName, limit } = req.query as { queueName?: string; limit?: string };
     const jobs = await getFailedJobs(queueName, limit ? Number(limit) : 20);
     res.json(jobs);
+  });
+
+  // DELETE /admin/stats/failed-jobs — 특정 큐(또는 전체)의 실패 잡 일괄 제거
+  router.delete('/admin/stats/failed-jobs', requireAdmin, async (req, res) => {
+    const { queueName } = req.query as { queueName?: string };
+
+    const QUEUE_MAP = {
+      'image-processing': imageQueue,
+      matching: matchingQueue,
+      notification: notificationQueue,
+      promotion: promotionQueue,
+      'promotion-monitor': promotionMonitorQueue,
+      'promotion-repost': promotionRepostQueue,
+      cleanup: cleanupQueue,
+      crawl: crawlQueue,
+    } as const;
+
+    type QueueName = keyof typeof QUEUE_MAP;
+    const validNames = Object.keys(QUEUE_MAP) as QueueName[];
+
+    if (queueName && !validNames.includes(queueName as QueueName)) {
+      throw new ApiError(400, 'INVALID_QUEUE_NAME');
+    }
+
+    const targets: QueueName[] = queueName ? [queueName as QueueName] : validNames;
+    const results: Record<string, number> = {};
+
+    for (const name of targets) {
+      const removed = await QUEUE_MAP[name].clean(5_000, 10_000, 'failed');
+      results[name] = removed.length;
+    }
+
+    await createAuditLog({
+      action: 'clean_failed_jobs',
+      targetType: 'queue',
+      targetId: queueName ?? 'all',
+      detail: results,
+      source: 'DASHBOARD',
+    });
+
+    res.json({ removed: results });
   });
 
   // GET /admin/health

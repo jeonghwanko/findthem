@@ -66,3 +66,7 @@ jobs:
             cp -r apps/web/dist/. /var/www/union/
             pm2 restart findthem-api || pm2 start ecosystem.config.cjs --env production
             pm2 save
+
+            # Nginx 설정 업데이트 (Ghost /devlog 포함)
+            sudo cp ~/findthem/deploy/nginx.conf /etc/nginx/sites-available/union.pryzm.gg
+            sudo nginx -t && sudo systemctl reload nginx
