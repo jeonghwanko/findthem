@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
+import BottomTab from './components/BottomTab';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import BrowsePage from './pages/BrowsePage';
@@ -58,9 +59,9 @@ export default function App() {
       <Route
         path="*"
         element={
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header user={user} onLogout={logout} />
-            <main>
+            <main className="flex-1 pb-20 md:pb-0">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route
@@ -82,11 +83,12 @@ export default function App() {
                 <Route path="/sightings/new" element={<SightingSubmitPage />} />
               </Routes>
             </main>
-            <footer className="bg-gray-100 border-t border-gray-200 py-6 mt-12">
+            <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">
               <div className="max-w-5xl mx-auto px-4 text-center text-sm text-gray-500">
                 {t('footer')}
               </div>
             </footer>
+            <BottomTab user={user} />
             <AgentChatWidget />
           </div>
         }
