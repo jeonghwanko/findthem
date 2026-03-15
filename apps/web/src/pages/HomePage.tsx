@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
+import { Megaphone, MessageSquare, ScanFace, ArrowRight, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import type { SubjectType } from '@findthem/shared';
@@ -11,10 +11,12 @@ const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
 interface Feature {
   key: string;
   Icon: LucideIcon;
-  tagCls: string;       // inactive tag style
-  activeCls: string;    // active tag style
-  iconCls: string;      // icon color in description panel
-  iconBg: string;       // icon bg in description panel
+  tagCls: string;
+  activeCls: string;
+  iconCls: string;
+  iconBg: string;
+  panelGradient: string;
+  panelBorder: string;
   titleKey: string;
   descKey: string;
 }
@@ -27,6 +29,8 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-blue-50 text-blue-700 border-blue-200',
     iconCls: 'text-blue-500',
     iconBg: 'bg-blue-50',
+    panelGradient: 'from-blue-50/70 to-white',
+    panelBorder: 'border-blue-100',
     titleKey: 'home.featurePromo',
     descKey: 'home.featurePromoDesc',
   },
@@ -37,6 +41,8 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-green-50 text-green-700 border-green-200',
     iconCls: 'text-green-500',
     iconBg: 'bg-green-50',
+    panelGradient: 'from-green-50/70 to-white',
+    panelBorder: 'border-green-100',
     titleKey: 'home.featureChatbot',
     descKey: 'home.featureChatbotDesc',
   },
@@ -47,6 +53,8 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-purple-50 text-purple-700 border-purple-200',
     iconCls: 'text-purple-500',
     iconBg: 'bg-purple-50',
+    panelGradient: 'from-purple-50/70 to-white',
+    panelBorder: 'border-purple-100',
     titleKey: 'home.featureMatching',
     descKey: 'home.featureMatchingDesc',
   },
@@ -118,13 +126,14 @@ export default function HomePage() {
           <div className="flex gap-3 justify-center flex-wrap">
             <Link
               to="/reports/new"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-semibold text-base transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               {t('home.newReport')}
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
             <Link
               to="/browse"
-              className="border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-semibold text-base transition-colors"
+              className="border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-base transition-all hover:-translate-y-0.5"
             >
               {t('home.submitSighting')}
             </Link>
@@ -182,7 +191,10 @@ export default function HomePage() {
         {/* 설명 패널 */}
         {FEATURES.map((f) => (
           activeFeature === f.key && (
-            <div key={f.key} className="flex items-start gap-4 max-w-lg mx-auto bg-gray-50 rounded-2xl px-6 py-5">
+            <div
+              key={activeFeature}
+              className={`animate-fade-slide-in flex items-start gap-4 max-w-lg mx-auto bg-gradient-to-br ${f.panelGradient} border ${f.panelBorder} rounded-2xl px-6 py-5`}
+            >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${f.iconBg}`}>
                 <f.Icon className={`w-5 h-5 ${f.iconCls}`} aria-hidden="true" />
               </div>
