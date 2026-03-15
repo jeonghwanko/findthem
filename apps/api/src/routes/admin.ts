@@ -1,6 +1,8 @@
 import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { crawlSchedulerQueue } from '../jobs/queues.js';
+import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
 import { requireAdmin } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { adminLimiter } from '../middlewares/rateLimit.js';
@@ -390,5 +392,23 @@ export function registerAdminRoutes(router: Router) {
     const session = await prisma.adminAgentSession.findUnique({ where: { id } });
     if (!session) throw new ApiError(404, 'AGENT_SESSION_NOT_FOUND');
     res.json(session);
+  });
+
+  // ── 크롤 API ──
+
+  // GET /admin/crawl/sources — 등록된 소스 목록
+  router.get('/admin/crawl/sources', requireAdmin, (_req, res) => {
+    res.json({ sources: fetchers.map((f) => f.source) });
+  });
+
+  // POST /admin/crawl/trigger — 즉시 크롤 실행
+  router.post('/admin/crawl/trigger', requireAdmin, async (req, res) => {
+    const { sources } = req.body as { sources?: string[] };
+    const job = await crawlSchedulerQueue.add(
+      'crawl-dispatch',
+      { sources },
+      { jobId: `manual-crawl-${Date.now()}` },
+    );
+    res.json({ jobId: job.id, sources: sources ?? fetchers.map((f) => f.source) });
   });
 }
