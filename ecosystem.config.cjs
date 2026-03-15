@@ -2,7 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'findthem-api',
-      script: 'dist/index.js',
+      script: 'npm',
+      args: 'start',
       cwd: '/home/ubuntu/findthem/apps/api',
       instances: 1,
       exec_mode: 'fork',
