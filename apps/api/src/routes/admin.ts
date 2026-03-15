@@ -1,6 +1,8 @@
 import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '../db/client.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 import {
   crawlSchedulerQueue,
   crawlQueue,
@@ -31,6 +33,74 @@ import { createGhostPost } from '../services/ghostService.js';
 import { config } from '../config.js';
 import type { AdminActionSource } from '@findthem/shared';
 
+// ── Query / Body 스키마 ──
+
+const timelineQuerySchema = z.object({
+  metric: z.enum(['reports', 'sightings', 'matches', 'users']),
+  period: z.enum(['day', 'week', 'month']),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+const failedJobsQuerySchema = z.object({
+  queueName: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+});
+
+const adminReportQuerySchema = z.object({
+  status: z.enum(['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED']).optional(),
+  subjectType: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+const adminReportStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'SUSPENDED']),
+  reason: z.string().optional(),
+});
+
+const adminMatchQuerySchema = z.object({
+  status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED']).optional(),
+  minConfidence: z.coerce.number().min(0).max(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+const adminMatchStatusSchema = z.object({
+  status: z.enum(['CONFIRMED', 'REJECTED']),
+  reason: z.string().optional(),
+});
+
+const adminUserQuerySchema = z.object({
+  q: z.string().optional(),
+  isBlocked: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+const adminBlockSchema = z.object({
+  blocked: z.boolean(),
+  reason: z.string().optional(),
+});
+
+const auditLogQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  targetType: z.string().optional(),
+  source: z.enum(['DASHBOARD', 'AGENT', 'API']).optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+const agentChatSchema = z.object({
+  message: z.string().min(1).max(2000),
+  sessionId: z.string().optional(),
+});
+
 export function registerAdminRoutes(router: Router) {
   // ── 통계 API ──
 
@@ -41,33 +111,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // GET /admin/stats/timeline
-  router.get('/admin/stats/timeline', requireAdmin, async (req, res) => {
-    const { metric, period, from, to } = req.query as {
-      metric?: string;
-      period?: string;
-      from?: string;
-      to?: string;
-    };
-
-    const validMetrics = ['reports', 'sightings', 'matches', 'users'] as const;
-    const validPeriods = ['day', 'week', 'month'] as const;
-
-    type TimelineMetric = (typeof validMetrics)[number];
-    type TimelinePeriod = (typeof validPeriods)[number];
-
-    if (!metric || !(validMetrics as readonly string[]).includes(metric)) {
-      throw new ApiError(400, 'metric은 reports|sightings|matches|users 중 하나여야 합니다.');
-    }
-    if (!period || !(validPeriods as readonly string[]).includes(period)) {
-      throw new ApiError(400, 'period는 day|week|month 중 하나여야 합니다.');
-    }
-
-    const data = await getTimelineStats({
-      metric: metric as TimelineMetric,
-      period: period as TimelinePeriod,
-      from,
-      to,
-    });
+  router.get('/admin/stats/timeline', requireAdmin, validateQuery(timelineQuerySchema), async (req, res) => {
+    const { metric, period, from, to } = req.query as unknown as z.infer<typeof timelineQuerySchema>;
+    const data = await getTimelineStats({ metric, period, from, to });
     res.json(data);
   });
 
@@ -78,9 +124,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // GET /admin/stats/failed-jobs
-  router.get('/admin/stats/failed-jobs', requireAdmin, async (req, res) => {
-    const { queueName, limit } = req.query as { queueName?: string; limit?: string };
-    const jobs = await getFailedJobs(queueName, limit ? Number(limit) : 20);
+  router.get('/admin/stats/failed-jobs', requireAdmin, validateQuery(failedJobsQuerySchema), async (req, res) => {
+    const { queueName, limit } = req.query as unknown as z.infer<typeof failedJobsQuerySchema>;
+    const jobs = await getFailedJobs(queueName, limit);
     res.json(jobs);
   });
 
@@ -134,23 +180,8 @@ export function registerAdminRoutes(router: Router) {
   // ── 신고 관리 API ──
 
   // GET /admin/reports
-  router.get('/admin/reports', requireAdmin, async (req, res) => {
-    const {
-      status,
-      subjectType,
-      q,
-      page: pageStr,
-      limit: limitStr,
-    } = req.query as {
-      status?: string;
-      subjectType?: string;
-      q?: string;
-      page?: string;
-      limit?: string;
-    };
-
-    const page = Math.max(1, Number(pageStr) || 1);
-    const limit = Math.min(50, Math.max(1, Number(limitStr) || 20));
+  router.get('/admin/reports', requireAdmin, validateQuery(adminReportQuerySchema), async (req, res) => {
+    const { status, subjectType, q, page, limit } = req.query as unknown as z.infer<typeof adminReportQuerySchema>;
 
     const where: Prisma.ReportWhereInput = {};
     if (status) where.status = status as Prisma.ReportWhereInput['status'];
@@ -182,13 +213,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // PATCH /admin/reports/:id/status
-  router.patch('/admin/reports/:id/status', requireAdmin, async (req, res) => {
+  router.patch('/admin/reports/:id/status', requireAdmin, validateBody(adminReportStatusSchema), async (req, res) => {
     const id = req.params.id as string;
-    const { status, reason } = req.body as { status?: unknown; reason?: unknown };
-
-    if (status !== 'ACTIVE' && status !== 'SUSPENDED') {
-      throw new ApiError(400, 'status는 ACTIVE 또는 SUSPENDED여야 합니다.');
-    }
+    const { status, reason } = req.body as z.infer<typeof adminReportStatusSchema>;
 
     const report = await prisma.report.findUnique({ where: { id } });
     if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
@@ -212,26 +239,13 @@ export function registerAdminRoutes(router: Router) {
   // ── 매칭 관리 API ──
 
   // GET /admin/matches
-  router.get('/admin/matches', requireAdmin, async (req, res) => {
-    const {
-      status,
-      minConfidence,
-      page: pageStr,
-      limit: limitStr,
-    } = req.query as {
-      status?: string;
-      minConfidence?: string;
-      page?: string;
-      limit?: string;
-    };
-
-    const page = Math.max(1, Number(pageStr) || 1);
-    const limit = Math.min(50, Math.max(1, Number(limitStr) || 20));
+  router.get('/admin/matches', requireAdmin, validateQuery(adminMatchQuerySchema), async (req, res) => {
+    const { status, minConfidence, page, limit } = req.query as unknown as z.infer<typeof adminMatchQuerySchema>;
 
     const where: Prisma.MatchWhereInput = {};
-    if (status) where.status = status as Prisma.MatchWhereInput['status'];
+    if (status) where.status = status;
     if (minConfidence !== undefined) {
-      where.confidence = { gte: Number(minConfidence) };
+      where.confidence = { gte: minConfidence };
     }
 
     const [matches, total] = await Promise.all([
@@ -256,13 +270,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // PATCH /admin/matches/:id/status
-  router.patch('/admin/matches/:id/status', requireAdmin, async (req, res) => {
+  router.patch('/admin/matches/:id/status', requireAdmin, validateBody(adminMatchStatusSchema), async (req, res) => {
     const id = req.params.id as string;
-    const { status, reason } = req.body as { status?: unknown; reason?: unknown };
-
-    if (status !== 'CONFIRMED' && status !== 'REJECTED') {
-      throw new ApiError(400, 'status는 CONFIRMED 또는 REJECTED여야 합니다.');
-    }
+    const { status, reason } = req.body as z.infer<typeof adminMatchStatusSchema>;
 
     const match = await prisma.match.findUnique({ where: { id } });
     if (!match) throw new ApiError(404, 'MATCH_NOT_FOUND');
@@ -286,24 +296,11 @@ export function registerAdminRoutes(router: Router) {
   // ── 사용자 관리 API ──
 
   // GET /admin/users
-  router.get('/admin/users', requireAdmin, async (req, res) => {
-    const {
-      q,
-      isBlocked,
-      page: pageStr,
-      limit: limitStr,
-    } = req.query as {
-      q?: string;
-      isBlocked?: string;
-      page?: string;
-      limit?: string;
-    };
-
-    const page = Math.max(1, Number(pageStr) || 1);
-    const limit = Math.min(50, Math.max(1, Number(limitStr) || 20));
+  router.get('/admin/users', requireAdmin, validateQuery(adminUserQuerySchema), async (req, res) => {
+    const { q, isBlocked, page, limit } = req.query as unknown as z.infer<typeof adminUserQuerySchema>;
 
     const where: Prisma.UserWhereInput = {};
-    if (isBlocked !== undefined) where.isBlocked = isBlocked === 'true';
+    if (isBlocked !== undefined) where.isBlocked = isBlocked;
     if (q) {
       where.OR = [
         { name: { contains: q, mode: 'insensitive' } },
@@ -338,13 +335,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // PATCH /admin/users/:id/block
-  router.patch('/admin/users/:id/block', requireAdmin, async (req, res) => {
+  router.patch('/admin/users/:id/block', requireAdmin, validateBody(adminBlockSchema), async (req, res) => {
     const id = req.params.id as string;
-    const { blocked, reason } = req.body as { blocked?: unknown; reason?: unknown };
-
-    if (typeof blocked !== 'boolean') {
-      throw new ApiError(400, 'blocked는 boolean이어야 합니다.');
-    }
+    const { blocked, reason } = req.body as z.infer<typeof adminBlockSchema>;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND');
@@ -380,49 +373,18 @@ export function registerAdminRoutes(router: Router) {
   // ── 감사 로그 API ──
 
   // GET /admin/audit-logs
-  router.get('/admin/audit-logs', requireAdmin, async (req, res) => {
-    const { page, limit, targetType, source, from, to } = req.query as {
-      page?: string;
-      limit?: string;
-      targetType?: string;
-      source?: string;
-      from?: string;
-      to?: string;
-    };
-
-    const validSources = ['DASHBOARD', 'AGENT', 'API'];
-    const resolvedSource =
-      source && validSources.includes(source)
-        ? (source as AdminActionSource)
-        : undefined;
-
-    const result = await listAuditLogs({
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      targetType,
-      source: resolvedSource,
-      from,
-      to,
-    });
-
+  router.get('/admin/audit-logs', requireAdmin, validateQuery(auditLogQuerySchema), async (req, res) => {
+    const { page, limit, targetType, source, from, to } = req.query as unknown as z.infer<typeof auditLogQuerySchema>;
+    const result = await listAuditLogs({ page, limit, targetType, source, from, to });
     res.json(result);
   });
 
   // ── 에이전트 대화 API ──
 
   // POST /admin/agent/chat
-  router.post('/admin/agent/chat', requireAdmin, adminLimiter, async (req, res) => {
-    const { sessionId, message } = req.body as {
-      sessionId?: unknown;
-      message?: unknown;
-    };
-
-    if (typeof message !== 'string' || message.trim().length === 0) {
-      throw new ApiError(400, 'message는 비어있지 않은 문자열이어야 합니다.');
-    }
-
-    const sid = typeof sessionId === 'string' ? sessionId : undefined;
-    const result = await adminAgentService.chat(sid, message.trim());
+  router.post('/admin/agent/chat', requireAdmin, adminLimiter, validateBody(agentChatSchema), async (req, res) => {
+    const { sessionId, message } = req.body as z.infer<typeof agentChatSchema>;
+    const result = await adminAgentService.chat(sessionId, message);
     res.json(result);
   });
 
