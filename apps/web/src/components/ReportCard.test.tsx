@@ -88,8 +88,9 @@ describe('ReportCard', () => {
   });
 
   it('사진 없으면 placeholder 렌더링', () => {
-    renderReportCard(createMockReport({ photos: [] } as any));
-    expect(screen.queryByRole('img')).toBeNull();
+    const { container } = renderReportCard(createMockReport({ photos: [] } as any));
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByRole('img', { name: '사진 없음' })).toBeDefined();
   });
 
   it('썸네일 이미지를 렌더링한다', () => {

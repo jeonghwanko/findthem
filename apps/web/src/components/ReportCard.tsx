@@ -18,7 +18,7 @@ interface ReportCardProps {
 export default function ReportCard({ report }: ReportCardProps) {
   const { t, i18n } = useTranslation();
   const primaryPhoto = report.photos?.[0];
-  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(l + '-')) ?? DEFAULT_LOCALE;
+  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(l + '-') || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(report.createdAt, locale);
   const badge = TYPE_BADGE[report.subjectType] ?? TYPE_BADGE.PERSON;
   // 외부 수집 데이터는 name이 숫자 ID인 경우가 있음 — 대상 유형 라벨로 대체
@@ -36,11 +36,11 @@ export default function ReportCard({ report }: ReportCardProps) {
         {primaryPhoto ? (
           <img
             src={primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl}
-            alt={t('card.photoAlt', { name: report.name, type: t(`subjectType.${report.subjectType}`) })}
+            alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" aria-label={t('card.noPhoto')}>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label={t('card.noPhoto')}>
             <Camera className="w-8 h-8" aria-hidden="true" />
           </div>
         )}

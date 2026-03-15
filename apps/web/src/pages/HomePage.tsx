@@ -30,12 +30,16 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    let ignore = false;
     setLoading(true);
     api.get<ReportListResponse>(`/reports?limit=8&type=${filter}`)
       // data.reports는 deprecated — items로 마이그레이션 완료 후 제거
-      .then((data) => setReports(data.items ?? (data as { reports: Report[] }).reports ?? []))
-      .catch(() => setReports([]))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!ignore) setReports(data.items ?? (data as { reports: Report[] }).reports ?? []);
+      })
+      .catch(() => { if (!ignore) setReports([]); })
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
   }, [filter]);
 
   const recoveryRate = stats && stats.total > 0
@@ -83,7 +87,7 @@ export default function HomePage() {
 
           {/* Stats strip */}
           {stats && (
-            <div className="flex items-center justify-center gap-0 mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 inline-flex mx-auto shadow-sm divide-x divide-gray-100">
+            <div className="inline-flex items-center mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 shadow-sm divide-x divide-gray-100">
               <div className="px-6 py-3 text-center">
                 <p className="text-2xl font-bold text-gray-900 tabular-nums">
                   {stats.total.toLocaleString()}
@@ -173,7 +177,7 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-busy="true" aria-label={t('loading')}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4" role="status" aria-live="polite" aria-busy="true" aria-label={t('loading')}>
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
                 <div className="aspect-[4/3] bg-gray-100" />
