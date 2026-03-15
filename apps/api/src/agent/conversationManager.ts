@@ -55,12 +55,16 @@ export async function loadAsClaudeMessages(
     } else if (msg.role === 'assistant') {
       if (meta.toolCalls && meta.toolCalls.length > 0) {
         // tool_use blocks 복원 (assistant) + tool_result blocks (user)
+        // tool_use_id는 복원 시 assistant/tool_result 쌍이 일치해야 함.
+        // Date.now()는 두 map() 호출 사이에 달라질 수 있으므로 idx 기반 고정 ID 사용.
+        const toolIds = meta.toolCalls.map((_, idx) => `tool_${idx}_${msg.id}`);
+
         const assistantContent: Anthropic.Messages.MessageParam['content'] = [
           { type: 'text', text: msg.content },
           ...meta.toolCalls.map(
-            (tc): Anthropic.Messages.ToolUseBlockParam => ({
+            (tc, idx): Anthropic.Messages.ToolUseBlockParam => ({
               type: 'tool_use',
-              id: `tool_${tc.name}_${Date.now()}`,
+              id: toolIds[idx],
               name: tc.name,
               input: tc.input,
             }),
@@ -73,7 +77,7 @@ export async function loadAsClaudeMessages(
         const toolResults: Anthropic.Messages.ToolResultBlockParam[] = meta.toolCalls.map(
           (tc, idx) => ({
             type: 'tool_result' as const,
-            tool_use_id: `tool_${tc.name}_${Date.now()}_${idx}`,
+            tool_use_id: toolIds[idx],
             content: JSON.stringify(tc.result),
           }),
         );

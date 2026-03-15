@@ -1,4 +1,5 @@
 import type { Job } from 'bullmq';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { createWorker, promotionQueue, type PromotionRepostJobData } from './queues.js';
 import { createLogger } from '../logger.js';
@@ -24,17 +25,20 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
 
   let enqueued = 0;
 
-  // N+1 제거: 모든 reportId에 대한 최신 Promotion을 2 쿼리로 일괄 조회
+  // N+1 제거: 각 reportId별 최신 Promotion을 일괄 조회
+  // Prisma의 distinct+orderBy는 PostgreSQL DISTINCT ON 보장이 불명확하므로 raw query 사용
   const reportIds = strategies.map((s) => s.reportId);
-  const promotions = await prisma.promotion.findMany({
-    where: {
-      reportId: { in: reportIds },
-      status: { in: ['POSTED', 'DELETED'] },
-    },
-    orderBy: { postedAt: 'desc' },
-    select: { reportId: true, postedAt: true, version: true, platform: true },
-    distinct: ['reportId'],
-  });
+  const promotions = await prisma.$queryRaw<
+    { reportId: string; postedAt: Date; version: number; platform: string }[]
+  >(
+    Prisma.sql`
+      SELECT DISTINCT ON ("reportId") "reportId", "postedAt", "version", "platform"
+      FROM "Promotion"
+      WHERE "reportId" = ANY(${reportIds}::text[])
+        AND "status" IN ('POSTED', 'DELETED')
+      ORDER BY "reportId", "postedAt" DESC
+    `,
+  );
   const promotionMap = new Map(promotions.map((p) => [p.reportId, p]));
 
   for (const strategy of strategies) {

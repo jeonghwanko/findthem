@@ -178,6 +178,10 @@ export async function getTimelineStats(options: TimelineOptions) {
   const tableName = TABLE_NAME[options.metric];
   const truncUnit = TRUNC_UNIT[options.period];
 
+  if (!tableName || !truncUnit) {
+    throw new Error(`Invalid metric or period: ${options.metric}/${options.period}`);
+  }
+
   const result = await prisma.$queryRawUnsafe<RawTimelineRow[]>(
     `SELECT date_trunc('${truncUnit}', created_at) AS date, COUNT(*)::bigint AS count
      FROM "${tableName}"

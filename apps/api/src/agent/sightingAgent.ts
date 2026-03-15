@@ -97,11 +97,7 @@ export class SightingAgent {
         }
       } catch (err) {
         log.error({ err }, 'Claude API call failed');
-        return {
-          text: '죄송합니다. 일시적으로 서비스에 문제가 있습니다. 잠시 후 다시 시도해주세요.',
-          completed: false,
-          toolsUsed: [],
-        };
+        throw new ApiError(503, ERROR_CODES.SERVER_ERROR);
       }
 
       // stop_reason 확인

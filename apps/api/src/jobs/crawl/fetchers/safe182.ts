@@ -84,8 +84,12 @@ export const safe182Fetcher: Fetcher = {
       if (list.length === 0) break;
 
       for (const item of list) {
+        if (!item.esntlId) {
+          log.warn({ nm: item.nm }, 'safe182 item missing esntlId, skipping');
+          continue;
+        }
         results.push({
-          externalId: item.esntlId ?? `safe182-${Date.now()}-${Math.random()}`,
+          externalId: item.esntlId,
           subjectType: 'PERSON',
           name: item.nm || '이름 미상',
           features: item.alldressingDscd || '특징 정보 없음',

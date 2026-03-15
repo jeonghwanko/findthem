@@ -4,6 +4,10 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('notificationService');
 
+function maskPhone(phone: string): string {
+  return phone.replace(/(\d{3})\d+(\d{4})$/, '$1****$2');
+}
+
 export interface MatchNotificationParams {
   recipientPhone: string;
   recipientName: string;
@@ -150,20 +154,20 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
   });
 
   if (alimtalkSent) {
-    log.info({ recipientPhone }, '[NOTIFICATION] Alimtalk sent');
+    log.info({ recipientPhone: maskPhone(recipientPhone) }, '[NOTIFICATION] Alimtalk sent');
     return;
   }
 
   // 2. SMS 시도
   const smsSent = await sendSms(recipientPhone, smsText);
   if (smsSent) {
-    log.info({ recipientPhone }, '[NOTIFICATION] SMS sent');
+    log.info({ recipientPhone: maskPhone(recipientPhone) }, '[NOTIFICATION] SMS sent');
     return;
   }
 
   // 3. 미설정 시 로그 (알림 미전송 명시)
   log.warn(
-    { recipientName, recipientPhone, smsText },
+    { recipientName, recipientPhone: maskPhone(recipientPhone) },
     '[NOTIFICATION] Notification method not configured — manual check required',
   );
 }

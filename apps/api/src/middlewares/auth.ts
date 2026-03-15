@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { timingSafeEqual } from 'crypto';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
 import { ERROR_CODES } from '@findthem/shared';
@@ -35,7 +36,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     where: { id: payload.userId },
     select: { isBlocked: true },
   });
-  if (user?.isBlocked) {
+  if (!user || user.isBlocked) {
     throw new ApiError(403, ERROR_CODES.USER_BLOCKED);
   }
 
@@ -64,7 +65,13 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   // 헤더로만 허용 (쿼리 파라미터는 URL 로그에 노출되므로 금지)
   const apiKey = req.headers['x-api-key'] as string | undefined;
 
-  if (apiKey !== config.adminApiKey) {
+  const adminKey = config.adminApiKey;
+  const valid =
+    apiKey &&
+    adminKey &&
+    apiKey.length === adminKey.length &&
+    timingSafeEqual(Buffer.from(apiKey), Buffer.from(adminKey));
+  if (!valid) {
     throw new ApiError(403, 'ADMIN_REQUIRED');
   }
   next();

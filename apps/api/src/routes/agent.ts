@@ -70,7 +70,7 @@ export function registerAgentRoutes(router: Router) {
 
     const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
-    if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
+    if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_COMPLETED);
 
     const response = await sightingAgent.processMessage(
       {
@@ -98,7 +98,7 @@ export function registerAgentRoutes(router: Router) {
 
       const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
       if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
-      if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_OVERFLOW);
+      if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_COMPLETED);
 
       const { photoUrl } = await imageService.processAndSave('sightings', file);
 
