@@ -4,17 +4,24 @@ import { useTranslation } from 'react-i18next';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 
+type FilterType = 'ALL' | 'PERSON' | 'DOG' | 'CAT';
+
+const FILTERS: FilterType[] = ['ALL', 'PERSON', 'DOG', 'CAT'];
+
 export default function HomePage() {
   const { t } = useTranslation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterType>('ALL');
 
   useEffect(() => {
-    api.get<ReportListResponse>('/reports?limit=8')
+    setLoading(true);
+    const query = filter === 'ALL' ? '/reports?limit=8' : `/reports?limit=8&type=${filter}`;
+    api.get<ReportListResponse>(query)
       .then((data) => setReports(data.reports))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [filter]);
 
   return (
     <div>
@@ -74,8 +81,25 @@ export default function HomePage() {
       {/* 최근 실종 신고 */}
       <section className="max-w-5xl mx-auto px-4 pb-12">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">{t('home.recentReports')}</h2>
-          <Link to="/browse" className="text-primary-600 hover:text-primary-700 font-medium">
+          <div className="flex items-center gap-4 flex-wrap">
+            <h2 className="text-2xl font-bold text-gray-900">{t('home.recentReports')}</h2>
+            <div className="flex gap-1">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    filter === f
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {f === 'ALL' ? t('browse.all') : t(`subjectType.${f}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Link to="/browse" className="text-primary-600 hover:text-primary-700 font-medium shrink-0">
             {t('home.viewAll')}
           </Link>
         </div>
