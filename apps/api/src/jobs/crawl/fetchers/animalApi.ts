@@ -6,7 +6,7 @@ const log = createLogger('crawl:animal-api');
 
 // 농림축산식품부 동물보호관리시스템 유기동물 API
 // 공공데이터포털: https://www.data.go.kr/data/15098931/openapi.do
-const BASE_URL = 'http://apis.data.go.kr/1543061/abandonmentPublicSrvc/abandonmentPublic';
+const BASE_URL = 'http://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2';
 const PAGE_SIZE = 100;
 const FETCH_TIMEOUT_MS = 10_000;
 

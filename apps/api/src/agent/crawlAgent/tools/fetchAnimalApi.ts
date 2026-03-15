@@ -4,7 +4,7 @@ import type { ExternalReport } from '../../../jobs/crawl/types.js';
 
 const log = createLogger('crawlAgent:fetchAnimalApi');
 
-const BASE_URL = 'http://apis.data.go.kr/1543061/abandonmentPublicSrvc/abandonmentPublic';
+const BASE_URL = 'http://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2';
 const FETCH_TIMEOUT_MS = 10_000;
 
 interface AnimalApiItem {
