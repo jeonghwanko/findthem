@@ -4,20 +4,21 @@ import type { ExternalReport } from '../../../jobs/crawl/types.js';
 
 const log = createLogger('crawlAgent:fetchSafe182');
 
+// Safe182 실종아동 찾기 직접 API (경찰청)
+// Docs: https://www.safe182.go.kr → Open API
 const BASE_URL = 'https://www.safe182.go.kr/api/lcm/findChildList.do';
 const FETCH_TIMEOUT_MS = 10_000;
 
 interface Safe182Item {
   esntlId?: string;
   nm?: string;
-  sexdstnCd?: string;
-  birthYmd?: string;
-  writngTelno?: string;
-  writngInstNm?: string;
-  physclSpclmtrDesc?: string;
-  lostPlc?: string;
-  lostYmd?: string;
-  tknphotoPath?: string;
+  sexdstnDscd?: string;    // "여자" | "남자"
+  age?: number;            // 당시나이
+  ageNow?: number;         // 현재나이
+  occrAdres?: string;      // 발생장소
+  occrde?: string;         // 발생일시 (yyyymmdd)
+  writngTrgetDscd?: string; // 010=정상아동, 020=가출인, etc.
+  alldressingDscd?: string; // 착의사항 (features)
 }
 
 interface FetchSafe182Input {
@@ -31,26 +32,19 @@ interface FetchResult {
   pageNo: number;
 }
 
-function parseLostYmd(ymd: string): Date {
+function parseOccrde(ymd: string): Date {
   if (!ymd || ymd.length < 8) return new Date();
   const y = ymd.slice(0, 4);
   const m = ymd.slice(4, 6);
   const d = ymd.slice(6, 8);
-  const date = new Date(`${y}-${m}-${d}T00:00:00+09:00`);
+  const date = new Date(`${y}-${m}-${d}T00:00:00Z`);
   return isNaN(date.getTime()) ? new Date() : date;
 }
 
 function mapSex(code: string | undefined): 'MALE' | 'FEMALE' | 'UNKNOWN' {
-  if (code === 'M') return 'MALE';
-  if (code === 'F') return 'FEMALE';
+  if (code === '남자') return 'MALE';
+  if (code === '여자') return 'FEMALE';
   return 'UNKNOWN';
-}
-
-function calcAge(birthYmd: string | undefined): string | undefined {
-  if (!birthYmd || birthYmd.length < 4) return undefined;
-  const birthYear = parseInt(birthYmd.slice(0, 4), 10);
-  if (isNaN(birthYear)) return undefined;
-  return `${new Date().getFullYear() - birthYear}세`;
 }
 
 export async function fetchSafe182(input: unknown): Promise<FetchResult> {
@@ -69,8 +63,8 @@ export async function fetchSafe182(input: unknown): Promise<FetchResult> {
       body: new URLSearchParams({
         esntlId: config.safe182EsntlId,
         authKey: config.safe182ApiKey,
-        pageIndex: String(pageNo),
-        pageUnit: String(numOfRows),
+        rowSize: String(numOfRows),  // max 100
+        page: String(pageNo),
       }).toString(),
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
@@ -93,27 +87,26 @@ export async function fetchSafe182(input: unknown): Promise<FetchResult> {
   }
 
   const data = raw as Record<string, unknown>;
-  const totalCount = (data['totCnt'] as number) ?? 0;
-  const rawList = data['list'];
-  const list: Safe182Item[] = Array.isArray(rawList) ? rawList : [];
+  const result = data['result'] as string | undefined;
+  if (result !== '00') {
+    log.warn({ result, msg: data['msg'], pageNo, raw }, 'fetch_safe182 non-OK result code');
+    return { items: [], totalCount: 0, pageNo };
+  }
+
+  const totalCount = (data['totalCount'] as number) ?? 0;
+  const list: Safe182Item[] = Array.isArray(data['list']) ? (data['list'] as Safe182Item[]) : [];
 
   const items: ExternalReport[] = list.map((item) => ({
     externalId: item.esntlId ?? `safe182-${Date.now()}-${Math.random()}`,
     subjectType: 'PERSON' as const,
     name: item.nm || '이름 미상',
-    features: item.physclSpclmtrDesc || '특징 정보 없음',
-    lastSeenAt: parseLostYmd(item.lostYmd ?? ''),
-    lastSeenAddress: item.lostPlc || '장소 미상',
-    photoUrl: item.tknphotoPath || undefined,
-    contactPhone: item.writngTelno || undefined,
-    contactName: item.writngInstNm || undefined,
-    gender: mapSex(item.sexdstnCd),
-    age: calcAge(item.birthYmd),
+    features: item.alldressingDscd || '특징 정보 없음',
+    lastSeenAt: parseOccrde(item.occrde ?? ''),
+    lastSeenAddress: item.occrAdres || '장소 미상',
+    gender: mapSex(item.sexdstnDscd),
+    age: item.age !== undefined ? `${item.age}세` : undefined,
   }));
 
-  if (totalCount === 0) {
-    log.warn({ pageNo, raw }, 'fetch_safe182 returned 0 total count');
-  }
   log.info({ pageNo, count: items.length, totalCount }, 'fetch_safe182 complete');
   return { items, totalCount, pageNo };
 }

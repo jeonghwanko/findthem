@@ -4,26 +4,23 @@ import type { Fetcher, ExternalReport } from '../types.js';
 
 const log = createLogger('crawl:safe182');
 
-// 경찰청 Safe182 실종아동 찾기 API
-// 공공데이터포털: https://www.data.go.kr/data/15000390/openapi.do
-const BASE_URL = 'http://apis.data.go.kr/B550034/missingChildInfoService/getMissingChildList';
+// Safe182 실종아동 찾기 직접 API (경찰청)
+// Credentials: SAFE182_ESNTL_ID + SAFE182_API_KEY
+const BASE_URL = 'https://www.safe182.go.kr/api/lcm/findChildList.do';
 const PAGE_SIZE = 100;
 const FETCH_TIMEOUT_MS = 10_000;
 
-interface MissingChildItem {
-  msspsnIdntfccd: string;
-  msspsnNm: string;
-  sexdstnCode: string;
-  birthYmd: string;
-  mssgnArCn: string;
-  mssgnYmd: string;
-  writngTelno: string;
-  writngInstNm: string;
-  physclcd: string;
-  filePathNm: string;
+interface Safe182Item {
+  esntlId?: string;
+  nm?: string;
+  sexdstnDscd?: string;    // "여자" | "남자"
+  age?: number;            // 당시나이
+  occrAdres?: string;      // 발생장소
+  occrde?: string;         // 발생일시 (yyyymmdd)
+  alldressingDscd?: string; // 착의사항 (features)
 }
 
-function parseMssgnYmd(ymd: string): Date {
+function parseOccrde(ymd: string): Date {
   if (!ymd || ymd.length < 8) return new Date();
   const y = ymd.slice(0, 4);
   const m = ymd.slice(4, 6);
@@ -32,26 +29,18 @@ function parseMssgnYmd(ymd: string): Date {
   return isNaN(date.getTime()) ? new Date() : date;
 }
 
-function mapSex(code: string): 'MALE' | 'FEMALE' | 'UNKNOWN' {
-  if (code === 'M') return 'MALE';
-  if (code === 'F') return 'FEMALE';
+function mapSex(code: string | undefined): 'MALE' | 'FEMALE' | 'UNKNOWN' {
+  if (code === '남자') return 'MALE';
+  if (code === '여자') return 'FEMALE';
   return 'UNKNOWN';
-}
-
-function calcAge(birthYmd: string): string | undefined {
-  if (!birthYmd || birthYmd.length < 4) return undefined;
-  const birthYear = parseInt(birthYmd.slice(0, 4), 10);
-  if (isNaN(birthYear)) return undefined;
-  return `${new Date().getFullYear() - birthYear}세`;
 }
 
 export const safe182Fetcher: Fetcher = {
   source: 'safe182',
 
   async fetch(): Promise<ExternalReport[]> {
-    const apiKey = config.safe182ApiKey || config.publicDataApiKey;
-    if (!apiKey) {
-      log.warn('SAFE182_API_KEY not set, skipping safe182 crawl');
+    if (!config.safe182EsntlId || !config.safe182ApiKey) {
+      log.warn('SAFE182_ESNTL_ID or SAFE182_API_KEY not set, skipping safe182 crawl');
       return [];
     }
 
@@ -60,15 +49,19 @@ export const safe182Fetcher: Fetcher = {
     let totalCount = Infinity;
 
     while (results.length < totalCount && pageNo <= 10) {
-      const url = new URL(BASE_URL);
-      url.searchParams.set('serviceKey', apiKey);
-      url.searchParams.set('_type', 'json');
-      url.searchParams.set('numOfRows', String(PAGE_SIZE));
-      url.searchParams.set('pageNo', String(pageNo));
-
       let res: Response;
       try {
-        res = await fetch(url.toString(), { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+        res = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            esntlId: config.safe182EsntlId,
+            authKey: config.safe182ApiKey,
+            rowSize: String(PAGE_SIZE),
+            page: String(pageNo),
+          }).toString(),
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        });
       } catch (err) {
         log.error({ pageNo, err }, 'safe182 fetch error');
         break;
@@ -79,35 +72,27 @@ export const safe182Fetcher: Fetcher = {
         break;
       }
 
-      const raw: unknown = await res.json();
-      const response = (raw as Record<string, unknown>)?.['response'] as Record<string, unknown> | undefined;
-      const body = response?.['body'] as Record<string, unknown> | undefined;
-      if (!body) {
-        log.warn({ pageNo }, 'safe182 unexpected response structure');
+      const raw = (await res.json()) as Record<string, unknown>;
+      const result = raw['result'] as string | undefined;
+      if (result !== '00') {
+        log.warn({ result, msg: raw['msg'], pageNo }, 'safe182 non-OK result code');
         break;
       }
 
-      totalCount = (body['totalCount'] as number) ?? 0;
-      const itemsWrapper = body['items'];
-      if (!itemsWrapper || itemsWrapper === '') break;
+      totalCount = (raw['totalCount'] as number) ?? 0;
+      const list: Safe182Item[] = Array.isArray(raw['list']) ? (raw['list'] as Safe182Item[]) : [];
+      if (list.length === 0) break;
 
-      const rawItem = (itemsWrapper as Record<string, unknown>)['item'];
-      if (!rawItem) break;
-      const items: MissingChildItem[] = Array.isArray(rawItem) ? rawItem : [rawItem as MissingChildItem];
-
-      for (const item of items) {
+      for (const item of list) {
         results.push({
-          externalId: item.msspsnIdntfccd,
+          externalId: item.esntlId ?? `safe182-${Date.now()}-${Math.random()}`,
           subjectType: 'PERSON',
-          name: item.msspsnNm || '이름 미상',
-          features: item.physclcd || '특징 정보 없음',
-          lastSeenAt: parseMssgnYmd(item.mssgnYmd),
-          lastSeenAddress: item.mssgnArCn || '장소 미상',
-          photoUrl: item.filePathNm || undefined,
-          contactPhone: item.writngTelno || undefined,
-          contactName: item.writngInstNm || undefined,
-          gender: mapSex(item.sexdstnCode ?? ''),
-          age: calcAge(item.birthYmd),
+          name: item.nm || '이름 미상',
+          features: item.alldressingDscd || '특징 정보 없음',
+          lastSeenAt: parseOccrde(item.occrde ?? ''),
+          lastSeenAddress: item.occrAdres || '장소 미상',
+          gender: mapSex(item.sexdstnDscd),
+          age: item.age !== undefined ? `${item.age}세` : undefined,
         });
       }
 

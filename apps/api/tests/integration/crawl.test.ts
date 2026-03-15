@@ -143,8 +143,8 @@ describe('Safe182 실종아동 API', () => {
       body: new URLSearchParams({
         esntlId,
         authKey,
-        pageIndex: '1',
-        pageUnit: '3',
+        rowSize: '3',
+        page: '1',
       }).toString(),
       signal: AbortSignal.timeout(15_000),
     });
@@ -153,7 +153,8 @@ describe('Safe182 실종아동 API', () => {
     console.log('\n[safe182] raw response (truncated):');
     console.log(JSON.stringify(raw, null, 2).slice(0, 1500));
 
-    const totalCount = raw?.['totCnt'] as number | undefined;
+    expect(raw['result']).toBe('00');
+    const totalCount = raw['totalCount'] as number | undefined;
     expect(typeof totalCount).toBe('number');
     expect(totalCount).toBeGreaterThan(0);
   });

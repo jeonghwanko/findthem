@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../../../config.js', () => ({
   config: {
-    publicDataApiKey: 'public-api-key',
-    safe182ApiKey: 'safe182-key',
+    safe182EsntlId: 'test-esntl-id',
+    safe182ApiKey: 'test-auth-key',
   },
 }));
 
@@ -20,29 +20,21 @@ import { config } from '../../../config.js';
 
 function makeApiResponse(items: unknown[], totalCount = items.length) {
   return {
-    response: {
-      body: {
-        totalCount,
-        items: {
-          item: items,
-        },
-      },
-    },
+    result: '00',
+    totalCount,
+    list: items,
   };
 }
 
-function makeMissingChildItem(overrides: Record<string, string> = {}) {
+function makeSafe182Item(overrides: Record<string, unknown> = {}) {
   return {
-    msspsnIdntfccd: 'MISSING-001',
-    msspsnNm: '홍길동',
-    sexdstnCode: 'M',
-    birthYmd: '20100515',
-    mssgnArCn: '서울시 종로구 종로1가',
-    mssgnYmd: '20250115',
-    writngTelno: '02-112',
-    writngInstNm: '서울종로경찰서',
-    physclcd: '키 150cm, 검은 머리',
-    filePathNm: 'https://example.com/missing.jpg',
+    esntlId: 'ID-001',
+    nm: '홍길동',
+    sexdstnDscd: '남자',
+    age: 16,
+    occrde: '20250115',
+    occrAdres: '서울시 종로구 종로1가',
+    alldressingDscd: '청바지 착용',
     ...overrides,
   };
 }
@@ -56,15 +48,14 @@ describe('safe182Fetcher', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // 기본 키 복구
-    (config as Record<string, unknown>).safe182ApiKey = 'safe182-key';
-    (config as Record<string, unknown>).publicDataApiKey = 'public-api-key';
+    (config as Record<string, unknown>).safe182EsntlId = 'test-esntl-id';
+    (config as Record<string, unknown>).safe182ApiKey = 'test-auth-key';
   });
 
   describe('API 키 없을 때', () => {
-    it('safe182ApiKey와 publicDataApiKey 모두 없으면 빈 배열 반환', async () => {
+    it('safe182EsntlId와 safe182ApiKey 모두 없으면 빈 배열 반환', async () => {
+      (config as Record<string, unknown>).safe182EsntlId = '';
       (config as Record<string, unknown>).safe182ApiKey = '';
-      (config as Record<string, unknown>).publicDataApiKey = '';
 
       const fetchSpy = vi.fn();
       global.fetch = fetchSpy;
@@ -75,41 +66,53 @@ describe('safe182Fetcher', () => {
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it('safe182ApiKey 없어도 publicDataApiKey 있으면 API 호출', async () => {
-      (config as Record<string, unknown>).safe182ApiKey = '';
-      (config as Record<string, unknown>).publicDataApiKey = 'public-api-key';
+    it('safe182EsntlId만 없어도 빈 배열 반환', async () => {
+      (config as Record<string, unknown>).safe182EsntlId = '';
 
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
-      });
+      const fetchSpy = vi.fn();
+      global.fetch = fetchSpy;
 
       const result = await safe182Fetcher.fetch();
 
-      expect(result.length).toBeGreaterThan(0);
+      expect(result).toEqual([]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('safe182ApiKey만 없어도 빈 배열 반환', async () => {
+      (config as Record<string, unknown>).safe182ApiKey = '';
+
+      const fetchSpy = vi.fn();
+      global.fetch = fetchSpy;
+
+      const result = await safe182Fetcher.fetch();
+
+      expect(result).toEqual([]);
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('API URL 및 파라미터 검증', () => {
-    it('올바른 URL과 파라미터로 fetch 호출', async () => {
+    it('safe182.go.kr에 POST로 올바른 파라미터 전송', async () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item()])),
       });
       global.fetch = fetchSpy;
 
       await safe182Fetcher.fetch();
 
       expect(fetchSpy).toHaveBeenCalled();
-      const calledUrl: string = fetchSpy.mock.calls[0][0] as string;
+      const [calledUrl, calledOptions] = fetchSpy.mock.calls[0] as [string, RequestInit];
 
-      expect(calledUrl).toContain('apis.data.go.kr');
-      expect(calledUrl).toContain('missingChildInfoService');
-      expect(calledUrl).toContain('getMissingChildList');
-      expect(calledUrl).toContain('serviceKey=safe182-key');
-      expect(calledUrl).toContain('_type=json');
-      expect(calledUrl).toContain('numOfRows=100');
-      expect(calledUrl).toContain('pageNo=1');
+      expect(calledUrl).toContain('safe182.go.kr');
+      expect(calledUrl).toContain('findChildList.do');
+      expect(calledOptions.method).toBe('POST');
+
+      const body = calledOptions.body as string;
+      expect(body).toContain('esntlId=test-esntl-id');
+      expect(body).toContain('authKey=test-auth-key');
+      expect(body).toContain('rowSize=');
+      expect(body).toContain('page=1');
     });
   });
 
@@ -117,30 +120,29 @@ describe('safe182Fetcher', () => {
     it('실종아동 API 응답을 ExternalReport[]로 변환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem()])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item()])),
       });
 
       const results = await safe182Fetcher.fetch();
 
       expect(results).toHaveLength(1);
       const report = results[0];
-      expect(report.externalId).toBe('MISSING-001');
+      expect(report.externalId).toBe('ID-001');
       expect(report.subjectType).toBe('PERSON');
       expect(report.name).toBe('홍길동');
-      expect(report.features).toBe('키 150cm, 검은 머리');
+      expect(report.features).toBe('청바지 착용');
       expect(report.lastSeenAddress).toBe('서울시 종로구 종로1가');
-      expect(report.photoUrl).toBe('https://example.com/missing.jpg');
-      expect(report.contactPhone).toBe('02-112');
-      expect(report.contactName).toBe('서울종로경찰서');
+      expect(report.gender).toBe('MALE');
+      expect(report.age).toBe('16세');
     });
 
     it('모든 항목의 subjectType은 PERSON', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(makeApiResponse([
-            makeMissingChildItem({ msspsnIdntfccd: 'P-001' }),
-            makeMissingChildItem({ msspsnIdntfccd: 'P-002' }),
-          ], 2)),
+          makeSafe182Item({ esntlId: 'P-001' }),
+          makeSafe182Item({ esntlId: 'P-002' }),
+        ], 2)),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -149,31 +151,10 @@ describe('safe182Fetcher', () => {
       results.forEach((r) => expect(r.subjectType).toBe('PERSON'));
     });
 
-    it('단일 item이 객체로 반환되어도 처리', async () => {
-      const singleItemResponse = {
-        response: {
-          body: {
-            totalCount: 1,
-            items: {
-              item: makeMissingChildItem(), // 배열이 아닌 단일 객체
-            },
-          },
-        },
-      };
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(singleItemResponse),
-      });
-
-      const results = await safe182Fetcher.fetch();
-
-      expect(results).toHaveLength(1);
-    });
-
     it('이름 없으면 "이름 미상" 사용', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ msspsnNm: '' })])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ nm: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -184,86 +165,29 @@ describe('safe182Fetcher', () => {
     it('장소 없으면 "장소 미상" 사용', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ mssgnArCn: '' })])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ occrAdres: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
 
       expect(results[0].lastSeenAddress).toBe('장소 미상');
     });
-  });
 
-  describe('externalId 고유성', () => {
-    it('각 항목의 externalId는 msspsnIdntfccd 값', async () => {
+    it('착의사항 없으면 "특징 정보 없음" 사용', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([
-            makeMissingChildItem({ msspsnIdntfccd: 'ID-AAA' }),
-            makeMissingChildItem({ msspsnIdntfccd: 'ID-BBB' }),
-            makeMissingChildItem({ msspsnIdntfccd: 'ID-CCC' }),
-          ], 3)),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ alldressingDscd: '' })])),
       });
 
       const results = await safe182Fetcher.fetch();
 
-      const ids = results.map((r) => r.externalId);
-      expect(ids).toEqual(['ID-AAA', 'ID-BBB', 'ID-CCC']);
-      // 중복 없음 확인
-      expect(new Set(ids).size).toBe(ids.length);
-    });
-  });
-
-  describe('gender 매핑', () => {
-    it('sexdstnCode "M" → MALE', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'M' })])),
-      });
-
-      const results = await safe182Fetcher.fetch();
-
-      expect(results[0].gender).toBe('MALE');
+      expect(results[0].features).toBe('특징 정보 없음');
     });
 
-    it('sexdstnCode "F" → FEMALE', async () => {
+    it('photoUrl은 항상 undefined (safe182 API는 사진 미제공)', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'F' })])),
-      });
-
-      const results = await safe182Fetcher.fetch();
-
-      expect(results[0].gender).toBe('FEMALE');
-    });
-
-    it('알 수 없는 sexdstnCode → UNKNOWN', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ sexdstnCode: 'X' })])),
-      });
-
-      const results = await safe182Fetcher.fetch();
-
-      expect(results[0].gender).toBe('UNKNOWN');
-    });
-  });
-
-  describe('photoUrl 처리', () => {
-    it('filePathNm 있으면 photoUrl 설정', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ filePathNm: 'https://img.safe182.go.kr/img.jpg' })])),
-      });
-
-      const results = await safe182Fetcher.fetch();
-
-      expect(results[0].photoUrl).toBe('https://img.safe182.go.kr/img.jpg');
-    });
-
-    it('filePathNm 빈 문자열이면 photoUrl이 undefined', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ filePathNm: '' })])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item()])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -272,23 +196,76 @@ describe('safe182Fetcher', () => {
     });
   });
 
-  describe('age 계산', () => {
-    it('birthYmd로 나이 계산 (예: 2010년생 → "16세" 근처)', async () => {
+  describe('externalId 고유성', () => {
+    it('각 항목의 externalId는 esntlId 값', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ birthYmd: '20100515' })])),
+        json: () => Promise.resolve(makeApiResponse([
+          makeSafe182Item({ esntlId: 'ID-AAA' }),
+          makeSafe182Item({ esntlId: 'ID-BBB' }),
+          makeSafe182Item({ esntlId: 'ID-CCC' }),
+        ], 3)),
       });
 
       const results = await safe182Fetcher.fetch();
 
-      // 현재 연도(2026) - 2010 = 16
+      const ids = results.map((r) => r.externalId);
+      expect(ids).toEqual(['ID-AAA', 'ID-BBB', 'ID-CCC']);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+  });
+
+  describe('gender 매핑', () => {
+    it('"남자" → MALE', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ sexdstnDscd: '남자' })])),
+      });
+
+      const results = await safe182Fetcher.fetch();
+
+      expect(results[0].gender).toBe('MALE');
+    });
+
+    it('"여자" → FEMALE', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ sexdstnDscd: '여자' })])),
+      });
+
+      const results = await safe182Fetcher.fetch();
+
+      expect(results[0].gender).toBe('FEMALE');
+    });
+
+    it('알 수 없는 값 → UNKNOWN', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ sexdstnDscd: '' })])),
+      });
+
+      const results = await safe182Fetcher.fetch();
+
+      expect(results[0].gender).toBe('UNKNOWN');
+    });
+  });
+
+  describe('age 처리', () => {
+    it('age 숫자 필드 → "N세" 형식', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ age: 16 })])),
+      });
+
+      const results = await safe182Fetcher.fetch();
+
       expect(results[0].age).toBe('16세');
     });
 
-    it('birthYmd 비어있으면 age가 undefined', async () => {
+    it('age가 undefined이면 age 필드도 undefined', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ birthYmd: '' })])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ age: undefined })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -298,10 +275,10 @@ describe('safe182Fetcher', () => {
   });
 
   describe('날짜 파싱', () => {
-    it('mssgnYmd "20250115" → 2025-01-15 Date', async () => {
+    it('occrde "20250115" → 2025-01-15 Date', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeMissingChildItem({ mssgnYmd: '20250115' })])),
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ occrde: '20250115' })])),
       });
 
       const results = await safe182Fetcher.fetch();
@@ -312,6 +289,20 @@ describe('safe182Fetcher', () => {
       expect(d.getUTCMonth()).toBe(0);
       expect(d.getUTCDate()).toBe(15);
     });
+
+    it('occrde 비어있으면 현재 날짜 근처 반환', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(makeApiResponse([makeSafe182Item({ occrde: '' })])),
+      });
+
+      const before = Date.now();
+      const results = await safe182Fetcher.fetch();
+      const after = Date.now();
+
+      expect(results[0].lastSeenAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
+      expect(results[0].lastSeenAt.getTime()).toBeLessThanOrEqual(after + 1000);
+    });
   });
 
   describe('API 에러 처리', () => {
@@ -319,7 +310,7 @@ describe('safe182Fetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 403,
-        json: () => Promise.resolve(({})),
+        json: () => Promise.resolve({}),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
@@ -329,7 +320,7 @@ describe('safe182Fetcher', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 503,
-        json: () => Promise.resolve(({})),
+        json: () => Promise.resolve({}),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
@@ -341,17 +332,19 @@ describe('safe182Fetcher', () => {
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
     });
 
-    it('items가 없는 응답 → 빈 배열 반환', async () => {
+    it('result !== "00" → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          response: {
-            body: {
-              totalCount: 0,
-              items: '',
-            },
-          },
-        }),
+        json: () => Promise.resolve({ result: '99', msg: '필수항목 누락' }),
+      });
+
+      await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
+    });
+
+    it('list가 빈 배열 → 빈 배열 반환', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: '00', totalCount: 0, list: [] }),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
@@ -360,7 +353,7 @@ describe('safe182Fetcher', () => {
     it('예상치 못한 응답 구조 → 빈 배열 반환', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(({ error: 'SERVICE_KEY_IS_NOT_REGISTERED_ERROR' })),
+        json: () => Promise.resolve({ error: 'SERVICE_KEY_IS_NOT_REGISTERED_ERROR' }),
       });
 
       await expect(safe182Fetcher.fetch()).resolves.toEqual([]);
