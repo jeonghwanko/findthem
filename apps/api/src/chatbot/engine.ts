@@ -415,7 +415,7 @@ export class ChatbotEngine {
       if (result.count === 0) {
         // 다른 요청이 먼저 세션을 변경함 — 현재 메시지 무시
         const log = (await import('../logger.js')).createLogger('chatbot-engine');
-        log.warn({ sessionId }, '세션 낙관적 잠금 충돌 — 현재 메시지 처리 건너뜀');
+        log.warn({ sessionId }, 'Session optimistic lock conflict — skipping current message');
       }
       return;
     }

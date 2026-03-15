@@ -96,7 +96,7 @@ export class SightingAgent {
           clearTimeout(timer);
         }
       } catch (err) {
-        log.error({ err }, 'Claude API 호출 실패');
+        log.error({ err }, 'Claude API call failed');
         return {
           text: '죄송합니다. 일시적으로 서비스에 문제가 있습니다. 잠시 후 다시 시도해주세요.',
           completed: false,
@@ -136,7 +136,7 @@ export class SightingAgent {
         try {
           toolResult = await dispatchTool(block.name, toolInput, ctx.userId);
         } catch (err) {
-          log.error({ err, tool: block.name }, '도구 실행 실패');
+          log.error({ err, tool: block.name }, 'Tool execution failed');
           toolResult = { error: err instanceof Error ? err.message : '도구 실행 중 오류가 발생했습니다' };
         }
 

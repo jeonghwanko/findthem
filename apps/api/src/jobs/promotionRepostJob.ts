@@ -8,7 +8,7 @@ const log = createLogger('promotionRepostJob');
 async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
   const { reason, platforms, regenerateContent } = job.data;
 
-  log.info({ reason }, '재홍보 스캔 시작');
+  log.info({ reason }, 'Repost scan started');
 
   // ACTIVE 신고 중 PromotionStrategy가 있는 것만 조회
   const strategies = await prisma.promotionStrategy.findMany({
@@ -58,7 +58,7 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
     // 현재 버전(최대 게시 횟수) 확인
     const currentVersion = latestPromotion.version ?? 1;
     if (currentVersion >= maxReposts) {
-      log.info({ reportId, maxReposts }, '최대 재게시 횟수 도달, 스킵');
+      log.info({ reportId, maxReposts }, 'Max repost count reached, skipping');
       continue;
     }
 
@@ -98,11 +98,11 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
     enqueued++;
     log.info(
       { reportId, version: currentVersion + 1, platforms: resolvedPlatforms },
-      '재홍보 큐 등록',
+      'Repost enqueued',
     );
   }
 
-  log.info({ enqueued }, '재홍보 스캔 완료');
+  log.info({ enqueued }, 'Repost scan complete');
 }
 
 export function startPromotionRepostWorker() {

@@ -36,45 +36,6 @@ const SMS_MESSAGES: Record<Locale, (recipientName: string, reportName: string, c
     `查看：${sightingUrl}`,
 };
 
-// ── 로그 메시지 다국어 맵 ──
-
-const LOG_MESSAGES: Record<Locale, {
-  alimtalkSent: string;
-  smsSent: string;
-  notifyWarningPrefix: string;
-  recipient: string;
-  content: string;
-}> = {
-  ko: {
-    alimtalkSent: '알림톡 발송 완료',
-    smsSent: 'SMS 발송 완료',
-    notifyWarningPrefix: '알림 수단 미설정 — 수동 확인 필요',
-    recipient: '수신자',
-    content: '내용',
-  },
-  en: {
-    alimtalkSent: 'Alimtalk sent',
-    smsSent: 'SMS sent',
-    notifyWarningPrefix: 'Notification method not configured — manual check required',
-    recipient: 'Recipient',
-    content: 'Content',
-  },
-  ja: {
-    alimtalkSent: 'アリムトーク送信完了',
-    smsSent: 'SMS送信完了',
-    notifyWarningPrefix: '通知手段未設定 — 手動確認が必要',
-    recipient: '受信者',
-    content: '内容',
-  },
-  'zh-TW': {
-    alimtalkSent: 'Alimtalk 發送完成',
-    smsSent: 'SMS 發送完成',
-    notifyWarningPrefix: '通知方式未設定 — 需要手動確認',
-    recipient: '收件者',
-    content: '內容',
-  },
-};
-
 /**
  * 카카오 알림톡 전송
  * - KAKAO_SENDER_KEY (발신 프로필 키) 필요
@@ -110,12 +71,12 @@ async function sendAlimtalk(
 
     if (!res.ok) {
       const err = await res.text();
-      log.warn({ err }, '[NOTIFICATION] 알림톡 발송 실패');
+      log.warn({ err }, '[NOTIFICATION] Alimtalk send failed');
       return false;
     }
     return true;
   } catch (err) {
-    log.warn({ err }, '[NOTIFICATION] 알림톡 오류');
+    log.warn({ err }, '[NOTIFICATION] Alimtalk error');
     return false;
   }
 }
@@ -153,12 +114,12 @@ async function sendSms(phone: string, text: string): Promise<boolean> {
 
     if (!res.ok) {
       const err = await res.text();
-      log.warn({ err }, '[NOTIFICATION] SMS 발송 실패');
+      log.warn({ err }, '[NOTIFICATION] SMS send failed');
       return false;
     }
     return true;
   } catch (err) {
-    log.warn({ err }, '[NOTIFICATION] SMS 오류');
+    log.warn({ err }, '[NOTIFICATION] SMS error');
     return false;
   }
 }
@@ -179,7 +140,6 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
 
   const confidencePct = Math.round(confidence * 100);
   const smsText = SMS_MESSAGES[locale](recipientName, reportName, confidencePct, sightingUrl);
-  const logMessages = LOG_MESSAGES[locale];
 
   // 1. 카카오 알림톡 시도
   const alimtalkSent = await sendAlimtalk(recipientPhone, 'MATCH_NOTIFY', {
@@ -190,20 +150,20 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
   });
 
   if (alimtalkSent) {
-    log.info({ recipientPhone }, `[NOTIFICATION] ${logMessages.alimtalkSent}`);
+    log.info({ recipientPhone }, '[NOTIFICATION] Alimtalk sent');
     return;
   }
 
   // 2. SMS 시도
   const smsSent = await sendSms(recipientPhone, smsText);
   if (smsSent) {
-    log.info({ recipientPhone }, `[NOTIFICATION] ${logMessages.smsSent}`);
+    log.info({ recipientPhone }, '[NOTIFICATION] SMS sent');
     return;
   }
 
   // 3. 미설정 시 로그 (알림 미전송 명시)
   log.warn(
     { recipientName, recipientPhone, smsText },
-    `[NOTIFICATION] ${logMessages.notifyWarningPrefix}`,
+    '[NOTIFICATION] Notification method not configured — manual check required',
   );
 }

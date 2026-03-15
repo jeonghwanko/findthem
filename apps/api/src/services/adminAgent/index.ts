@@ -99,7 +99,7 @@ export class AdminAgentService {
           clearTimeout(timer);
         }
       } catch (err) {
-        log.error({ err }, 'Claude API 호출 실패');
+        log.error({ err }, 'Claude API call failed');
         return {
           sessionId: session.id,
           reply: '일시적 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',

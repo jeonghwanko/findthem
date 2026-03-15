@@ -16,13 +16,13 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
   });
 
   if (!report) {
-    log.warn({ reportId }, 'Report를 찾을 수 없음');
+    log.warn({ reportId }, 'Report not found');
     return;
   }
 
   // FOUND 상태가 아니면 실행 중단 (잘못 enqueue된 경우 방지)
   if (report.status !== 'FOUND') {
-    log.warn({ reportId, status: report.status }, 'Report 상태가 FOUND가 아님, 건너뜀');
+    log.warn({ reportId, status: report.status }, 'Report status is not FOUND, skipping');
     return;
   }
 
@@ -62,10 +62,10 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
 
     log.info(
       { reportId, reportName: report.name, deletedCount: promotions.length },
-      'SNS 게시물 삭제 완료',
+      'SNS posts deleted',
     );
   } else {
-    log.info({ reportId }, '삭제할 SNS 게시물 없음');
+    log.info({ reportId }, 'No SNS posts to delete');
   }
 
   // 감사 메시지 게시 (실패해도 전체 작업은 계속 진행)
@@ -113,11 +113,11 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
 
     log.info(
       { reportId, reportName: report.name, successCount, totalCount: thanksResults.length },
-      '감사 메시지 게시 완료',
+      'Thank-you message posted',
     );
   } catch (err) {
     // 감사 메시지 게시 실패는 무시 (cleanup 자체는 성공)
-    log.warn({ err, reportId }, '감사 메시지 게시 실패 (무시)');
+    log.warn({ err, reportId }, 'Failed to post thank-you message (ignored)');
 
     try {
       await prisma.promotionLog.create({

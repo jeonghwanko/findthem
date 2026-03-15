@@ -111,6 +111,9 @@ export async function fetchSafe182(input: unknown): Promise<FetchResult> {
     age: calcAge(item.birthYmd),
   }));
 
+  if (totalCount === 0) {
+    log.warn({ pageNo, raw }, 'fetch_safe182 returned 0 total count');
+  }
   log.info({ pageNo, count: items.length, totalCount }, 'fetch_safe182 complete');
   return { items, totalCount, pageNo };
 }

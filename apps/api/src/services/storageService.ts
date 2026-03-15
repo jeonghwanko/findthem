@@ -39,7 +39,7 @@ export const storageService = {
       await fs.unlink(fullPath);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-        log.error({ err, relativePath }, '[STORAGE] 파일 삭제 실패');
+        log.error({ err, relativePath }, '[STORAGE] File deletion failed');
       }
     }
   },

@@ -27,7 +27,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
 
   const primaryPhoto = report.photos.find((p) => p.isPrimary) || report.photos[0];
   if (!primaryPhoto) {
-    log.warn({ reportId }, 'Report 사진 없음, 건너뜀');
+    log.warn({ reportId }, 'No photos on report, skipping');
     return;
   }
 
@@ -220,7 +220,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
 
   log.info(
     { reportId, version, isRepost, successCount, totalCount: results.length },
-    `Report 홍보 완료 (${isRepost ? '재게시' : '최초'})`,
+    `Report promotion complete (${isRepost ? 'repost' : 'initial'})`,
   );
 }
 

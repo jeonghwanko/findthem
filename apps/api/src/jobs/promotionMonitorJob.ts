@@ -36,7 +36,7 @@ async function collectMetrics(
 
     return null;
   } catch (err) {
-    log.warn({ err, platform, postId }, '메트릭 수집 실패');
+    log.warn({ err, platform, postId }, 'Failed to collect metrics');
     return null;
   }
 }
@@ -50,12 +50,12 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
   });
 
   if (!promotion) {
-    log.warn({ promotionId }, 'Promotion을 찾을 수 없음');
+    log.warn({ promotionId }, 'Promotion not found');
     return;
   }
 
   if (promotion.status !== 'POSTED') {
-    log.info({ promotionId, status: promotion.status }, 'Promotion 상태가 POSTED가 아님, 건너뜀');
+    log.info({ promotionId, status: promotion.status }, 'Promotion status is not POSTED, skipping');
     return;
   }
 
@@ -85,7 +85,7 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
       },
     });
 
-    log.info({ reportId, platform, metrics }, '메트릭 수집 완료');
+    log.info({ reportId, platform, metrics }, 'Metrics collected');
   } else {
     // 메트릭 수집 불가 — 로그만 기록
     await prisma.promotionLog.create({
@@ -101,7 +101,7 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
       },
     });
 
-    log.info({ reportId, platform }, '메트릭 수집 불가 (API 미구성)');
+    log.info({ reportId, platform }, 'Metrics unavailable (API not configured)');
   }
 }
 

@@ -22,19 +22,19 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
   }).catch(() => null);
 
   if (!claimedMatch) {
-    log.info({ matchId }, 'Match 이미 알림 전송됨 또는 존재하지 않음, 건너뜀');
+    log.info({ matchId }, 'Match already notified or not found, skipping');
     return;
   }
 
   const report = claimedMatch.report;
 
   if (!report) {
-    log.warn({ matchId, reportId }, 'report를 찾을 수 없음');
+    log.warn({ matchId, reportId }, 'Report not found');
     return;
   }
 
   if (!report.user) {
-    log.warn({ reportId }, 'Report에 연결된 사용자 없음, 건너뜀');
+    log.warn({ reportId }, 'No user linked to report, skipping');
     return;
   }
 

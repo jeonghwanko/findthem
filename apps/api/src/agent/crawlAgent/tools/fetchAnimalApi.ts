@@ -95,7 +95,7 @@ export async function fetchAnimalApi(input: unknown): Promise<FetchResult> {
   const body = response?.['body'] as Record<string, unknown> | undefined;
 
   if (!body) {
-    log.warn({ pageNo }, 'fetch_animal_api unexpected response structure');
+    log.warn({ pageNo, raw }, 'fetch_animal_api unexpected response structure');
     return { items: [], totalCount: 0, pageNo };
   }
 
