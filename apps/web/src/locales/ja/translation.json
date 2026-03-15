@@ -2,7 +2,6 @@
   "brand": "FindThem",
   "loading": "読み込み中...",
   "footer": "FindThem - AI搭載 行方不明者・ペット検索サービス",
-
   "nav": {
     "browse": "一覧",
     "myReports": "マイ届出",
@@ -10,7 +9,6 @@
     "logout": "ログアウト",
     "login": "ログイン"
   },
-
   "home": {
     "heroTitle": "大切な家族を見つけるお手伝いをします",
     "heroDesc": "AIが自動でSNSに宣伝し、目撃情報を分析してマッチングします",
@@ -26,7 +24,6 @@
     "viewAll": "すべて見る →",
     "noReports": "まだ届出がありません"
   },
-
   "auth": {
     "login": "ログイン",
     "register": "会員登録",
@@ -38,7 +35,6 @@
     "noAccount": "アカウントがありませんか？",
     "errorFallback": "エラーが発生しました"
   },
-
   "browse": {
     "title": "行方不明届一覧",
     "all": "すべて",
@@ -47,7 +43,6 @@
     "prev": "前へ",
     "next": "次へ"
   },
-
   "report": {
     "title": "行方不明届の登録",
     "selectType": "対象の種類を選択してください",
@@ -86,7 +81,6 @@
     "submitting": "登録中...",
     "submit": "届出を登録"
   },
-
   "detail": {
     "statusActive": "捜索中",
     "statusFound": "見つかりました",
@@ -110,7 +104,6 @@
     "notFound": "届出が見つかりません",
     "found": "見つかりました！"
   },
-
   "sighting": {
     "title": "目撃情報の提供",
     "photoOptional": "写真（任意）",
@@ -125,7 +118,6 @@
     "submit": "目撃情報を送信",
     "submitError": "送信に失敗しました。"
   },
-
   "chat": {
     "title": "目撃情報チャットボット",
     "subtitle": "チャットで簡単に情報提供",
@@ -135,23 +127,19 @@
     "photoAttach": "写真添付",
     "openChat": "チャットを開く"
   },
-
   "card": {
     "found": "見つかりました！",
     "sightingCount": "{{count}}件の情報"
   },
-
   "upload": {
     "addPhoto": "写真追加",
     "limit": "最大{{max}}枚、1枚10MBまで"
   },
-
   "subjectType": {
     "PERSON": "人",
     "DOG": "犬",
     "CAT": "猫"
   },
-
   "admin": {
     "dashboard": {
       "title": "ダッシュボード",
@@ -188,7 +176,6 @@
       "statsError": "現況の読み込みに失敗しました"
     }
   },
-
   "errors": {
     "AUTH_REQUIRED": "ログインが必要です。",
     "INVALID_TOKEN": "無効なトークンです。",
@@ -205,5 +192,21 @@
     "REPORT_CLOSED": "終了した届出には情報を提供できません。",
     "IMAGE_ONLY": "画像ファイルのみアップロード可能です。",
     "SERVER_ERROR": "サーバーエラーが発生しました。"
+  },
+  "agent": {
+    "title": "AI目撃情報アシスタント",
+    "subtitle": "写真を送るとAIが分析します",
+    "openChat": "AIアシスタントを開く",
+    "analyzing": "分析中...",
+    "completed": "情報提供が完了しました",
+    "similarity": "類似度:",
+    "photoLabel": "写真分析:",
+    "similarReports": "類似届出:",
+    "retry": "再試行",
+    "connectionError": "接続に失敗しました。もう一度お試しください。",
+    "sendError": "メッセージの送信に失敗しました。",
+    "send": "送信",
+    "placeholder": "メッセージを入力...",
+    "photoAttach": "写真添付"
   }
 }

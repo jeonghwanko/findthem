@@ -31,7 +31,7 @@ export default function BrowsePage() {
         setReports(data.reports);
         setTotalPages(data.totalPages);
       })
-      .catch(console.error)
+      .catch(() => setReports([]))
       .finally(() => setLoading(false));
   }, [type, page, search]);
 

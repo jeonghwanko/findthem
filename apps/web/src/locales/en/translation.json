@@ -2,7 +2,6 @@
   "brand": "FindThem",
   "loading": "Loading...",
   "footer": "FindThem - AI-powered missing person/pet finder",
-
   "nav": {
     "browse": "Browse All",
     "myReports": "My Reports",
@@ -10,7 +9,6 @@
     "logout": "Logout",
     "login": "Login"
   },
-
   "home": {
     "heroTitle": "We help you find your beloved family",
     "heroDesc": "AI automatically promotes on social media, analyzes sightings, and finds matches",
@@ -26,7 +24,6 @@
     "viewAll": "View All →",
     "noReports": "No reports registered yet"
   },
-
   "auth": {
     "login": "Login",
     "register": "Sign Up",
@@ -38,7 +35,6 @@
     "noAccount": "Don't have an account? ",
     "errorFallback": "An error occurred"
   },
-
   "browse": {
     "title": "Missing Reports",
     "all": "All",
@@ -47,7 +43,6 @@
     "prev": "Previous",
     "next": "Next"
   },
-
   "report": {
     "title": "File a Missing Report",
     "selectType": "Select the type of missing subject",
@@ -86,7 +81,6 @@
     "submitting": "Registering...",
     "submit": "Submit Missing Report"
   },
-
   "detail": {
     "statusActive": "Searching",
     "statusFound": "Found",
@@ -110,7 +104,6 @@
     "notFound": "Report not found",
     "found": "Found!"
   },
-
   "sighting": {
     "title": "Report a Sighting",
     "photoOptional": "Photos (Optional)",
@@ -125,7 +118,6 @@
     "submit": "Submit Sighting",
     "submitError": "Failed to submit sighting."
   },
-
   "chat": {
     "title": "Sighting Report Chatbot",
     "subtitle": "Report sightings easily through chat",
@@ -135,23 +127,19 @@
     "photoAttach": "Attach Photo",
     "openChat": "Open Chat"
   },
-
   "card": {
     "found": "Found!",
     "sightingCount": "{{count}} sightings"
   },
-
   "upload": {
     "addPhoto": "Add Photo",
     "limit": "Max {{max}} photos, 10MB each"
   },
-
   "subjectType": {
     "PERSON": "Person",
     "DOG": "Dog",
     "CAT": "Cat"
   },
-
   "admin": {
     "dashboard": {
       "title": "Dashboard",
@@ -188,7 +176,6 @@
       "statsError": "Failed to load stats"
     }
   },
-
   "errors": {
     "AUTH_REQUIRED": "Login is required.",
     "INVALID_TOKEN": "Invalid token.",
@@ -205,5 +192,21 @@
     "REPORT_CLOSED": "Cannot submit a sighting for a closed report.",
     "IMAGE_ONLY": "Only image files can be uploaded.",
     "SERVER_ERROR": "A server error occurred."
+  },
+  "agent": {
+    "title": "AI Sighting Assistant",
+    "subtitle": "Send a photo and AI will analyze it",
+    "openChat": "Open AI Sighting Assistant",
+    "analyzing": "Analyzing...",
+    "completed": "Sighting submitted successfully",
+    "similarity": "Similarity:",
+    "photoLabel": "Photo analysis:",
+    "similarReports": "Similar reports:",
+    "retry": "Retry",
+    "connectionError": "Connection failed. Please try again.",
+    "sendError": "Failed to send message.",
+    "send": "Send",
+    "placeholder": "Type a message...",
+    "photoAttach": "Attach photo"
   }
 }

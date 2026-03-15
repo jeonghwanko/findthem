@@ -70,6 +70,7 @@ export function registerAgentRoutes(router: Router) {
 
     const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
+    if (session.userId && session.userId !== req.user?.userId) throw new ApiError(403, ERROR_CODES.SESSION_OWNER_ONLY);
     if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_COMPLETED);
 
     const response = await sightingAgent.processMessage(
@@ -94,10 +95,11 @@ export function registerAgentRoutes(router: Router) {
     async (req, res) => {
       const sessionId = req.params.id as string;
       const file = req.file;
-      if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
+      if (!file) throw new ApiError(400, ERROR_CODES.PHOTO_ATTACH_REQUIRED);
 
       const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
       if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
+      if (session.userId && session.userId !== req.user?.userId) throw new ApiError(403, ERROR_CODES.SESSION_OWNER_ONLY);
       if (session.status !== 'ACTIVE') throw new ApiError(400, ERROR_CODES.SESSION_COMPLETED);
 
       const { photoUrl } = await imageService.processAndSave('sightings', file);
@@ -135,6 +137,7 @@ export function registerAgentRoutes(router: Router) {
     ]);
 
     if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
+    if (session.userId && session.userId !== req.user?.userId) throw new ApiError(403, ERROR_CODES.SESSION_OWNER_ONLY);
 
     res.json({
       id: session.id,

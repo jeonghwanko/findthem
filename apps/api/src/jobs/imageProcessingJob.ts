@@ -1,4 +1,4 @@
-import type { Job } from 'bullmq';
+import { type Job, UnrecoverableError } from 'bullmq';
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';
 import { analyzeImage } from '../ai/matchingAgent.js';
@@ -8,6 +8,7 @@ import {
   matchingQueue,
   type ImageJobData,
 } from './queues.js';
+import { QUEUE_NAMES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('imageProcessingJob');
@@ -20,7 +21,7 @@ async function processImageJob(job: Job<ImageJobData>) {
   } else if (type === 'sighting' && sightingId) {
     await processSightingPhotos(sightingId);
   } else {
-    throw new Error(`잘못된 job 데이터: type=${type}, reportId=${reportId}, sightingId=${sightingId}`);
+    throw new UnrecoverableError(`Invalid job data: type=${type}, reportId=${reportId}, sightingId=${sightingId}`);
   }
 }
 
@@ -133,7 +134,7 @@ async function processSightingPhotos(sightingId: string) {
 
 export function startImageWorker() {
   log.info('Image processing worker started');
-  createWorker<ImageJobData>('image-processing', processImageJob, {
+  createWorker<ImageJobData>(QUEUE_NAMES.IMAGE_PROCESSING, processImageJob, {
     concurrency: 2,
   });
 }

@@ -16,10 +16,9 @@ export default function HomePage() {
 
   useEffect(() => {
     setLoading(true);
-    const query = `/reports?limit=8&type=${filter}`;
-    api.get<ReportListResponse>(query)
+    api.get<ReportListResponse>(`/reports?limit=8&type=${filter}`)
       .then((data) => setReports(data.reports))
-      .catch(console.error)
+      .catch(() => setReports([]))
       .finally(() => setLoading(false));
   }, [filter]);
 

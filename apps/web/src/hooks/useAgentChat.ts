@@ -49,7 +49,7 @@ export function useAgentChat(reportId?: string) {
       setSessionId(res.sessionId);
       addBotMessage(res as AgentResponse);
     } catch {
-      setError('연결에 실패했습니다. 다시 시도해주세요.');
+      setError('connectionError');
     } finally {
       setLoading(false);
     }
@@ -63,6 +63,8 @@ export function useAgentChat(reportId?: string) {
       try {
         const res = await sendAgentMessage(sessionId, text);
         addBotMessage(res);
+      } catch {
+        setError('sendError');
       } finally {
         setLoading(false);
       }
@@ -74,12 +76,15 @@ export function useAgentChat(reportId?: string) {
     async (file: File, message?: string) => {
       if (!sessionId) return;
       const previewUrl = URL.createObjectURL(file);
-      addUserMessage(message || '사진 첨부', previewUrl);
+      addUserMessage(message ?? 'photoAttach', previewUrl);
       setLoading(true);
       try {
         const res = await uploadAgentPhoto(sessionId, file, message);
         addBotMessage(res);
+      } catch {
+        setError('sendError');
       } finally {
+        URL.revokeObjectURL(previewUrl);
         setLoading(false);
       }
     },
