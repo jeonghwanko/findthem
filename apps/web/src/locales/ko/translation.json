@@ -152,6 +152,38 @@
     "CAT": "고양이"
   },
 
+  "admin": {
+    "dashboard": {
+      "title": "대시보드",
+      "refresh": "새로고침",
+      "loadingData": "데이터를 불러오는 중...",
+      "totalReports": "전체 신고",
+      "totalSightings": "전체 제보",
+      "totalMatches": "전체 매칭",
+      "totalUsers": "전체 사용자",
+      "active": "활성",
+      "found": "발견",
+      "suspended": "정지",
+      "web": "웹",
+      "kakao": "카카오",
+      "adminLabel": "관리자",
+      "pending": "대기",
+      "confirmed": "확인",
+      "highConfidence": "고신뢰",
+      "blocked": "차단",
+      "queueStatus": "큐 상태",
+      "noQueueData": "큐 데이터 없음"
+    },
+    "crawl": {
+      "title": "데이터 수집",
+      "description": "외부 소스에서 실종/유기동물 데이터를 수동으로 수집합니다. 수집할 소스를 선택하세요.",
+      "triggerBtn": "지금 수집하기",
+      "triggering": "수집 중...",
+      "triggerSuccess": "수집 작업이 큐에 등록되었습니다.",
+      "triggerError": "수집 요청에 실패했습니다."
+    }
+  },
+
   "errors": {
     "AUTH_REQUIRED": "로그인이 필요합니다.",
     "INVALID_TOKEN": "유효하지 않은 토큰입니다.",

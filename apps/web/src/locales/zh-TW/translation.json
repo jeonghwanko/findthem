@@ -152,6 +152,38 @@
     "CAT": "貓"
   },
 
+  "admin": {
+    "dashboard": {
+      "title": "控制台",
+      "refresh": "重新整理",
+      "loadingData": "載入資料中...",
+      "totalReports": "報案總數",
+      "totalSightings": "目擊線索總數",
+      "totalMatches": "比對總數",
+      "totalUsers": "使用者總數",
+      "active": "搜尋中",
+      "found": "已尋獲",
+      "suspended": "已暫停",
+      "web": "網頁",
+      "kakao": "Kakao",
+      "adminLabel": "管理員",
+      "pending": "待處理",
+      "confirmed": "已確認",
+      "highConfidence": "高信賴度",
+      "blocked": "已封鎖",
+      "queueStatus": "佇列狀態",
+      "noQueueData": "無佇列資料"
+    },
+    "crawl": {
+      "title": "資料收集",
+      "description": "從外部來源手動收集失蹤人口/流浪動物資料。請選擇要收集的來源。",
+      "triggerBtn": "立即收集",
+      "triggering": "收集中...",
+      "triggerSuccess": "收集任務已加入佇列。",
+      "triggerError": "資料收集請求失敗。"
+    }
+  },
+
   "errors": {
     "AUTH_REQUIRED": "需要登入。",
     "INVALID_TOKEN": "無效的令牌。",

@@ -152,6 +152,38 @@
     "CAT": "猫"
   },
 
+  "admin": {
+    "dashboard": {
+      "title": "ダッシュボード",
+      "refresh": "更新",
+      "loadingData": "データを読み込み中...",
+      "totalReports": "全届出数",
+      "totalSightings": "全目撃情報数",
+      "totalMatches": "全マッチング数",
+      "totalUsers": "全ユーザー数",
+      "active": "捜索中",
+      "found": "発見",
+      "suspended": "停止",
+      "web": "Web",
+      "kakao": "カカオ",
+      "adminLabel": "管理者",
+      "pending": "待機中",
+      "confirmed": "確認済",
+      "highConfidence": "高信頼度",
+      "blocked": "ブロック",
+      "queueStatus": "キュー状態",
+      "noQueueData": "キューデータなし"
+    },
+    "crawl": {
+      "title": "データ収集",
+      "description": "外部ソースから行方不明者・迷子動物のデータを手動収集します。収集するソースを選択してください。",
+      "triggerBtn": "今すぐ収集",
+      "triggering": "収集中...",
+      "triggerSuccess": "収集ジョブがキューに登録されました。",
+      "triggerError": "データ収集リクエストに失敗しました。"
+    }
+  },
+
   "errors": {
     "AUTH_REQUIRED": "ログインが必要です。",
     "INVALID_TOKEN": "無効なトークンです。",

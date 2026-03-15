@@ -152,6 +152,38 @@
     "CAT": "Cat"
   },
 
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "refresh": "Refresh",
+      "loadingData": "Loading data...",
+      "totalReports": "Total Reports",
+      "totalSightings": "Total Sightings",
+      "totalMatches": "Total Matches",
+      "totalUsers": "Total Users",
+      "active": "Active",
+      "found": "Found",
+      "suspended": "Suspended",
+      "web": "Web",
+      "kakao": "Kakao",
+      "adminLabel": "Admin",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "highConfidence": "High Conf.",
+      "blocked": "Blocked",
+      "queueStatus": "Queue Status",
+      "noQueueData": "No queue data"
+    },
+    "crawl": {
+      "title": "Data Collection",
+      "description": "Manually collect missing/stray animal data from external sources. Select the sources to collect from.",
+      "triggerBtn": "Collect Now",
+      "triggering": "Collecting...",
+      "triggerSuccess": "Collection jobs have been queued.",
+      "triggerError": "Failed to trigger data collection."
+    }
+  },
+
   "errors": {
     "AUTH_REQUIRED": "Login is required.",
     "INVALID_TOKEN": "Invalid token.",

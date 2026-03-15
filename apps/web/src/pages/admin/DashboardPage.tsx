@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAdminData } from '../../hooks/useAdminApi.js';
+import { adminApi } from '../../api/admin.js';
 import type { AdminOverviewStats, QueueStatusSummary } from '@findthem/shared';
 
 interface StatCardProps {
@@ -58,7 +61,90 @@ function QueueCard({ q }: { q: QueueStatusSummary }) {
   );
 }
 
+const ALL_SOURCES = ['animal-api', 'safe182'];
+
+interface CrawlTriggerResponse {
+  message: string;
+  jobIds: string[];
+}
+
+function CrawlSection() {
+  const { t } = useTranslation();
+  const [sources, setSources] = useState<string[]>(ALL_SOURCES);
+  const [triggering, setTriggering] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!statusMsg) return;
+    const timer = setTimeout(() => setStatusMsg(null), 4000);
+    return () => clearTimeout(timer);
+  }, [statusMsg]);
+
+  function toggleSource(source: string) {
+    setSources((prev) =>
+      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source],
+    );
+  }
+
+  async function handleTrigger() {
+    if (sources.length === 0) return;
+    setTriggering(true);
+    setStatusMsg(null);
+    try {
+      await adminApi.post<CrawlTriggerResponse>('/admin/crawl/trigger', { sources });
+      setStatusMsg({ type: 'success', text: t('admin.crawl.triggerSuccess') });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : t('admin.crawl.triggerError');
+      setStatusMsg({ type: 'error', text: msg });
+    } finally {
+      setTriggering(false);
+    }
+  }
+
+  return (
+    <div className="mb-6">
+      <h2 className="text-base font-semibold text-gray-700 mb-3">{t('admin.crawl.title')}</h2>
+      <div className="bg-white rounded-lg shadow p-5">
+        <p className="text-sm text-gray-500 mb-4">{t('admin.crawl.description')}</p>
+        <div className="flex flex-wrap gap-4 mb-4">
+          {ALL_SOURCES.map((source) => (
+            <label key={source} className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={sources.includes(source)}
+                onChange={() => toggleSource(source)}
+                disabled={triggering}
+                className="w-4 h-4 accent-indigo-600"
+              />
+              <span className="text-sm font-medium text-gray-700">{source}</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { void handleTrigger(); }}
+            disabled={triggering || sources.length === 0}
+            className="bg-indigo-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {triggering ? t('admin.crawl.triggering') : t('admin.crawl.triggerBtn')}
+          </button>
+          {statusMsg && (
+            <span
+              className={`text-sm ${statusMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {statusMsg.text}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useAdminData<AdminOverviewStats>(
     '/admin/stats/overview',
   );
@@ -66,13 +152,13 @@ export default function DashboardPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-900">대시보드</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t('admin.dashboard.title')}</h1>
         <button
           onClick={() => { void refresh(); }}
           disabled={loading}
           className="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm hover:bg-indigo-700 disabled:opacity-50"
         >
-          {loading ? '로딩 중...' : '새로고침'}
+          {loading ? t('loading') : t('admin.dashboard.refresh')}
         </button>
       </div>
 
@@ -83,57 +169,60 @@ export default function DashboardPage() {
       )}
 
       {loading && !data ? (
-        <div className="text-center py-20 text-gray-400">데이터를 불러오는 중...</div>
+        <div className="text-center py-20 text-gray-400">{t('admin.dashboard.loadingData')}</div>
       ) : data ? (
         <>
           {/* 통계 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <StatCard
-              title="전체 신고"
+              title={t('admin.dashboard.totalReports')}
               value={data.reports.total}
               todayNew={data.reports.todayNew}
               details={[
-                { label: '활성', value: data.reports.active, color: 'text-green-600' },
-                { label: '발견', value: data.reports.found, color: 'text-blue-600' },
-                { label: '정지', value: data.reports.suspended, color: 'text-red-500' },
+                { label: t('admin.dashboard.active'), value: data.reports.active, color: 'text-green-600' },
+                { label: t('admin.dashboard.found'), value: data.reports.found, color: 'text-blue-600' },
+                { label: t('admin.dashboard.suspended'), value: data.reports.suspended, color: 'text-red-500' },
               ]}
             />
             <StatCard
-              title="전체 제보"
+              title={t('admin.dashboard.totalSightings')}
               value={data.sightings.total}
               todayNew={data.sightings.todayNew}
               details={[
-                { label: '웹', value: data.sightings.bySource?.WEB ?? 0 },
-                { label: '카카오', value: data.sightings.bySource?.KAKAO_CHATBOT ?? 0 },
-                { label: '관리자', value: data.sightings.bySource?.ADMIN ?? 0 },
+                { label: t('admin.dashboard.web'), value: data.sightings.bySource?.WEB ?? 0 },
+                { label: t('admin.dashboard.kakao'), value: data.sightings.bySource?.KAKAO_CHATBOT ?? 0 },
+                { label: t('admin.dashboard.adminLabel'), value: data.sightings.bySource?.ADMIN ?? 0 },
               ]}
             />
             <StatCard
-              title="전체 매칭"
+              title={t('admin.dashboard.totalMatches')}
               value={data.matches.total}
               details={[
-                { label: '대기', value: data.matches.pending, color: 'text-yellow-600' },
-                { label: '확인', value: data.matches.confirmed, color: 'text-green-600' },
+                { label: t('admin.dashboard.pending'), value: data.matches.pending, color: 'text-yellow-600' },
+                { label: t('admin.dashboard.confirmed'), value: data.matches.confirmed, color: 'text-green-600' },
                 {
-                  label: '고신뢰',
+                  label: t('admin.dashboard.highConfidence'),
                   value: data.matches.highConfidenceCount,
                   color: 'text-indigo-600',
                 },
               ]}
             />
             <StatCard
-              title="전체 사용자"
+              title={t('admin.dashboard.totalUsers')}
               value={data.users.total}
               todayNew={data.users.todayNew}
               details={[
-                { label: '차단', value: data.users.blocked, color: 'text-red-500' },
+                { label: t('admin.dashboard.blocked'), value: data.users.blocked, color: 'text-red-500' },
               ]}
             />
           </div>
 
+          {/* 데이터 수집 */}
+          <CrawlSection />
+
           {/* 큐 상태 */}
           <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-700 mb-3">큐 상태</h2>
+            <h2 className="text-base font-semibold text-gray-700 mb-3">{t('admin.dashboard.queueStatus')}</h2>
             {data.queues && data.queues.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                 {data.queues.map((q) => (
@@ -141,7 +230,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-gray-400">큐 데이터 없음</div>
+              <div className="text-sm text-gray-400">{t('admin.dashboard.noQueueData')}</div>
             )}
           </div>
         </>
