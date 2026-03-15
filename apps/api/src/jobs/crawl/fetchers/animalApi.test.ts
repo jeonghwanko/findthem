@@ -36,7 +36,10 @@ function makeApiResponse(items: unknown[], totalCount = items.length) {
 function makeAnimalItem(overrides: Record<string, string> = {}) {
   return {
     desertionNo: 'EXT-001',
-    kindCd: '[개] 푸들',
+    upKindNm: '개',
+    kindFullNm: '[개] 푸들',
+    kindCd: '000114',
+    kindNm: '푸들',
     sexCd: 'M',
     age: '2023(년생)',
     colorCd: '갈색',
@@ -45,7 +48,7 @@ function makeAnimalItem(overrides: Record<string, string> = {}) {
     happenPlace: '서울시 강남구',
     orgNm: '강남유기동물센터',
     careTel: '02-1234-5678',
-    popfile: 'https://example.com/photo.jpg',
+    popfile1: 'https://example.com/photo.jpg',
     weight: '5.0(kg)',
     ...overrides,
   };
@@ -126,7 +129,7 @@ describe('animalApiFetcher', () => {
       expect(report.contactName).toBe('강남유기동물센터');
       expect(report.color).toBe('갈색');
       expect(report.weight).toBe('5.0(kg)');
-      expect(report.species).toBe('[개] 푸들');
+      expect(report.species).toBe('[개] 푸들'); // kindFullNm
     });
 
     it('단일 item이 배열이 아닌 객체로 반환되어도 처리', async () => {
@@ -165,7 +168,7 @@ describe('animalApiFetcher', () => {
     it('name 필드: 고양이는 "유기묘 {desertionNo}" 형식', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-888', kindCd: '[고양이] 코리안숏헤어' })])),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ desertionNo: 'EXT-888', upKindNm: '고양이', kindFullNm: '[고양이] 코리안숏헤어' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -175,10 +178,10 @@ describe('animalApiFetcher', () => {
   });
 
   describe('subjectType 매핑', () => {
-    it('[개] 접두사 → DOG', async () => {
+    it('upKindNm "개" → DOG', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ kindCd: '[개] 푸들' })])),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ upKindNm: '개' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -186,10 +189,10 @@ describe('animalApiFetcher', () => {
       expect(results[0].subjectType).toBe('DOG');
     });
 
-    it('[고양이] 접두사 → CAT', async () => {
+    it('upKindNm "고양이" → CAT', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ kindCd: '[고양이] 페르시안' })])),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ upKindNm: '고양이', kindFullNm: '[고양이] 페르시안' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -197,16 +200,13 @@ describe('animalApiFetcher', () => {
       expect(results[0].subjectType).toBe('CAT');
     });
 
-    it('기타 kindCd (예: [기타축종]) → skip (결과에 포함되지 않음)', async () => {
-      // totalCount=1로 설정: loop가 1번만 실행되도록 (기타 아이템 skip → results.length=1 이지만
-      // skip된 아이템 자체가 결과에 포함 안 됨을 검증)
-      // totalCount를 실제 포함될 아이템 수(1)로 설정
+    it('기타 upKindNm (기타축종) → skip', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(makeApiResponse([
-            makeAnimalItem({ kindCd: '[기타축종] 토끼' }),
-            makeAnimalItem({ desertionNo: 'EXT-002', kindCd: '[개] 믹스견' }),
-          ], 1)),  // totalCount=1 → 1개 이상 결과가 모이면 loop 종료
+            makeAnimalItem({ upKindNm: '기타축종', kindFullNm: '[기타축종] 토끼' }),
+            makeAnimalItem({ desertionNo: 'EXT-002', upKindNm: '개', kindFullNm: '[개] 믹스견' }),
+          ], 1)),  // totalCount=1 → loop 종료
       });
 
       const results = await animalApiFetcher.fetch();
@@ -264,10 +264,10 @@ describe('animalApiFetcher', () => {
   });
 
   describe('photoUrl 처리', () => {
-    it('popfile 있으면 photoUrl 설정', async () => {
+    it('popfile1 있으면 photoUrl 설정', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile: 'https://example.com/img.jpg' })])),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile1: 'https://example.com/img.jpg' })])),
       });
 
       const results = await animalApiFetcher.fetch();
@@ -275,10 +275,10 @@ describe('animalApiFetcher', () => {
       expect(results[0].photoUrl).toBe('https://example.com/img.jpg');
     });
 
-    it('popfile 빈 문자열이면 photoUrl이 undefined', async () => {
+    it('popfile1 빈 문자열이면 photoUrl이 undefined', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile: '' })])),
+        json: () => Promise.resolve(makeApiResponse([makeAnimalItem({ popfile1: '' })])),
       });
 
       const results = await animalApiFetcher.fetch();

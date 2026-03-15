@@ -9,7 +9,10 @@ const FETCH_TIMEOUT_MS = 10_000;
 
 interface AnimalApiItem {
   desertionNo: string;
-  kindCd: string;
+  upKindNm: string;   // v2: "개" | "고양이" | "기타축종"
+  kindFullNm: string; // v2: "[개] 믹스견"
+  kindCd: string;     // v2: numeric code
+  kindNm: string;
   sexCd: string;
   age: string;
   colorCd: string;
@@ -18,7 +21,7 @@ interface AnimalApiItem {
   happenPlace: string;
   orgNm: string;
   careTel: string;
-  popfile: string;
+  popfile1: string;   // v2: was "popfile"
   weight: string;
 }
 
@@ -34,9 +37,9 @@ interface FetchResult {
   pageNo: number;
 }
 
-function mapKindToSubjectType(kindCd: string): 'DOG' | 'CAT' | null {
-  if (kindCd.startsWith('[개]')) return 'DOG';
-  if (kindCd.startsWith('[고양이]')) return 'CAT';
+function mapKindToSubjectType(upKindNm: string): 'DOG' | 'CAT' | null {
+  if (upKindNm === '개') return 'DOG';
+  if (upKindNm === '고양이') return 'CAT';
   return null;
 }
 
@@ -114,24 +117,24 @@ export async function fetchAnimalApi(input: unknown): Promise<FetchResult> {
 
   const items: ExternalReport[] = [];
   for (const item of apiItems) {
-    const subjectType = mapKindToSubjectType(item.kindCd ?? '');
+    const subjectType = mapKindToSubjectType(item.upKindNm ?? '');
     if (!subjectType) continue;
 
     items.push({
       externalId: item.desertionNo,
       subjectType,
       name: `유기${subjectType === 'DOG' ? '견' : '묘'} ${item.desertionNo}`,
-      features: item.specialMark || `${item.colorCd ?? ''} ${item.kindCd ?? ''}`.trim() || '특징 미상',
+      features: item.specialMark || `${item.colorCd ?? ''} ${item.kindFullNm ?? ''}`.trim() || '특징 미상',
       lastSeenAt: parseHappenDt(item.happenDt),
       lastSeenAddress: item.happenPlace || '장소 미상',
-      photoUrl: item.popfile || undefined,
+      photoUrl: item.popfile1 || undefined,
       contactPhone: item.careTel || undefined,
       contactName: item.orgNm || undefined,
       gender: mapSexCode(item.sexCd ?? ''),
       age: item.age || undefined,
       color: item.colorCd || undefined,
       weight: item.weight || undefined,
-      species: item.kindCd || undefined,
+      species: item.kindFullNm || undefined,
     });
   }
 
