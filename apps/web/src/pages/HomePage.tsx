@@ -103,18 +103,18 @@ export default function HomePage() {
     <div className="bg-white">
       {/* Hero */}
       <section
-        className="border-b border-gray-100 py-20 px-4 relative overflow-hidden"
+        className="border-b border-pink-100 py-20 px-4 relative overflow-hidden"
         style={{
-          backgroundImage: 'radial-gradient(circle, #c7d2fe 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #f9a8d4 1px, transparent 1px)',
           backgroundSize: '28px 28px',
-          backgroundColor: '#f8fafc',
+          backgroundColor: '#fdf2f8',
         }}
       >
         {/* 배경 그라디언트 페이드 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/80 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-white/70 pointer-events-none" />
 
         <div className="max-w-3xl mx-auto text-center relative">
-          <span className="inline-block bg-primary-50 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
+          <span className="inline-block bg-pink-100 text-pink-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
             {t('home.heroBadge')}
           </span>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">
@@ -168,7 +168,7 @@ export default function HomePage() {
       </section>
 
       {/* 기능 소개 - 인디고 틴트 밴드 */}
-      <div className="bg-primary-50/50 border-y border-primary-100/70 py-12 px-4">
+      <div className="bg-gray-50 border-y border-gray-100 py-12 px-4">
         <div className="max-w-5xl mx-auto">
           {/* 태그 행 */}
           <div className="flex flex-wrap gap-2 justify-center mb-6">
