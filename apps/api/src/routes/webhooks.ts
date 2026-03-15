@@ -1,4 +1,5 @@
 import type { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
@@ -28,28 +29,24 @@ export function registerWebhookRoutes(router: Router) {
     }
 
     try {
-      // RACE-07: TODO — ChatSession에 @@unique([platformUserId, platform]) 제약이 없어서
-      // prisma.chatSession.upsert 패턴을 적용할 수 없음.
-      // 적용하려면 schema.prisma의 ChatSession 모델에 아래를 추가하고 마이그레이션 필요:
-      //   @@unique([platformUserId, platform])
-      // 현재는 findFirst fallback 패턴 유지.
-      // 기존 활성 세션 찾기 (engineVersion 포함)
+      // RACE-07: partial unique index로 해결됨.
+      // chat_session_active_platform_user_unique: (platformUserId, platform) WHERE status = 'ACTIVE'
+      // → 동일 사용자의 ACTIVE 세션이 동시에 두 개 생성되면 DB가 P2002를 발생시킴.
+      const SESSION_SELECT = {
+        id: true,
+        engineVersion: true,
+        platform: true,
+        platformUserId: true,
+        status: true,
+        state: true,
+        context: true,
+        updatedAt: true,
+      } as const;
+
+      // 기존 활성 세션 찾기
       let session = await prisma.chatSession.findFirst({
-        where: {
-          platformUserId: kakaoUserId,
-          platform: 'KAKAO',
-          status: 'ACTIVE',
-        },
-        select: {
-          id: true,
-          engineVersion: true,
-          platform: true,
-          platformUserId: true,
-          status: true,
-          state: true,
-          context: true,
-          updatedAt: true,
-        },
+        where: { platformUserId: kakaoUserId, platform: 'KAKAO', status: 'ACTIVE' },
+        select: SESSION_SELECT,
         orderBy: { updatedAt: 'desc' },
       });
 
@@ -58,26 +55,43 @@ export function registerWebhookRoutes(router: Router) {
       // v2 분기: 새 세션이거나 v2 세션인 경우
       if (!session || session.engineVersion === 'v2' || isReset) {
         if (!session || isReset) {
-          // 모든 새 세션은 v2로 생성
-          session = await prisma.chatSession.create({
-            data: {
-              platform: 'KAKAO',
-              platformUserId: kakaoUserId,
-              state: { currentStep: 'GREETING' },
-              context: {},
-              engineVersion: 'v2',
-            },
-            select: {
-              id: true,
-              engineVersion: true,
-              platform: true,
-              platformUserId: true,
-              status: true,
-              state: true,
-              context: true,
-              updatedAt: true,
-            },
-          });
+          // reset 시 기존 세션 먼저 ABANDONED 처리 (partial unique index 해제)
+          if (isReset && session) {
+            await prisma.chatSession.update({
+              where: { id: session.id },
+              data: { status: 'ABANDONED' },
+            });
+          }
+
+          // 새 세션 생성 — 동시 요청 race 시 P2002 발생 가능 (optimistic create)
+          try {
+            session = await prisma.chatSession.create({
+              data: {
+                platform: 'KAKAO',
+                platformUserId: kakaoUserId,
+                state: { currentStep: 'GREETING' },
+                context: {},
+                engineVersion: 'v2',
+              },
+              select: SESSION_SELECT,
+            });
+          } catch (createErr) {
+            // P2002: 동시 요청이 먼저 생성한 세션 사용
+            if (
+              createErr instanceof Prisma.PrismaClientKnownRequestError &&
+              createErr.code === 'P2002'
+            ) {
+              const existing = await prisma.chatSession.findFirst({
+                where: { platformUserId: kakaoUserId, platform: 'KAKAO', status: 'ACTIVE' },
+                select: SESSION_SELECT,
+                orderBy: { updatedAt: 'desc' },
+              });
+              if (!existing) throw createErr;
+              session = existing;
+            } else {
+              throw createErr;
+            }
+          }
         }
 
         // 4초 타임아웃 적용 (카카오 5초 제한 대응)
