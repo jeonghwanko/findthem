@@ -95,7 +95,8 @@ describe('animalApiFetcher', () => {
       const calledUrl: string = fetchSpy.mock.calls[0][0] as string;
 
       expect(calledUrl).toContain('apis.data.go.kr');
-      expect(calledUrl).toContain('abandonmentPublicSrvc');
+      expect(calledUrl).toContain('abandonmentPublicService_v2');
+      expect(calledUrl).toContain('abandonmentPublic_v2');
       expect(calledUrl).toContain('serviceKey=test-api-key');
       expect(calledUrl).toContain('_type=json');
       expect(calledUrl).toContain('numOfRows=100');
