@@ -105,13 +105,13 @@ export default function HomePage() {
       <section
         className="border-b border-pink-100 py-20 px-4 relative overflow-hidden"
         style={{
-          backgroundImage: 'radial-gradient(circle, #f9a8d4 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #f472b6 1px, transparent 1px)',
           backgroundSize: '28px 28px',
-          backgroundColor: '#fdf2f8',
+          backgroundColor: '#fce7f3',
         }}
       >
         {/* 배경 그라디언트 페이드 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-white/70 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/40 pointer-events-none" />
 
         <div className="max-w-3xl mx-auto text-center relative">
           <span className="inline-block bg-pink-100 text-pink-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
