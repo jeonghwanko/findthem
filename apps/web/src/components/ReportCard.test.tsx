@@ -96,6 +96,6 @@ describe('ReportCard', () => {
     renderReportCard(createMockReport());
     const img = screen.getByRole('img');
     expect(img.getAttribute('src')).toBe('/uploads/thumbs/photo.jpg');
-    expect(img.getAttribute('alt')).toBe('초코');
+    expect(img.getAttribute('alt')).toBe('초코 - 강아지 실종 사진');
   });
 });

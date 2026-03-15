@@ -4,12 +4,14 @@
   "footer": "FindThem - AI搭載 行方不明者・ペット検索サービス",
   "nav": {
     "browse": "一覧",
+    "devlog": "開発ブログ",
     "myReports": "マイ届出",
     "newReport": "届出登録",
     "logout": "ログアウト",
     "login": "ログイン"
   },
   "home": {
+    "heroBadge": "AI搭載 行方不明者・ペット検索",
     "heroTitle": "大切な家族を見つけるお手伝いをします",
     "heroDesc": "AIが自動でSNSに宣伝し、目撃情報を分析してマッチングします",
     "newReport": "届出を登録",
@@ -129,7 +131,9 @@
   },
   "card": {
     "found": "見つかりました！",
-    "sightingCount": "{{count}}件の情報"
+    "sightingCount": "{{count}}件の情報",
+    "noPhoto": "写真なし",
+    "photoAlt": "{{name}} - {{type}} 行方不明写真"
   },
   "upload": {
     "addPhoto": "写真追加",

@@ -4,12 +4,14 @@
   "footer": "FindThem - AI-powered missing person/pet finder",
   "nav": {
     "browse": "Browse All",
+    "devlog": "Dev Blog",
     "myReports": "My Reports",
     "newReport": "New Report",
     "logout": "Logout",
     "login": "Login"
   },
   "home": {
+    "heroBadge": "AI-Powered Missing Person & Pet Finder",
     "heroTitle": "We help you find your beloved family",
     "heroDesc": "AI automatically promotes on social media, analyzes sightings, and finds matches",
     "newReport": "Report Missing",
@@ -129,7 +131,9 @@
   },
   "card": {
     "found": "Found!",
-    "sightingCount": "{{count}} sightings"
+    "sightingCount": "{{count}} sightings",
+    "noPhoto": "No photo",
+    "photoAlt": "{{name}} - {{type}} missing photo"
   },
   "upload": {
     "addPhoto": "Add Photo",

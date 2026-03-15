@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Camera, MapPin } from 'lucide-react';
 import type { Report } from '../api/client';
-import { formatTimeAgo } from '@findthem/shared';
+import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
+import type { SubjectType } from '@findthem/shared';
 
-const TYPE_COLORS: Record<string, string> = {
-  PERSON: 'bg-blue-100 text-blue-700',
-  DOG: 'bg-amber-100 text-amber-700',
-  CAT: 'bg-purple-100 text-purple-700',
+const TYPE_BADGE: Record<SubjectType, { bg: string; text: string; dot: string }> = {
+  PERSON: { bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-400' },
+  DOG: { bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400' },
+  CAT: { bg: 'bg-violet-50', text: 'text-violet-600', dot: 'bg-violet-400' },
 };
 
 interface ReportCardProps {
@@ -14,49 +16,63 @@ interface ReportCardProps {
 }
 
 export default function ReportCard({ report }: ReportCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const primaryPhoto = report.photos?.[0];
-  const timeAgo = formatTimeAgo(report.createdAt);
+  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(l + '-')) ?? DEFAULT_LOCALE;
+  const timeAgo = formatTimeAgo(report.createdAt, locale);
+  const badge = TYPE_BADGE[report.subjectType] ?? TYPE_BADGE.PERSON;
 
   return (
     <Link
       to={`/reports/${report.id}`}
-      className="block bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+      className="group block bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all overflow-hidden"
     >
-      <div className="aspect-[4/3] bg-gray-100 relative">
+      {/* 이미지 */}
+      <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
         {primaryPhoto ? (
           <img
             src={primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl}
-            alt={report.name}
-            className="w-full h-full object-cover"
+            alt={t('card.photoAlt', { name: report.name, type: t(`subjectType.${report.subjectType}`) })}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl">
-            📷
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" aria-label={t('card.noPhoto')}>
+            <Camera className="w-8 h-8" aria-hidden="true" />
           </div>
         )}
-        <span
-          className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[report.subjectType]}`}
-        >
+
+        {/* 타입 배지 */}
+        <span className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} aria-hidden="true" />
           {t(`subjectType.${report.subjectType}`)}
         </span>
+
+        {/* FOUND 오버레이 */}
         {report.status === 'FOUND' && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white text-lg font-bold">{t('card.found')}</span>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+            <span className="bg-white text-gray-900 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
+              {t('card.found')}
+            </span>
           </div>
         )}
       </div>
 
-      <div className="p-3">
-        <h3 className="font-semibold text-gray-900 truncate">{report.name}</h3>
-        <p className="text-sm text-gray-500 mt-1 truncate">
-          📍 {report.lastSeenAddress}
+      {/* 텍스트 */}
+      <div className="p-3.5">
+        <h3 className="font-semibold text-gray-900 truncate text-sm">{report.name}</h3>
+        <p className="text-xs text-gray-400 mt-1 truncate flex items-center gap-1">
+          <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
+          <span>{report.lastSeenAddress}</span>
         </p>
-        <p className="text-sm text-gray-400 mt-1 line-clamp-2">{report.features}</p>
-        <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
+        {report.features?.trim() && (
+          <p className="text-xs text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">{report.features}</p>
+        )}
+        <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-100 text-xs text-gray-400">
           <span>{timeAgo}</span>
-          {report._count && (
-            <span>{t('card.sightingCount', { count: report._count.sightings })}</span>
+          {report._count && report._count.sightings > 0 && (
+            <span className="text-primary-500 font-medium">
+              {t('card.sightingCount', { count: report._count.sightings })}
+            </span>
           )}
         </div>
       </div>

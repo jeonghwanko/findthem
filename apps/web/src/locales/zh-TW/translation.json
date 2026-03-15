@@ -4,12 +4,14 @@
   "footer": "FindThem - AI 驅動的失蹤人口/寵物搜尋服務",
   "nav": {
     "browse": "瀏覽全部",
+    "devlog": "開發日誌",
     "myReports": "我的報案",
     "newReport": "報案登記",
     "logout": "登出",
     "login": "登入"
   },
   "home": {
+    "heroBadge": "AI 驅動失蹤配對平台",
     "heroTitle": "幫您找回摯愛的家人",
     "heroDesc": "AI 自動在社群媒體宣傳，分析目擊報告並進行比對",
     "newReport": "報案登記",
@@ -129,7 +131,9 @@
   },
   "card": {
     "found": "已尋獲！",
-    "sightingCount": "{{count}}則線索"
+    "sightingCount": "{{count}}則線索",
+    "noPhoto": "無照片",
+    "photoAlt": "{{name}} - {{type}} 失蹤照片"
   },
   "upload": {
     "addPhoto": "新增照片",

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Search, LogOut, LogIn, FileText, List, BookOpen } from 'lucide-react';
 import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -12,44 +13,55 @@ export default function Header({ user, onLogout }: HeaderProps) {
   const { t } = useTranslation();
 
   return (
-    <header className="bg-primary-600 text-white shadow-lg sticky top-0 z-40" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header
+      className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-40"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl">🔍</span>
-          <span className="text-xl font-bold">{t('brand')}</span>
+          <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
+            <Search className="w-4 h-4 text-white" aria-hidden="true" />
+          </div>
+          <span className="text-lg font-bold text-gray-900">{t('brand')}</span>
         </Link>
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}
-        <nav className="hidden md:flex items-center gap-4 text-sm">
-          <Link to="/browse" className="hover:text-primary-200 transition-colors">
+        <nav className="hidden md:flex items-center gap-1 text-sm">
+          <Link to="/browse" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+            <List className="w-4 h-4" aria-hidden="true" />
             {t('nav.browse')}
           </Link>
-          <a href="/devlog" className="hover:text-primary-200 transition-colors">
-            데브로그
+          <a href="/devlog" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+            <BookOpen className="w-4 h-4" aria-hidden="true" />
+            {t('nav.devlog')}
           </a>
           {user ? (
             <>
-              <Link to="/my-reports" className="hover:text-primary-200 transition-colors">
+              <Link to="/my-reports" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+                <FileText className="w-4 h-4" aria-hidden="true" />
                 {t('nav.myReports')}
               </Link>
               <Link
                 to="/reports/new"
-                className="bg-accent-500 hover:bg-accent-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+                className="ml-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 {t('nav.newReport')}
               </Link>
               <button
+                type="button"
                 onClick={onLogout}
-                className="text-primary-200 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
               >
+                <LogOut className="w-4 h-4" aria-hidden="true" />
                 {t('nav.logout')}
               </button>
             </>
           ) : (
             <Link
               to="/login"
-              className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 ml-2 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors"
             >
+              <LogIn className="w-4 h-4" aria-hidden="true" />
               {t('nav.login')}
             </Link>
           )}
@@ -61,15 +73,16 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <LanguageSwitcher />
           {user ? (
             <button
+              type="button"
               onClick={onLogout}
-              className="text-primary-200 hover:text-white text-sm transition-colors"
+              className="text-gray-500 hover:text-gray-900 text-sm transition-colors"
             >
               {t('nav.logout')}
             </button>
           ) : (
             <Link
               to="/login"
-              className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm transition-colors"
+              className="border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
             >
               {t('nav.login')}
             </Link>
