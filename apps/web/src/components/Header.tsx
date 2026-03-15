@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LogOut, LogIn, FileText, List, BookOpen } from 'lucide-react';
+import { Search, LogOut, LogIn, FileText, List, BookOpen, Bell, BellOff } from 'lucide-react';
 import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
+import { usePushNotification } from '../hooks/usePushNotification';
 
 interface HeaderProps {
   user: User | null;
@@ -11,6 +12,7 @@ interface HeaderProps {
 
 export default function Header({ user, onLogout }: HeaderProps) {
   const { t } = useTranslation();
+  const { subscribed, loading, isSupported, subscribe, unsubscribe } = usePushNotification();
 
   return (
     <header
@@ -47,6 +49,21 @@ export default function Header({ user, onLogout }: HeaderProps) {
               >
                 {t('nav.newReport')}
               </Link>
+              {isSupported && (
+                <button
+                  type="button"
+                  onClick={() => { void (subscribed ? unsubscribe() : subscribe()); }}
+                  disabled={loading}
+                  title={subscribed ? t('push.unsubscribe') : t('push.subscribe')}
+                  className="flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {subscribed ? (
+                    <Bell className="w-4 h-4 text-primary-600" aria-hidden="true" />
+                  ) : (
+                    <BellOff className="w-4 h-4" aria-hidden="true" />
+                  )}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onLogout}

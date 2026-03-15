@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { DEFAULT_LOCALE, type Locale } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { sendPushToUser } from './pushService.js';
 
 const log = createLogger('notificationService');
 
@@ -17,6 +18,7 @@ export interface MatchNotificationParams {
   matchId: string;
   sightingUrl: string;
   locale?: Locale;
+  userId?: string;
 }
 
 // ── SMS 본문 다국어 맵 ──
@@ -140,10 +142,23 @@ export async function sendMatchNotification(params: MatchNotificationParams): Pr
     confidence,
     sightingUrl,
     locale = DEFAULT_LOCALE,
+    userId,
   } = params;
 
   const confidencePct = Math.round(confidence * 100);
   const smsText = SMS_MESSAGES[locale](recipientName, reportName, confidencePct, sightingUrl);
+
+  // 웹 푸시는 채널(알림톡/SMS)과 무관하게 항상 병렬 발송
+  if (userId) {
+    sendPushToUser(userId, {
+      title: '[FindThem] 매칭 알림',
+      body: `"${reportName}" 신고와 유사한 목격 제보가 있습니다. (일치도 ${confidencePct}%)`,
+      url: sightingUrl,
+      icon: '/pwa-192x192.png',
+    }).catch((err) => {
+      log.warn({ err }, '[NOTIFICATION] Web push failed');
+    });
+  }
 
   // 1. 카카오 알림톡 시도
   const alimtalkSent = await sendAlimtalk(recipientPhone, 'MATCH_NOTIFY', {

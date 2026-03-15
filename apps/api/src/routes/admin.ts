@@ -491,7 +491,7 @@ export function registerAdminRoutes(router: Router) {
 
     const resolvedTags: Array<{ name: string }> =
       Array.isArray(tags) && tags.every((t) => typeof t === 'string')
-        ? (tags as string[]).map((t) => ({ name: t }))
+        ? (tags).map((t) => ({ name: t }))
         : [{ name: 'devlog' }];
 
     return {

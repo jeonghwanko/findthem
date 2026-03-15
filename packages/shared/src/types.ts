@@ -43,6 +43,8 @@ export interface ReportSummary {
   features: string;
   lastSeenAt: string;
   lastSeenAddress: string;
+  lastSeenLat?: number | null;
+  lastSeenLng?: number | null;
   contactPhone: string;
   contactName: string;
   reward?: string | null;
@@ -58,8 +60,6 @@ export interface ReportDetail extends ReportSummary {
   height?: string | null;
   color?: string | null;
   clothingDesc?: string | null;
-  lastSeenLat?: number | null;
-  lastSeenLng?: number | null;
   aiDescription?: string | null;
   user?: { id: string; name: string };
 }
@@ -76,6 +76,8 @@ export interface Sighting {
   description: string;
   sightedAt: string;
   address: string;
+  lat?: number | null;
+  lng?: number | null;
   photos: SightingPhoto[];
   createdAt: string;
 }

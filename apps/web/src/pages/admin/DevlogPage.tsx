@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { devlogApi } from '../../api/admin';
-import type {
-  DevlogPreviewRequest,
-  DevlogPreviewResponse,
-  DevlogGenerateResponse,
+import {
+  devlogApi,
+  type DevlogPreviewRequest,
+  type DevlogPreviewResponse,
+  type DevlogGenerateResponse,
 } from '../../api/admin';
 
 const COMMIT_COUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);

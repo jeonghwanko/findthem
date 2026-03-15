@@ -51,4 +51,8 @@ export const config = {
   ghostAdminApiKey: process.env.GHOST_ADMIN_API_KEY || '',
   ghostApiUrl: process.env.GHOST_API_URL || 'https://union.pryzm.gg/devlog',
   devlogRepoPath: process.env.DEVLOG_REPO_PATH || process.cwd(),
+
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
+  vapidEmail: process.env.VAPID_EMAIL || 'mailto:admin@union.pryzm.gg',
 } as const;

@@ -1,5 +1,4 @@
-import { simpleGit } from 'simple-git';
-import type { DefaultLogFields, ListLogLine } from 'simple-git';
+import { simpleGit, type DefaultLogFields, type ListLogLine } from 'simple-git';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('gitDiffService');

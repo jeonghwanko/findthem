@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
 import type { Report } from '../api/client';
-import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
-import type { SubjectType } from '@findthem/shared';
+import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE, type SubjectType } from '@findthem/shared';
 
 const TYPE_BADGE: Record<SubjectType, { bg: string; text: string; dot: string }> = {
   PERSON: { bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-400' },
@@ -18,7 +17,7 @@ interface ReportCardProps {
 export default function ReportCard({ report }: ReportCardProps) {
   const { t, i18n } = useTranslation();
   const primaryPhoto = report.photos?.[0];
-  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(l + '-') || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
+  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l  }-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(report.createdAt, locale);
   const badge = TYPE_BADGE[report.subjectType] ?? TYPE_BADGE.PERSON;
   // 외부 수집 데이터는 name이 숫자 ID인 경우가 있음 — 대상 유형 라벨로 대체

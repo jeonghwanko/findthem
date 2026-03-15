@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type ReportDetail, type Sighting, type SightingListResponse } from '../api/client';
 import ShareButton from '../components/ShareButton';
+import KakaoMap from '../components/KakaoMap';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',
@@ -10,6 +11,10 @@ const STATUS_MAP: Record<string, string> = {
   EXPIRED: 'statusExpired',
   SUSPENDED: 'statusSuspended',
 };
+
+function esc(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 export default function ReportDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -155,6 +160,37 @@ export default function ReportDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 위치 지도 */}
+      {report.lastSeenLat !== null && report.lastSeenLat !== undefined && report.lastSeenLng !== null && report.lastSeenLng !== undefined && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <h2 className="font-semibold text-lg mb-4">{t('detail.locationMap')}</h2>
+          <KakaoMap
+            markers={[
+              {
+                lat: report.lastSeenLat,
+                lng: report.lastSeenLng,
+                title: report.name,
+                infoContent: `<div style="padding:4px 8px;font-size:13px"><strong>${esc(report.name)}</strong><br/>${esc(report.lastSeenAddress)}</div>`,
+              },
+              ...sightings
+                .filter((s): s is Sighting & { lat: number; lng: number } =>
+                  s.lat !== null && s.lat !== undefined && s.lng !== null && s.lng !== undefined,
+                )
+                .map((s) => ({
+                  lat: s.lat,
+                  lng: s.lng,
+                  title: s.address,
+                  infoContent: `<div style="padding:4px 8px;font-size:13px">${esc(s.description)}<br/><span style="color:#6b7280">${esc(s.address)}</span></div>`,
+                })),
+            ]}
+            center={{ lat: report.lastSeenLat, lng: report.lastSeenLng }}
+            level={6}
+            useCluster={false}
+            className="w-full h-72 rounded-lg"
+          />
+        </div>
+      )}
 
       {/* 연락처 */}
       <div className="bg-primary-50 rounded-xl p-6 mb-6">

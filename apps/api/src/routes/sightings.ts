@@ -1,6 +1,7 @@
 import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { optionalAuth } from '../middlewares/auth.js';
@@ -8,7 +9,6 @@ import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
 import { MAX_FILE_SIZE, ERROR_CODES } from '@findthem/shared';
-import type { Prisma } from '@prisma/client';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -36,7 +36,22 @@ const createSightingSchema = z.object({
 const sightingListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  radiusKm: z.coerce.number().min(1).max(200).default(50).optional(),
 });
+
+interface RawSightingRow {
+  id: string;
+  report_id: string | null;
+  description: string;
+  sighted_at: Date;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  created_at: Date;
+  distance_km: number;
+}
 
 export function registerSightingRoutes(router: Router) {
   // 제보 접수
@@ -95,6 +110,68 @@ export function registerSightingRoutes(router: Router) {
       res.status(201).json({ ...sighting, photos });
     },
   );
+
+  // 전체 제보 목록 (반경 검색 지원)
+  router.get('/sightings', optionalAuth, validateQuery(sightingListQuerySchema), async (req, res) => {
+    const { page, limit, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof sightingListQuerySchema>;
+
+    if (lat !== undefined && lng !== undefined) {
+      const radius = radiusKm ?? 50;
+      const skip = (page - 1) * limit;
+
+      const baseQuery = Prisma.sql`
+        SELECT s.id, s.report_id, s.description, s.sighted_at, s.address, s.lat, s.lng, s.created_at,
+               (6371 * 2 * ASIN(SQRT(
+                 POWER(SIN(RADIANS((${lat} - s.lat) / 2)), 2) +
+                 COS(RADIANS(${lat})) * COS(RADIANS(s.lat)) *
+                 POWER(SIN(RADIANS((${lng} - s.lng) / 2)), 2)
+               ))) AS distance_km
+        FROM sighting s
+        WHERE s.lat IS NOT NULL AND s.lng IS NOT NULL
+      `;
+
+      const [rawRows, countRows] = await Promise.all([
+        prisma.$queryRaw<RawSightingRow[]>`
+          SELECT * FROM (${baseQuery}) sub
+          WHERE sub.distance_km <= ${radius}
+          ORDER BY sub.distance_km ASC
+          LIMIT ${Prisma.raw(String(limit))} OFFSET ${Prisma.raw(String(skip))}
+        `,
+        prisma.$queryRaw<[{ count: bigint }]>`
+          SELECT COUNT(*) FROM (${baseQuery}) sub
+          WHERE sub.distance_km <= ${radius}
+        `,
+      ]);
+
+      const total = Number(countRows[0]?.count ?? 0);
+      const sightings = rawRows.map((s) => ({
+        id: s.id,
+        reportId: s.report_id,
+        description: s.description,
+        sightedAt: s.sighted_at,
+        address: s.address,
+        lat: s.lat,
+        lng: s.lng,
+        createdAt: s.created_at,
+        photos: [],
+        distanceKm: Math.round(s.distance_km * 10) / 10,
+      }));
+
+      return res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+    }
+
+    const [sightings, total] = await Promise.all([
+      prisma.sighting.findMany({
+        include: { photos: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.sighting.count(),
+    ]);
+
+    res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+  });
 
   // 특정 신고에 대한 제보 목록 (페이지네이션 적용)
   router.get(

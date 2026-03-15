@@ -28,9 +28,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reports      Report[]
-  sightings    Sighting[]
-  chatSessions ChatSession[]
+  reports           Report[]
+  sightings         Sighting[]
+  chatSessions      ChatSession[]
+  pushSubscriptions PushSubscription[]
 
   @@map("user")
 }
@@ -96,6 +97,7 @@ model Report {
   @@index([status])
   @@index([subjectType, status])
   @@index([externalSource])
+  @@index([lastSeenLat, lastSeenLng])
   @@map("report")
 }
 
@@ -169,6 +171,7 @@ model Sighting {
 
   @@index([reportId])
   @@index([status])
+  @@index([lat, lng])
   @@map("sighting")
 }
 
@@ -377,6 +380,23 @@ model PromotionLog {
 
   @@index([reportId, createdAt])
   @@map("promotion_log")
+}
+
+// ── Push Subscription (웹 푸시 구독) ──
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
 }
 
 // ── Admin Audit Log (관리자 감사 로그) ──

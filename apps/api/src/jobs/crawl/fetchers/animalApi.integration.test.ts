@@ -7,7 +7,9 @@
  * Skipped automatically in CI (INTEGRATION_TEST not set).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
+import { config } from '../../../config.js';
 
+// eslint-disable-next-line no-restricted-syntax -- integration test entry point must read env directly
 const RUN = !!process.env.INTEGRATION_TEST;
 
 const BASE_URL =
@@ -17,7 +19,7 @@ describe.skipIf(!RUN)('animalApi integration', () => {
   let apiKey: string;
 
   beforeAll(() => {
-    apiKey = process.env.PUBLIC_DATA_API_KEY ?? '';
+    apiKey = config.publicDataApiKey;
     if (!apiKey) throw new Error('PUBLIC_DATA_API_KEY env var is required');
   });
 

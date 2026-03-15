@@ -8,6 +8,7 @@ import { registerWebhookRoutes } from './webhooks.js';
 import { registerAdminRoutes } from './admin.js';
 import { registerAgentRoutes } from './agent.js';
 import { registerPromotionRoutes } from './promotions.js';
+import { registerPushRoutes } from './push.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -21,6 +22,7 @@ export function createRouter(): Router {
   registerAdminRoutes(router);
   registerAgentRoutes(router);
   registerPromotionRoutes(router);
+  registerPushRoutes(router);
 
   return router;
 }

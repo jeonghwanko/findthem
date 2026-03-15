@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth, optionalAuth } from '../middlewares/auth.js';
@@ -45,7 +45,28 @@ const listQuerySchema = z.object({
   type: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
   status: z.enum(['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED']).optional(),
   q: z.string().optional(),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  radiusKm: z.coerce.number().min(1).max(200).default(50).optional(),
 });
+
+interface RawReportRow {
+  id: string;
+  subject_type: string;
+  status: string;
+  name: string;
+  species: string | null;
+  features: string;
+  last_seen_at: Date;
+  last_seen_address: string;
+  last_seen_lat: number | null;
+  last_seen_lng: number | null;
+  contact_phone: string;
+  contact_name: string;
+  reward: string | null;
+  created_at: Date;
+  distance_km: number;
+}
 
 export function registerReportRoutes(router: Router) {
   // 실종 신고 등록
@@ -109,7 +130,71 @@ export function registerReportRoutes(router: Router) {
 
   // 실종 신고 목록
   router.get('/reports', optionalAuth, validateQuery(listQuerySchema), async (req, res) => {
-    const { page, limit, type, status, q } = req.query as unknown as z.infer<typeof listQuerySchema>;
+    const { page, limit, type, status, q, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof listQuerySchema>;
+
+    // 반경 검색: lat + lng 모두 있을 때 Haversine raw query 사용
+    if (lat !== undefined && lng !== undefined) {
+      const radius = radiusKm ?? 50;
+      const skip = (page - 1) * limit;
+      const statusVal = status ?? 'ACTIVE';
+
+      const typeCondition = type ? Prisma.sql`AND r.subject_type::text = ${type}` : Prisma.empty;
+      const qCondition = q
+        ? Prisma.sql`AND (r.name ILIKE ${`%${  q  }%`} OR r.features ILIKE ${`%${  q  }%`} OR r.last_seen_address ILIKE ${`%${  q  }%`})`
+        : Prisma.empty;
+
+      const baseQuery = Prisma.sql`
+        SELECT r.id, r.subject_type, r.status, r.name, r.species, r.features,
+               r.last_seen_at, r.last_seen_address, r.last_seen_lat, r.last_seen_lng,
+               r.contact_phone, r.contact_name, r.reward, r.created_at,
+               (6371 * 2 * ASIN(SQRT(
+                 POWER(SIN(RADIANS((${lat} - r.last_seen_lat) / 2)), 2) +
+                 COS(RADIANS(${lat})) * COS(RADIANS(r.last_seen_lat)) *
+                 POWER(SIN(RADIANS((${lng} - r.last_seen_lng) / 2)), 2)
+               ))) AS distance_km
+        FROM report r
+        WHERE r.last_seen_lat IS NOT NULL
+          AND r.last_seen_lng IS NOT NULL
+          AND r.status::text = ${statusVal}
+          ${typeCondition}
+          ${qCondition}
+      `;
+
+      const [rawRows, countRows] = await Promise.all([
+        prisma.$queryRaw<RawReportRow[]>`
+          SELECT * FROM (${baseQuery}) sub
+          WHERE sub.distance_km <= ${radius}
+          ORDER BY sub.distance_km ASC
+          LIMIT ${Prisma.raw(String(limit))} OFFSET ${Prisma.raw(String(skip))}
+        `,
+        prisma.$queryRaw<[{ count: bigint }]>`
+          SELECT COUNT(*) FROM (${baseQuery}) sub
+          WHERE sub.distance_km <= ${radius}
+        `,
+      ]);
+
+      const total = Number(countRows[0]?.count ?? 0);
+      const reports = rawRows.map((r) => ({
+        id: r.id,
+        subjectType: r.subject_type,
+        status: r.status,
+        name: r.name,
+        species: r.species,
+        features: r.features,
+        lastSeenAt: r.last_seen_at,
+        lastSeenAddress: r.last_seen_address,
+        lastSeenLat: r.last_seen_lat,
+        lastSeenLng: r.last_seen_lng,
+        contactPhone: r.contact_phone,
+        contactName: r.contact_name,
+        reward: r.reward,
+        createdAt: r.created_at,
+        photos: [],
+        distanceKm: Math.round(r.distance_km * 10) / 10,
+      }));
+
+      return res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
+    }
 
     const where: Prisma.ReportWhereInput = {};
     if (type) where.subjectType = type;

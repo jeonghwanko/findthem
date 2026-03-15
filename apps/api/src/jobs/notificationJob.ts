@@ -48,6 +48,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
     confidence: claimedMatch.confidence,
     matchId,
     sightingUrl,
+    userId: report.user.id,
   });
 }
 

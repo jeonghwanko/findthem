@@ -1,16 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
+import KakaoMap, { type MapMarker } from '../components/KakaoMap';
+
+function esc(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 export default function BrowsePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState('DOG');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   const TYPES = [
     { value: 'DOG', label: t('subjectType.DOG') },
@@ -21,8 +29,9 @@ export default function BrowsePage() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
-    params.set('page', String(page));
-    params.set('limit', '12');
+    // 지도 뷰는 한 번에 많이 로드 (페이지네이션 없음)
+    params.set('page', viewMode === 'map' ? '1' : String(page));
+    params.set('limit', viewMode === 'map' ? '50' : '12');
     params.set('type', type);
     if (search) params.set('q', search);
 
@@ -33,7 +42,17 @@ export default function BrowsePage() {
       })
       .catch(() => setReports([]))
       .finally(() => setLoading(false));
-  }, [type, page, search]);
+  }, [type, page, search, viewMode]);
+
+  const mapMarkers: MapMarker[] = reports
+    .filter((r) => r.lastSeenLat !== null && r.lastSeenLat !== undefined && r.lastSeenLng !== null && r.lastSeenLng !== undefined)
+    .map((r) => ({
+      lat: r.lastSeenLat!,
+      lng: r.lastSeenLng!,
+      title: r.name,
+      infoContent: `<div style="padding:4px 8px;font-size:13px"><strong>${esc(r.name)}</strong><br/>${esc(r.lastSeenAddress)}</div>`,
+      onClick: () => navigate(`/reports/${r.id}`),
+    }));
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +62,26 @@ export default function BrowsePage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
+
+      {/* 뷰 전환 탭 */}
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4 w-fit">
+        <button
+          onClick={() => setViewMode('list')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          {t('browse.viewList')}
+        </button>
+        <button
+          onClick={() => setViewMode('map')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            viewMode === 'map' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          {t('browse.viewMap')}
+        </button>
+      </div>
 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -72,14 +111,33 @@ export default function BrowsePage() {
         </form>
       </div>
 
-      {/* 목록 */}
-      {loading ? (
+      {/* 지도 뷰 */}
+      {viewMode === 'map' && (
+        <div className="mb-6">
+          {loading ? (
+            <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+              {t('loading')}
+            </div>
+          ) : (
+            <>
+              <KakaoMap markers={mapMarkers} className="w-full h-[500px] rounded-xl" />
+              {mapMarkers.length < reports.length && (
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  {t('browse.mapNoCoords')}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {viewMode === 'list' && loading ? (
         <div className="text-center py-20 text-gray-400">{t('loading')}</div>
-      ) : reports.length === 0 ? (
+      ) : viewMode === 'list' && reports.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           {t('browse.noResults')}
         </div>
-      ) : (
+      ) : viewMode === 'list' ? (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {reports.map((report) => (
@@ -110,7 +168,7 @@ export default function BrowsePage() {
             </div>
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }
