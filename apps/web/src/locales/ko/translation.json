@@ -24,7 +24,10 @@
     "featureMatchingDesc": "제보된 사진과 실종 사진을 AI가 자동 비교하여 매칭 알림을 보냅니다",
     "recentReports": "최근 실종 신고",
     "viewAll": "전체 보기 →",
-    "noReports": "아직 등록된 신고가 없습니다"
+    "noReports": "아직 등록된 신고가 없습니다",
+    "statTotal": "전체 신고",
+    "statFound": "찾은 가족",
+    "statRate": "발견율"
   },
   "auth": {
     "login": "로그인",
@@ -43,7 +46,10 @@
     "searchPlaceholder": "이름, 특징, 장소로 검색...",
     "noResults": "검색 결과가 없습니다",
     "prev": "이전",
-    "next": "다음"
+    "next": "다음",
+    "viewList": "목록",
+    "viewMap": "지도",
+    "mapNoCoords": "위치 정보가 없는 신고는 지도에 표시되지 않습니다"
   },
   "report": {
     "title": "실종 신고 등록",
@@ -104,7 +110,8 @@
     "sightedThis": "이 {{type}}을(를) 목격했습니다",
     "sightingCount": "제보 {{count}}건",
     "notFound": "신고를 찾을 수 없습니다",
-    "found": "찾았습니다!"
+    "found": "찾았습니다!",
+    "locationMap": "위치 지도"
   },
   "sighting": {
     "title": "목격 제보",
@@ -221,5 +228,11 @@
     "copied": "복사됨!",
     "copyPrompt": "링크를 복사하세요:",
     "kakaoButton": "신고 보기"
+  },
+  "push": {
+    "subscribe": "알림 받기",
+    "unsubscribe": "알림 끄기",
+    "permissionDenied": "브라우저 알림 권한이 거부되었습니다.",
+    "notSupported": "이 브라우저는 푸시 알림을 지원하지 않습니다."
   }
 }

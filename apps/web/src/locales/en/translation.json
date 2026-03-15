@@ -24,7 +24,10 @@
     "featureMatchingDesc": "AI automatically compares sighting photos with missing photos and sends match alerts",
     "recentReports": "Recent Missing Reports",
     "viewAll": "View All →",
-    "noReports": "No reports registered yet"
+    "noReports": "No reports registered yet",
+    "statTotal": "Total Reports",
+    "statFound": "Families Found",
+    "statRate": "Recovery Rate"
   },
   "auth": {
     "login": "Login",
@@ -43,7 +46,10 @@
     "searchPlaceholder": "Search by name, features, location...",
     "noResults": "No results found",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "viewList": "List",
+    "viewMap": "Map",
+    "mapNoCoords": "Reports without location data are not shown on the map"
   },
   "report": {
     "title": "File a Missing Report",
@@ -104,7 +110,8 @@
     "sightedThis": "I saw this {{type}}",
     "sightingCount": "{{count}} sightings",
     "notFound": "Report not found",
-    "found": "Found!"
+    "found": "Found!",
+    "locationMap": "Location Map"
   },
   "sighting": {
     "title": "Report a Sighting",
@@ -221,5 +228,11 @@
     "copied": "Copied!",
     "copyPrompt": "Copy this link:",
     "kakaoButton": "View report"
+  },
+  "push": {
+    "subscribe": "Enable Notifications",
+    "unsubscribe": "Disable Notifications",
+    "permissionDenied": "Notification permission was denied.",
+    "notSupported": "Push notifications are not supported in this browser."
   }
 }

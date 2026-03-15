@@ -24,7 +24,10 @@
     "featureMatchingDesc": "提供された写真と行方不明者の写真をAIが自動比較してマッチング通知を送ります",
     "recentReports": "最近の行方不明届",
     "viewAll": "すべて見る →",
-    "noReports": "まだ届出がありません"
+    "noReports": "まだ届出がありません",
+    "statTotal": "届出総数",
+    "statFound": "見つかった家族",
+    "statRate": "発見率"
   },
   "auth": {
     "login": "ログイン",
@@ -43,7 +46,10 @@
     "searchPlaceholder": "名前、特徴、場所で検索...",
     "noResults": "検索結果がありません",
     "prev": "前へ",
-    "next": "次へ"
+    "next": "次へ",
+    "viewList": "リスト",
+    "viewMap": "地図",
+    "mapNoCoords": "位置情報がない届出は地図に表示されません"
   },
   "report": {
     "title": "行方不明届の登録",
@@ -104,7 +110,8 @@
     "sightedThis": "この{{type}}を目撃しました",
     "sightingCount": "{{count}}件の目撃情報",
     "notFound": "届出が見つかりません",
-    "found": "見つかりました！"
+    "found": "見つかりました！",
+    "locationMap": "位置地図"
   },
   "sighting": {
     "title": "目撃情報の提供",
@@ -221,5 +228,11 @@
     "copied": "コピーしました！",
     "copyPrompt": "リンクをコピーしてください：",
     "kakaoButton": "届出を見る"
+  },
+  "push": {
+    "subscribe": "通知を受け取る",
+    "unsubscribe": "通知をオフにする",
+    "permissionDenied": "ブラウザの通知権限が拒否されました。",
+    "notSupported": "このブラウザはプッシュ通知をサポートしていません。"
   }
 }

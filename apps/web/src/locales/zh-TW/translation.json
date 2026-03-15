@@ -24,7 +24,10 @@
     "featureMatchingDesc": "AI 自動比對目擊照片與失蹤照片，並發送配對通知",
     "recentReports": "最近的失蹤報案",
     "viewAll": "查看全部 →",
-    "noReports": "尚無報案記錄"
+    "noReports": "尚無報案記錄",
+    "statTotal": "總報案數",
+    "statFound": "已找到的家人",
+    "statRate": "尋獲率"
   },
   "auth": {
     "login": "登入",
@@ -43,7 +46,10 @@
     "searchPlaceholder": "依姓名、特徵、地點搜尋...",
     "noResults": "查無結果",
     "prev": "上一頁",
-    "next": "下一頁"
+    "next": "下一頁",
+    "viewList": "列表",
+    "viewMap": "地圖",
+    "mapNoCoords": "沒有位置資訊的報案不會顯示在地圖上"
   },
   "report": {
     "title": "失蹤報案登記",
@@ -104,7 +110,8 @@
     "sightedThis": "我目擊了這個{{type}}",
     "sightingCount": "{{count}}則目擊線索",
     "notFound": "找不到報案記錄",
-    "found": "已尋獲！"
+    "found": "已尋獲！",
+    "locationMap": "位置地圖"
   },
   "sighting": {
     "title": "提供目擊線索",
@@ -221,5 +228,11 @@
     "copied": "已複製！",
     "copyPrompt": "請複製此連結：",
     "kakaoButton": "查看報案"
+  },
+  "push": {
+    "subscribe": "開啟通知",
+    "unsubscribe": "關閉通知",
+    "permissionDenied": "瀏覽器通知權限已被拒絕。",
+    "notSupported": "此瀏覽器不支援推播通知。"
   }
 }

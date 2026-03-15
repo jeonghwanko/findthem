@@ -8,25 +8,55 @@ import type { SubjectType } from '@findthem/shared';
 
 const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
 
+interface Stats {
+  total: number;
+  found: number;
+}
+
 export default function HomePage() {
   const { t } = useTranslation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<SubjectType>('DOG');
+  const [stats, setStats] = useState<Stats | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get<ReportListResponse>('/reports?limit=1'),
+      api.get<ReportListResponse>('/reports?status=FOUND&limit=1'),
+    ]).then(([all, found]) => {
+      setStats({ total: all.total ?? 0, found: found.total ?? 0 });
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     api.get<ReportListResponse>(`/reports?limit=8&type=${filter}`)
-      .then((data) => setReports(data.items ?? data.reports ?? []))
+      // data.reports는 deprecated — items로 마이그레이션 완료 후 제거
+      .then((data) => setReports(data.items ?? (data as { reports: Report[] }).reports ?? []))
       .catch(() => setReports([]))
       .finally(() => setLoading(false));
   }, [filter]);
 
+  const recoveryRate = stats && stats.total > 0
+    ? Math.round((stats.found / stats.total) * 100)
+    : null;
+
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="border-b border-gray-100 bg-gray-50 py-20 px-4">
-        <div className="max-w-3xl mx-auto text-center">
+      <section
+        className="border-b border-gray-100 py-20 px-4 relative overflow-hidden"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #c7d2fe 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          backgroundColor: '#f8fafc',
+        }}
+      >
+        {/* 배경 그라디언트 페이드 */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/80 pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto text-center relative">
           <span className="inline-block bg-primary-50 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
             {t('home.heroBadge')}
           </span>
@@ -50,33 +80,59 @@ export default function HomePage() {
               {t('home.submitSighting')}
             </Link>
           </div>
+
+          {/* Stats strip */}
+          {stats && (
+            <div className="flex items-center justify-center gap-0 mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 inline-flex mx-auto shadow-sm divide-x divide-gray-100">
+              <div className="px-6 py-3 text-center">
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">
+                  {stats.total.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('home.statTotal')}</p>
+              </div>
+              <div className="px-6 py-3 text-center">
+                <p className="text-2xl font-bold text-primary-600 tabular-nums">
+                  {stats.found.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('home.statFound')}</p>
+              </div>
+              {recoveryRate !== null && (
+                <div className="px-6 py-3 text-center">
+                  <p className="text-2xl font-bold text-green-600 tabular-nums">
+                    {recoveryRate}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('home.statRate')}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* 기능 소개 */}
       <section className="max-w-5xl mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all">
-            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-              <Megaphone className="w-5 h-5 text-blue-500" aria-hidden="true" />
+          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <Megaphone className="w-6 h-6 text-blue-500" aria-hidden="true" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">{t('home.featurePromo')}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
               {t('home.featurePromoDesc')}
             </p>
           </div>
-          <div className="p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all">
-            <div className="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-              <MessageSquare className="w-5 h-5 text-green-500" aria-hidden="true" />
+          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <MessageSquare className="w-6 h-6 text-green-500" aria-hidden="true" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">{t('home.featureChatbot')}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
               {t('home.featureChatbotDesc')}
             </p>
           </div>
-          <div className="p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all">
-            <div className="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center mb-4">
-              <ScanFace className="w-5 h-5 text-purple-500" aria-hidden="true" />
+          <div className="p-8 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all text-center">
+            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <ScanFace className="w-6 h-6 text-purple-500" aria-hidden="true" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">{t('home.featureMatching')}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
@@ -95,10 +151,11 @@ export default function HomePage() {
               {FILTERS.map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => setFilter(f)}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     filter === f
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-primary-600 text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
@@ -107,7 +164,10 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <Link to="/browse" className="text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors shrink-0">
+          <Link
+            to="/browse"
+            className="text-sm border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-medium px-4 py-1.5 rounded-lg transition-colors shrink-0"
+          >
             {t('home.viewAll')}
           </Link>
         </div>

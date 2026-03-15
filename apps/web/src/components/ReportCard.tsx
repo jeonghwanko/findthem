@@ -21,6 +21,10 @@ export default function ReportCard({ report }: ReportCardProps) {
   const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(l + '-')) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(report.createdAt, locale);
   const badge = TYPE_BADGE[report.subjectType] ?? TYPE_BADGE.PERSON;
+  // 외부 수집 데이터는 name이 숫자 ID인 경우가 있음 — 대상 유형 라벨로 대체
+  const displayName = /^\d{8,}$/.test(report.name)
+    ? t(`subjectType.${report.subjectType}`)
+    : report.name;
 
   return (
     <Link
@@ -59,7 +63,7 @@ export default function ReportCard({ report }: ReportCardProps) {
 
       {/* 텍스트 */}
       <div className="p-3.5">
-        <h3 className="font-semibold text-gray-900 truncate text-sm">{report.name}</h3>
+        <h3 className="font-semibold text-gray-900 truncate text-sm">{displayName}</h3>
         <p className="text-xs text-gray-400 mt-1 truncate flex items-center gap-1">
           <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span>{report.lastSeenAddress}</span>
