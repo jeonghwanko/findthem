@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
-import { createWorker, promotionQueue, type PromotionRepostJobData } from './queues.js';
+import { createWorker, promotionQueue, promotionRepostQueue, type PromotionRepostJobData } from './queues.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('promotionRepostJob');
@@ -109,9 +109,28 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
   log.info({ enqueued }, 'Repost scan complete');
 }
 
+const REPOST_CRON = '0 7,19 * * *'; // 07:00, 19:00 KST
+
 export function startPromotionRepostWorker() {
   log.info('Promotion repost worker started');
   createWorker<PromotionRepostJobData>('promotion-repost', processPromotionRepostJob, {
     concurrency: 1,
   });
+}
+
+/** 서버 시작 시 리포스트 크론 등록 (12시간마다 자동 스캔) */
+export async function schedulePromotionRepostJob() {
+  const existingJobs = await promotionRepostQueue.getRepeatableJobs();
+  for (const job of existingJobs) {
+    if (job.name === 'scan-reposts') {
+      await promotionRepostQueue.removeRepeatableByKey(job.key);
+    }
+  }
+
+  await promotionRepostQueue.add(
+    'scan-reposts',
+    { reason: 'scheduled' },
+    { attempts: 2, backoff: { type: 'exponential', delay: 60_000 }, repeat: { pattern: REPOST_CRON } },
+  );
+  log.info({ cron: REPOST_CRON }, 'Promotion repost cron scheduled');
 }

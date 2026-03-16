@@ -36,6 +36,7 @@ export const config = {
   twitterApiSecret: process.env.TWITTER_API_SECRET || '',
   twitterAccessToken: process.env.TWITTER_ACCESS_TOKEN || '',
   twitterAccessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
+  twitterBearerToken: process.env.TWITTER_BEARER_TOKEN || '',
 
   kakaoMapRestKey: process.env.KAKAO_MAP_REST_KEY || '',
   kakaoSenderKey: process.env.KAKAO_SENDER_KEY || '',

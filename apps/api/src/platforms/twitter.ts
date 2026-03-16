@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config.js';
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
+import type { PromotionMetrics } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const UPLOAD_ROOT = path.resolve(config.uploadDir);
@@ -130,6 +131,50 @@ export class TwitterAdapter implements PlatformAdapter {
       method: 'DELETE',
       headers: { Authorization: authHeader },
     });
+  }
+
+  async getMetrics(postId: string): Promise<PromotionMetrics | null> {
+    if (!config.twitterBearerToken) {
+      log.warn('TWITTER_BEARER_TOKEN not configured, skipping metrics');
+      return null;
+    }
+
+    try {
+      const url = `https://api.twitter.com/2/tweets/${postId}?tweet.fields=public_metrics`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${config.twitterBearerToken}` },
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (!res.ok) {
+        log.warn({ postId, status: res.status }, 'Twitter metrics fetch failed');
+        return null;
+      }
+
+      const body = (await res.json()) as {
+        data?: { public_metrics?: {
+          impression_count?: number;
+          like_count?: number;
+          retweet_count?: number;
+          reply_count?: number;
+          quote_count?: number;
+        } };
+      };
+
+      const m = body.data?.public_metrics;
+      if (!m) return null;
+
+      return {
+        views: m.impression_count ?? 0,
+        likes: m.like_count ?? 0,
+        retweets: m.retweet_count ?? 0,
+        shares: m.quote_count ?? 0,
+        replies: m.reply_count ?? 0,
+      };
+    } catch (err) {
+      log.warn({ err, postId }, 'Twitter metrics error');
+      return null;
+    }
   }
 
   private async uploadMedia(imagePath: string): Promise<string | null> {

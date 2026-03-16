@@ -9,7 +9,7 @@ import { startCleanupWorker } from './jobs/cleanupJob.js';
 import { startCrawlWorker, scheduleCrawlJob } from './jobs/crawlJob.js';
 import { startCrawlAgentWorker } from './jobs/crawlAgentJob.js';
 import { startPromotionMonitorWorker } from './jobs/promotionMonitorJob.js';
-import { startPromotionRepostWorker } from './jobs/promotionRepostJob.js';
+import { startPromotionRepostWorker, schedulePromotionRepostJob } from './jobs/promotionRepostJob.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('server');
@@ -30,6 +30,7 @@ async function main() {
   startPromotionMonitorWorker();
   startPromotionRepostWorker();
   await scheduleCrawlJob();
+  await schedulePromotionRepostJob();
 
   // 서버 시작
   app.listen(config.port, () => {

@@ -165,6 +165,7 @@ export interface PromotionJobData {
   version?: number;
   platforms?: PromoPlatform[];
   regenerateContent?: boolean;
+  reason?: 'scheduled' | 'low_performance' | 'manual';
 }
 
 export interface MatchingJobData {
@@ -206,7 +207,7 @@ export interface PlatformAdapter {
   readonly name: string;
   post(text: string, imagePaths: string[]): Promise<PlatformPostResult>;
   deletePost(postId: string): Promise<void>;
-  getMetrics?(postId: string): Promise<PromotionMetrics>;
+  getMetrics?(postId: string): Promise<PromotionMetrics | null>;
 }
 
 // ── 홍보 에이전트 타입 ──
@@ -226,13 +227,15 @@ export interface PromotionMonitorJobData {
   promotionId: string;
   platform: PromoPlatform;
   postId: string;
+  /** Collection round: 0=1h, 1=24h, 2=72h */
+  round?: number;
 }
 
 export interface PromotionRepostJobData {
-  reportId: string;
+  reportId?: string;
   reason: 'scheduled' | 'low_performance' | 'manual';
   platforms?: PromoPlatform[];
-  regenerateContent: boolean;
+  regenerateContent?: boolean;
 }
 
 export interface CrawlDispatchJobData {

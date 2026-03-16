@@ -1,15 +1,22 @@
 import type { Job } from 'bullmq';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
-import { createWorker, type PromotionMonitorJobData } from './queues.js';
+import { createWorker, promotionMonitorQueue, promotionQueue, type PromotionMonitorJobData } from './queues.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import type { PromotionMetrics, PlatformAdapter } from '@findthem/shared';
+import { analyzePerformance } from '../ai/promotionFeedbackAgent.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('promotionMonitorJob');
 
-// Twitter 어댑터 인스턴스 (PlatformAdapter 인터페이스로 캐스팅하여 getMetrics 접근)
 const twitterAdapter: PlatformAdapter = new TwitterAdapter();
+
+/** Collection schedule: round 0 = 1h, round 1 = 24h, round 2 = 72h */
+const COLLECTION_DELAYS_MS = [
+  1 * 60 * 60 * 1000,   // round 0 → 1h (already scheduled by promotionJob)
+  24 * 60 * 60 * 1000,  // round 1 → 24h after posting
+  72 * 60 * 60 * 1000,  // round 2 → 72h after posting (final)
+];
 
 async function collectMetrics(
   platform: string,
@@ -17,20 +24,14 @@ async function collectMetrics(
 ): Promise<PromotionMetrics | null> {
   try {
     if (platform === 'TWITTER') {
-      // PlatformAdapter 인터페이스에 getMetrics?가 정의되어 있음
       if (typeof twitterAdapter.getMetrics === 'function') {
         return await twitterAdapter.getMetrics(postId);
       }
-
-      // TODO: Twitter API v2 Public Metrics 직접 조회
-      // GET https://api.twitter.com/2/tweets/:id?tweet.fields=public_metrics
-      // Bearer Token 필요: apps/api/src/config.ts에 twitterBearerToken 추가 후 구현
       return null;
     }
 
     if (platform === 'KAKAO_CHANNEL') {
-      // TODO: 카카오 채널 메트릭 수집 API 구현
-      // 카카오 비즈니스 API를 통한 메시지 발송 통계 조회
+      // Kakao Channel 메트릭 API 미제공
       return null;
     }
 
@@ -42,11 +43,11 @@ async function collectMetrics(
 }
 
 async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
-  const { reportId, promotionId, platform, postId } = job.data;
+  const { reportId, promotionId, platform, postId, round = 0 } = job.data;
 
   const promotion = await prisma.promotion.findUnique({
     where: { id: promotionId },
-    select: { id: true, status: true, platform: true, postId: true },
+    select: { id: true, status: true, platform: true, postId: true, content: true, version: true },
   });
 
   if (!promotion) {
@@ -80,14 +81,55 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
           promotionId,
           platform,
           postId,
+          round,
           metrics: metricsJson,
         } as Prisma.InputJsonObject,
       },
     });
 
-    log.info({ reportId, platform, metrics }, 'Metrics collected');
+    log.info({ reportId, platform, round, metrics }, 'Metrics collected');
+
+    // ── 피드백 루프: round 0(1h 후)에서만 성과 분석 + 저성과 재게시 트리거 ──
+    if (round === 0 && promotion.content) {
+      try {
+        const feedback = await analyzePerformance(
+          metrics,
+          promotion.content,
+          platform as 'TWITTER' | 'KAKAO_CHANNEL',
+        );
+
+        await prisma.promotionLog.create({
+          data: {
+            reportId,
+            action: 'performance_analyzed',
+            detail: {
+              promotionId,
+              platform,
+              shouldRepost: feedback.shouldRepost,
+              suggestions: feedback.improvementSuggestions,
+            } as unknown as Prisma.InputJsonObject,
+          },
+        });
+
+        if (feedback.shouldRepost) {
+          log.info({ reportId, platform }, 'Low performance detected, triggering repost');
+          await promotionQueue.add(
+            'repost-report',
+            {
+              reportId,
+              isRepost: true,
+              version: (promotion.version ?? 1) + 1,
+              reason: 'low_performance',
+              regenerateContent: true,
+            },
+            { attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
+          );
+        }
+      } catch (err) {
+        log.warn({ err, reportId }, 'Performance analysis failed, continuing');
+      }
+    }
   } else {
-    // 메트릭 수집 불가 — 로그만 기록
     await prisma.promotionLog.create({
       data: {
         reportId,
@@ -96,12 +138,25 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
           promotionId,
           platform,
           postId,
+          round,
           reason: 'API not available or not configured',
         },
       },
     });
 
-    log.info({ reportId, platform }, 'Metrics unavailable (API not configured)');
+    log.info({ reportId, platform, round }, 'Metrics unavailable (API not configured)');
+  }
+
+  // ── 다음 라운드 수집 예약 ──
+  const nextRound = round + 1;
+  if (nextRound < COLLECTION_DELAYS_MS.length) {
+    const delay = COLLECTION_DELAYS_MS[nextRound] - COLLECTION_DELAYS_MS[round];
+    await promotionMonitorQueue.add(
+      'collect-metrics',
+      { reportId, promotionId, platform, postId, round: nextRound },
+      { delay, attempts: 2, backoff: { type: 'exponential', delay: 30_000 } },
+    );
+    log.info({ reportId, platform, nextRound, delayH: delay / 3600_000 }, 'Next metrics collection scheduled');
   }
 }
 
