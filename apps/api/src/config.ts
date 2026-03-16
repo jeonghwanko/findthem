@@ -66,6 +66,7 @@ export const config = {
   merchantWalletEvm:    process.env.MERCHANT_WALLET_EVM    || '',
   merchantWalletAptos:  process.env.MERCHANT_WALLET_APTOS  || '',
   merchantWalletSolana: process.env.MERCHANT_WALLET_SOLANA || '',
-  aptosRpcUrl:          process.env.APTOS_RPC_URL  || 'https://fullnode.mainnet.aptoslabs.com/v1',
-  solanaRpcUrl:         process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
+  aptosRpcUrl:          process.env.APTOS_RPC_URL     || 'https://api.mainnet.aptoslabs.com/v1',
+  aptosRpcApiKey:       process.env.APTOS_RPC_API_KEY || '',
+  solanaRpcUrl:         process.env.SOLANA_RPC_URL    || 'https://api.mainnet-beta.solana.com',
 } as const;

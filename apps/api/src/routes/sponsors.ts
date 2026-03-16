@@ -287,6 +287,7 @@ export function registerSponsorRoutes(router: Router) {
           coinType: APT_NATIVE_COIN_TYPE,
           minAmountAtomic,
           rpcUrl: config.aptosRpcUrl,
+          apiKey: config.aptosRpcApiKey || undefined,
         });
         verified = result.verified;
         actualAmount = result.actualAmount;

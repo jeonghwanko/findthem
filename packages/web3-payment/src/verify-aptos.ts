@@ -16,13 +16,19 @@ export function normalizeAddr64(s: string): string {
   return v.padStart(64, '0')
 }
 
-async function fetchTx(txHash: string, rpcUrl: string): Promise<Record<string, unknown>> {
+async function fetchTx(txHash: string, rpcUrl: string, apiKey?: string): Promise<Record<string, unknown>> {
   const url = `${rpcUrl}/transactions/by_hash/${txHash}`
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (apiKey) {
+    headers['authorization'] = apiKey.toLowerCase().startsWith('bearer ')
+      ? apiKey
+      : `Bearer ${apiKey}`
+  }
   let res: Response
   try {
-    res = await fetch(url, { signal: controller.signal })
+    res = await fetch(url, { signal: controller.signal, headers })
   } finally {
     clearTimeout(timer)
   }
@@ -40,11 +46,12 @@ export async function verifyAptosTransfer(params: {
   coinType: string       // e.g. '0x1::aptos_coin::AptosCoin'
   minAmountAtomic: bigint
   rpcUrl?: string
+  apiKey?: string        // Aptos Labs API key (Authorization: Bearer)
 }): Promise<TransferVerifyResult> {
-  const { txHash, expectedFrom, expectedTo, coinType, minAmountAtomic, rpcUrl } = params
+  const { txHash, expectedFrom, expectedTo, coinType, minAmountAtomic, rpcUrl, apiKey } = params
   const url = rpcUrl ?? DEFAULT_APTOS_RPC
 
-  const tx = await fetchTx(txHash, url)
+  const tx = await fetchTx(txHash, url, apiKey)
 
   if (typeof tx.type !== 'string' || tx.type !== 'user_transaction') throw new Error('TX_NOT_USER')
   if (tx.success !== true && tx.success !== 'true') throw new Error('TX_NOT_SUCCESS')

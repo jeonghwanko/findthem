@@ -46,6 +46,7 @@ jobs:
         run: npm run build
         env:
           VITE_KAKAO_JS_KEY: ${{ secrets.VITE_KAKAO_JS_KEY }}
+          VITE_TOSS_CLIENT_KEY: ${{ secrets.VITE_TOSS_CLIENT_KEY }}
 
   # ── CD: main 머지 시 서버 자동 배포 ──
   deploy:
