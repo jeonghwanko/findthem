@@ -140,30 +140,32 @@ export default function HomePage() {
           </div>
 
           {/* Stats strip */}
-          {stats && (
-            <div className="inline-flex items-center mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 shadow-sm divide-x divide-gray-100">
-              <div className="px-6 py-3 text-center">
-                <p className="text-2xl font-bold text-gray-900 tabular-nums">
-                  {stats.total.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">{t('home.statTotal')}</p>
-              </div>
-              <div className="px-6 py-3 text-center">
-                <p className="text-2xl font-bold text-primary-600 tabular-nums">
-                  {stats.found.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">{t('home.statFound')}</p>
-              </div>
-              {recoveryRate !== null && (
-                <div className="px-6 py-3 text-center">
-                  <p className="text-2xl font-bold text-green-600 tabular-nums">
-                    {recoveryRate}%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{t('home.statRate')}</p>
-                </div>
+          <div className="inline-flex items-center mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 shadow-sm divide-x divide-gray-100">
+            <div className="px-6 py-3 text-center">
+              {stats ? (
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total.toLocaleString()}</p>
+              ) : (
+                <div className="h-8 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
               )}
+              <p className="text-xs text-gray-500 mt-0.5">{t('home.statTotal')}</p>
             </div>
-          )}
+            <div className="px-6 py-3 text-center">
+              {stats ? (
+                <p className="text-2xl font-bold text-primary-600 tabular-nums">{stats.found.toLocaleString()}</p>
+              ) : (
+                <div className="h-8 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
+              )}
+              <p className="text-xs text-gray-500 mt-0.5">{t('home.statFound')}</p>
+            </div>
+            <div className="px-6 py-3 text-center">
+              {recoveryRate !== null ? (
+                <p className="text-2xl font-bold text-green-600 tabular-nums">{recoveryRate}%</p>
+              ) : (
+                <div className="h-8 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
+              )}
+              <p className="text-xs text-gray-500 mt-0.5">{t('home.statRate')}</p>
+            </div>
+          </div>
         </div>
       </section>
 

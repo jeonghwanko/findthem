@@ -74,52 +74,64 @@ const AGENTS: AgentConfig[] = [
   },
 ];
 
-function ActivitySection({ agent, activity }: { agent: AgentConfig; activity: AgentActivity | undefined }) {
+function ActivitySection({ agent, activity, loading }: { agent: AgentConfig; activity: AgentActivity | undefined; loading: boolean }) {
   const { t, i18n } = useTranslation();
 
-  if (!activity) return null;
+  const a = activity ?? {} as Partial<AgentActivity>;
 
   const todayLabel =
     agent.id === 'image-matching'
-      ? t('team.activity.todayMatches', { count: activity.todayMatches ?? 0 })
+      ? t('team.activity.todayMatches', { count: a.todayMatches ?? 0 })
       : agent.id === 'promotion'
-        ? t('team.activity.todayPosts', { count: activity.todayPosts ?? 0 })
-        : t('team.activity.todaySightings', { count: activity.todaySightings ?? 0 });
+        ? t('team.activity.todayPosts', { count: a.todayPosts ?? 0 })
+        : t('team.activity.todaySightings', { count: a.todaySightings ?? 0 });
 
   const weekCount =
     agent.id === 'image-matching'
-      ? activity.weekMatches ?? 0
+      ? a.weekMatches ?? 0
       : agent.id === 'promotion'
-        ? activity.weekPosts ?? 0
-        : activity.weekSightings ?? 0;
+        ? a.weekPosts ?? 0
+        : a.weekSightings ?? 0;
 
   const totalCount =
     agent.id === 'image-matching'
-      ? activity.totalMatches ?? 0
+      ? a.totalMatches ?? 0
       : agent.id === 'promotion'
-        ? activity.totalPosts ?? 0
-        : activity.totalSightings ?? 0;
+        ? a.totalPosts ?? 0
+        : a.totalSightings ?? 0;
 
-  const lastActiveText = activity.lastActiveAt
-    ? t('team.activity.lastActive', { time: formatTimeAgo(activity.lastActiveAt, i18n.language as 'ko' | 'en' | 'ja' | 'zh-TW') })
+  const lastActiveText = a.lastActiveAt
+    ? t('team.activity.lastActive', { time: formatTimeAgo(a.lastActiveAt, i18n.language as 'ko' | 'en' | 'ja' | 'zh-TW') })
     : t('team.activity.idle');
 
-  const isActive = activity.lastActiveAt && (Date.now() - new Date(activity.lastActiveAt).getTime()) < 3600_000;
+  const isActive = a.lastActiveAt && (Date.now() - new Date(a.lastActiveAt).getTime()) < 3600_000;
 
   return (
     <div className="bg-gray-50 rounded-lg px-3 py-2.5 space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-900">{todayLabel}</span>
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
-          {lastActiveText}
-        </span>
+        {loading ? (
+          <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
+        ) : (
+          <span className="text-sm font-semibold text-gray-900">{todayLabel}</span>
+        )}
+        {loading ? (
+          <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+        ) : (
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
+            {lastActiveText}
+          </span>
+        )}
       </div>
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <span>{t('team.activity.weekCount', { count: weekCount })}</span>
-        <span className="text-gray-300">·</span>
-        <span>{t('team.activity.totalCount', { count: totalCount })}</span>
-      </div>
+      {loading ? (
+        <div className="h-3 w-36 bg-gray-200 rounded animate-pulse" />
+      ) : (
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span>{t('team.activity.weekCount', { count: weekCount })}</span>
+          <span className="text-gray-300">·</span>
+          <span>{t('team.activity.totalCount', { count: totalCount })}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -190,14 +202,7 @@ export default function TeamPage() {
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
 
               {/* 활동 통계 */}
-              {activityLoading ? (
-                <div className="bg-gray-50 rounded-lg px-3 py-2.5 space-y-1.5">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
-                </div>
-              ) : (
-                <ActivitySection agent={agent} activity={activity[agent.id]} />
-              )}
+              <ActivitySection agent={agent} activity={activity[agent.id]} loading={activityLoading} />
 
               <div className="text-center py-2 px-3 bg-primary-50 rounded-lg">
                 <p className="text-xs text-gray-500">{t('sponsor.totalReceived')}</p>
