@@ -154,7 +154,8 @@ function SponsorPageInner() {
 
   // Payment status
   const [tossEnabled, setTossEnabled] = useState<boolean | null>(null);
-  const [cryptoEnabled, setCryptoEnabled] = useState<boolean | null>(null);
+  const [evmEnabled, setEvmEnabled] = useState<boolean | null>(null);
+  const [aptosEnabled, setAptosEnabled] = useState<boolean | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -183,9 +184,9 @@ function SponsorPageInner() {
 
   useEffect(() => {
     if (!agent) return;
-    api.get<{ tossEnabled: boolean; cryptoEnabled: boolean }>('/sponsors/payment-status')
-      .then((res) => { setTossEnabled(res.tossEnabled); setCryptoEnabled(res.cryptoEnabled); })
-      .catch(() => { setTossEnabled(false); setCryptoEnabled(false); });
+    api.get<{ tossEnabled: boolean; evmEnabled: boolean; aptosEnabled: boolean }>('/sponsors/payment-status')
+      .then((res) => { setTossEnabled(res.tossEnabled); setEvmEnabled(res.evmEnabled); setAptosEnabled(res.aptosEnabled); })
+      .catch(() => { setTossEnabled(false); setEvmEnabled(false); setAptosEnabled(false); });
   }, [agent]);
 
   const showToast = useCallback((msg: string) => {
@@ -264,7 +265,7 @@ function SponsorPageInner() {
   // ── Crypto Pay (EVM) ──
   const handleEvmPay = useCallback(async () => {
     if (isPayingRef.current) return;
-    if (cryptoEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
+    if (evmEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
     if (!evmConnected || !evmAddress) { setCryptoError(t('sponsor.crypto.connectFirst')); return; }
 
     isPayingRef.current = true;
@@ -340,12 +341,12 @@ function SponsorPageInner() {
       setCryptoLoading(false);
       setPayStep('idle');
     }
-  }, [evmConnected, evmAddress, evmChain, evmChainId, evmToken, cryptoUsdCents, agentId, cryptoEnabled, t, showToast, switchChainAsync, writeContractAsync, sendTransactionAsync]);
+  }, [evmConnected, evmAddress, evmChain, evmChainId, evmToken, cryptoUsdCents, agentId, evmEnabled, t, showToast, switchChainAsync, writeContractAsync, sendTransactionAsync]);
 
   // ── Crypto Pay (Aptos) ──
   const handleAptosPay = useCallback(async () => {
     if (isPayingRef.current) return;
-    if (cryptoEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
+    if (aptosEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
     if (!aptosConnected || !aptosAccount?.address) { setCryptoError(t('sponsor.crypto.connectFirst')); return; }
 
     isPayingRef.current = true;
@@ -418,7 +419,7 @@ function SponsorPageInner() {
       setCryptoLoading(false);
       setPayStep('idle');
     }
-  }, [aptosConnected, aptosAccount, cryptoUsdCents, agentId, cryptoEnabled, t, showToast, signAndSubmitTransaction]);
+  }, [aptosConnected, aptosAccount, cryptoUsdCents, agentId, aptosEnabled, t, showToast, signAndSubmitTransaction]);
 
   const handleCryptoPay = cryptoMode === 'aptos' ? handleAptosPay : handleEvmPay;
 

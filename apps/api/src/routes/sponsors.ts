@@ -64,7 +64,9 @@ export function registerSponsorRoutes(router: Router) {
   router.get('/sponsors/payment-status', (_req, res): void => {
     res.json({
       tossEnabled: !!config.tossSecretKey,
-      cryptoEnabled: !!config.merchantWalletEvm,
+      cryptoEnabled: !!(config.merchantWalletEvm || config.merchantWalletAptos),
+      evmEnabled: !!config.merchantWalletEvm,
+      aptosEnabled: !!config.merchantWalletAptos,
     });
   });
 
