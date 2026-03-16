@@ -261,6 +261,17 @@
       "name": "導覽機器人阿里",
       "role": "聊天機器人與通知",
       "desc": "透過對話收集目擊線索，比對成功時通知報案人"
+    },
+    "activity": {
+      "todayMatches": "今日配對 {{count}}筆",
+      "todayPosts": "今日發文 {{count}}筆",
+      "todaySightings": "今日線索 {{count}}筆",
+      "todayNotifications": "今日通知 {{count}}筆",
+      "weekCount": "本週 {{count}}筆",
+      "totalCount": "累計 {{count}}",
+      "lastActive": "{{time}} 活動",
+      "idle": "待命中",
+      "analyzed": "分析 {{count}}張"
     }
   },
   "sponsor": {

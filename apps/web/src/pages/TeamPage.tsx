@@ -2,10 +2,29 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
+import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
+
+interface AgentActivity {
+  todayMatches?: number;
+  todayAnalyzed?: number;
+  weekMatches?: number;
+  totalMatches?: number;
+  todayPosts?: number;
+  weekPosts?: number;
+  totalPosts?: number;
+  platforms?: { twitter: number; kakao: number };
+  todaySightings?: number;
+  todayNotifications?: number;
+  weekSightings?: number;
+  totalSightings?: number;
+  lastActiveAt: string | null;
+}
+
+type AgentActivityMap = Record<string, AgentActivity>;
 
 interface AgentConfig {
   id: AgentId;
@@ -55,12 +74,64 @@ const AGENTS: AgentConfig[] = [
   },
 ];
 
+function ActivitySection({ agent, activity }: { agent: AgentConfig; activity: AgentActivity | undefined }) {
+  const { t, i18n } = useTranslation();
+
+  if (!activity) return null;
+
+  const todayLabel =
+    agent.id === 'image-matching'
+      ? t('team.activity.todayMatches', { count: activity.todayMatches ?? 0 })
+      : agent.id === 'promotion'
+        ? t('team.activity.todayPosts', { count: activity.todayPosts ?? 0 })
+        : t('team.activity.todaySightings', { count: activity.todaySightings ?? 0 });
+
+  const weekCount =
+    agent.id === 'image-matching'
+      ? activity.weekMatches ?? 0
+      : agent.id === 'promotion'
+        ? activity.weekPosts ?? 0
+        : activity.weekSightings ?? 0;
+
+  const totalCount =
+    agent.id === 'image-matching'
+      ? activity.totalMatches ?? 0
+      : agent.id === 'promotion'
+        ? activity.totalPosts ?? 0
+        : activity.totalSightings ?? 0;
+
+  const lastActiveText = activity.lastActiveAt
+    ? t('team.activity.lastActive', { time: formatTimeAgo(activity.lastActiveAt, i18n.language as 'ko' | 'en' | 'ja' | 'zh-TW') })
+    : t('team.activity.idle');
+
+  const isActive = activity.lastActiveAt && (Date.now() - new Date(activity.lastActiveAt).getTime()) < 3600_000;
+
+  return (
+    <div className="bg-gray-50 rounded-lg px-3 py-2.5 space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-900">{todayLabel}</span>
+        <span className="flex items-center gap-1 text-xs text-gray-400">
+          <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-300'}`} />
+          {lastActiveText}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <span>{t('team.activity.weekCount', { count: weekCount })}</span>
+        <span className="text-gray-300">·</span>
+        <span>{t('team.activity.totalCount', { count: totalCount })}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function TeamPage() {
   const { t } = useTranslation();
   const [sponsors, setSponsors] = useState<SponsorPublic[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(true);
   const [totals, setTotals] = useState<AgentTotals>({});
   const [totalsLoading, setTotalsLoading] = useState(true);
+  const [activity, setActivity] = useState<AgentActivityMap>({});
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     api
@@ -73,6 +144,11 @@ export default function TeamPage() {
       .then((res) => setTotals(res ?? {}))
       .catch(() => {})
       .finally(() => setTotalsLoading(false));
+    api
+      .get<AgentActivityMap>('/agents/activity')
+      .then((res) => setActivity(res ?? {}))
+      .catch(() => {})
+      .finally(() => setActivityLoading(false));
   }, []);
 
   const agentNameMap = useMemo(() => {
@@ -112,6 +188,17 @@ export default function TeamPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
+
+              {/* 활동 통계 */}
+              {activityLoading ? (
+                <div className="bg-gray-50 rounded-lg px-3 py-2.5 space-y-1.5">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
+                </div>
+              ) : (
+                <ActivitySection agent={agent} activity={activity[agent.id]} />
+              )}
+
               <div className="text-center py-2 px-3 bg-primary-50 rounded-lg">
                 <p className="text-xs text-gray-500">{t('sponsor.totalReceived')}</p>
                 {totalsLoading ? (

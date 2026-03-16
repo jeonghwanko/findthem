@@ -261,6 +261,17 @@
       "name": "案内ボット アリ",
       "role": "チャットボット & 通知",
       "desc": "目撃情報をチャットで収集し、マッチング時に通報者へ通知します"
+    },
+    "activity": {
+      "todayMatches": "本日マッチ {{count}}件",
+      "todayPosts": "本日投稿 {{count}}件",
+      "todaySightings": "本日情報 {{count}}件",
+      "todayNotifications": "本日通知 {{count}}件",
+      "weekCount": "今週 {{count}}件",
+      "totalCount": "累計 {{count}}",
+      "lastActive": "{{time}} 活動",
+      "idle": "待機中",
+      "analyzed": "分析 {{count}}枚"
     }
   },
   "sponsor": {

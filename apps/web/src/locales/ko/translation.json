@@ -261,6 +261,17 @@
       "name": "안내봇 알리",
       "role": "챗봇 & 알림",
       "desc": "목격 제보를 대화로 수집하고, 매칭 시 신고자에게 알림을 발송합니다"
+    },
+    "activity": {
+      "todayMatches": "오늘 매칭 {{count}}건",
+      "todayPosts": "오늘 홍보 {{count}}건",
+      "todaySightings": "오늘 제보 {{count}}건",
+      "todayNotifications": "오늘 알림 {{count}}건",
+      "weekCount": "이번 주 {{count}}건",
+      "totalCount": "누적 {{count}}",
+      "lastActive": "{{time}} 활동",
+      "idle": "대기 중",
+      "analyzed": "분석 {{count}}장"
     }
   },
   "sponsor": {

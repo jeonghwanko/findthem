@@ -261,6 +261,17 @@
       "name": "Guide Bot Ali",
       "role": "Chatbot & Alerts",
       "desc": "Collects sighting reports via chat and sends alerts when matches are found"
+    },
+    "activity": {
+      "todayMatches": "{{count}} matches today",
+      "todayPosts": "{{count}} posts today",
+      "todaySightings": "{{count}} tips today",
+      "todayNotifications": "{{count}} alerts today",
+      "weekCount": "{{count}} this week",
+      "totalCount": "{{count}} total",
+      "lastActive": "Active {{time}}",
+      "idle": "Idle",
+      "analyzed": "{{count}} analyzed"
     }
   },
   "sponsor": {
