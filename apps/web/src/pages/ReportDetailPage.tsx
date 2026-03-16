@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Camera } from 'lucide-react';
 import { api, type ReportDetail, type Sighting, type SightingListResponse } from '../api/client';
 import ShareButton from '../components/ShareButton';
 import KakaoMap from '../components/KakaoMap';
@@ -79,12 +80,16 @@ export default function ReportDetailPage() {
       {/* 사진 갤러리 */}
       {report.photos.length > 0 && (
         <div className="mb-6">
-          <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden mb-3">
+          <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden mb-3 relative">
             <img
               src={report.photos[selectedPhoto]?.photoUrl}
               alt={report.name}
               className="w-full h-full object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement?.querySelector('.img-fallback')?.classList.remove('hidden'); }}
             />
+            <div className="img-fallback hidden absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-300">
+              <Camera className="w-12 h-12" />
+            </div>
           </div>
           {report.photos.length > 1 && (
             <div className="flex gap-2">
@@ -92,7 +97,7 @@ export default function ReportDetailPage() {
                 <button
                   key={photo.id}
                   onClick={() => setSelectedPhoto(i)}
-                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 bg-gray-100 flex items-center justify-center ${
                     i === selectedPhoto ? 'border-primary-500' : 'border-transparent'
                   }`}
                 >
@@ -100,6 +105,7 @@ export default function ReportDetailPage() {
                     src={photo.thumbnailUrl || photo.photoUrl}
                     alt=""
                     className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                 </button>
               ))}

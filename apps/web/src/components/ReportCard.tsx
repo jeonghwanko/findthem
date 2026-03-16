@@ -18,6 +18,7 @@ interface ReportCardProps {
 export default function ReportCard({ report }: ReportCardProps) {
   const { t, i18n } = useTranslation();
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const primaryPhoto = report.photos?.[0];
   const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l  }-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(report.createdAt, locale);
@@ -34,7 +35,7 @@ export default function ReportCard({ report }: ReportCardProps) {
     >
       {/* 이미지 */}
       <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
-        {primaryPhoto ? (
+        {primaryPhoto && !imgError ? (
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
@@ -42,6 +43,7 @@ export default function ReportCard({ report }: ReportCardProps) {
               alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
               onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
             />
           </>
         ) : (
