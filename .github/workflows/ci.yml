@@ -73,6 +73,9 @@ jobs:
             pm2 restart findthem-api || pm2 start ecosystem.config.cjs --env production
             pm2 save
 
+            # 크롤링 이미지 복구 (파일 없는 사진을 공공 API에서 재다운로드)
+            cd ~/findthem && npx tsx apps/api/scripts/repair-missing-images.ts || true
+
             # Nginx 설정 업데이트 (Ghost /devlog 포함)
             sudo cp ~/findthem/deploy/nginx.conf /etc/nginx/sites-available/yoonion
             sudo nginx -t && sudo systemctl reload nginx
