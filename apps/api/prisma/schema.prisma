@@ -440,15 +440,40 @@ model AdminAgentSession {
 // ── Sponsor (AI 팀원 후원) ──
 
 model Sponsor {
-  id          String   @id @default(cuid())
-  agentId     String   // 'image-matching' | 'promotion' | 'chatbot-alert'
-  amount      Int      // KRW 단위
-  orderId     String   @unique
-  paymentKey  String?
-  displayName String?
-  message     String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  agentId       String   // 'image-matching' | 'promotion' | 'chatbot-alert'
+  // Toss: KRW 단위, Crypto: USD cents
+  amount        Int
+  currency      String   @default("KRW") // "KRW" | "USD_CENTS"
+  // Toss 결제
+  orderId       String   @unique
+  paymentKey    String?
+  // 크립토 결제
+  txHash        String?
+  chainId       Int?
+  tokenSymbol   String?
+  walletAddress String?
+  displayName   String?
+  message       String?
+  createdAt     DateTime @default(now())
 
   @@index([agentId])
   @@map("sponsor")
+}
+
+// 크립토 결제 견적 (5분 TTL)
+model SponsorCryptoQuote {
+  id             String   @id @default(cuid())
+  agentId        String
+  amountUsdCents Int
+  walletAddress  String
+  tokenSymbol    String
+  chainId        Int?     // null = Solana or Aptos
+  amountAtomic   String   // BigInt as string
+  merchantWallet String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([agentId])
+  @@map("sponsor_crypto_quote")
 }

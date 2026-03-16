@@ -366,3 +366,15 @@ export interface SponsorPublic {
   message: string | null;
   createdAt: string;
 }
+
+export type SupportedPayToken = 'APT' | 'USDC' | 'USDt' | 'ETH' | 'BNB' | 'SOL';
+
+export interface CryptoQuoteResult {
+  quoteId: string;
+  merchantWallet: string;
+  amountAtomic: string;
+  tokenSymbol: SupportedPayToken;
+  chainId: number | null;
+  tokenContract: string | null;
+  quoteExpiresAt: string;
+}

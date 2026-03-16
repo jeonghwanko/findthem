@@ -263,7 +263,8 @@
   },
   "sponsor": {
     "title": "{{name}}を支援する",
-    "amountLabel": "支援金額",
+    "amountLabel": "支援金額 (KRW)",
+    "customAmountPlaceholder": "金額を入力",
     "nicknameLabel": "ニックネーム（任意）",
     "nicknamePlaceholder": "未入力の場合は匿名表示",
     "messageLabel": "応援メッセージ（任意）",
@@ -276,6 +277,27 @@
     "noSponsors": "まだ支援者がいません。最初の支援者になりませんか？",
     "anonymous": "匿名",
     "backToTeam": "チームページへ戻る",
-    "amount": "₩{{amount}}"
+    "amount": "₩{{amount}}",
+    "tabCard": "カード決済",
+    "tabCrypto": "暗号資産決済",
+    "crypto": {
+      "amountLabel": "金額 (USD)",
+      "tokenLabel": "トークンを選択",
+      "chainLabel": "チェーンを選択",
+      "walletLabel": "ウォレットアドレス",
+      "walletPlaceholder": "0x... / Solana / Aptosアドレス",
+      "walletRequired": "ウォレットアドレスを入力してください。",
+      "quoteBtn": "見積もりを取得",
+      "quoteError": "見積もりの取得に失敗しました。再試行してください。",
+      "quoteTitle": "お支払い情報",
+      "sendAmount": "送金額",
+      "sendTo": "送金先アドレス",
+      "expiresAt": "見積もり有効期限: {{time}}",
+      "txHashLabel": "トランザクションハッシュ（送金後に入力）",
+      "txHashPlaceholder": "0x... またはSolana/Aptosハッシュ",
+      "txHashRequired": "トランザクションハッシュを入力してください。",
+      "verifyBtn": "決済を確認",
+      "verifyError": "決済確認に失敗しました。しばらくしてからお試しください。"
+    }
   }
 }

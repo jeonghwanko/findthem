@@ -56,4 +56,10 @@ export const config = {
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
   vapidEmail: process.env.VAPID_EMAIL || 'mailto:admin@union.pryzm.gg',
   tossSecretKey: process.env.TOSS_SECRET_KEY || '',
+
+  merchantWalletEvm:    process.env.MERCHANT_WALLET_EVM    || '',
+  merchantWalletAptos:  process.env.MERCHANT_WALLET_APTOS  || '',
+  merchantWalletSolana: process.env.MERCHANT_WALLET_SOLANA || '',
+  aptosRpcUrl:          process.env.APTOS_RPC_URL  || 'https://fullnode.mainnet.aptoslabs.com/v1',
+  solanaRpcUrl:         process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
 } as const;

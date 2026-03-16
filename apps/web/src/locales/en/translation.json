@@ -263,7 +263,8 @@
   },
   "sponsor": {
     "title": "Sponsor {{name}}",
-    "amountLabel": "Amount",
+    "amountLabel": "Amount (KRW)",
+    "customAmountPlaceholder": "Enter custom amount",
     "nicknameLabel": "Nickname (optional)",
     "nicknamePlaceholder": "Shown anonymously if empty",
     "messageLabel": "Message (optional)",
@@ -276,6 +277,27 @@
     "noSponsors": "No sponsors yet. Be the first!",
     "anonymous": "Anonymous",
     "backToTeam": "Back to Team",
-    "amount": "₩{{amount}}"
+    "amount": "₩{{amount}}",
+    "tabCard": "Card Payment",
+    "tabCrypto": "Crypto Payment",
+    "crypto": {
+      "amountLabel": "Amount (USD)",
+      "tokenLabel": "Select Token",
+      "chainLabel": "Select Chain",
+      "walletLabel": "Your Wallet Address",
+      "walletPlaceholder": "0x... / Solana / Aptos address",
+      "walletRequired": "Please enter your wallet address.",
+      "quoteBtn": "Get Quote",
+      "quoteError": "Failed to get quote. Please try again.",
+      "quoteTitle": "Payment Details",
+      "sendAmount": "Amount to Send",
+      "sendTo": "Send to Address",
+      "expiresAt": "Quote expires at {{time}}",
+      "txHashLabel": "Transaction Hash (after sending)",
+      "txHashPlaceholder": "0x... or Solana/Aptos TX hash",
+      "txHashRequired": "Please enter the transaction hash.",
+      "verifyBtn": "Confirm Payment",
+      "verifyError": "Payment verification failed. Please try again in a moment."
+    }
   }
 }

@@ -7,8 +7,39 @@ import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { randomUUID } from 'node:crypto';
+import {
+  getUsdPerToken,
+  toAtomic,
+  fromUsdToTokenAmount,
+  EVM_TOKENS,
+  SOL_TOKENS,
+  APT_NATIVE_COIN_TYPE,
+  APT_DECIMALS,
+  QUOTE_TTL_SECS,
+  SOLANA_USDC_MINT,
+  isSupportedChainId,
+  toSupportedChainId,
+  verifyEvmTransfer,
+  verifySolanaTransfer,
+  verifyAptosTransfer,
+} from '@findthem/web3-payment';
 
 const log = createLogger('sponsors');
+
+const cryptoQuoteSchema = z.object({
+  agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']),
+  amountUsdCents: z.number().int().min(100).max(10_000_000),
+  walletAddress: z.string().min(10).max(200),
+  tokenSymbol: z.enum(['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL']),
+  chainId: z.number().int().optional(),
+});
+
+const cryptoVerifySchema = z.object({
+  quoteId: z.string(),
+  txHash: z.string().min(10).max(200),
+  displayName: z.string().max(30).optional(),
+  message: z.string().max(100).optional(),
+});
 
 const listQuerySchema = z.object({
   agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']).optional(),
@@ -111,6 +142,211 @@ export function registerSponsorRoutes(router: Router) {
     });
 
     log.info({ orderId, agentId, amount }, 'Sponsor payment verified and saved');
+
+    res.json({ success: true });
+  });
+
+  // 크립토 결제 견적 생성
+  router.post('/sponsors/crypto/quote', validateBody(cryptoQuoteSchema), async (req, res) => {
+    const { agentId, amountUsdCents, walletAddress, tokenSymbol, chainId } =
+      req.body as z.infer<typeof cryptoQuoteSchema>;
+
+    // 체인 판별
+    const isAptos = tokenSymbol === 'APT';
+    const isSolana = tokenSymbol === 'SOL' || (
+      (tokenSymbol === 'USDC' || tokenSymbol === 'USDt') &&
+      (!chainId || !isSupportedChainId(chainId))
+    );
+
+    let merchantWallet: string;
+    let resolvedChainId: number | null;
+    let tokenContract: string | null;
+    let decimals: number;
+
+    if (isAptos) {
+      merchantWallet = config.merchantWalletAptos;
+      resolvedChainId = null;
+      tokenContract = null;
+      decimals = APT_DECIMALS;
+    } else if (isSolana) {
+      merchantWallet = config.merchantWalletSolana;
+      resolvedChainId = null;
+      if (tokenSymbol === 'SOL') {
+        tokenContract = null;
+        decimals = SOL_TOKENS['SOL']?.decimals ?? 9;
+      } else {
+        // USDC or USDt on Solana
+        const solToken = SOL_TOKENS[tokenSymbol];
+        tokenContract = solToken?.mint ?? SOLANA_USDC_MINT;
+        decimals = solToken?.decimals ?? 6;
+      }
+    } else {
+      // EVM
+      merchantWallet = config.merchantWalletEvm;
+      const evmChainId = chainId && isSupportedChainId(chainId)
+        ? chainId
+        : toSupportedChainId(chainId);
+      resolvedChainId = evmChainId;
+      const evmToken = EVM_TOKENS[evmChainId]?.[tokenSymbol];
+      if (!evmToken) {
+        throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+      }
+      tokenContract = evmToken.address === 'ETH' || evmToken.address === 'BNB'
+        ? null
+        : evmToken.address;
+      decimals = evmToken.decimals;
+    }
+
+    if (!merchantWallet) {
+      throw new ApiError(503, ERROR_CODES.PAYMENT_FAILED);
+    }
+
+    const usdPerToken = await getUsdPerToken(tokenSymbol);
+    const tokenAmount = fromUsdToTokenAmount(amountUsdCents / 100, usdPerToken);
+    const amountAtomic = toAtomic(tokenAmount, decimals);
+
+    const expiresAt = new Date(Date.now() + QUOTE_TTL_SECS * 1000);
+
+    const quote = await prisma.sponsorCryptoQuote.create({
+      data: {
+        agentId,
+        amountUsdCents,
+        walletAddress,
+        tokenSymbol,
+        chainId: resolvedChainId,
+        amountAtomic,
+        merchantWallet,
+        expiresAt,
+      },
+    });
+
+    log.info({ quoteId: quote.id, tokenSymbol, amountUsdCents }, 'Crypto quote created');
+
+    res.json({
+      quoteId: quote.id,
+      merchantWallet,
+      amountAtomic,
+      tokenSymbol,
+      chainId: resolvedChainId,
+      tokenContract,
+      quoteExpiresAt: expiresAt.toISOString(),
+    });
+  });
+
+  // 크립토 결제 온체인 검증 후 DB 저장
+  router.post('/sponsors/crypto/verify', validateBody(cryptoVerifySchema), async (req, res) => {
+    const { quoteId, txHash, displayName, message } =
+      req.body as z.infer<typeof cryptoVerifySchema>;
+
+    const quote = await prisma.sponsorCryptoQuote.findUnique({ where: { id: quoteId } });
+    if (!quote) {
+      throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+    }
+
+    // 이미 검증된 견적인지 확인
+    const usedQuote = await prisma.sponsor.findUnique({ where: { orderId: quoteId } });
+    if (usedQuote) {
+      throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
+    }
+
+    // 견적 만료 확인
+    if (new Date() > quote.expiresAt) {
+      throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+    }
+
+    const minAmountAtomic = BigInt(quote.amountAtomic);
+    const { tokenSymbol, walletAddress, merchantWallet } = quote;
+
+    const isAptos = tokenSymbol === 'APT';
+    const isSolana = quote.chainId === null && tokenSymbol !== 'APT';
+
+    let verified = false;
+    let actualAmount = 0n;
+    let pending = false;
+
+    if (isAptos) {
+      const result = await verifyAptosTransfer({
+        txHash,
+        expectedFrom: walletAddress,
+        expectedTo: merchantWallet,
+        coinType: APT_NATIVE_COIN_TYPE,
+        minAmountAtomic,
+        rpcUrl: config.aptosRpcUrl,
+      });
+      verified = result.verified;
+      actualAmount = result.actualAmount;
+    } else if (isSolana) {
+      let tokenMint: string | null;
+      if (tokenSymbol === 'SOL') {
+        tokenMint = null;
+      } else {
+        const solToken = SOL_TOKENS[tokenSymbol];
+        tokenMint = solToken?.mint ?? SOLANA_USDC_MINT;
+      }
+      const result = await verifySolanaTransfer({
+        txHash,
+        expectedPayer: walletAddress,
+        expectedRecipient: merchantWallet,
+        tokenMint,
+        minAmountAtomic,
+        rpcUrl: config.solanaRpcUrl,
+      });
+      verified = result.verified;
+      actualAmount = result.actualAmount;
+    } else {
+      // EVM
+      const chainId = quote.chainId ?? 1;
+      if (!isSupportedChainId(chainId)) {
+        throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+      }
+      const evmToken = EVM_TOKENS[chainId]?.[tokenSymbol];
+      const tokenContract = evmToken
+        ? (evmToken.address === 'ETH' || evmToken.address === 'BNB' ? null : evmToken.address)
+        : null;
+
+      if (!txHash.startsWith('0x')) {
+        throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+      }
+
+      const result = await verifyEvmTransfer({
+        txHash: txHash as `0x${string}`,
+        chainId,
+        expectedFrom: walletAddress,
+        expectedTo: merchantWallet,
+        tokenContract,
+        minAmountAtomic,
+      });
+      verified = result.verified;
+      actualAmount = result.actualAmount;
+      pending = result.pending ?? false;
+    }
+
+    if (pending) {
+      log.warn({ quoteId, txHash }, 'Crypto TX still pending on chain');
+      throw new ApiError(202, ERROR_CODES.PAYMENT_FAILED);
+    }
+
+    if (!verified) {
+      log.warn({ quoteId, txHash, actualAmount: String(actualAmount) }, 'Crypto TX verification failed');
+      throw new ApiError(400, ERROR_CODES.AMOUNT_MISMATCH);
+    }
+
+    await prisma.sponsor.create({
+      data: {
+        agentId: quote.agentId,
+        amount: quote.amountUsdCents,
+        currency: 'USD_CENTS',
+        orderId: quoteId,
+        txHash,
+        chainId: quote.chainId,
+        tokenSymbol,
+        walletAddress,
+        displayName: displayName ?? null,
+        message: message ?? null,
+      },
+    });
+
+    log.info({ quoteId, txHash, tokenSymbol, agentId: quote.agentId }, 'Crypto sponsor payment verified and saved');
 
     res.json({ success: true });
   });

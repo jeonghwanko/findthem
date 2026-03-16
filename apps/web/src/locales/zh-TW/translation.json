@@ -263,7 +263,8 @@
   },
   "sponsor": {
     "title": "贊助 {{name}}",
-    "amountLabel": "贊助金額",
+    "amountLabel": "贊助金額 (KRW)",
+    "customAmountPlaceholder": "輸入自訂金額",
     "nicknameLabel": "暱稱（選填）",
     "nicknamePlaceholder": "未填寫則匿名顯示",
     "messageLabel": "加油訊息（選填）",
@@ -276,6 +277,27 @@
     "noSponsors": "尚無贊助者，成為第一位贊助者吧！",
     "anonymous": "匿名",
     "backToTeam": "返回團隊頁面",
-    "amount": "₩{{amount}}"
+    "amount": "₩{{amount}}",
+    "tabCard": "信用卡付款",
+    "tabCrypto": "加密貨幣付款",
+    "crypto": {
+      "amountLabel": "金額 (USD)",
+      "tokenLabel": "選擇代幣",
+      "chainLabel": "選擇鏈",
+      "walletLabel": "您的錢包地址",
+      "walletPlaceholder": "0x... / Solana / Aptos 地址",
+      "walletRequired": "請輸入您的錢包地址。",
+      "quoteBtn": "取得報價",
+      "quoteError": "取得報價失敗，請再試一次。",
+      "quoteTitle": "付款詳情",
+      "sendAmount": "轉帳金額",
+      "sendTo": "轉帳至地址",
+      "expiresAt": "報價到期時間：{{time}}",
+      "txHashLabel": "交易雜湊值（轉帳後輸入）",
+      "txHashPlaceholder": "0x... 或 Solana/Aptos TX 雜湊值",
+      "txHashRequired": "請輸入交易雜湊值。",
+      "verifyBtn": "確認付款",
+      "verifyError": "付款確認失敗，請稍後再試。"
+    }
   }
 }
