@@ -103,18 +103,18 @@ export default function HomePage() {
     <div className="bg-white">
       {/* Hero */}
       <section
-        className="border-b border-pink-100 py-20 px-4 relative overflow-hidden"
+        className="border-b border-primary-100 py-20 px-4 relative overflow-hidden"
         style={{
-          backgroundImage: 'radial-gradient(circle, #f472b6 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #a5b4fc 1px, transparent 1px)',
           backgroundSize: '28px 28px',
-          backgroundColor: '#fce7f3',
+          backgroundColor: '#eef2ff',
         }}
       >
         {/* 배경 그라디언트 페이드 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/50 pointer-events-none" />
 
         <div className="max-w-3xl mx-auto text-center relative">
-          <span className="inline-block bg-pink-100 text-pink-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
+          <span className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
             {t('home.heroBadge')}
           </span>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">
