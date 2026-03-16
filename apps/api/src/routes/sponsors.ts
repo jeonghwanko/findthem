@@ -61,6 +61,13 @@ const verifySchema = z.object({
 
 export function registerSponsorRoutes(router: Router) {
   // 후원자 목록 (최신순)
+  router.get('/sponsors/payment-status', (_req, res): void => {
+    res.json({
+      tossEnabled: !!config.tossSecretKey,
+      cryptoEnabled: !!config.merchantWalletEvm,
+    });
+  });
+
   router.get('/sponsors', validateQuery(listQuerySchema), async (req, res) => {
     const { agentId, limit } = req.query as unknown as z.infer<typeof listQuerySchema>;
 
@@ -86,7 +93,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // orderId 생성
-  router.post('/sponsors/prepare', validateBody(prepareSchema), async (req, res) => {
+  router.post('/sponsors/prepare', validateBody(prepareSchema), (req, res) => {
     const { agentId } = req.body as z.infer<typeof prepareSchema>;
     const orderId = `${agentId}-${randomUUID()}`;
 

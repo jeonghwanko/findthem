@@ -279,6 +279,7 @@
     "noSponsors": "아직 후원자가 없습니다. 첫 번째 후원자가 되어주세요!",
     "anonymous": "익명",
     "backToTeam": "팀 페이지로 돌아가기",
+    "paymentNotReady": "결제 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.",
     "amount": "{{amount}}원",
     "tabCard": "카드 결제",
     "tabCrypto": "크립토 결제",

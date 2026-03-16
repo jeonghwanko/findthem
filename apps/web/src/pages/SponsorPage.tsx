@@ -117,6 +117,22 @@ export default function SponsorPage() {
   const [cryptoSuccess, setCryptoSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // 결제 기능 활성화 여부
+  const [tossEnabled, setTossEnabled] = useState<boolean | null>(null);
+  const [cryptoEnabled, setCryptoEnabled] = useState<boolean | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<{ tossEnabled: boolean; cryptoEnabled: boolean }>('/sponsors/payment-status')
+      .then((res) => { setTossEnabled(res.tossEnabled); setCryptoEnabled(res.cryptoEnabled); })
+      .catch(() => { setTossEnabled(false); setCryptoEnabled(false); });
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
   // Load Toss widget when tab = toss
   useEffect(() => {
     if (tab !== 'toss') return;
@@ -161,6 +177,10 @@ export default function SponsorPage() {
   };
 
   const handleTossPay = async () => {
+    if (tossEnabled === false) {
+      showToast(t('sponsor.paymentNotReady'));
+      return;
+    }
     if (!widgetRef.current) {
       setTossError(t('sponsor.processing'));
       return;
@@ -188,6 +208,10 @@ export default function SponsorPage() {
   };
 
   const handleGetQuote = async () => {
+    if (cryptoEnabled === false) {
+      showToast(t('sponsor.paymentNotReady'));
+      return;
+    }
     if (!walletAddress.trim()) {
       setCryptoError(t('sponsor.crypto.walletRequired'));
       return;
@@ -259,6 +283,13 @@ export default function SponsorPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 z-50 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg animate-fade-in whitespace-nowrap">
+          {toast}
+        </div>
+      )}
+
       {/* 뒤로가기 */}
       <Link
         to="/team"

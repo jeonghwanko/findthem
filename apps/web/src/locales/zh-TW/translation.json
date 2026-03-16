@@ -279,6 +279,7 @@
     "noSponsors": "尚無贊助者，成為第一位贊助者吧！",
     "anonymous": "匿名",
     "backToTeam": "返回團隊頁面",
+    "paymentNotReady": "付款功能尚未開放，請稍後再試。",
     "amount": "₩{{amount}}",
     "tabCard": "信用卡付款",
     "tabCrypto": "加密貨幣付款",

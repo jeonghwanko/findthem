@@ -8,12 +8,6 @@ if (isProd && !process.env.JWT_SECRET) {
 if (isProd && !process.env.ADMIN_API_KEY) {
   throw new Error('ADMIN_API_KEY must be set in production');
 }
-if (isProd && !process.env.TOSS_SECRET_KEY) {
-  throw new Error('TOSS_SECRET_KEY must be set in production');
-}
-if (isProd && !process.env.MERCHANT_WALLET_EVM) {
-  throw new Error('MERCHANT_WALLET_EVM must be set in production');
-}
 
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),

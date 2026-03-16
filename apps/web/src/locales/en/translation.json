@@ -279,6 +279,7 @@
     "noSponsors": "No sponsors yet. Be the first!",
     "anonymous": "Anonymous",
     "backToTeam": "Back to Team",
+    "paymentNotReady": "Payment is not yet available. Please try again later.",
     "amount": "₩{{amount}}",
     "tabCard": "Card Payment",
     "tabCrypto": "Crypto Payment",
