@@ -9,12 +9,19 @@ export function toStr(v: unknown): string {
 }
 
 /**
- * Convert a decimal token amount to atomic units.
+ * Convert a decimal token amount to atomic units using string parsing.
+ * Avoids floating point precision loss for large decimals (e.g., ETH 18 decimals).
  * e.g. toAtomic(1.5, 6) → "1500000"
  */
 export function toAtomic(amount: number, decimals: number): string {
-  const factor = Math.pow(10, decimals)
-  return String(Math.round(amount * factor))
+  // Use toFixed to get exact string representation
+  const str = amount.toFixed(decimals)
+  const [whole, frac = ''] = str.split('.')
+  const fracPadded = frac.padEnd(decimals, '0').slice(0, decimals)
+  const combined = (whole ?? '0') + fracPadded
+  // Remove leading zeros but keep at least one digit
+  const trimmed = combined.replace(/^0+/, '') || '0'
+  return trimmed
 }
 
 /**

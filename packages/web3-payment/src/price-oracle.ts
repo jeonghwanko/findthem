@@ -66,7 +66,7 @@ export function _resetPriceCache(): void { MEM.clear() }
  */
 export async function getUsdPerToken(symbol: string): Promise<number> {
   const sym = symbol.toUpperCase()
-  if (sym === 'USDC' || sym === 'USDT' || sym === 'USDT') return 1
+  if (sym === 'USDC' || sym === 'USDT') return 1
 
   const id = COINGECKO_IDS[sym]
   if (!id) throw new Error(`USD_PRICE_UNSUPPORTED_SYMBOL_${sym}`)

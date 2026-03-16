@@ -240,18 +240,32 @@ export function registerSponsorRoutes(router: Router) {
 
     const quote = await prisma.sponsorCryptoQuote.findUnique({ where: { id: quoteId } });
     if (!quote) {
-      throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+      throw new ApiError(404, ERROR_CODES.QUOTE_NOT_FOUND);
     }
 
-    // 이미 검증된 견적인지 확인
-    const usedQuote = await prisma.sponsor.findUnique({ where: { orderId: quoteId } });
-    if (usedQuote) {
+    // 1. 견적 만료 확인
+    if (new Date() > quote.expiresAt) {
+      throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+    }
+
+    // 2. 원자적 선점: verifiedAt이 null인 경우에만 verifiedAt을 설정
+    const claimed = await prisma.sponsorCryptoQuote.updateMany({
+      where: { id: quoteId, verifiedAt: null },
+      data: { verifiedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      // 이미 처리 중이거나 완료된 견적
       throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
     }
 
-    // 견적 만료 확인
-    if (new Date() > quote.expiresAt) {
-      throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+    // 3. TX 해시 중복 체크 (다른 quoteId로 같은 TX 재사용 방지)
+    if (txHash) {
+      const existingTxSponsor = await prisma.sponsor.findUnique({ where: { txHash } });
+      if (existingTxSponsor) {
+        // 선점 롤백
+        await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
+        throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
+      }
     }
 
     const minAmountAtomic = BigInt(quote.amountAtomic);
@@ -265,16 +279,25 @@ export function registerSponsorRoutes(router: Router) {
     let pending = false;
 
     if (isAptos) {
-      const result = await verifyAptosTransfer({
-        txHash,
-        expectedFrom: walletAddress,
-        expectedTo: merchantWallet,
-        coinType: APT_NATIVE_COIN_TYPE,
-        minAmountAtomic,
-        rpcUrl: config.aptosRpcUrl,
-      });
-      verified = result.verified;
-      actualAmount = result.actualAmount;
+      try {
+        const result = await verifyAptosTransfer({
+          txHash,
+          expectedFrom: walletAddress,
+          expectedTo: merchantWallet,
+          coinType: APT_NATIVE_COIN_TYPE,
+          minAmountAtomic,
+          rpcUrl: config.aptosRpcUrl,
+        });
+        verified = result.verified;
+        actualAmount = result.actualAmount;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg === 'TX_NOT_FOUND_ON_CHAIN') {
+          pending = true;
+        } else {
+          throw e;
+        }
+      }
     } else if (isSolana) {
       let tokenMint: string | null;
       if (tokenSymbol === 'SOL') {
@@ -283,20 +306,30 @@ export function registerSponsorRoutes(router: Router) {
         const solToken = SOL_TOKENS[tokenSymbol];
         tokenMint = solToken?.mint ?? SOLANA_USDC_MINT;
       }
-      const result = await verifySolanaTransfer({
-        txHash,
-        expectedPayer: walletAddress,
-        expectedRecipient: merchantWallet,
-        tokenMint,
-        minAmountAtomic,
-        rpcUrl: config.solanaRpcUrl,
-      });
-      verified = result.verified;
-      actualAmount = result.actualAmount;
+      try {
+        const result = await verifySolanaTransfer({
+          txHash,
+          expectedPayer: walletAddress,
+          expectedRecipient: merchantWallet,
+          tokenMint,
+          minAmountAtomic,
+          rpcUrl: config.solanaRpcUrl,
+        });
+        verified = result.verified;
+        actualAmount = result.actualAmount;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg === 'TX_NOT_FOUND_ON_CHAIN') {
+          pending = true;
+        } else {
+          throw e;
+        }
+      }
     } else {
       // EVM
       const chainId = quote.chainId ?? 1;
       if (!isSupportedChainId(chainId)) {
+        await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
         throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
       }
       const evmToken = EVM_TOKENS[chainId]?.[tokenSymbol];
@@ -305,6 +338,7 @@ export function registerSponsorRoutes(router: Router) {
         : null;
 
       if (!txHash.startsWith('0x')) {
+        await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
         throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
       }
 
@@ -322,11 +356,15 @@ export function registerSponsorRoutes(router: Router) {
     }
 
     if (pending) {
+      // 선점 롤백 (재시도 허용)
+      await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
       log.warn({ quoteId, txHash }, 'Crypto TX still pending on chain');
-      throw new ApiError(202, ERROR_CODES.PAYMENT_FAILED);
+      throw new ApiError(408, ERROR_CODES.PAYMENT_PENDING);
     }
 
     if (!verified) {
+      // 선점 롤백 (재시도 허용)
+      await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
       log.warn({ quoteId, txHash, actualAmount: String(actualAmount) }, 'Crypto TX verification failed');
       throw new ApiError(400, ERROR_CODES.AMOUNT_MISMATCH);
     }

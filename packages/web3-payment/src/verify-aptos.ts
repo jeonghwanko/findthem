@@ -1,5 +1,6 @@
 import type { TransferVerifyResult } from './types.js'
 import { isRecord, toBigIntOrZero } from './utils.js'
+import { APT_NATIVE_COIN_TYPE } from './constants.js'
 
 const DEFAULT_APTOS_RPC = 'https://fullnode.mainnet.aptoslabs.com/v1'
 const TIMEOUT_MS = 15_000
@@ -52,15 +53,23 @@ export async function verifyAptosTransfer(params: {
   if (!isRecord(payload)) throw new Error('TX_NO_PAYLOAD')
 
   const func = typeof payload.function === 'string' ? payload.function : ''
-  if (!func.endsWith('::transfer')) throw new Error('TX_NOT_TRANSFER')
+
+  const ALLOWED_TRANSFER_FUNCS = new Set([
+    '0x1::coin::transfer',
+    '0x1::aptos_account::transfer',
+  ])
+  if (!ALLOWED_TRANSFER_FUNCS.has(func)) throw new Error('TX_NOT_TRANSFER')
 
   const args: unknown[] = Array.isArray(payload.arguments) ? payload.arguments : []
   const tyArgs: string[] = Array.isArray(payload.type_arguments)
     ? payload.type_arguments.filter((t): t is string => typeof t === 'string')
     : []
 
-  // coin::transfer<CoinType>(to, amount)
-  const expectedCoinType = tyArgs[0] ?? ''
+  // coin::transfer<CoinType>(to, amount) or aptos_account::transfer(to, amount)
+  const isAptosCoinTransfer = func === '0x1::coin::transfer'
+  const isAptosAccountTransfer = func === '0x1::aptos_account::transfer'
+  // aptos_account::transfer is APT-only (no type argument needed)
+  const expectedCoinType = isAptosCoinTransfer ? (tyArgs[0] ?? '') : (isAptosAccountTransfer ? APT_NATIVE_COIN_TYPE : '')
   const toAddr = typeof args[0] === 'string' ? args[0] : ''
   const amount = typeof args[1] === 'string' ? args[1]
     : typeof args[1] === 'number' ? String(args[1]) : '0'

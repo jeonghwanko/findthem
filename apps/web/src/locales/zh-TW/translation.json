@@ -209,7 +209,9 @@
     "SIGHTING_REPORT_NOT_FOUND": "找不到對應的失蹤報案。",
     "REPORT_CLOSED": "無法對已結案的報案提供線索。",
     "IMAGE_ONLY": "只能上傳圖片檔案。",
-    "SERVER_ERROR": "伺服器發生錯誤。"
+    "SERVER_ERROR": "伺服器發生錯誤。",
+    "QUOTE_NOT_FOUND": "找不到付款報價。",
+    "PAYMENT_PENDING": "交易仍在處理中，請稍後再試。"
   },
   "agent": {
     "title": "AI目擊通報助手",

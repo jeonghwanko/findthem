@@ -209,7 +209,9 @@
     "SIGHTING_REPORT_NOT_FOUND": "The referenced missing report was not found.",
     "REPORT_CLOSED": "Cannot submit a sighting for a closed report.",
     "IMAGE_ONLY": "Only image files can be uploaded.",
-    "SERVER_ERROR": "A server error occurred."
+    "SERVER_ERROR": "A server error occurred.",
+    "QUOTE_NOT_FOUND": "Payment quote not found.",
+    "PAYMENT_PENDING": "Transaction is still pending. Please try again in a moment."
   },
   "agent": {
     "title": "AI Sighting Assistant",

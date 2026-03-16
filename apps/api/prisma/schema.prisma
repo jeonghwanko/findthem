@@ -449,7 +449,7 @@ model Sponsor {
   orderId       String   @unique
   paymentKey    String?
   // 크립토 결제
-  txHash        String?
+  txHash        String?  @unique
   chainId       Int?
   tokenSymbol   String?
   walletAddress String?
@@ -472,6 +472,7 @@ model SponsorCryptoQuote {
   amountAtomic   String   // BigInt as string
   merchantWallet String
   expiresAt      DateTime
+  verifiedAt     DateTime?  // 견적 사용 여부 체크 (선점 처리)
   createdAt      DateTime @default(now())
 
   @@index([agentId])

@@ -209,7 +209,9 @@
     "SIGHTING_REPORT_NOT_FOUND": "該当する行方不明届が見つかりません。",
     "REPORT_CLOSED": "終了した届出には情報を提供できません。",
     "IMAGE_ONLY": "画像ファイルのみアップロード可能です。",
-    "SERVER_ERROR": "サーバーエラーが発生しました。"
+    "SERVER_ERROR": "サーバーエラーが発生しました。",
+    "QUOTE_NOT_FOUND": "支払い見積もりが見つかりません。",
+    "PAYMENT_PENDING": "トランザクションはまだ処理中です。しばらくしてから再試行してください。"
   },
   "agent": {
     "title": "AI目撃情報アシスタント",
