@@ -28,6 +28,9 @@ jobs:
       - name: shared 패키지 빌드
         run: npm run build -w packages/shared
 
+      - name: web3-payment 패키지 빌드
+        run: npm run build -w packages/web3-payment
+
       - name: Prisma 클라이언트 생성
         run: cd apps/api && npx prisma generate
 
