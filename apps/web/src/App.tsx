@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import BottomTab from './components/BottomTab';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -92,8 +93,9 @@ export default function App() {
               </Routes>
             </main>
             <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">
-              <div className="max-w-5xl mx-auto px-4 text-center text-sm text-gray-500">
-                {t('footer')}
+              <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
+                <span className="text-sm text-gray-500">{t('footer')}</span>
+                <LanguageSwitcher variant="light" />
               </div>
             </footer>
             <BottomTab user={user} />
