@@ -65,7 +65,7 @@ jobs:
           script: |
             cd ~/findthem
             git pull origin master
-            npm ci
+            npm ci || (rm -rf node_modules && npm ci)
             cd apps/api && npx prisma generate && cd ~/findthem
             npm run build
             cd apps/api && npx prisma migrate deploy && cd ~/findthem
