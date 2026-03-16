@@ -33,14 +33,14 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <List className="w-4 h-4" aria-hidden="true" />
             {t('nav.browse')}
           </Link>
-          <a href="/devlog" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-            <BookOpen className="w-4 h-4" aria-hidden="true" />
-            {t('nav.devlog')}
-          </a>
           <Link to="/team" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
             <Users className="w-4 h-4" aria-hidden="true" />
             {t('nav.team')}
           </Link>
+          <a href="/devlog" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+            <BookOpen className="w-4 h-4" aria-hidden="true" />
+            {t('nav.devlog')}
+          </a>
           {user ? (
             <>
               <Link to="/my-reports" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">

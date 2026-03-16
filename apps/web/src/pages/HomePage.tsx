@@ -194,7 +194,7 @@ export default function HomePage() {
             activeFeature === f.key && (
               <div
                 key={activeFeature}
-                className={`animate-fade-slide-in flex items-start gap-4 max-w-lg mx-auto bg-white/80 border ${f.panelBorder} rounded-2xl px-6 py-5 shadow-sm`}
+                className={`animate-fade-slide-in flex items-start gap-4 max-w-xl mx-auto bg-white/80 border ${f.panelBorder} rounded-2xl px-6 py-5 shadow-sm`}
               >
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${f.iconBg}`}>
                   <f.Icon className={`w-5 h-5 ${f.iconCls}`} aria-hidden="true" />
