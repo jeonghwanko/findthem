@@ -52,10 +52,6 @@ const AGENTS: AgentConfig[] = [
   },
 ];
 
-interface SponsorListResponse {
-  sponsors: SponsorPublic[];
-}
-
 export default function TeamPage() {
   const { t } = useTranslation();
   const [sponsors, setSponsors] = useState<SponsorPublic[]>([]);
@@ -63,8 +59,8 @@ export default function TeamPage() {
 
   useEffect(() => {
     api
-      .get<SponsorListResponse>('/sponsors?limit=20')
-      .then((res) => setSponsors(res.sponsors))
+      .get<SponsorPublic[]>('/sponsors?limit=20')
+      .then((res) => setSponsors(Array.isArray(res) ? res : []))
       .catch(() => setSponsors([]))
       .finally(() => setSponsorsLoading(false));
   }, []);
@@ -105,9 +101,7 @@ export default function TeamPage() {
                 className="inline-flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
               >
                 <Heart className="w-4 h-4" aria-hidden="true" />
-                {t('team.agentImageMatching.name') === t(agent.nameKey)
-                  ? t('sponsor.title', { name: t(agent.nameKey) })
-                  : t('sponsor.title', { name: t(agent.nameKey) })}
+                {t('sponsor.title', { name: t(agent.nameKey) })}
               </Link>
             </div>
           );
