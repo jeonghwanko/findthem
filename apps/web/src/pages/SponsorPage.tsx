@@ -8,6 +8,7 @@ import { useAccount, useSendTransaction, useWriteContract, useSwitchChain } from
 import { parseAbi } from 'viem';
 import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
 import { api, type AgentId } from '../api/client';
+import Web3Provider from '../providers/Web3Provider';
 
 // ── Constants ──
 
@@ -114,6 +115,14 @@ async function verifyWithRetry(
 // ── Component ──
 
 export default function SponsorPage() {
+  return (
+    <Web3Provider>
+      <SponsorPageInner />
+    </Web3Provider>
+  );
+}
+
+function SponsorPageInner() {
   const { agentId } = useParams<{ agentId: string }>();
   const { t } = useTranslation();
   const agent = AGENTS.find((a) => a.id === agentId);
