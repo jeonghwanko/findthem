@@ -5,14 +5,14 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from '@findthem/shared';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ERROR_CODES, type Locale } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new ApiError(400, 'IMAGE_ONLY') as unknown as Error);
+    else cb(new ApiError(400, ERROR_CODES.IMAGE_ONLY) as unknown as Error);
   },
 });
 
@@ -92,7 +92,7 @@ export function registerChatRoutes(router: Router) {
     async (req, res) => {
       const sessionId = req.params.id as string;
       const file = req.file;
-      if (!file) throw new ApiError(400, 'PHOTO_ATTACH_REQUIRED');
+      if (!file) throw new ApiError(400, ERROR_CODES.PHOTO_ATTACH_REQUIRED);
 
       const locale = resolveLocale(
         req.headers['accept-language'],

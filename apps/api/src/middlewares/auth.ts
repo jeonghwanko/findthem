@@ -21,7 +21,7 @@ declare global {
 export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
-    throw new ApiError(401, 'AUTH_REQUIRED');
+    throw new ApiError(401, ERROR_CODES.AUTH_REQUIRED);
   }
 
   const token = header.slice(7);
@@ -29,7 +29,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   try {
     payload = jwt.verify(token, config.jwtSecret) as JwtPayload;
   } catch {
-    throw new ApiError(401, 'INVALID_TOKEN');
+    throw new ApiError(401, ERROR_CODES.INVALID_TOKEN);
   }
 
   const user = await prisma.user.findUnique({
@@ -72,7 +72,7 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
     apiKey.length === adminKey.length &&
     timingSafeEqual(Buffer.from(apiKey), Buffer.from(adminKey));
   if (!valid) {
-    throw new ApiError(403, 'ADMIN_REQUIRED');
+    throw new ApiError(403, ERROR_CODES.ADMIN_REQUIRED);
   }
   next();
 }

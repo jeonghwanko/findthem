@@ -15,7 +15,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('IMAGE_ONLY'));
+    else cb(new Error(ERROR_CODES.IMAGE_ONLY));
   },
 });
 
@@ -81,7 +81,7 @@ export function registerReportRoutes(router: Router) {
 
       const files = (req.files as Express.Multer.File[]) || [];
       if (files.length === 0) {
-        throw new ApiError(400, 'PHOTO_REQUIRED');
+        throw new ApiError(400, ERROR_CODES.PHOTO_REQUIRED);
       }
 
       // 파일 I/O는 트랜잭션 밖에서 처리
@@ -265,7 +265,7 @@ export function registerReportRoutes(router: Router) {
       },
     });
 
-    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
     res.json(report);
   });
 
@@ -277,11 +277,11 @@ export function registerReportRoutes(router: Router) {
       .parse(req.body);
 
     const report = await prisma.report.findUnique({ where: { id } });
-    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { userId: statusUserId } = req.user!; // requireAuth가 보장
     if (report.userId !== statusUserId) {
-      throw new ApiError(403, 'REPORT_OWNER_ONLY');
+      throw new ApiError(403, ERROR_CODES.REPORT_OWNER_ONLY);
     }
 
     // RACE-02: where 조건에 현재 상태를 포함하여 원자적 업데이트
@@ -320,11 +320,11 @@ export function registerReportRoutes(router: Router) {
     async (req, res) => {
       const id = req.params.id as string;
       const report = await prisma.report.findUnique({ where: { id } });
-      if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
+      if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { userId: photosUserId } = req.user!; // requireAuth가 보장
       if (report.userId !== photosUserId) {
-        throw new ApiError(403, 'REPORT_OWNER_ONLY');
+        throw new ApiError(403, ERROR_CODES.REPORT_OWNER_ONLY);
       }
 
       const files = (req.files as Express.Multer.File[]) || [];

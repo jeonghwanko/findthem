@@ -207,9 +207,9 @@
     "MATCH_NOT_FOUND": "Match result not found.",
     "MATCH_OWNER_ONLY": "You can only modify matches for your own reports.",
     "SIGHTING_REPORT_NOT_FOUND": "The referenced missing report was not found.",
-    "REPORT_CLOSED": "Cannot submit a sighting for a closed report.",
     "IMAGE_ONLY": "Only image files can be uploaded.",
     "SERVER_ERROR": "A server error occurred.",
+    "INVALID_QUEUE_NAME": "Invalid queue name.",
     "QUOTE_NOT_FOUND": "Payment quote not found.",
     "PAYMENT_PENDING": "Transaction is still pending. Please try again in a moment."
   },

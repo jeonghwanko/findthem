@@ -83,7 +83,7 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
         platforms: resolvedPlatforms,
         regenerateContent,
       },
-      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+      { attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
     );
 
     await prisma.promotionLog.create({

@@ -32,6 +32,7 @@ import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
+import { ERROR_CODES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 
 // ── 데브로그 트윗 헬퍼 ──
@@ -165,7 +166,7 @@ export function registerAdminRoutes(router: Router) {
     const validNames = Object.keys(QUEUE_MAP) as QueueName[];
 
     if (queueName && !validNames.includes(queueName as QueueName)) {
-      throw new ApiError(400, 'INVALID_QUEUE_NAME');
+      throw new ApiError(400, ERROR_CODES.INVALID_QUEUE_NAME);
     }
 
     const targets: QueueName[] = queueName ? [queueName as QueueName] : validNames;
@@ -234,7 +235,7 @@ export function registerAdminRoutes(router: Router) {
     const { status, reason } = req.body as z.infer<typeof adminReportStatusSchema>;
 
     const report = await prisma.report.findUnique({ where: { id } });
-    if (!report) throw new ApiError(404, 'REPORT_NOT_FOUND');
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
 
     const updated = await prisma.report.update({
       where: { id },
@@ -291,7 +292,7 @@ export function registerAdminRoutes(router: Router) {
     const { status, reason } = req.body as z.infer<typeof adminMatchStatusSchema>;
 
     const match = await prisma.match.findUnique({ where: { id } });
-    if (!match) throw new ApiError(404, 'MATCH_NOT_FOUND');
+    if (!match) throw new ApiError(404, ERROR_CODES.MATCH_NOT_FOUND);
 
     const updated = await prisma.match.update({
       where: { id },
@@ -356,7 +357,7 @@ export function registerAdminRoutes(router: Router) {
     const { blocked, reason } = req.body as z.infer<typeof adminBlockSchema>;
 
     const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) throw new ApiError(404, 'USER_NOT_FOUND');
+    if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
 
     const updated = await prisma.user.update({
       where: { id },
@@ -423,7 +424,7 @@ export function registerAdminRoutes(router: Router) {
   router.get('/admin/agent/sessions/:id', requireAdmin, async (req, res) => {
     const id = req.params.id as string;
     const session = await prisma.adminAgentSession.findUnique({ where: { id } });
-    if (!session) throw new ApiError(404, 'AGENT_SESSION_NOT_FOUND');
+    if (!session) throw new ApiError(404, ERROR_CODES.SESSION_NOT_FOUND);
     res.json(session);
   });
 
@@ -440,7 +441,7 @@ export function registerAdminRoutes(router: Router) {
     const job = await crawlSchedulerQueue.add(
       'crawl-dispatch',
       { sources },
-      { jobId: `manual-crawl-${Date.now()}` },
+      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `manual-crawl-${Date.now()}` },
     );
     res.json({ jobId: job.id, sources: sources ?? fetchers.map((f) => f.source) });
   });
@@ -478,7 +479,7 @@ export function registerAdminRoutes(router: Router) {
     const { context, commitCount, publishStatus, tags, twitterShare } = body;
 
     if (typeof context !== 'string' || context.trim().length < 10) {
-      throw new ApiError(400, 'DEVLOG_CONTEXT_REQUIRED');
+      throw new ApiError(400, ERROR_CODES.DEVLOG_CONTEXT_REQUIRED);
     }
 
     const resolvedCommitCount =
@@ -591,7 +592,7 @@ export function registerAdminRoutes(router: Router) {
       const result = await twitterAdapter.post(tweetText, []);
 
       if (!result.postId) {
-        throw new ApiError(502, 'TWITTER_POST_FAILED');
+        throw new ApiError(502, ERROR_CODES.TWITTER_POST_FAILED);
       }
 
       await createAuditLog({

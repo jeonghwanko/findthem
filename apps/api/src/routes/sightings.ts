@@ -15,7 +15,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('IMAGE_ONLY'));
+    else cb(new Error(ERROR_CODES.IMAGE_ONLY));
   },
 });
 
@@ -71,7 +71,7 @@ export function registerSightingRoutes(router: Router) {
             where: { id: body.reportId },
             select: { status: true },
           });
-          if (!report) throw new ApiError(404, 'SIGHTING_REPORT_NOT_FOUND');
+          if (!report) throw new ApiError(404, ERROR_CODES.SIGHTING_REPORT_NOT_FOUND);
           if (report.status !== 'ACTIVE') {
             throw new ApiError(400, ERROR_CODES.REPORT_NOT_ACTIVE);
           }

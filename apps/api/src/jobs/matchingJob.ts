@@ -156,10 +156,11 @@ async function comparePairDirect(
       );
 
       if (result.confidence >= NOTIFY_THRESHOLD) {
-        await notificationQueue.add('notify-reporter', {
-          matchId: match.id,
-          reportId: report.id,
-        });
+        await notificationQueue.add(
+          'notify-reporter',
+          { matchId: match.id, reportId: report.id },
+          { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        );
       }
     }
   } catch (err) {

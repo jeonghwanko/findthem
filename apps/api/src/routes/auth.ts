@@ -8,6 +8,7 @@ import { validateBody } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { authLimiter } from '../middlewares/rateLimit.js';
+import { ERROR_CODES } from '@findthem/shared';
 
 const registerSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요'),
@@ -34,7 +35,7 @@ export function registerAuthRoutes(router: Router) {
 
     const existing = await prisma.user.findUnique({ where: { phone } });
     if (existing) {
-      throw new ApiError(409, 'PHONE_ALREADY_EXISTS');
+      throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -55,12 +56,12 @@ export function registerAuthRoutes(router: Router) {
 
     const user = await prisma.user.findUnique({ where: { phone } });
     if (!user || !user.passwordHash) {
-      throw new ApiError(401, 'INVALID_CREDENTIALS');
+      throw new ApiError(401, ERROR_CODES.INVALID_CREDENTIALS);
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      throw new ApiError(401, 'INVALID_CREDENTIALS');
+      throw new ApiError(401, ERROR_CODES.INVALID_CREDENTIALS);
     }
 
     const token = signToken(user.id);
@@ -78,7 +79,7 @@ export function registerAuthRoutes(router: Router) {
       where: { id: userId },
       select: { id: true, name: true, phone: true, email: true, createdAt: true },
     });
-    if (!user) throw new ApiError(404, 'USER_NOT_FOUND');
+    if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
     res.json(user);
   });
 }

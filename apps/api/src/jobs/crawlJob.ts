@@ -163,7 +163,7 @@ export async function scheduleCrawlJob() {
   await crawlSchedulerQueue.add(
     'crawl-dispatch',
     {},
-    { repeat: { pattern: CRAWL_CRON } },
+    { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, repeat: { pattern: CRAWL_CRON } },
   );
   log.info({ cron: CRAWL_CRON }, 'Crawl cron scheduled');
 }
