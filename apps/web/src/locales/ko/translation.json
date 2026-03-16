@@ -287,20 +287,16 @@
       "amountLabel": "후원 금액 (USD)",
       "tokenLabel": "토큰 선택",
       "chainLabel": "체인 선택",
-      "walletLabel": "내 지갑 주소",
-      "walletPlaceholder": "0x... / 솔라나 / 앱토스 주소",
-      "walletRequired": "지갑 주소를 입력해주세요.",
-      "quoteBtn": "견적 조회",
-      "quoteError": "견적 조회에 실패했습니다. 다시 시도해주세요.",
-      "quoteTitle": "결제 정보",
-      "sendAmount": "전송 금액",
-      "sendTo": "받는 주소",
-      "expiresAt": "견적 만료: {{time}}",
-      "txHashLabel": "트랜잭션 해시 (결제 후 입력)",
-      "txHashPlaceholder": "0x... 또는 Solana/Aptos TX 해시",
-      "txHashRequired": "트랜잭션 해시를 입력해주세요.",
-      "verifyBtn": "결제 확인",
-      "verifyError": "결제 확인에 실패했습니다. 잠시 후 다시 시도해주세요."
+      "walletLabel": "지갑",
+      "connectWallet": "지갑 연결",
+      "connectFirst": "지갑을 먼저 연결해주세요",
+      "payBtn": "{{amount}} ({{token}}) 결제하기",
+      "payError": "결제에 실패했습니다. 다시 시도해주세요.",
+      "rejected": "결제가 취소되었습니다.",
+      "stepQuoting": "견적 조회 중...",
+      "stepSigning": "지갑 서명 대기 중...",
+      "stepVerifying": "결제 확인 중...",
+      "installPetra": "Petra 지갑 설치"
     }
   }
 }

@@ -42,9 +42,20 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'web3': ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@tanstack/react-query'],
+          'aptos': ['@aptos-labs/wallet-adapter-react', '@aptos-labs/ts-sdk'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

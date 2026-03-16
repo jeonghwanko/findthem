@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.39.0",
+    "@aptos-labs/wallet-adapter-react": "^8.3.1",
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
     "@capacitor/core": "^7.0.0",
@@ -19,6 +21,8 @@
     "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
     "@findthem/shared": "*",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@tanstack/react-query": "^5.90.21",
     "@tosspayments/payment-widget-sdk": "^0.12.1",
     "i18next": "^25.8.18",
     "i18next-browser-languagedetector": "^8.2.1",
@@ -27,6 +31,8 @@
     "react-dom": "^19.0.0",
     "react-i18next": "^16.5.8",
     "react-router-dom": "^7.1.0",
+    "viem": "^2.47.4",
+    "wagmi": "^2.19.5",
     "workbox-precaching": "^7.4.0",
     "workbox-routing": "^7.4.0",
     "workbox-strategies": "^7.4.0"

@@ -287,20 +287,16 @@
       "amountLabel": "金額 (USD)",
       "tokenLabel": "選擇代幣",
       "chainLabel": "選擇鏈",
-      "walletLabel": "您的錢包地址",
-      "walletPlaceholder": "0x... / Solana / Aptos 地址",
-      "walletRequired": "請輸入您的錢包地址。",
-      "quoteBtn": "取得報價",
-      "quoteError": "取得報價失敗，請再試一次。",
-      "quoteTitle": "付款詳情",
-      "sendAmount": "轉帳金額",
-      "sendTo": "轉帳至地址",
-      "expiresAt": "報價到期時間：{{time}}",
-      "txHashLabel": "交易雜湊值（轉帳後輸入）",
-      "txHashPlaceholder": "0x... 或 Solana/Aptos TX 雜湊值",
-      "txHashRequired": "請輸入交易雜湊值。",
-      "verifyBtn": "確認付款",
-      "verifyError": "付款確認失敗，請稍後再試。"
+      "walletLabel": "錢包",
+      "connectWallet": "連接錢包",
+      "connectFirst": "請先連接您的錢包",
+      "payBtn": "支付 {{amount}} ({{token}})",
+      "payError": "付款失敗，請再試一次。",
+      "rejected": "付款已取消。",
+      "stepQuoting": "取得報價中...",
+      "stepSigning": "等待錢包簽名...",
+      "stepVerifying": "確認付款中...",
+      "installPetra": "安裝 Petra 錢包"
     }
   }
 }

@@ -286,20 +286,16 @@
       "amountLabel": "金額 (USD)",
       "tokenLabel": "トークンを選択",
       "chainLabel": "チェーンを選択",
-      "walletLabel": "ウォレットアドレス",
-      "walletPlaceholder": "0x... / Solana / Aptosアドレス",
-      "walletRequired": "ウォレットアドレスを入力してください。",
-      "quoteBtn": "見積もりを取得",
-      "quoteError": "見積もりの取得に失敗しました。再試行してください。",
-      "quoteTitle": "お支払い情報",
-      "sendAmount": "送金額",
-      "sendTo": "送金先アドレス",
-      "expiresAt": "見積もり有効期限: {{time}}",
-      "txHashLabel": "トランザクションハッシュ（送金後に入力）",
-      "txHashPlaceholder": "0x... またはSolana/Aptosハッシュ",
-      "txHashRequired": "トランザクションハッシュを入力してください。",
-      "verifyBtn": "決済を確認",
-      "verifyError": "決済確認に失敗しました。しばらくしてからお試しください。"
+      "walletLabel": "ウォレット",
+      "connectWallet": "ウォレットを接続",
+      "connectFirst": "ウォレットを先に接続してください",
+      "payBtn": "{{amount}} ({{token}}) 決済する",
+      "payError": "決済に失敗しました。再試行してください。",
+      "rejected": "決済がキャンセルされました。",
+      "stepQuoting": "見積もり取得中...",
+      "stepSigning": "ウォレット署名待ち...",
+      "stepVerifying": "決済確認中...",
+      "installPetra": "Petraウォレットをインストール"
     }
   }
 }

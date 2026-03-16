@@ -5,6 +5,7 @@ import { fetchers, getFetcher } from './crawl/fetcherRegistry.js';
 import type { ExternalReport } from './crawl/types.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
+import { imageService } from '../services/imageService.js';
 
 const log = createLogger('crawl');
 
@@ -47,6 +48,27 @@ function startCrawlSchedulerWorker() {
 
 async function saveNewReport(item: ExternalReport, source: string): Promise<boolean> {
   try {
+    // I/O(이미지 다운로드)는 트랜잭션 밖에서 먼저 처리
+    // http:// 외부 URL이면 로컬에 다운로드하여 Mixed Content 방지
+    let localPhotoUrl: string | undefined;
+    let localThumbnailUrl: string | undefined;
+
+    if (item.photoUrl) {
+      const isExternal = item.photoUrl.startsWith('http://') || item.photoUrl.startsWith('https://');
+      if (isExternal) {
+        const saved = await imageService.processAndSaveFromUrl('reports', item.photoUrl);
+        if (saved) {
+          localPhotoUrl = saved.photoUrl;
+          localThumbnailUrl = saved.thumbnailUrl;
+        } else {
+          log.warn({ externalId: item.externalId, source, photoUrl: item.photoUrl }, 'External image download failed, saving report without photo');
+        }
+      } else {
+        // 이미 로컬 경로인 경우 그대로 사용
+        localPhotoUrl = item.photoUrl;
+      }
+    }
+
     const report = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.report.create({
         data: {
@@ -69,11 +91,12 @@ async function saveNewReport(item: ExternalReport, source: string): Promise<bool
         },
       });
 
-      if (item.photoUrl) {
+      if (localPhotoUrl) {
         await tx.reportPhoto.create({
           data: {
             reportId: created.id,
-            photoUrl: item.photoUrl,
+            photoUrl: localPhotoUrl,
+            thumbnailUrl: localThumbnailUrl,
             isPrimary: true,
           },
         });
@@ -84,7 +107,7 @@ async function saveNewReport(item: ExternalReport, source: string): Promise<bool
 
     // 트랜잭션 커밋 후 AI 분석 큐 등록
     // RACE-11: jobId로 동일 report의 중복 image job 방지
-    if (item.photoUrl) {
+    if (localPhotoUrl) {
       await imageQueue.add(
         'process-report-photos',
         { type: 'report', reportId: report.id },

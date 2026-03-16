@@ -287,20 +287,16 @@
       "amountLabel": "Amount (USD)",
       "tokenLabel": "Select Token",
       "chainLabel": "Select Chain",
-      "walletLabel": "Your Wallet Address",
-      "walletPlaceholder": "0x... / Solana / Aptos address",
-      "walletRequired": "Please enter your wallet address.",
-      "quoteBtn": "Get Quote",
-      "quoteError": "Failed to get quote. Please try again.",
-      "quoteTitle": "Payment Details",
-      "sendAmount": "Amount to Send",
-      "sendTo": "Send to Address",
-      "expiresAt": "Quote expires at {{time}}",
-      "txHashLabel": "Transaction Hash (after sending)",
-      "txHashPlaceholder": "0x... or Solana/Aptos TX hash",
-      "txHashRequired": "Please enter the transaction hash.",
-      "verifyBtn": "Confirm Payment",
-      "verifyError": "Payment verification failed. Please try again in a moment."
+      "walletLabel": "Wallet",
+      "connectWallet": "Connect Wallet",
+      "connectFirst": "Please connect your wallet first",
+      "payBtn": "Pay {{amount}} ({{token}})",
+      "payError": "Payment failed. Please try again.",
+      "rejected": "Payment was cancelled.",
+      "stepQuoting": "Getting quote...",
+      "stepSigning": "Waiting for wallet signature...",
+      "stepVerifying": "Confirming payment...",
+      "installPetra": "Install Petra Wallet"
     }
   }
 }
