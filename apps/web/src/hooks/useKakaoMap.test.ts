@@ -59,7 +59,7 @@ describe('useKakaoMap', () => {
 // SDK 로딩 동작은 loadKakaoMapSdk 함수를 직접 테스트
 // (useKakaoMap 내부에서 KAKAO_JS_KEY 체크가 있어 키 없이는 진입 불가)
 describe('loadKakaoMapSdk (내부 함수 — _testLoadSdk 경유)', () => {
-  let onLoadCb: vi.Mock;
+  let onLoadCb: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     _testReset();
