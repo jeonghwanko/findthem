@@ -61,7 +61,14 @@
   },
   "myReports": {
     "title": "マイ届出一覧",
-    "empty": "届出がまだありません"
+    "empty": "届出がまだありません",
+    "edit": "編集",
+    "delete": "削除",
+    "deleteConfirm": "「{{name}}」の届出を削除しますか？この操作は元に戻せません。",
+    "deleteError": "削除に失敗しました。再試行してください。",
+    "statusError": "ステータスの変更に失敗しました。再試行してください。",
+    "markFound": "見つかったとしてマーク",
+    "markActive": "捜索中に戻す"
   },
   "report": {
     "title": "行方不明届の登録",

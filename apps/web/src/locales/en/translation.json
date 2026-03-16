@@ -61,7 +61,14 @@
   },
   "myReports": {
     "title": "My Reports",
-    "empty": "You haven't filed any reports yet"
+    "empty": "You haven't filed any reports yet",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the report for \"{{name}}\"? This cannot be undone.",
+    "deleteError": "Failed to delete. Please try again.",
+    "statusError": "Failed to update status. Please try again.",
+    "markFound": "Mark as Found",
+    "markActive": "Mark as Searching"
   },
   "report": {
     "title": "File a Missing Report",

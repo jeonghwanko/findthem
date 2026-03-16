@@ -3,7 +3,7 @@ import { z } from 'zod';
 import multer from 'multer';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
-import { validateQuery } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
@@ -346,6 +346,90 @@ export function registerReportRoutes(router: Router) {
     }
 
     res.json(updated);
+  });
+
+  // 신고 내용 수정 (본인만)
+  const editReportSchema = z.object({
+    name: z.string().min(1).max(100).optional(),
+    species: z.string().max(100).optional(),
+    gender: z.enum(['MALE', 'FEMALE', 'UNKNOWN']).optional(),
+    age: z.string().max(50).optional(),
+    color: z.string().max(50).optional(),
+    features: z.string().max(500).optional(),
+    lastSeenAt: z.string().datetime().optional(),
+    lastSeenAddress: z.string().max(200).optional(),
+    lastSeenLat: z.number().optional().nullable(),
+    lastSeenLng: z.number().optional().nullable(),
+    contactPhone: z.string().max(20).optional(),
+    contactName: z.string().max(50).optional(),
+    reward: z.string().max(100).optional().nullable(),
+  });
+
+  router.patch('/reports/:id', requireAuth, validateBody(editReportSchema), async (req, res) => {
+    const id = req.params.id as string;
+    const body = req.body as z.infer<typeof editReportSchema>;
+
+    const report = await prisma.report.findUnique({ where: { id } });
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId: editUserId } = req.user!;
+    if (report.userId !== editUserId) {
+      throw new ApiError(403, ERROR_CODES.REPORT_EDIT_FORBIDDEN);
+    }
+
+    if (report.externalSource !== null) {
+      throw new ApiError(403, ERROR_CODES.EXTERNAL_REPORT_IMMUTABLE);
+    }
+
+    const updated = await prisma.report.update({
+      where: { id },
+      data: {
+        ...body,
+        lastSeenAt: body.lastSeenAt !== undefined ? new Date(body.lastSeenAt) : undefined,
+      },
+      include: {
+        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true, createdAt: true } },
+        user: { select: { id: true, name: true } },
+        _count: { select: { sightings: true, matches: true } },
+      },
+    });
+
+    res.json(updated);
+  });
+
+  // 신고 삭제 (본인만)
+  router.delete('/reports/:id', requireAuth, async (req, res) => {
+    const id = req.params.id as string;
+
+    const report = await prisma.report.findUnique({
+      where: { id },
+      select: { id: true, userId: true, externalSource: true, promotions: { select: { id: true }, take: 1 } },
+    });
+    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId: deleteUserId } = req.user!;
+    if (report.userId !== deleteUserId) {
+      throw new ApiError(403, ERROR_CODES.REPORT_DELETE_FORBIDDEN);
+    }
+
+    if (report.externalSource !== null) {
+      throw new ApiError(403, ERROR_CODES.EXTERNAL_REPORT_IMMUTABLE);
+    }
+
+    // SNS 게시물이 있으면 삭제 작업 먼저 enqueue (레코드 삭제 전)
+    if (report.promotions.length > 0) {
+      await cleanupQueue.add(
+        'cleanup-sns-posts',
+        { reportId: id },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+      );
+    }
+
+    await prisma.report.delete({ where: { id } });
+
+    res.json({ success: true });
   });
 
   // 신고에 사진 추가

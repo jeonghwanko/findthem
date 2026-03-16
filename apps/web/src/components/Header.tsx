@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, LogOut, LogIn, FileText, List, BookOpen, Bell, BellOff, Users } from 'lucide-react';
 import type { User } from '../api/client';
@@ -13,6 +13,16 @@ interface HeaderProps {
 export default function Header({ user, onLogout }: HeaderProps) {
   const { t } = useTranslation();
   const { subscribed, loading, isSupported, subscribe, unsubscribe } = usePushNotification();
+  const { pathname } = useLocation();
+
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+  const navLinkClass = (path: string) =>
+    `flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
+      isActive(path)
+        ? 'text-primary-600 bg-primary-50 font-medium'
+        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+    }`;
 
   return (
     <header
@@ -29,11 +39,11 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}
         <nav className="hidden md:flex items-center gap-1 text-sm">
-          <Link to="/browse" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+          <Link to="/browse" className={navLinkClass('/browse')}>
             <List className="w-4 h-4" aria-hidden="true" />
             {t('nav.browse')}
           </Link>
-          <Link to="/team" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+          <Link to="/team" className={navLinkClass('/team')}>
             <Users className="w-4 h-4" aria-hidden="true" />
             {t('nav.team')}
           </Link>
@@ -43,7 +53,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </a>
           {user ? (
             <>
-              <Link to="/my-reports" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+              <Link to="/my-reports" className={navLinkClass('/my-reports')}>
                 <FileText className="w-4 h-4" aria-hidden="true" />
                 {t('nav.myReports')}
               </Link>
