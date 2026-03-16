@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
-import { AgentTotalSkeleton, SponsorItemSkeleton } from '../components/Skeleton';
+import { SponsorItemSkeleton } from '../components/Skeleton';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -112,22 +112,22 @@ export default function TeamPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
-              {totalsLoading ? (
-                <AgentTotalSkeleton />
-              ) : (() => {
-                const total = totals[agent.id];
-                if (!total) return null;
-                const parts: string[] = [];
-                if (total.krw > 0) parts.push(`${total.krw.toLocaleString()}${t('sponsor.currencyKrw')}`);
-                if (total.usdCents > 0) parts.push(`$${(total.usdCents / 100).toLocaleString()}`);
-                if (parts.length === 0) return null;
-                return (
-                  <div className="text-center py-2 px-3 bg-primary-50 rounded-lg">
-                    <p className="text-xs text-gray-500">{t('sponsor.totalReceived')}</p>
-                    <p className="text-lg font-bold text-primary-600">{parts.join(' + ')}</p>
-                  </div>
-                );
-              })()}
+              <div className="text-center py-2 px-3 bg-primary-50 rounded-lg">
+                <p className="text-xs text-gray-500">{t('sponsor.totalReceived')}</p>
+                {totalsLoading ? (
+                  <div className="h-7 w-24 mx-auto bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className="text-lg font-bold text-primary-600">
+                    {(() => {
+                      const total = totals[agent.id];
+                      const parts: string[] = [];
+                      if (total?.krw && total.krw > 0) parts.push(`${total.krw.toLocaleString()}${t('sponsor.currencyKrw')}`);
+                      if (total?.usdCents && total.usdCents > 0) parts.push(`$${(total.usdCents / 100).toLocaleString()}`);
+                      return parts.length > 0 ? parts.join(' + ') : '$0';
+                    })()}
+                  </p>
+                )}
+              </div>
               <Link
                 to={`/team/sponsor/${agent.id}`}
                 className="inline-flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
