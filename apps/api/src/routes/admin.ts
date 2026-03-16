@@ -13,6 +13,7 @@ import {
   matchingQueue,
   notificationQueue,
   cleanupQueue,
+  outreachQueue,
 } from '../jobs/queues.js';
 import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
 import { requireAdmin } from '../middlewares/auth.js';
@@ -28,6 +29,8 @@ import {
 import { createAuditLog, listAuditLogs } from '../services/auditLogService.js';
 import { adminAgentService } from '../services/adminAgent/index.js';
 import { getRecentDiff } from '../services/gitDiffService.js';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
@@ -606,4 +609,238 @@ export function registerAdminRoutes(router: Router) {
       res.json({ tweetId: result.postId, tweetUrl: result.postUrl, text: tweetText });
     },
   );
+
+  // ── 깨진 사진 레코드 정리 ──
+  router.post('/admin/cleanup-broken-photos', requireAdmin, async (_req, res) => {
+    const photos = await prisma.reportPhoto.findMany({
+      select: { id: true, photoUrl: true },
+    });
+
+    const brokenIds: string[] = [];
+    for (const photo of photos) {
+      const url = photo.photoUrl;
+      // 외부 URL(http)이면 무조건 깨진 것으로 판정 (로컬 저장 이전 데이터)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        brokenIds.push(photo.id);
+        continue;
+      }
+      // 로컬 파일이면 실제 존재 여부 확인
+      const filePath = url.startsWith('/uploads/')
+        ? resolve(config.uploadDir, url.replace('/uploads/', ''))
+        : resolve(config.uploadDir, url);
+      if (!existsSync(filePath)) {
+        brokenIds.push(photo.id);
+      }
+    }
+
+    let deleted = 0;
+    if (brokenIds.length > 0) {
+      const result = await prisma.reportPhoto.deleteMany({
+        where: { id: { in: brokenIds } },
+      });
+      deleted = result.count;
+    }
+
+    res.json({ total: photos.length, broken: brokenIds.length, deleted });
+  });
+
+  // ── 아웃리치 관리 API ──
+
+  const outreachQuerySchema = z.object({
+    status: z.string().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  });
+
+  const outreachApproveSchema = z.object({
+    content: z.string().min(1).optional(),
+    subject: z.string().min(1).optional(),
+  });
+
+  const outreachContactQuerySchema = z.object({
+    type: z.enum(['JOURNALIST', 'YOUTUBER']).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  });
+
+  const outreachContactCreateSchema = z.object({
+    type: z.enum(['JOURNALIST', 'YOUTUBER']),
+    name: z.string().min(1).max(200),
+    email: z.string().email().optional(),
+    youtubeChannelId: z.string().optional(),
+    youtubeChannelUrl: z.string().url().optional(),
+    organization: z.string().optional(),
+    topics: z.array(z.string()).default([]),
+    subscriberCount: z.number().int().nonnegative().optional(),
+  });
+
+  // GET /admin/outreach — 아웃리치 요청 목록 (정적 라우트: /admin/outreach/contacts 보다 먼저)
+  router.get('/admin/outreach', requireAdmin, validateQuery(outreachQuerySchema), async (req, res) => {
+    const { status, page, limit } = req.query as unknown as z.infer<typeof outreachQuerySchema>;
+
+    const where: Prisma.OutreachRequestWhereInput = {};
+    if (status) where.status = status;
+
+    const [items, total] = await Promise.all([
+      prisma.outreachRequest.findMany({
+        where,
+        include: {
+          report: {
+            select: {
+              id: true,
+              name: true,
+              subjectType: true,
+              lastSeenAddress: true,
+              photos: { where: { isPrimary: true }, take: 1, select: { thumbnailUrl: true } },
+            },
+          },
+          contact: {
+            select: {
+              id: true,
+              type: true,
+              name: true,
+              email: true,
+              youtubeChannelUrl: true,
+              organization: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.outreachRequest.count({ where }),
+    ]);
+
+    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+  });
+
+  // GET /admin/outreach/contacts — 컨택 목록 (정적 경로, 동적 :id 보다 먼저)
+  router.get(
+    '/admin/outreach/contacts',
+    requireAdmin,
+    validateQuery(outreachContactQuerySchema),
+    async (req, res) => {
+      const { type, page, limit } = req.query as unknown as z.infer<typeof outreachContactQuerySchema>;
+
+      const where: Prisma.OutreachContactWhereInput = { isActive: true };
+      if (type) where.type = type;
+
+      const [items, total] = await Promise.all([
+        prisma.outreachContact.findMany({
+          where,
+          include: {
+            _count: { select: { outreachRequests: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.outreachContact.count({ where }),
+      ]);
+
+      res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+    },
+  );
+
+  // POST /admin/outreach/contacts — 컨택 수동 등록
+  router.post(
+    '/admin/outreach/contacts',
+    requireAdmin,
+    validateBody(outreachContactCreateSchema),
+    async (req, res) => {
+      const body = req.body as z.infer<typeof outreachContactCreateSchema>;
+
+      const contact = await prisma.outreachContact.create({
+        data: {
+          type: body.type,
+          name: body.name,
+          email: body.email,
+          youtubeChannelId: body.youtubeChannelId,
+          youtubeChannelUrl: body.youtubeChannelUrl,
+          organization: body.organization,
+          topics: body.topics,
+          subscriberCount: body.subscriberCount,
+          source: 'MANUAL',
+          isActive: true,
+        },
+      });
+
+      await createAuditLog({
+        action: 'outreach.contact.create',
+        targetType: 'OutreachContact',
+        targetId: contact.id,
+        detail: { type: contact.type, name: contact.name },
+        source: 'DASHBOARD' as AdminActionSource,
+      });
+
+      res.status(201).json(contact);
+    },
+  );
+
+  // PATCH /admin/outreach/:id/approve — 승인 (본문 수정 가능)
+  router.patch(
+    '/admin/outreach/:id/approve',
+    requireAdmin,
+    validateBody(outreachApproveSchema),
+    async (req, res) => {
+      const id = req.params.id as string;
+      const { content, subject } = req.body as z.infer<typeof outreachApproveSchema>;
+
+      const request = await prisma.outreachRequest.findUnique({ where: { id } });
+      if (!request) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+
+      const updateData: Prisma.OutreachRequestUpdateInput = {
+        status: 'APPROVED',
+        approvedAt: new Date(),
+      };
+      if (content) updateData.draftContent = content;
+      if (subject) updateData.draftSubject = subject;
+
+      const updated = await prisma.outreachRequest.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // 발송 큐에 등록
+      await outreachQueue.add(
+        'send-outreach',
+        { type: 'send-outreach', outreachRequestId: id },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+      );
+
+      await createAuditLog({
+        action: 'outreach.request.approve',
+        targetType: 'OutreachRequest',
+        targetId: id,
+        detail: { channel: request.channel, reportId: request.reportId },
+        source: 'DASHBOARD' as AdminActionSource,
+      });
+
+      res.json(updated);
+    },
+  );
+
+  // PATCH /admin/outreach/:id/reject — 거절
+  router.patch('/admin/outreach/:id/reject', requireAdmin, async (req, res) => {
+    const id = req.params.id as string;
+
+    const request = await prisma.outreachRequest.findUnique({ where: { id } });
+    if (!request) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+
+    const updated = await prisma.outreachRequest.update({
+      where: { id },
+      data: { status: 'REJECTED' },
+    });
+
+    await createAuditLog({
+      action: 'outreach.request.reject',
+      targetType: 'OutreachRequest',
+      targetId: id,
+      detail: { channel: request.channel, reportId: request.reportId },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json(updated);
+  });
 }
