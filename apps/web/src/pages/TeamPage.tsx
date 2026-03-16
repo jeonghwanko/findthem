@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
+import { AgentTotalSkeleton, SponsorItemSkeleton } from '../components/Skeleton';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -59,6 +60,7 @@ export default function TeamPage() {
   const [sponsors, setSponsors] = useState<SponsorPublic[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(true);
   const [totals, setTotals] = useState<AgentTotals>({});
+  const [totalsLoading, setTotalsLoading] = useState(true);
 
   useEffect(() => {
     api
@@ -69,7 +71,8 @@ export default function TeamPage() {
     api
       .get<AgentTotals>('/sponsors/totals')
       .then((res) => setTotals(res ?? {}))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTotalsLoading(false));
   }, []);
 
   const agentNameMap = useMemo(() => {
@@ -109,7 +112,9 @@ export default function TeamPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
-              {(() => {
+              {totalsLoading ? (
+                <AgentTotalSkeleton />
+              ) : (() => {
                 const total = totals[agent.id];
                 if (!total) return null;
                 const parts: string[] = [];
@@ -139,7 +144,11 @@ export default function TeamPage() {
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-6">{t('sponsor.sponsorList')}</h2>
         {sponsorsLoading ? (
-          <div className="text-center py-8 text-gray-400">{t('loading')}</div>
+          <ul className="divide-y divide-gray-100 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SponsorItemSkeleton key={i} />
+            ))}
+          </ul>
         ) : sponsors.length === 0 ? (
           <p className="text-center text-gray-500 py-8">{t('sponsor.noSponsors')}</p>
         ) : (

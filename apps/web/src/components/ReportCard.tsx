@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
@@ -16,6 +17,7 @@ interface ReportCardProps {
 
 export default function ReportCard({ report }: ReportCardProps) {
   const { t, i18n } = useTranslation();
+  const [imgLoaded, setImgLoaded] = useState(false);
   const primaryPhoto = report.photos?.[0];
   const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l  }-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(report.createdAt, locale);
@@ -33,11 +35,15 @@ export default function ReportCard({ report }: ReportCardProps) {
       {/* 이미지 */}
       <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
         {primaryPhoto ? (
-          <img
-            src={primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl}
-            alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+          <>
+            {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+            <img
+              src={primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl}
+              alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
+              onLoad={() => setImgLoaded(true)}
+            />
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label={t('card.noPhoto')}>
             <Camera className="w-8 h-8" aria-hidden="true" />

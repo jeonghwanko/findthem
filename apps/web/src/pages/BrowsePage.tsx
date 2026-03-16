@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
+import { ReportCardSkeleton } from '../components/Skeleton';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
@@ -157,7 +158,11 @@ export default function BrowsePage() {
       )}
 
       {viewMode === 'list' && loading ? (
-        <div className="text-center py-20 text-gray-400">{t('loading')}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <ReportCardSkeleton key={i} />
+          ))}
+        </div>
       ) : viewMode === 'list' && reports.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           {t('browse.noResults')}

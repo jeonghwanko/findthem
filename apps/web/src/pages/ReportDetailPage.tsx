@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, type ReportDetail, type Sighting, type SightingListResponse } from '../api/client';
 import ShareButton from '../components/ShareButton';
 import KakaoMap from '../components/KakaoMap';
+import { ReportDetailSkeleton } from '../components/Skeleton';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',
@@ -39,7 +40,7 @@ export default function ReportDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-400">{t('loading')}</div>;
+    return <ReportDetailSkeleton />;
   }
 
   if (!report) {
