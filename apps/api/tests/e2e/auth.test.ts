@@ -45,7 +45,10 @@ describe('Auth E2E', () => {
     });
 
     it('중복 전화번호 → 409', async () => {
-      prismaMock.user.findUnique.mockResolvedValue(testUser);
+      // P2002 unique constraint violation을 시뮬레이션
+      const { Prisma } = await import('@prisma/client');
+      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', { code: 'P2002', clientVersion: '5.0.0' });
+      prismaMock.user.create.mockRejectedValue(p2002);
 
       const res = await app
         .post('/api/auth/register')
