@@ -61,3 +61,12 @@ export function useKakaoMap(
 
   return map;
 }
+
+// ── 테스트 전용 헬퍼 (프로덕션 빌드에서 tree-shaking 됨) ──
+export function _testReset() {
+  sdkLoaded = false;
+  sdkLoading = false;
+  sdkCallbacks.length = 0;
+}
+
+export const _testLoadSdk = loadKakaoMapSdk;

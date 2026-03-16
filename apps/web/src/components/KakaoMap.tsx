@@ -35,6 +35,12 @@ export default function KakaoMap({
   const defaultCenter = center ?? computeCenter(markers);
   const map = useKakaoMap(containerRef, { ...defaultCenter, level });
 
+  // center prop 변경 시 맵 재중심화 (geolocation 비동기 응답 반영)
+  useEffect(() => {
+    if (!map || !center) return;
+    map.setCenter(new window.kakao.maps.LatLng(center.lat, center.lng));
+  }, [map, center?.lat, center?.lng]);
+
   useEffect(() => {
     if (!map) return;
 

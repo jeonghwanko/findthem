@@ -54,7 +54,7 @@ export default function BrowsePage() {
 
     api.get<ReportListResponse>(`/reports?${params}`)
       .then((data) => {
-        setReports(data.reports);
+        setReports(data.items ?? data.reports ?? []);
         setTotalPages(data.totalPages);
       })
       .catch(() => setReports([]))
