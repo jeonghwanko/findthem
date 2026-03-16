@@ -1,5 +1,6 @@
 import type { Router } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -78,15 +79,19 @@ export function registerAuthRoutes(router: Router) {
   router.post('/auth/register', authLimiter, validateBody(registerSchema), async (req, res) => {
     const { name, phone, password, email } = req.body;
 
-    const existing = await prisma.user.findUnique({ where: { phone } });
-    if (existing) {
-      throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: { name, phone, passwordHash, email },
-    });
+
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: { name, phone, passwordHash, email },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
+      }
+      throw err;
+    }
 
     const token = signToken(user.id);
     res.status(201).json({
