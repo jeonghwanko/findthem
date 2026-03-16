@@ -41,7 +41,11 @@
     "processing": "Processing...",
     "hasAccount": "Already have an account? ",
     "noAccount": "Don't have an account? ",
-    "errorFallback": "An error occurred"
+    "errorFallback": "An error occurred",
+    "kakaoLogin": "Login with Kakao",
+    "naverLogin": "Login with Naver",
+    "telegramLogin": "Login with Telegram",
+    "orDivider": "or"
   },
   "browse": {
     "title": "Missing Reports",
@@ -54,6 +58,10 @@
     "viewMap": "Map",
     "mapNoCoords": "Reports without location data are not shown on the map",
     "mapKeyMissing": "Map API key is not configured"
+  },
+  "myReports": {
+    "title": "My Reports",
+    "empty": "You haven't filed any reports yet"
   },
   "report": {
     "title": "File a Missing Report",

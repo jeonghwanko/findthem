@@ -27,6 +27,8 @@ import OutreachPage from './pages/admin/OutreachPage';
 import TeamPage from './pages/TeamPage';
 import SponsorPage from './pages/SponsorPage';
 import SponsorSuccessPage from './pages/SponsorSuccessPage';
+import MyReportsPage from './pages/MyReportsPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 export default function App() {
   const { user, loading, login, register, logout } = useAuth();
@@ -84,11 +86,16 @@ export default function App() {
                 />
                 <Route path="/browse" element={<BrowsePage />} />
                 <Route
+                  path="/my-reports"
+                  element={user ? <MyReportsPage /> : <Navigate to="/login" />}
+                />
+                <Route
                   path="/reports/new"
                   element={user ? <RegisterReportPage /> : <Navigate to="/login" />}
                 />
                 <Route path="/reports/:id" element={<ReportDetailPage />} />
                 <Route path="/sightings/new" element={<SightingSubmitPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/team" element={<TeamPage />} />
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />

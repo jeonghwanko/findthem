@@ -41,7 +41,11 @@
     "processing": "処理中...",
     "hasAccount": "アカウントをお持ちですか？",
     "noAccount": "アカウントがありませんか？",
-    "errorFallback": "エラーが発生しました"
+    "errorFallback": "エラーが発生しました",
+    "kakaoLogin": "カカオでログイン",
+    "naverLogin": "Naverでログイン",
+    "telegramLogin": "Telegramでログイン",
+    "orDivider": "または"
   },
   "browse": {
     "title": "行方不明届一覧",
@@ -54,6 +58,10 @@
     "viewMap": "地図",
     "mapNoCoords": "位置情報がない届出は地図に表示されません",
     "mapKeyMissing": "地図APIキーが設定されていません"
+  },
+  "myReports": {
+    "title": "マイ届出一覧",
+    "empty": "届出がまだありません"
   },
   "report": {
     "title": "行方不明届の登録",

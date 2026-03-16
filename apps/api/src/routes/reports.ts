@@ -239,7 +239,7 @@ export function registerReportRoutes(router: Router) {
       prisma.report.count({ where }),
     ]);
 
-    res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: reports, reports, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 내 신고 목록 (⚠️ /reports/:id 보다 먼저 등록)
@@ -286,7 +286,7 @@ export function registerReportRoutes(router: Router) {
       prisma.report.count({ where }),
     ]);
 
-    res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: reports, reports, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 실종 신고 상세
