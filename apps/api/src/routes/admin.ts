@@ -850,4 +850,23 @@ export function registerAdminRoutes(router: Router) {
 
     res.json(updated);
   });
+
+  // POST /admin/outreach/trigger — 수동 아웃리치 스캔 실행
+  router.post('/admin/outreach/trigger', requireAdmin, async (_req, res) => {
+    const job = await outreachQueue.add(
+      'discover-contacts',
+      { type: 'discover-contacts' as const },
+      { jobId: `manual-outreach-${Date.now()}` },
+    );
+
+    await createAuditLog({
+      action: 'outreach.trigger',
+      targetType: 'OutreachRequest',
+      targetId: job.id ?? '',
+      detail: { trigger: 'manual' },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json({ jobId: job.id });
+  });
 }

@@ -216,6 +216,7 @@ export default function OutreachPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [triggerLoading, setTriggerLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -278,13 +279,29 @@ export default function OutreachPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-gray-900">아웃리치 관리</h1>
-        <button
-          onClick={() => { void fetchData(); }}
-          disabled={loading}
-          className="border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
-        >
-          {loading ? '로딩 중...' : '새로고침'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (!confirm('아웃리치 스캔을 수동 실행합니다. ACTIVE 신고에 대해 기자/유튜버를 탐색하고 초안을 생성합니다.')) return;
+              setTriggerLoading(true);
+              adminApi.post<{ jobId: string }>('/admin/outreach/trigger', {})
+                .then(() => { alert('아웃리치 스캔이 시작되었습니다. 잠시 후 새로고침하세요.'); })
+                .catch(() => { alert('스캔 실행에 실패했습니다.'); })
+                .finally(() => setTriggerLoading(false));
+            }}
+            disabled={triggerLoading}
+            className="bg-primary-600 hover:bg-primary-700 text-white rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {triggerLoading ? '실행 중...' : '🔍 수동 스캔'}
+          </button>
+          <button
+            onClick={() => { void fetchData(); }}
+            disabled={loading}
+            className="border border-gray-300 rounded px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            {loading ? '로딩 중...' : '새로고침'}
+          </button>
+        </div>
       </div>
 
       {/* 탭 */}
