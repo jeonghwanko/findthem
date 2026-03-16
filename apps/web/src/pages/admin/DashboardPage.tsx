@@ -208,6 +208,57 @@ function CrawlSection() {
   );
 }
 
+interface CleanupResult {
+  total: number;
+  broken: number;
+  deleted: number;
+}
+
+function BrokenPhotosSection() {
+  const { t } = useTranslation();
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<CleanupResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleCleanup() {
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await adminApi.post<CleanupResult>('/admin/cleanup-broken-photos', {});
+      setResult(res);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t('admin.crawl.triggerError'));
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="mb-6">
+      <h2 className="text-base font-semibold text-gray-700 mb-3">{t('admin.dashboard.brokenPhotos')}</h2>
+      <div className="bg-white rounded-lg shadow p-5">
+        <p className="text-sm text-gray-500 mb-4">{t('admin.dashboard.brokenPhotosDesc')}</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { void handleCleanup(); }}
+            disabled={running}
+            className="bg-red-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {running ? t('admin.dashboard.brokenPhotosRunning') : t('admin.dashboard.brokenPhotosBtn')}
+          </button>
+          {result && (
+            <span className="text-sm text-green-600">
+              {t('admin.dashboard.brokenPhotosResult', { total: result.total, broken: result.broken, deleted: result.deleted })}
+            </span>
+          )}
+          {error && <span className="text-sm text-red-600">{error}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { data, loading, error, refresh } = useAdminData<AdminOverviewStats>(
@@ -284,6 +335,9 @@ export default function DashboardPage() {
 
           {/* 데이터 수집 */}
           <CrawlSection />
+
+          {/* 깨진 사진 정리 */}
+          <BrokenPhotosSection />
 
           {/* 큐 상태 */}
           <div className="mb-4">

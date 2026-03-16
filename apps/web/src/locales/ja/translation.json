@@ -178,7 +178,12 @@
       "highConfidence": "高信頼度",
       "blocked": "ブロック",
       "queueStatus": "キュー状態",
-      "noQueueData": "キューデータなし"
+      "noQueueData": "キューデータなし",
+      "brokenPhotos": "壊れた写真の整理",
+      "brokenPhotosDesc": "存在しない画像ファイルを参照するレコードを削除します。",
+      "brokenPhotosBtn": "整理実行",
+      "brokenPhotosRunning": "整理中...",
+      "brokenPhotosResult": "全{{total}}件中{{broken}}件破損 → {{deleted}}件削除"
     },
     "crawl": {
       "title": "データ収集",

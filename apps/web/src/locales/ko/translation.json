@@ -178,7 +178,12 @@
       "highConfidence": "고신뢰",
       "blocked": "차단",
       "queueStatus": "큐 상태",
-      "noQueueData": "큐 데이터 없음"
+      "noQueueData": "큐 데이터 없음",
+      "brokenPhotos": "깨진 사진 정리",
+      "brokenPhotosDesc": "서버에 존재하지 않는 이미지 파일을 참조하는 사진 레코드를 삭제합니다. (외부 URL 또는 로컬 파일 누락)",
+      "brokenPhotosBtn": "깨진 사진 정리 실행",
+      "brokenPhotosRunning": "정리 중...",
+      "brokenPhotosResult": "전체 {{total}}건 중 {{broken}}건 깨짐 → {{deleted}}건 삭제"
     },
     "crawl": {
       "title": "데이터 수집",

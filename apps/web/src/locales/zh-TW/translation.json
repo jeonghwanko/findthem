@@ -178,7 +178,12 @@
       "highConfidence": "高信賴度",
       "blocked": "已封鎖",
       "queueStatus": "佇列狀態",
-      "noQueueData": "無佇列資料"
+      "noQueueData": "無佇列資料",
+      "brokenPhotos": "清理損壞照片",
+      "brokenPhotosDesc": "刪除指向不存在圖片的記錄（外部URL或缺失本地檔案）。",
+      "brokenPhotosBtn": "執行清理",
+      "brokenPhotosRunning": "清理中...",
+      "brokenPhotosResult": "共{{total}}筆中{{broken}}筆損壞 → 已刪除{{deleted}}筆"
     },
     "crawl": {
       "title": "資料收集",
