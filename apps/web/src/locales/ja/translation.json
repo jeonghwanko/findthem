@@ -280,6 +280,8 @@
     "anonymous": "匿名",
     "backToTeam": "チームページへ戻る",
     "amount": "₩{{amount}}",
+    "totalReceived": "累計スポンサー",
+    "currencyKrw": "ウォン",
     "tabCard": "カード決済",
     "tabCrypto": "暗号資産決済",
     "crypto": {

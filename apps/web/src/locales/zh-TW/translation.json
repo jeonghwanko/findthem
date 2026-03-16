@@ -281,6 +281,8 @@
     "backToTeam": "返回團隊頁面",
     "paymentNotReady": "付款功能尚未開放，請稍後再試。",
     "amount": "₩{{amount}}",
+    "totalReceived": "累計贊助",
+    "currencyKrw": "韓元",
     "tabCard": "信用卡付款",
     "tabCrypto": "加密貨幣付款",
     "crypto": {

@@ -281,6 +281,8 @@
     "backToTeam": "Back to Team",
     "paymentNotReady": "Payment is not yet available. Please try again later.",
     "amount": "₩{{amount}}",
+    "totalReceived": "Total Received",
+    "currencyKrw": "KRW",
     "tabCard": "Card Payment",
     "tabCrypto": "Crypto Payment",
     "crypto": {

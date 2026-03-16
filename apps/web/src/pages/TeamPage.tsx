@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
+
+type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
 interface AgentConfig {
   id: AgentId;
@@ -56,6 +58,7 @@ export default function TeamPage() {
   const { t } = useTranslation();
   const [sponsors, setSponsors] = useState<SponsorPublic[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(true);
+  const [totals, setTotals] = useState<AgentTotals>({});
 
   useEffect(() => {
     api
@@ -63,6 +66,16 @@ export default function TeamPage() {
       .then((res) => setSponsors(Array.isArray(res) ? res : []))
       .catch(() => setSponsors([]))
       .finally(() => setSponsorsLoading(false));
+    api
+      .get<AgentTotals>('/sponsors/totals')
+      .then((res) => setTotals(res ?? {}))
+      .catch(() => {});
+  }, []);
+
+  const agentNameMap = useMemo(() => {
+    const map: Record<string, { nameKey: string; iconColor: string }> = {};
+    for (const a of AGENTS) map[a.id] = { nameKey: a.nameKey, iconColor: a.iconColor };
+    return map;
   }, []);
 
   return (
@@ -96,6 +109,20 @@ export default function TeamPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
+              {(() => {
+                const total = totals[agent.id];
+                if (!total) return null;
+                const parts: string[] = [];
+                if (total.krw > 0) parts.push(`${total.krw.toLocaleString()}${t('sponsor.currencyKrw')}`);
+                if (total.usdCents > 0) parts.push(`$${(total.usdCents / 100).toLocaleString()}`);
+                if (parts.length === 0) return null;
+                return (
+                  <div className="text-center py-2 px-3 bg-primary-50 rounded-lg">
+                    <p className="text-xs text-gray-500">{t('sponsor.totalReceived')}</p>
+                    <p className="text-lg font-bold text-primary-600">{parts.join(' + ')}</p>
+                  </div>
+                );
+              })()}
               <Link
                 to={`/team/sponsor/${agent.id}`}
                 className="inline-flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
@@ -129,6 +156,11 @@ export default function TeamPage() {
                         ? `$${(sponsor.amount / 100).toLocaleString()}`
                         : t('sponsor.amount', { amount: sponsor.amount.toLocaleString() })}
                     </span>
+                    {agentNameMap[sponsor.agentId] && (
+                      <span className="text-xs text-gray-400">
+                        → {t(agentNameMap[sponsor.agentId].nameKey)}
+                      </span>
+                    )}
                   </div>
                   {sponsor.message && (
                     <p className="text-sm text-gray-500 mt-0.5 truncate">{sponsor.message}</p>

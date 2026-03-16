@@ -281,6 +281,8 @@
     "backToTeam": "팀 페이지로 돌아가기",
     "paymentNotReady": "결제 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.",
     "amount": "{{amount}}원",
+    "totalReceived": "누적 후원금",
+    "currencyKrw": "원",
     "tabCard": "카드 결제",
     "tabCrypto": "크립토 결제",
     "crypto": {

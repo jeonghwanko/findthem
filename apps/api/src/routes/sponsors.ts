@@ -70,6 +70,27 @@ export function registerSponsorRoutes(router: Router) {
     });
   });
 
+  // 에이전트별 후원 총액
+  router.get('/sponsors/totals', async (_req, res) => {
+    const rows = await prisma.sponsor.groupBy({
+      by: ['agentId', 'currency'],
+      _sum: { amount: true },
+    });
+
+    // { [agentId]: { krw: number, usdCents: number } }
+    const totals: Record<string, { krw: number; usdCents: number }> = {};
+    for (const row of rows) {
+      const entry = totals[row.agentId] ??= { krw: 0, usdCents: 0 };
+      if (row.currency === 'USD_CENTS') {
+        entry.usdCents += row._sum.amount ?? 0;
+      } else {
+        entry.krw += row._sum.amount ?? 0;
+      }
+    }
+
+    res.json(totals);
+  });
+
   router.get('/sponsors', validateQuery(listQuerySchema), async (req, res) => {
     const { agentId, limit } = req.query as unknown as z.infer<typeof listQuerySchema>;
 
