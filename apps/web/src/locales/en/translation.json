@@ -3,6 +3,8 @@
   "loading": "Loading...",
   "footer": "An experimental project solving social problems with AI \"Yoonion\" - 100% Agent operated",
   "nav": {
+    "home": "Home",
+    "sighting": "Report",
     "browse": "Browse All",
     "devlog": "Dev Blog",
     "team": "Team",

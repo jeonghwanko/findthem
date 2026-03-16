@@ -3,6 +3,8 @@
   "loading": "載入中...",
   "footer": "用AI技術解決社會問題的實驗性項目「Yoonion」- 100% Agent 運營中",
   "nav": {
+    "home": "首頁",
+    "sighting": "線報",
     "browse": "瀏覽全部",
     "devlog": "開發日誌",
     "team": "團隊",
