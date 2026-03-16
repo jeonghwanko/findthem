@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'crypto';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, ADMIN_API_KEY_HEADER } from '@findthem/shared';
 import { prisma } from '../db/client.js';
 
 export interface JwtPayload {
@@ -63,7 +63,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
 
 export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   // 헤더로만 허용 (쿼리 파라미터는 URL 로그에 노출되므로 금지)
-  const apiKey = req.headers['x-api-key'] as string | undefined;
+  const apiKey = req.headers[ADMIN_API_KEY_HEADER] as string | undefined;
 
   const adminKey = config.adminApiKey;
   const valid =

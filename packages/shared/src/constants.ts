@@ -149,6 +149,9 @@ export const ERROR_CODES = {
   PAYMENT_FAILED: 'PAYMENT_FAILED',
   QUOTE_NOT_FOUND: 'QUOTE_NOT_FOUND',
   PAYMENT_PENDING: 'PAYMENT_PENDING',
+  OAUTH_FAILED: 'OAUTH_FAILED',
+  OAUTH_INVALID_STATE: 'OAUTH_INVALID_STATE',
+  OAUTH_TELEGRAM_INVALID: 'OAUTH_TELEGRAM_INVALID',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -179,6 +182,7 @@ export const CRAWL_AGENT_MAX_ROUNDS = 20;
 // ── JWT ──
 
 export const TOKEN_STORAGE_KEY = 'ft_token';
+export const ADMIN_KEY_STORAGE_KEY = 'ft_admin_key';
 
 // ── 에이전트 공통 ──
 

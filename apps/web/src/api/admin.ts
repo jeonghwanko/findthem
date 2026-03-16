@@ -1,22 +1,24 @@
+import { ADMIN_KEY_STORAGE_KEY, ADMIN_API_KEY_HEADER } from '@findthem/shared';
+
 const BASE = '/api';
 
 function getAdminKey(): string | null {
-  return sessionStorage.getItem('ft_admin_key');
+  return sessionStorage.getItem(ADMIN_KEY_STORAGE_KEY);
 }
 
 export function setAdminKey(key: string) {
-  sessionStorage.setItem('ft_admin_key', key);
+  sessionStorage.setItem(ADMIN_KEY_STORAGE_KEY, key);
 }
 
 export function clearAdminKey() {
-  sessionStorage.removeItem('ft_admin_key');
+  sessionStorage.removeItem(ADMIN_KEY_STORAGE_KEY);
 }
 
 async function adminRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
   const key = getAdminKey();
-  if (!key) throw new Error('관리자 인증이 필요합니다.');
+  if (!key) throw new Error('ADMIN_AUTH_REQUIRED');
 
-  const headers: Record<string, string> = { 'x-api-key': key };
+  const headers: Record<string, string> = { [ADMIN_API_KEY_HEADER]: key };
   if (body) headers['Content-Type'] = 'application/json';
 
   const res = await fetch(`${BASE}${path}`, {
@@ -27,7 +29,7 @@ async function adminRequest<T>(method: string, path: string, body?: unknown): Pr
 
   if (!res.ok) {
     const b = await res.json().catch(() => null);
-    throw new Error(b?.error || '요청 실패');
+    throw new Error(b?.error || 'REQUEST_FAILED');
   }
 
   return res.json();

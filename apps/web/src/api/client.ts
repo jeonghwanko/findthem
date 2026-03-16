@@ -45,7 +45,7 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `요청 실패 (${res.status})`);
+    throw new Error(body.error || 'REQUEST_FAILED');
   }
 
   return res.json();
