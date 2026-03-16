@@ -16,7 +16,7 @@ export type PromoPlatform = 'KAKAO_CHANNEL' | 'TWITTER';
 export type PromoStatus = 'PENDING' | 'POSTED' | 'FAILED' | 'DELETED';
 export type ChatPlatform = 'WEB' | 'KAKAO';
 export type ChatStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
-export type AuthProvider = 'LOCAL' | 'KAKAO';
+export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM';
 
 // ── API 응답 타입 ──
 

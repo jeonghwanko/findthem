@@ -76,4 +76,7 @@ export const config = {
 
   naverClientId:     process.env.NAVER_CLIENT_ID || '',
   naverClientSecret: process.env.NAVER_CLIENT_SECRET || '',
+  naverRedirectUri:  process.env.NAVER_REDIRECT_URI || '',
+
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
 } as const;

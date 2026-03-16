@@ -33,12 +33,15 @@ model User {
   chatSessions      ChatSession[]
   pushSubscriptions PushSubscription[]
 
+  @@unique([provider, providerId], name: "provider_providerId")
   @@map("user")
 }
 
 enum AuthProvider {
   LOCAL
   KAKAO
+  NAVER
+  TELEGRAM
 
   @@map("auth_provider")
 }
