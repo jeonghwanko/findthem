@@ -84,7 +84,9 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
       content: {
         title,
         description,
-        imageUrl: imageUrl ?? `${window.location.origin}/pwa-512x512.png`,
+        imageUrl: imageUrl
+          ? (imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`)
+          : `${window.location.origin}/pwa-512x512.png`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
       buttons: [{ title: t('share.kakaoButton'), link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],

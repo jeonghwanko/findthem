@@ -11,10 +11,12 @@ import { registerPromotionRoutes } from './promotions.js';
 import { registerPushRoutes } from './push.js';
 import { registerSponsorRoutes } from './sponsors.js';
 import { registerAgentsRoutes } from './agents.js';
+import { registerOgRoutes } from './og.js';
 
 export function createRouter(): Router {
   const router = Router();
 
+  registerOgRoutes(router);
   registerAuthRoutes(router);
   registerReportRoutes(router);
   registerSightingRoutes(router);

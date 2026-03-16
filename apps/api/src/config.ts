@@ -13,6 +13,7 @@ export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   webOrigin: process.env.WEB_ORIGIN || 'http://localhost:5173',
+  siteUrl: process.env.SITE_URL || 'https://union.pryzm.gg',
   uploadDir: process.env.UPLOAD_DIR || './uploads',
 
   databaseUrl: process.env.DATABASE_URL!,
