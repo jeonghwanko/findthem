@@ -832,13 +832,20 @@ export function registerAdminRoutes(router: Router) {
   router.patch('/admin/outreach/:id/reject', requireAdmin, async (req, res) => {
     const id = req.params.id as string;
 
+    // Check existence first so we can return 404 vs 409 correctly
     const request = await prisma.outreachRequest.findUnique({ where: { id } });
     if (!request) throw new ApiError(404, ERROR_CODES.OUTREACH_NOT_FOUND);
 
-    const updated = await prisma.outreachRequest.update({
-      where: { id },
+    // Use updateMany with status filter to prevent race conditions.
+    // Only PENDING_APPROVAL requests can be rejected.
+    const updated = await prisma.outreachRequest.updateMany({
+      where: { id, status: 'PENDING_APPROVAL' },
       data: { status: 'REJECTED' },
     });
+
+    if (updated.count === 0) {
+      throw new ApiError(409, ERROR_CODES.OUTREACH_ALREADY_PROCESSED);
+    }
 
     await createAuditLog({
       action: 'outreach.request.reject',
@@ -848,11 +855,11 @@ export function registerAdminRoutes(router: Router) {
       source: 'DASHBOARD' as AdminActionSource,
     });
 
-    res.json(updated);
+    res.json({ id, status: 'REJECTED' });
   });
 
   // POST /admin/outreach/trigger — 수동 아웃리치 스캔 실행
-  router.post('/admin/outreach/trigger', requireAdmin, async (_req, res) => {
+  router.post('/admin/outreach/trigger', requireAdmin, adminLimiter, async (_req, res) => {
     const job = await outreachQueue.add(
       'discover-contacts',
       { type: 'discover-contacts' as const },

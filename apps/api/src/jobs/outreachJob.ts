@@ -189,14 +189,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
   const sentToday = await getTodaySentCount(channel);
 
   if (sentToday >= dailyLimit) {
-    log.warn({ outreachRequestId, channel, sentToday, dailyLimit }, 'Daily limit reached, skipping');
-    await prisma.outreachRequest.update({
-      where: { id: outreachRequestId },
-      data: {
-        status: 'PENDING_APPROVAL',
-        errorMessage: `Daily ${channel} limit reached (${sentToday}/${dailyLimit})`,
-      },
-    });
+    log.warn({ outreachRequestId, channel, sentToday, dailyLimit }, 'Daily limit reached, keeping APPROVED for next run');
     return;
   }
 
@@ -221,17 +214,13 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       }
       // YouTube 채널의 최신 영상에 댓글 게시
       const youtubeAdapter = new YouTubeAdapter();
-      const videos = await youtubeAdapter.searchVideos(
-        '',
-        1,
-        request.contact.youtubeChannelId,
-      );
+      const latestVideo = await youtubeAdapter.getLatestVideo(request.contact.youtubeChannelId);
 
-      if (videos.length === 0) {
+      if (!latestVideo) {
         throw new Error('No recent videos found for YouTube channel');
       }
 
-      externalId = await youtubeAdapter.postComment(videos[0].videoId, request.draftContent);
+      externalId = await youtubeAdapter.postComment(latestVideo.videoId, request.draftContent);
     } else {
       throw new Error(`Unsupported channel: ${channel}`);
     }
@@ -270,6 +259,24 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
 // ── Daily discovery scan ──
 
 async function handleDailyDiscoveryScan(): Promise<void> {
+  // Retry approved but unsent requests from previous days
+  const pendingSend = await prisma.outreachRequest.findMany({
+    where: { status: 'APPROVED', sentAt: null },
+    take: 5,
+  });
+
+  for (const req of pendingSend) {
+    await outreachQueue.add(
+      'send-outreach',
+      { type: 'send-outreach', outreachRequestId: req.id },
+      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+    );
+  }
+
+  if (pendingSend.length > 0) {
+    log.info({ count: pendingSend.length }, 'Re-queued approved unsent outreach requests');
+  }
+
   // ACTIVE 상태이고 HIGH/MEDIUM urgency인 신고 중 아웃리치 없는 것을 찾아 큐 등록
   const reportsNeedingOutreach = await prisma.report.findMany({
     where: {

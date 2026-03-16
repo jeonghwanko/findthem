@@ -21,6 +21,30 @@ interface YouTubeSearchResponse {
   error?: { message?: string };
 }
 
+interface YouTubeChannelContentDetails {
+  items?: Array<{
+    contentDetails?: {
+      relatedPlaylists?: { uploads?: string };
+    };
+  }>;
+  error?: { message?: string };
+}
+
+interface YouTubePlaylistItemsResponse {
+  items?: Array<{
+    snippet?: {
+      resourceId?: { videoId?: string };
+      title?: string;
+    };
+  }>;
+  error?: { message?: string };
+}
+
+export interface YouTubeLatestVideoResult {
+  videoId: string;
+  title: string;
+}
+
 export interface YouTubeVideoResult {
   videoId: string;
   title: string;
@@ -66,6 +90,80 @@ export class YouTubeAdapter {
 
     log.info({ videoId, commentId: data.id }, 'YouTube comment posted');
     return data.id;
+  }
+
+  /**
+   * 채널의 업로드 플레이리스트에서 최신 영상 1개를 가져온다 (API key 전용).
+   * @param channelId YouTube 채널 ID
+   */
+  async getLatestVideo(channelId: string): Promise<YouTubeLatestVideoResult | null> {
+    if (!config.youtubeApiKey) {
+      log.warn('YouTube API key not configured, skipping getLatestVideo');
+      return null;
+    }
+
+    try {
+      // Step 1: channels.list → uploads 플레이리스트 ID 획득
+      const channelParams = new URLSearchParams({
+        key: config.youtubeApiKey,
+        id: channelId,
+        part: 'contentDetails',
+      });
+
+      const channelRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?${channelParams.toString()}`,
+        { signal: AbortSignal.timeout(10_000) },
+      );
+
+      const channelData = (await channelRes.json()) as YouTubeChannelContentDetails;
+
+      if (!channelRes.ok) {
+        log.warn({ channelId, error: channelData.error?.message }, 'YouTube channels.list failed');
+        return null;
+      }
+
+      const uploadsPlaylistId =
+        channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+
+      if (!uploadsPlaylistId) {
+        log.warn({ channelId }, 'No uploads playlist found for channel');
+        return null;
+      }
+
+      // Step 2: playlistItems.list → 최신 영상 1개
+      const playlistParams = new URLSearchParams({
+        key: config.youtubeApiKey,
+        playlistId: uploadsPlaylistId,
+        part: 'snippet',
+        maxResults: '1',
+      });
+
+      const playlistRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/playlistItems?${playlistParams.toString()}`,
+        { signal: AbortSignal.timeout(10_000) },
+      );
+
+      const playlistData = (await playlistRes.json()) as YouTubePlaylistItemsResponse;
+
+      if (!playlistRes.ok) {
+        log.warn({ channelId, error: playlistData.error?.message }, 'YouTube playlistItems.list failed');
+        return null;
+      }
+
+      const item = playlistData.items?.[0];
+      const videoId = item?.snippet?.resourceId?.videoId;
+      const title = item?.snippet?.title;
+
+      if (!videoId || !title) {
+        log.warn({ channelId }, 'No video found in uploads playlist');
+        return null;
+      }
+
+      return { videoId, title };
+    } catch (err) {
+      log.warn({ err, channelId }, 'getLatestVideo error');
+      return null;
+    }
   }
 
   /**

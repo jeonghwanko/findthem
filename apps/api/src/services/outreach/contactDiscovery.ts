@@ -269,55 +269,46 @@ function buildSearchKeywords(report: ReportForOutreach): {
 
 async function upsertContact(contact: DiscoveredContact): Promise<string | null> {
   try {
-    // 이메일 혹은 채널 ID로 중복 체크
-    let existing: { id: string } | null = null;
+    const updateData: Prisma.OutreachContactUpdateInput = {};
+    if (contact.subscriberCount !== undefined) {
+      updateData.subscriberCount = contact.subscriberCount;
+    }
+
+    const createData: Prisma.OutreachContactCreateInput = {
+      type: contact.type,
+      name: contact.name,
+      email: contact.email,
+      youtubeChannelId: contact.youtubeChannelId,
+      youtubeChannelUrl: contact.youtubeChannelUrl,
+      organization: contact.organization,
+      topics: contact.topics,
+      subscriberCount: contact.subscriberCount,
+      source: contact.source,
+      isActive: true,
+    };
 
     if (contact.email) {
-      existing = await prisma.outreachContact.findUnique({
+      const result = await prisma.outreachContact.upsert({
         where: { email: contact.email },
+        create: createData,
+        update: updateData,
         select: { id: true },
       });
+      return result.id;
     }
 
-    if (!existing && contact.youtubeChannelId) {
-      existing = await prisma.outreachContact.findUnique({
+    if (contact.youtubeChannelId) {
+      const result = await prisma.outreachContact.upsert({
         where: { youtubeChannelId: contact.youtubeChannelId },
+        create: createData,
+        update: updateData,
         select: { id: true },
       });
+      return result.id;
     }
 
-    if (existing) {
-      // 구독자 수 업데이트만 수행
-      const updateData: Prisma.OutreachContactUpdateInput = {
-        lastContactedAt: undefined,
-      };
-      if (contact.subscriberCount !== undefined) {
-        updateData.subscriberCount = contact.subscriberCount;
-      }
-      await prisma.outreachContact.update({
-        where: { id: existing.id },
-        data: updateData,
-      });
-      return existing.id;
-    }
-
-    const created = await prisma.outreachContact.create({
-      data: {
-        type: contact.type,
-        name: contact.name,
-        email: contact.email,
-        youtubeChannelId: contact.youtubeChannelId,
-        youtubeChannelUrl: contact.youtubeChannelUrl,
-        organization: contact.organization,
-        topics: contact.topics,
-        subscriberCount: contact.subscriberCount,
-        source: contact.source,
-        isActive: true,
-      },
-      select: { id: true },
-    });
-
-    return created.id;
+    log.warn({ contactName: contact.name }, 'Contact has no email or youtubeChannelId, skipping upsert');
+    return null;
   } catch (err) {
     log.warn({ err, contactName: contact.name }, 'Failed to upsert outreach contact');
     return null;

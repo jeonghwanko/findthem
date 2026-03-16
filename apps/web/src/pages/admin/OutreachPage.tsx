@@ -36,6 +36,7 @@ const TABS: { value: string; label: string }[] = [
   { value: 'APPROVED', label: '승인됨' },
   { value: 'SENT', label: '발송됨' },
   { value: 'REJECTED', label: '거부됨' },
+  { value: 'FAILED', label: '실패' },
 ];
 
 const STATUS_BADGE: Record<string, string> = {
@@ -43,6 +44,7 @@ const STATUS_BADGE: Record<string, string> = {
   APPROVED: 'bg-blue-100 text-blue-700',
   SENT: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
+  FAILED: 'bg-orange-100 text-orange-700',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -50,6 +52,7 @@ const STATUS_LABEL: Record<string, string> = {
   APPROVED: '승인됨',
   SENT: '발송됨',
   REJECTED: '거부됨',
+  FAILED: '실패',
 };
 
 function formatDate(iso: string) {
