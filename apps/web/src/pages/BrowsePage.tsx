@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
+
+const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
+const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
 
 function esc(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -19,6 +22,20 @@ export default function BrowsePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [userCenter, setUserCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const geoFetched = useRef(false);
+
+  // 지도 탭 첫 진입 시 현재 위치 요청
+  useEffect(() => {
+    if (viewMode !== 'map' || geoFetched.current) return;
+    geoFetched.current = true;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => { /* 거부 시 기본값 유지 */ },
+      { timeout: 5000 },
+    );
+  }, [viewMode]);
 
   const TYPES = [
     { value: 'DOG', label: t('subjectType.DOG') },
@@ -114,13 +131,21 @@ export default function BrowsePage() {
       {/* 지도 뷰 */}
       {viewMode === 'map' && (
         <div className="mb-6">
-          {loading ? (
+          {!KAKAO_JS_KEY ? (
+            <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+              {t('browse.mapKeyMissing')}
+            </div>
+          ) : loading ? (
             <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
               {t('loading')}
             </div>
           ) : (
             <>
-              <KakaoMap markers={mapMarkers} className="w-full h-[500px] rounded-xl" />
+              <KakaoMap
+                markers={mapMarkers}
+                center={userCenter ?? (mapMarkers.length > 0 ? undefined : DEFAULT_CENTER)}
+                className="w-full h-[500px] rounded-xl"
+              />
               {mapMarkers.length < reports.length && (
                 <p className="text-xs text-gray-400 mt-2 text-center">
                   {t('browse.mapNoCoords')}

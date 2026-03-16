@@ -50,7 +50,8 @@
     "next": "Next",
     "viewList": "List",
     "viewMap": "Map",
-    "mapNoCoords": "Reports without location data are not shown on the map"
+    "mapNoCoords": "Reports without location data are not shown on the map",
+    "mapKeyMissing": "Map API key is not configured"
   },
   "report": {
     "title": "File a Missing Report",

@@ -50,7 +50,8 @@
     "next": "下一頁",
     "viewList": "列表",
     "viewMap": "地圖",
-    "mapNoCoords": "沒有位置資訊的報案不會顯示在地圖上"
+    "mapNoCoords": "沒有位置資訊的報案不會顯示在地圖上",
+    "mapKeyMissing": "地圖API金鑰未設定"
   },
   "report": {
     "title": "失蹤報案登記",

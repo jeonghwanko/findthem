@@ -50,7 +50,8 @@
     "next": "次へ",
     "viewList": "リスト",
     "viewMap": "地図",
-    "mapNoCoords": "位置情報がない届出は地図に表示されません"
+    "mapNoCoords": "位置情報がない届出は地図に表示されません",
+    "mapKeyMissing": "地図APIキーが設定されていません"
   },
   "report": {
     "title": "行方不明届の登録",
