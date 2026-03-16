@@ -37,7 +37,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Users className="w-4 h-4" aria-hidden="true" />
             {t('nav.team')}
           </Link>
-          <a href="/devlog" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+          <a href="/devlog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
             <BookOpen className="w-4 h-4" aria-hidden="true" />
             {t('nav.devlog')}
           </a>
