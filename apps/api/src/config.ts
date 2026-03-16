@@ -72,4 +72,7 @@ export const config = {
   googleCseId:        process.env.GOOGLE_CSE_ID || '',
   youtubeApiKey:      process.env.YOUTUBE_API_KEY || '',
   outreachEmailFrom:  process.env.OUTREACH_EMAIL_FROM || 'findthem@union.pryzm.gg',
+
+  naverClientId:     process.env.NAVER_CLIENT_ID || '',
+  naverClientSecret: process.env.NAVER_CLIENT_SECRET || '',
 } as const;
