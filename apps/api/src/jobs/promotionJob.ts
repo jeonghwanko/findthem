@@ -20,7 +20,35 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
 
   const report = await prisma.report.findUnique({
     where: { id: reportId },
-    include: { photos: true },
+    select: {
+      id: true,
+      status: true,
+      subjectType: true,
+      name: true,
+      species: true,
+      gender: true,
+      age: true,
+      weight: true,
+      height: true,
+      color: true,
+      features: true,
+      clothingDesc: true,
+      lastSeenAt: true,
+      lastSeenAddress: true,
+      lastSeenLat: true,
+      lastSeenLng: true,
+      contactPhone: true,
+      contactName: true,
+      reward: true,
+      aiDescription: true,
+      aiPromoText: true,
+      externalId: true,
+      externalSource: true,
+      userId: true,
+      createdAt: true,
+      updatedAt: true,
+      photos: { select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true } },
+    },
   });
 
   if (!report || report.status !== 'ACTIVE') return;

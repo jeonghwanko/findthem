@@ -21,6 +21,7 @@ export function registerMatchRoutes(router: Router) {
 
     const report = await prisma.report.findUnique({
       where: { id },
+      select: { userId: true },
     });
     if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
     if (report.userId !== userId) {
@@ -52,7 +53,7 @@ export function registerMatchRoutes(router: Router) {
 
     const match = await prisma.match.findUnique({
       where: { id },
-      include: { report: true },
+      include: { report: { select: { userId: true } } },
     });
 
     if (!match) throw new ApiError(404, ERROR_CODES.MATCH_NOT_FOUND);

@@ -210,8 +210,26 @@ export function registerReportRoutes(router: Router) {
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        include: {
-          photos: { where: { isPrimary: true }, take: 1 },
+        select: {
+          id: true,
+          subjectType: true,
+          status: true,
+          name: true,
+          species: true,
+          gender: true,
+          age: true,
+          color: true,
+          features: true,
+          lastSeenAt: true,
+          lastSeenAddress: true,
+          lastSeenLat: true,
+          lastSeenLng: true,
+          contactPhone: true,
+          contactName: true,
+          reward: true,
+          createdAt: true,
+          updatedAt: true,
+          photos: { where: { isPrimary: true }, take: 1, select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true } },
           _count: { select: { sightings: true, matches: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -239,8 +257,26 @@ export function registerReportRoutes(router: Router) {
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        include: {
-          photos: { where: { isPrimary: true }, take: 1 },
+        select: {
+          id: true,
+          subjectType: true,
+          status: true,
+          name: true,
+          species: true,
+          gender: true,
+          age: true,
+          color: true,
+          features: true,
+          lastSeenAt: true,
+          lastSeenAddress: true,
+          lastSeenLat: true,
+          lastSeenLng: true,
+          contactPhone: true,
+          contactName: true,
+          reward: true,
+          createdAt: true,
+          updatedAt: true,
+          photos: { where: { isPrimary: true }, take: 1, select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true } },
           _count: { select: { sightings: true, matches: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -259,7 +295,7 @@ export function registerReportRoutes(router: Router) {
     const report = await prisma.report.findUnique({
       where: { id },
       include: {
-        photos: true,
+        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true, createdAt: true } },
         user: { select: { id: true, name: true } },
         _count: { select: { sightings: true, matches: true } },
       },
