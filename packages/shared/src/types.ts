@@ -362,6 +362,7 @@ export interface SponsorPublic {
   id: string;
   agentId: AgentId;
   amount: number;
+  currency: string;
   displayName: string | null;
   message: string | null;
   createdAt: string;

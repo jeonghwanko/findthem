@@ -83,6 +83,7 @@ export function registerSponsorRoutes(router: Router) {
         id: true,
         agentId: true,
         amount: true,
+        currency: true,
         displayName: true,
         message: true,
         createdAt: true,

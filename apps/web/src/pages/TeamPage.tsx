@@ -125,7 +125,9 @@ export default function TeamPage() {
                       {sponsor.displayName ?? t('sponsor.anonymous')}
                     </span>
                     <span className="text-primary-600 font-semibold text-sm">
-                      {t('sponsor.amount', { amount: sponsor.amount.toLocaleString() })}
+                      {sponsor.currency === 'USD_CENTS'
+                        ? `$${(sponsor.amount / 100).toLocaleString()}`
+                        : t('sponsor.amount', { amount: sponsor.amount.toLocaleString() })}
                     </span>
                   </div>
                   {sponsor.message && (
