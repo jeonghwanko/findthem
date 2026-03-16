@@ -647,14 +647,14 @@ export function registerAdminRoutes(router: Router) {
   // ── 아웃리치 관리 API ──
 
   const outreachQuerySchema = z.object({
-    status: z.string().optional(),
+    status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'SENT', 'REJECTED', 'FAILED']).optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(20),
   });
 
   const outreachApproveSchema = z.object({
-    content: z.string().min(1).optional(),
-    subject: z.string().min(1).optional(),
+    content: z.string().min(1).max(10000).optional(),
+    subject: z.string().min(1).max(200).optional(),
   });
 
   const outreachContactQuerySchema = z.object({
@@ -778,7 +778,7 @@ export function registerAdminRoutes(router: Router) {
     },
   );
 
-  // PATCH /admin/outreach/:id/approve — 승인 (본문 수정 가능)
+  // PATCH /admin/outreach/:id/approve — 승인 (본문 수정 가능, FAILED 재시도 포함)
   router.patch(
     '/admin/outreach/:id/approve',
     requireAdmin,
@@ -787,8 +787,9 @@ export function registerAdminRoutes(router: Router) {
       const id = req.params.id as string;
       const { content, subject } = req.body as z.infer<typeof outreachApproveSchema>;
 
+      // Check existence first so we can return 404 vs 409 correctly
       const request = await prisma.outreachRequest.findUnique({ where: { id } });
-      if (!request) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+      if (!request) throw new ApiError(404, ERROR_CODES.OUTREACH_NOT_FOUND);
 
       const updateData: Prisma.OutreachRequestUpdateInput = {
         status: 'APPROVED',
@@ -797,10 +798,16 @@ export function registerAdminRoutes(router: Router) {
       if (content) updateData.draftContent = content;
       if (subject) updateData.draftSubject = subject;
 
-      const updated = await prisma.outreachRequest.update({
-        where: { id },
+      // Use updateMany with a status filter to prevent double-send race condition.
+      // Only PENDING_APPROVAL and FAILED requests can be approved/retried.
+      const updated = await prisma.outreachRequest.updateMany({
+        where: { id, status: { in: ['PENDING_APPROVAL', 'FAILED'] } },
         data: updateData,
       });
+
+      if (updated.count === 0) {
+        throw new ApiError(409, ERROR_CODES.OUTREACH_ALREADY_PROCESSED);
+      }
 
       // 발송 큐에 등록
       await outreachQueue.add(
@@ -817,7 +824,7 @@ export function registerAdminRoutes(router: Router) {
         source: 'DASHBOARD' as AdminActionSource,
       });
 
-      res.json(updated);
+      res.json({ id, status: 'APPROVED' });
     },
   );
 
@@ -826,7 +833,7 @@ export function registerAdminRoutes(router: Router) {
     const id = req.params.id as string;
 
     const request = await prisma.outreachRequest.findUnique({ where: { id } });
-    if (!request) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+    if (!request) throw new ApiError(404, ERROR_CODES.OUTREACH_NOT_FOUND);
 
     const updated = await prisma.outreachRequest.update({
       where: { id },

@@ -92,6 +92,7 @@ model Report {
   chatSessions      ChatSession[]
   promotionStrategy PromotionStrategy?
   promotionLogs     PromotionLog[]
+  outreachRequests  OutreachRequest[]
 
   @@unique([externalId, externalSource])
   @@index([status])
@@ -441,7 +442,7 @@ model AdminAgentSession {
 
 model Sponsor {
   id            String   @id @default(cuid())
-  agentId       String   // 'image-matching' | 'promotion' | 'chatbot-alert'
+  agentId       String // 'image-matching' | 'promotion' | 'chatbot-alert'
   // Toss: KRW 단위, Crypto: USD cents
   amount        Int
   currency      String   @default("KRW") // "KRW" | "USD_CENTS"
@@ -461,19 +462,67 @@ model Sponsor {
   @@map("sponsor")
 }
 
+// ── Outreach (홍보왕 헤르미) ──
+
+model OutreachContact {
+  id                String    @id @default(cuid())
+  type              String // 'JOURNALIST' | 'YOUTUBER'
+  name              String
+  email             String?
+  youtubeChannelId  String?
+  youtubeChannelUrl String?
+  organization      String?
+  topics            String[]
+  subscriberCount   Int?
+  isActive          Boolean   @default(true)
+  lastContactedAt   DateTime?
+  source            String? // 'GOOGLE_SEARCH' | 'MANUAL' | 'YOUTUBE_API'
+  createdAt         DateTime  @default(now())
+
+  outreachRequests OutreachRequest[]
+
+  @@unique([email])
+  @@unique([youtubeChannelId])
+  @@index([type, isActive])
+  @@map("outreach_contact")
+}
+
+model OutreachRequest {
+  id           String    @id @default(cuid())
+  reportId     String
+  contactId    String
+  channel      String // 'EMAIL' | 'YOUTUBE_COMMENT'
+  status       String    @default("PENDING_APPROVAL")
+  draftSubject String?
+  draftContent String
+  approvedAt   DateTime?
+  sentAt       DateTime?
+  externalId   String?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  report  Report          @relation(fields: [reportId], references: [id])
+  contact OutreachContact @relation(fields: [contactId], references: [id])
+
+  @@unique([reportId, contactId, channel])
+  @@index([status])
+  @@map("outreach_request")
+}
+
 // 크립토 결제 견적 (5분 TTL)
 model SponsorCryptoQuote {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   agentId        String
   amountUsdCents Int
   walletAddress  String
   tokenSymbol    String
-  chainId        Int?     // null = Solana or Aptos
-  amountAtomic   String   // BigInt as string
+  chainId        Int? // null = Solana or Aptos
+  amountAtomic   String // BigInt as string
   merchantWallet String
   expiresAt      DateTime
-  verifiedAt     DateTime?  // 견적 사용 여부 체크 (선점 처리)
-  createdAt      DateTime @default(now())
+  verifiedAt     DateTime? // 견적 사용 여부 체크 (선점 처리)
+  createdAt      DateTime  @default(now())
 
   @@index([agentId])
   @@map("sponsor_crypto_quote")

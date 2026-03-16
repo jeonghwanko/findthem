@@ -252,6 +252,12 @@ export interface CrawlAgentJobData {
   sources?: string[];
 }
 
+export interface OutreachJobData {
+  type: 'discover-contacts' | 'send-outreach';
+  reportId?: string;
+  outreachRequestId?: string;
+}
+
 // ── 정보 수집 에이전트 타입 ──
 
 export type EngineVersion = 'v1' | 'v2';

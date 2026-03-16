@@ -23,6 +23,7 @@ import QueuesPage from './pages/admin/QueuesPage';
 import AuditLogPage from './pages/admin/AuditLogPage';
 import AgentChatPage from './pages/admin/AgentChatPage';
 import DevlogPage from './pages/admin/DevlogPage';
+import OutreachPage from './pages/admin/OutreachPage';
 import TeamPage from './pages/TeamPage';
 import SponsorPage from './pages/SponsorPage';
 import SponsorSuccessPage from './pages/SponsorSuccessPage';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="audit-logs" element={<AuditLogPage />} />
         <Route path="agent" element={<AgentChatPage />} />
         <Route path="devlog" element={<DevlogPage />} />
+        <Route path="outreach" element={<OutreachPage />} />
       </Route>
 
       {/* 일반 사용자 라우트 — 공통 Header/Footer */}

@@ -64,4 +64,12 @@ export const config = {
   aptosRpcUrl:          process.env.APTOS_RPC_URL     || 'https://api.mainnet.aptoslabs.com/v1',
   aptosRpcApiKey:       process.env.APTOS_RPC_API_KEY || '',
   solanaRpcUrl:         process.env.SOLANA_RPC_URL    || 'https://api.mainnet-beta.solana.com',
+
+  googleClientId:     process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN || '',
+  googleCseApiKey:    process.env.GOOGLE_CSE_API_KEY || '',
+  googleCseId:        process.env.GOOGLE_CSE_ID || '',
+  youtubeApiKey:      process.env.YOUTUBE_API_KEY || '',
+  outreachEmailFrom:  process.env.OUTREACH_EMAIL_FROM || 'findthem@union.pryzm.gg',
 } as const;
