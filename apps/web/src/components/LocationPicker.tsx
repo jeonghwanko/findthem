@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useKakaoMap } from '../hooks/useKakaoMap';
 
@@ -6,6 +6,32 @@ const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
 
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.978;
+
+// Daum Postcode 스크립트 로딩 상태 (모듈 레벨 — 중복 로드 방지)
+let daumLoading = false;
+let daumLoaded = false;
+const daumCallbacks: Array<() => void> = [];
+
+function loadDaumPostcodeScript(onReady: () => void) {
+  if (daumLoaded) { onReady(); return; }
+  daumCallbacks.push(onReady);
+  if (daumLoading) return;
+  daumLoading = true;
+
+  const script = document.createElement('script');
+  script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+  script.onload = () => {
+    daumLoaded = true;
+    daumLoading = false;
+    daumCallbacks.forEach((cb) => cb());
+    daumCallbacks.length = 0;
+  };
+  script.onerror = () => {
+    daumLoading = false;
+    daumCallbacks.length = 0;
+  };
+  document.head.appendChild(script);
+}
 
 export interface LocationPickerProps {
   address: string;
@@ -25,6 +51,11 @@ export default function LocationPicker({
   const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<kakao.maps.Marker | null>(null);
+  const [geoError, setGeoError] = useState('');
+
+  // 항상 최신 콜백을 참조하는 stable ref — 이벤트 리스너 재등록 없이 최신 함수 사용
+  const onLocationChangeRef = useRef(onLocationChange);
+  useEffect(() => { onLocationChangeRef.current = onLocationChange; });
 
   const map = useKakaoMap(mapContainerRef, {
     lat: lat ?? DEFAULT_LAT,
@@ -36,24 +67,25 @@ export default function LocationPicker({
   useEffect(() => {
     if (!map) return;
 
-    const initialLat = lat ?? DEFAULT_LAT;
-    const initialLng = lng ?? DEFAULT_LNG;
-    const position = new window.kakao.maps.LatLng(initialLat, initialLng);
-
+    const position = new window.kakao.maps.LatLng(lat ?? DEFAULT_LAT, lng ?? DEFAULT_LNG);
     const marker = new window.kakao.maps.Marker({ position, map });
     markerRef.current = marker;
 
-    window.kakao.maps.event.addListener(map, 'click', (mouseEvent: kakao.maps.MouseEvent) => {
+    const handleClick = (mouseEvent: kakao.maps.MouseEvent) => {
       const clickedLat = mouseEvent.latLng.getLat();
       const clickedLng = mouseEvent.latLng.getLng();
       marker.setPosition(new window.kakao.maps.LatLng(clickedLat, clickedLng));
-      onLocationChange(clickedLat, clickedLng);
-    });
+      setGeoError('');
+      onLocationChangeRef.current(clickedLat, clickedLng);
+    };
+
+    window.kakao.maps.event.addListener(map, 'click', handleClick);
 
     return () => {
+      window.kakao.maps.event.removeListener(map, 'click', handleClick);
       marker.setMap(null);
     };
-    // onLocationChange은 렌더마다 새 함수가 될 수 있으므로 map 초기화 시 한 번만 등록
+    // map이 초기화될 때 한 번만 등록. 콜백은 stable ref로 항상 최신 유지.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
@@ -65,39 +97,30 @@ export default function LocationPicker({
     markerRef.current?.setPosition(latlng);
   }, [map, lat, lng]);
 
-  const loadDaumPostcode = useCallback((callback: () => void) => {
-    if (window.daum?.Postcode) {
-      callback();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-    script.onload = callback;
-    document.head.appendChild(script);
-  }, []);
-
   const handleAddressSearch = useCallback(() => {
-    loadDaumPostcode(() => {
+    loadDaumPostcodeScript(() => {
       if (!window.daum?.Postcode) return;
 
       new window.daum.Postcode({
         oncomplete: (data: DaumAddressData) => {
           const selectedAddress = data.roadAddress || data.address;
           onAddressChange(selectedAddress);
+          setGeoError('');
 
           if (!window.kakao?.maps?.services) return;
 
           const geocoder = new window.kakao.maps.services.Geocoder();
           geocoder.addressSearch(selectedAddress, (results, status) => {
             if (status === window.kakao.maps.services.Status.OK && results.length > 0) {
-              const result = results[0];
-              onLocationChange(parseFloat(result.y), parseFloat(result.x));
+              onLocationChangeRef.current(parseFloat(results[0].y), parseFloat(results[0].x));
+            } else {
+              setGeoError(t('report.geoError'));
             }
           });
         },
       }).open();
     });
-  }, [loadDaumPostcode, onAddressChange, onLocationChange]);
+  }, [onAddressChange, t]);
 
   const hasMap = Boolean(KAKAO_JS_KEY);
 
@@ -107,18 +130,23 @@ export default function LocationPicker({
         <input
           type="text"
           value={address}
-          onChange={(e) => onAddressChange(e.target.value)}
+          onChange={(e) => { onAddressChange(e.target.value); }}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
           placeholder={t('report.lastSeenPlaceholder')}
         />
         <button
           type="button"
           onClick={handleAddressSearch}
+          aria-label={t('report.addressSearch')}
           className="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors whitespace-nowrap"
         >
           {t('report.addressSearch')}
         </button>
       </div>
+
+      {geoError && (
+        <p className="text-xs text-red-500">{geoError}</p>
+      )}
 
       {hasMap && (
         <div

@@ -90,7 +90,9 @@
     "submit": "Submit Missing Report",
     "addressSearch": "Search Address",
     "mapClickHint": "Click on the map to fine-tune the location",
-    "coordsLabel": "Lat {{lat}}, Lng {{lng}}"
+    "coordsLabel": "Lat {{lat}}, Lng {{lng}}",
+    "geoError": "Could not find coordinates for this address. Please click on the map to set the location.",
+    "invalidDate": "Please enter a valid date and time."
   },
   "detail": {
     "statusActive": "Searching",

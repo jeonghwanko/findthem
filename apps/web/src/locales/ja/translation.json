@@ -90,7 +90,9 @@
     "submit": "届出を登録",
     "addressSearch": "住所検索",
     "mapClickHint": "地図をクリックして位置を細かく調整できます",
-    "coordsLabel": "緯度 {{lat}}, 経度 {{lng}}"
+    "coordsLabel": "緯度 {{lat}}, 経度 {{lng}}",
+    "geoError": "この住所の座標が見つかりませんでした。地図をクリックして位置を指定してください。",
+    "invalidDate": "正しい日付と時間を入力してください。"
   },
   "detail": {
     "statusActive": "捜索中",

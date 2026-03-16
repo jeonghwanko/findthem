@@ -90,7 +90,9 @@
     "submit": "提交失蹤報案",
     "addressSearch": "搜尋地址",
     "mapClickHint": "點擊地圖可以精確調整位置",
-    "coordsLabel": "緯度 {{lat}}, 經度 {{lng}}"
+    "coordsLabel": "緯度 {{lat}}, 經度 {{lng}}",
+    "geoError": "無法找到此地址的座標，請直接點擊地圖指定位置。",
+    "invalidDate": "請輸入有效的日期和時間。"
   },
   "detail": {
     "statusActive": "搜尋中",

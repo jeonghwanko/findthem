@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
@@ -29,6 +29,11 @@ export default function RegisterReportPage() {
   const [reward, setReward] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
 
+  const handleLocationChange = useCallback((lat: number, lng: number) => {
+    setLastSeenLat(lat);
+    setLastSeenLng(lng);
+  }, []);
+
   const SUBJECT_TYPES = [
     { value: 'PERSON', label: t('subjectType.PERSON'), icon: '👤' },
     { value: 'DOG', label: t('subjectType.DOG'), icon: '🐕' },
@@ -48,11 +53,17 @@ export default function RegisterReportPage() {
       const formData = new FormData();
       photos.forEach((file) => formData.append('photos', file));
 
+      const lastSeenDate = new Date(lastSeenAt);
+      if (isNaN(lastSeenDate.getTime())) {
+        setError(t('report.invalidDate'));
+        return;
+      }
+
       const data: Record<string, unknown> = {
         subjectType,
         name,
         features,
-        lastSeenAt: new Date(lastSeenAt).toISOString(),
+        lastSeenAt: lastSeenDate.toISOString(),
         lastSeenAddress,
         contactPhone,
         contactName,
@@ -293,10 +304,7 @@ export default function RegisterReportPage() {
               lat={lastSeenLat}
               lng={lastSeenLng}
               onAddressChange={setLastSeenAddress}
-              onLocationChange={(lat, lng) => {
-                setLastSeenLat(lat);
-                setLastSeenLng(lng);
-              }}
+              onLocationChange={handleLocationChange}
             />
           </div>
 

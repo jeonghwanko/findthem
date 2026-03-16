@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare namespace kakao {
   namespace maps {
     function load(callback: () => void): void;
@@ -39,14 +38,18 @@ declare namespace kakao {
         type: 'click',
         handler: (mouseEvent: MouseEvent) => void,
       ): void;
-      function addListener(
-        target: any,
-        type: string,
-        handler: (mouseEvent?: MouseEvent) => void,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function addListener(target: any, type: string, handler: (mouseEvent?: MouseEvent) => void): void;
+      function removeListener(
+        target: Map,
+        type: 'click',
+        handler: (mouseEvent: MouseEvent) => void,
       ): void;
-      function removeListener(target: any, type: string, handler: () => void): void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function removeListener(target: any, type: string, handler: (mouseEvent?: MouseEvent) => void): void;
     }
 
+     
     namespace clusterer {
       class MarkerClusterer {
         constructor(options: ClustererOptions);
