@@ -16,7 +16,7 @@ function loadKakaoMapSdk(onLoad: () => void) {
   sdkLoading = true;
 
   const script = document.createElement('script');
-  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=clusterer&autoload=false`;
+  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=clusterer,services&autoload=false`;
   script.onload = () => {
     window.kakao.maps.load(() => {
       sdkLoaded = true;

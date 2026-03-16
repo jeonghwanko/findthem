@@ -87,7 +87,10 @@
     "photoRequired": "少なくとも1枚の写真を登録してください。",
     "submitError": "登録に失敗しました。",
     "submitting": "登録中...",
-    "submit": "届出を登録"
+    "submit": "届出を登録",
+    "addressSearch": "住所検索",
+    "mapClickHint": "地図をクリックして位置を細かく調整できます",
+    "coordsLabel": "緯度 {{lat}}, 経度 {{lng}}"
   },
   "detail": {
     "statusActive": "捜索中",

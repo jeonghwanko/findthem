@@ -87,7 +87,10 @@
     "photoRequired": "請至少上傳一張照片。",
     "submitError": "登記失敗。",
     "submitting": "登記中...",
-    "submit": "提交失蹤報案"
+    "submit": "提交失蹤報案",
+    "addressSearch": "搜尋地址",
+    "mapClickHint": "點擊地圖可以精確調整位置",
+    "coordsLabel": "緯度 {{lat}}, 經度 {{lng}}"
   },
   "detail": {
     "statusActive": "搜尋中",

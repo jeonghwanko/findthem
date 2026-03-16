@@ -87,7 +87,10 @@
     "photoRequired": "Please add at least one photo.",
     "submitError": "Failed to register report.",
     "submitting": "Registering...",
-    "submit": "Submit Missing Report"
+    "submit": "Submit Missing Report",
+    "addressSearch": "Search Address",
+    "mapClickHint": "Click on the map to fine-tune the location",
+    "coordsLabel": "Lat {{lat}}, Lng {{lng}}"
   },
   "detail": {
     "statusActive": "Searching",

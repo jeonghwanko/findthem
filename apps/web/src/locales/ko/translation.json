@@ -87,7 +87,10 @@
     "photoRequired": "최소 1장의 사진을 등록하세요.",
     "submitError": "등록에 실패했습니다.",
     "submitting": "등록 중...",
-    "submit": "실종 신고 등록"
+    "submit": "실종 신고 등록",
+    "addressSearch": "주소 검색",
+    "mapClickHint": "지도를 클릭하여 위치를 세밀하게 조정할 수 있습니다",
+    "coordsLabel": "위도 {{lat}}, 경도 {{lng}}"
   },
   "detail": {
     "statusActive": "찾는 중",

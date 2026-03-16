@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import PhotoUpload from '../components/PhotoUpload';
+import LocationPicker from '../components/LocationPicker';
 
 export default function RegisterReportPage() {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function RegisterReportPage() {
   const [clothingDesc, setClothingDesc] = useState('');
   const [lastSeenAt, setLastSeenAt] = useState('');
   const [lastSeenAddress, setLastSeenAddress] = useState('');
+  const [lastSeenLat, setLastSeenLat] = useState<number | null>(null);
+  const [lastSeenLng, setLastSeenLng] = useState<number | null>(null);
   const [contactPhone, setContactPhone] = useState('');
   const [contactName, setContactName] = useState('');
   const [reward, setReward] = useState('');
@@ -60,6 +63,10 @@ export default function RegisterReportPage() {
       if (color) data.color = color;
       if (clothingDesc) data.clothingDesc = clothingDesc;
       if (reward) data.reward = reward;
+      if (lastSeenLat !== null && lastSeenLng !== null) {
+        data.lastSeenLat = lastSeenLat;
+        data.lastSeenLng = lastSeenLng;
+      }
 
       formData.append('data', JSON.stringify(data));
 
@@ -281,12 +288,15 @@ export default function RegisterReportPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('report.lastSeenPlace')}
             </label>
-            <input
-              value={lastSeenAddress}
-              onChange={(e) => setLastSeenAddress(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              placeholder={t('report.lastSeenPlaceholder')}
-              required
+            <LocationPicker
+              address={lastSeenAddress}
+              lat={lastSeenLat}
+              lng={lastSeenLng}
+              onAddressChange={setLastSeenAddress}
+              onLocationChange={(lat, lng) => {
+                setLastSeenLat(lat);
+                setLastSeenLng(lng);
+              }}
             />
           </div>
 
