@@ -11,8 +11,7 @@ import {
   crawlSchedulerQueue,
   crawlQueue,
 } from '../jobs/queues.js';
-import { NOTIFY_THRESHOLD } from '@findthem/shared';
-import type { QueueStatusSummary, AdminOverviewStats } from '@findthem/shared';
+import { NOTIFY_THRESHOLD, type QueueStatusSummary, type AdminOverviewStats } from '@findthem/shared';
 
 // ── 날짜 헬퍼 ──
 

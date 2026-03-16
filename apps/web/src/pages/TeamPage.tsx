@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
-import { api } from '../api/client';
-import type { SponsorPublic, AgentId } from '../api/client';
+import { api, type SponsorPublic, type AgentId } from '../api/client';
 
 interface AgentConfig {
   id: AgentId;

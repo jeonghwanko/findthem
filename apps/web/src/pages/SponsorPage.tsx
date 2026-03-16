@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanFace, Megaphone, MessageSquare, ArrowLeft } from 'lucide-react';
-import { loadPaymentWidget } from '@tosspayments/payment-widget-sdk';
-import type { PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
-import { api } from '../api/client';
-import type { AgentId } from '../api/client';
+import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
+import { api, type AgentId } from '../api/client';
 
 interface AgentConfig {
   id: AgentId;
