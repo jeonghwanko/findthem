@@ -8,22 +8,21 @@ const log = createLogger('crawl:naver-search');
 
 const CAFE_URL = 'https://openapi.naver.com/v1/search/cafearticle.json';
 const BLOG_URL = 'https://openapi.naver.com/v1/search/blog.json';
-const DISPLAY = 30;
+const DISPLAY = 20;
 const FETCH_TIMEOUT_MS = 10_000;
 
-/** AI 파싱 동시 처리 제한 (API 부하 방지) */
-const AI_CONCURRENCY = 5;
+/** AI 파싱 동시 처리 제한 */
+const AI_CONCURRENCY = 3;
+
+/** AI 호출 전 제목/본문에서 실종 관련 신호가 있는지 사전 필터링 */
+const RELEVANCE_KEYWORDS = /실종|잃어버|찾습니다|발견|보호중|유기|목격|주인.*찾/;
 
 const SEARCH_QUERIES = [
-  // 실종/유기 신고
   '실종 강아지', '잃어버린 강아지', '강아지 찾습니다',
   '실종 고양이', '잃어버린 고양이', '고양이 찾습니다',
   '유기견 발견', '유기묘 발견',
-  // 목격/발견 제보
   '강아지 목격', '고양이 발견', '강아지 발견 보호중',
-  '길고양이 보호', '주인 찾습니다 강아지',
-  // 사람 실종
-  '실종자 찾습니다', '실종 어르신', '실종 아이',
+  '실종자 찾습니다', '실종 어르신',
 ];
 
 interface NaverSearchItem {
@@ -43,15 +42,39 @@ interface NaverSearchResponse {
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&[a-z]+;/g, ' ')
+    .trim();
+}
+
+function normalizeNaverUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    u.hostname = u.hostname.replace(/^m\./, '');
+    u.search = '';
+    return u.toString();
+  } catch {
+    return raw;
+  }
 }
 
 function generateExternalId(url: string): string {
-  return crypto.createHash('sha256').update(url).digest('hex').slice(0, 32);
+  return crypto.createHash('sha256').update(normalizeNaverUrl(url)).digest('hex');
 }
 
 function parsePostDate(dateStr?: string): Date {
   if (!dateStr || dateStr.length < 8) return new Date();
+  if (dateStr.includes('-')) {
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
   const y = dateStr.slice(0, 4);
   const m = dateStr.slice(4, 6);
   const d = dateStr.slice(6, 8);
@@ -90,7 +113,6 @@ async function searchNaver(
   }
 }
 
-/** AI 파싱을 배치로 처리 (concurrency 제한) */
 async function parseItemsBatch(
   items: { item: NaverSearchItem; source: string }[],
 ): Promise<ExternalReport[]> {
@@ -140,36 +162,44 @@ export const naverSearchFetcher: Fetcher = {
       return [];
     }
 
-    // 모든 키워드로 카페 + 블로그 검색
+    // 1. 모든 키워드 병렬 검색 (BullMQ stall 방지)
+    const queryResults = await Promise.all(
+      SEARCH_QUERIES.map(async (query) => {
+        const [cafeItems, blogItems] = await Promise.all([
+          searchNaver(CAFE_URL, query),
+          searchNaver(BLOG_URL, query),
+        ]);
+        return { cafeItems, blogItems };
+      }),
+    );
+
+    // 2. URL 중복 제거 + 제목/본문 키워드 사전 필터링 (AI 호출 절감)
     const allItems: { item: NaverSearchItem; source: string }[] = [];
     const seenUrls = new Set<string>();
 
-    for (const query of SEARCH_QUERIES) {
-      const [cafeItems, blogItems] = await Promise.all([
-        searchNaver(CAFE_URL, query),
-        searchNaver(BLOG_URL, query),
-      ]);
-
+    for (const { cafeItems, blogItems } of queryResults) {
       for (const item of cafeItems) {
-        if (!seenUrls.has(item.link)) {
-          seenUrls.add(item.link);
-          allItems.push({ item, source: 'cafe' });
-        }
+        const normalized = normalizeNaverUrl(item.link);
+        if (seenUrls.has(normalized)) continue;
+        if (!RELEVANCE_KEYWORDS.test(stripHtml(item.title)) && !RELEVANCE_KEYWORDS.test(stripHtml(item.description))) continue;
+        seenUrls.add(normalized);
+        allItems.push({ item, source: 'cafe' });
       }
       for (const item of blogItems) {
-        if (!seenUrls.has(item.link)) {
-          seenUrls.add(item.link);
-          allItems.push({ item, source: 'blog' });
-        }
+        const normalized = normalizeNaverUrl(item.link);
+        if (seenUrls.has(normalized)) continue;
+        if (!RELEVANCE_KEYWORDS.test(stripHtml(item.title)) && !RELEVANCE_KEYWORDS.test(stripHtml(item.description))) continue;
+        seenUrls.add(normalized);
+        allItems.push({ item, source: 'blog' });
       }
     }
 
     log.info({ totalItems: allItems.length, queries: SEARCH_QUERIES.length }, 'Naver search complete, starting AI parsing');
 
-    // AI로 실종 게시글 필터링 + 구조화
+    // 3. AI 파싱
     const results = await parseItemsBatch(allItems);
 
-    log.info({ parsed: results.length, total: allItems.length }, 'Naver search AI parsing complete');
+    log.info({ parsed: results.length, filtered: allItems.length }, 'Naver search AI parsing complete');
 
     return results;
   },
