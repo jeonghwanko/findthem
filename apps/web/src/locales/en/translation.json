@@ -296,7 +296,8 @@
       "stepQuoting": "Getting quote...",
       "stepSigning": "Waiting for wallet signature...",
       "stepVerifying": "Confirming payment...",
-      "installPetra": "Install Petra Wallet"
+      "installPetra": "Install Petra Wallet",
+      "quoteExpired": "Quote expired. Please try again."
     }
   }
 }

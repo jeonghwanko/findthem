@@ -34,12 +34,22 @@ type CryptoMode = 'evm' | 'aptos';
 type EvmTokenSymbol = 'ETH' | 'USDC' | 'USDt' | 'BNB';
 type TokenSymbol = EvmTokenSymbol | 'APT';
 
-interface ChainOption { id: number; label: string }
+/** Token symbol → icon path mapping */
+const TOKEN_ICONS: Record<string, string> = {
+  ETH: '/icon/eth.svg',
+  USDC: '/icon/usdc.svg',
+  USDt: '/icon/usdt.svg',
+  BNB: '/icon/bnb.png',
+  APT: '/icon/apt.svg',
+  SOL: '/icon/sol.svg',
+};
+
+interface ChainOption { id: number; label: string; icon: string }
 
 const EVM_CHAINS: ChainOption[] = [
-  { id: 1, label: 'Ethereum' },
-  { id: 56, label: 'BSC' },
-  { id: 8453, label: 'Base' },
+  { id: 1, label: 'Ethereum', icon: '/icon/eth.svg' },
+  { id: 56, label: 'BSC', icon: '/icon/bnb.png' },
+  { id: 8453, label: 'Base', icon: '/icon/base.svg' },
 ];
 
 const EVM_TOKENS_BY_CHAIN: Record<number, EvmTokenSymbol[]> = {
@@ -67,6 +77,11 @@ interface CryptoQuote {
   chainId: number | null;
   tokenContract: string | null;
   quoteExpiresAt: string;
+}
+
+function isUserRejection(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  return msg.includes('rejected') || msg.includes('denied') || msg.includes('cancel') || msg.includes('4001');
 }
 
 /** Verify with retry for pending TXs (pure function — no closures) */
@@ -170,6 +185,9 @@ export default function SponsorPage() {
     toastTimerRef.current = setTimeout(() => setToast(null), 3500);
   }, []);
 
+  // Clear error on mode switch
+  useEffect(() => { setCryptoError(null); }, [cryptoMode]);
+
   // Reset token when chain changes
   useEffect(() => {
     const available = EVM_TOKENS_BY_CHAIN[evmChainId] ?? [];
@@ -266,6 +284,11 @@ export default function SponsorPage() {
         throw new Error('Invalid merchant wallet address');
       }
 
+      // Check quote expiration before signing
+      if (new Date(quote.quoteExpiresAt) <= new Date()) {
+        throw new Error('QUOTE_EXPIRED');
+      }
+
       const amountBigInt = BigInt(quote.amountAtomic);
       const merchantWallet = quote.merchantWallet as `0x${string}`;
       const tokenContract = EVM_TOKEN_CONTRACTS[evmChainId]?.[tokenSymbol] ?? null;
@@ -297,11 +320,11 @@ export default function SponsorPage() {
 
       setCryptoSuccess(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('User rejected') || msg.includes('denied')) {
+      if (isUserRejection(err)) {
         setCryptoError(t('sponsor.crypto.rejected'));
       } else {
-        setCryptoError(t('sponsor.crypto.payError'));
+        const msg = err instanceof Error ? err.message : '';
+        setCryptoError(msg === 'QUOTE_EXPIRED' ? t('sponsor.crypto.quoteExpired') : t('sponsor.crypto.payError'));
       }
     } finally {
       isPayingRef.current = false;
@@ -335,6 +358,11 @@ export default function SponsorPage() {
         throw new Error('Invalid merchant wallet address');
       }
 
+      // Check quote expiration before signing
+      if (new Date(quote.quoteExpiresAt) <= new Date()) {
+        throw new Error('QUOTE_EXPIRED');
+      }
+
       const amountBigInt = BigInt(quote.amountAtomic);
 
       // 2. Send TX
@@ -347,10 +375,16 @@ export default function SponsorPage() {
         },
       });
 
-      // Extract TX hash with proper type handling
+      // Extract TX hash — handle both adapter-unwrapped and raw UserResponse formats
       let txHash: string;
-      if (typeof response === 'object' && response !== null && 'hash' in response) {
-        txHash = (response as { hash: string }).hash;
+      if (typeof response === 'object' && response !== null) {
+        if ('hash' in response) {
+          txHash = (response as { hash: string }).hash;
+        } else if ('status' in response && (response as { status: string }).status === 'Rejected') {
+          throw new Error('User rejected the request');
+        } else {
+          throw new Error('Unexpected transaction response format');
+        }
       } else {
         throw new Error('Unexpected transaction response format');
       }
@@ -364,11 +398,11 @@ export default function SponsorPage() {
 
       setCryptoSuccess(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('User rejected') || msg.includes('denied') || msg.includes('cancel')) {
+      if (isUserRejection(err)) {
         setCryptoError(t('sponsor.crypto.rejected'));
       } else {
-        setCryptoError(t('sponsor.crypto.payError'));
+        const msg = err instanceof Error ? err.message : '';
+        setCryptoError(msg === 'QUOTE_EXPIRED' ? t('sponsor.crypto.quoteExpired') : t('sponsor.crypto.payError'));
       }
     } finally {
       isPayingRef.current = false;
@@ -382,7 +416,7 @@ export default function SponsorPage() {
   const isWalletConnected = cryptoMode === 'aptos' ? aptosConnected : evmConnected;
 
   const selectedTokenSymbol: TokenSymbol = cryptoMode === 'aptos' ? 'APT' : evmToken;
-  const quoteDisplayAmount = cryptoUsdCents >= 100 ? `$${(cryptoUsdCents / 100).toFixed(0)}` : `$${(cryptoUsdCents / 100).toFixed(2)}`;
+  const quoteDisplayAmount = `$${(cryptoUsdCents / 100).toFixed(0)}`;
 
   // Step labels for progress
   const stepLabel = payStep === 'quoting' ? t('sponsor.crypto.stepQuoting')
@@ -495,11 +529,13 @@ export default function SponsorPage() {
               {/* Crypto mode: EVM / Aptos */}
               <div className="flex bg-gray-50 rounded-lg p-0.5 gap-0.5">
                 <button type="button" onClick={() => setCryptoMode('evm')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'evm' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'evm' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <img src="/icon/eth.svg" alt="" className="w-4 h-4" />
                   EVM
                 </button>
                 <button type="button" onClick={() => setCryptoMode('aptos')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'aptos' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'aptos' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <img src="/icon/apt.svg" alt="" className="w-4 h-4" />
                   Aptos
                 </button>
               </div>
@@ -511,7 +547,8 @@ export default function SponsorPage() {
                   <div className="flex flex-wrap gap-2">
                     {EVM_CHAINS.map((chain) => (
                       <button key={chain.id} type="button" onClick={() => setEvmChainId(chain.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${evmChainId === chain.id ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${evmChainId === chain.id ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
+                        <img src={chain.icon} alt="" className="w-5 h-5 rounded-full" />
                         {chain.label}
                       </button>
                     ))}
@@ -526,7 +563,8 @@ export default function SponsorPage() {
                   <div className="flex flex-wrap gap-2">
                     {availableEvmTokens.map((tk) => (
                       <button key={tk} type="button" onClick={() => setEvmToken(tk)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${evmToken === tk ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-400'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${evmToken === tk ? 'bg-primary-50 text-primary-700 border-primary-500 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-300'}`}>
+                        <img src={TOKEN_ICONS[tk]} alt="" className="w-5 h-5 rounded-full" />
                         {tk}
                       </button>
                     ))}
@@ -539,7 +577,10 @@ export default function SponsorPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.tokenLabel')}</label>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-primary-600 text-white border-primary-600">APT</span>
+                    <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 bg-primary-50 text-primary-700 border-primary-500 shadow-sm">
+                      <img src={TOKEN_ICONS.APT} alt="" className="w-5 h-5 rounded-full" />
+                      APT
+                    </span>
                   </div>
                 </div>
               )}
@@ -550,7 +591,7 @@ export default function SponsorPage() {
                 <div className="grid grid-cols-4 gap-2">
                   {CRYPTO_PRESETS_CENTS.map((cents) => (
                     <button key={cents} type="button" onClick={() => setCryptoUsdCents(cents)}
-                      className={`py-2 rounded-lg text-sm font-medium border transition-colors ${cryptoUsdCents === cents ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-400'}`}>
+                      className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${cryptoUsdCents === cents ? 'bg-primary-50 text-primary-700 border-primary-500 shadow-sm scale-[1.02]' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-300'}`}>
                       ${(cents / 100).toFixed(0)}
                     </button>
                   ))}
@@ -638,12 +679,13 @@ export default function SponsorPage() {
                     <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     <span>{stepLabel || t('sponsor.processing')}</span>
                   </>
+                ) : isWalletConnected ? (
+                  <>
+                    <img src={TOKEN_ICONS[selectedTokenSymbol]} alt="" className="w-5 h-5 rounded-full" />
+                    <span>{t('sponsor.crypto.payBtn', { amount: quoteDisplayAmount, token: selectedTokenSymbol })}</span>
+                  </>
                 ) : (
-                  <span>
-                    {isWalletConnected
-                      ? t('sponsor.crypto.payBtn', { amount: quoteDisplayAmount, token: selectedTokenSymbol })
-                      : t('sponsor.crypto.connectFirst')}
-                  </span>
+                  <span>{t('sponsor.crypto.connectFirst')}</span>
                 )}
               </button>
             </>

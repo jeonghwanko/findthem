@@ -295,7 +295,8 @@
       "stepQuoting": "見積もり取得中...",
       "stepSigning": "ウォレット署名待ち...",
       "stepVerifying": "決済確認中...",
-      "installPetra": "Petraウォレットをインストール"
+      "installPetra": "Petraウォレットをインストール",
+      "quoteExpired": "見積もりが期限切れです。再試行してください。"
     }
   }
 }

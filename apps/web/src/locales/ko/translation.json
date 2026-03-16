@@ -296,7 +296,8 @@
       "stepQuoting": "견적 조회 중...",
       "stepSigning": "지갑 서명 대기 중...",
       "stepVerifying": "결제 확인 중...",
-      "installPetra": "Petra 지갑 설치"
+      "installPetra": "Petra 지갑 설치",
+      "quoteExpired": "견적이 만료되었습니다. 다시 시도해주세요."
     }
   }
 }

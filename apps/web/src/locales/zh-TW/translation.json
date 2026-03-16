@@ -296,7 +296,8 @@
       "stepQuoting": "取得報價中...",
       "stepSigning": "等待錢包簽名...",
       "stepVerifying": "確認付款中...",
-      "installPetra": "安裝 Petra 錢包"
+      "installPetra": "安裝 Petra 錢包",
+      "quoteExpired": "報價已過期，請重試。"
     }
   }
 }

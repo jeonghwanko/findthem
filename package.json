@@ -12,7 +12,7 @@
     "build": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
-    "test": "npm run test -w packages/shared && npm run test -w apps/api && npm run test -w apps/web",
+    "test": "npm run test -w packages/shared && npm run test -w packages/web3-payment && npm run test -w apps/api && npm run test -w apps/web",
     "test:api": "npm run test -w apps/api",
     "test:web": "npm run test -w apps/web",
     "test:shared": "npm run test -w packages/shared",
