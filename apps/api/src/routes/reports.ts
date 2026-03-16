@@ -28,7 +28,7 @@ const createReportSchema = z.object({
   weight: z.string().optional(),
   height: z.string().optional(),
   color: z.string().optional(),
-  features: z.string().min(1, '특징을 입력하세요'),
+  features: z.string().min(1),
   clothingDesc: z.string().optional(),
   lastSeenAt: z.string().transform((s) => new Date(s)),
   lastSeenAddress: z.string().min(1),

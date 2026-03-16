@@ -354,3 +354,15 @@ export interface AuditLogEntry {
   agentSessionId?: string | null;
   createdAt: string;
 }
+
+// ── Sponsor ──
+export type AgentId = 'image-matching' | 'promotion' | 'chatbot-alert';
+
+export interface SponsorPublic {
+  id: string;
+  agentId: AgentId;
+  amount: number;
+  displayName: string | null;
+  message: string | null;
+  createdAt: string;
+}

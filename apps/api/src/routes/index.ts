@@ -9,6 +9,7 @@ import { registerAdminRoutes } from './admin.js';
 import { registerAgentRoutes } from './agent.js';
 import { registerPromotionRoutes } from './promotions.js';
 import { registerPushRoutes } from './push.js';
+import { registerSponsorRoutes } from './sponsors.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -23,6 +24,7 @@ export function createRouter(): Router {
   registerAgentRoutes(router);
   registerPromotionRoutes(router);
   registerPushRoutes(router);
+  registerSponsorRoutes(router);
 
   return router;
 }

@@ -436,3 +436,19 @@ model AdminAgentSession {
 
   @@map("admin_agent_session")
 }
+
+// ── Sponsor (AI 팀원 후원) ──
+
+model Sponsor {
+  id          String   @id @default(cuid())
+  agentId     String   // 'image-matching' | 'promotion' | 'chatbot-alert'
+  amount      Int      // KRW 단위
+  orderId     String   @unique
+  paymentKey  String?
+  displayName String?
+  message     String?
+  createdAt   DateTime @default(now())
+
+  @@index([agentId])
+  @@map("sponsor")
+}

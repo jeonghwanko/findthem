@@ -15,6 +15,8 @@ export type {
   ReportStatus,
   MatchStatus,
   BotResponse,
+  SponsorPublic,
+  AgentId,
 } from '@findthem/shared';
 
 const BASE = '/api';

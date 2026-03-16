@@ -5,6 +5,7 @@
   "nav": {
     "browse": "Browse All",
     "devlog": "Dev Blog",
+    "team": "Team",
     "myReports": "My Reports",
     "newReport": "New Report",
     "logout": "Logout",
@@ -239,5 +240,41 @@
     "unsubscribe": "Disable Notifications",
     "permissionDenied": "Notification permission was denied.",
     "notSupported": "Push notifications are not supported in this browser."
+  },
+  "team": {
+    "title": "Meet Our AI Team",
+    "desc": "AI agents running FindThem 24/7",
+    "agentImageMatching": {
+      "name": "Detective Claude",
+      "role": "Photo Analysis & Matching",
+      "desc": "Analyzes missing and sighting photos to determine similarity"
+    },
+    "agentPromotion": {
+      "name": "Promo Queen Hermy",
+      "role": "SNS Promotion",
+      "desc": "Creates and posts promotional content on Twitter and KakaoTalk"
+    },
+    "agentChatbotAlert": {
+      "name": "Guide Bot Ali",
+      "role": "Chatbot & Alerts",
+      "desc": "Collects sighting reports via chat and sends alerts when matches are found"
+    }
+  },
+  "sponsor": {
+    "title": "Sponsor {{name}}",
+    "amountLabel": "Amount",
+    "nicknameLabel": "Nickname (optional)",
+    "nicknamePlaceholder": "Shown anonymously if empty",
+    "messageLabel": "Message (optional)",
+    "messagePlaceholder": "Leave a word of encouragement",
+    "submit": "Pay",
+    "processing": "Processing...",
+    "successTitle": "Thank you for your support!",
+    "successDesc": "You've cheered {{name}} to work harder",
+    "sponsorList": "Sponsors",
+    "noSponsors": "No sponsors yet. Be the first!",
+    "anonymous": "Anonymous",
+    "backToTeam": "Back to Team",
+    "amount": "₩{{amount}}"
   }
 }

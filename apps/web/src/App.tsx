@@ -22,6 +22,9 @@ import QueuesPage from './pages/admin/QueuesPage';
 import AuditLogPage from './pages/admin/AuditLogPage';
 import AgentChatPage from './pages/admin/AgentChatPage';
 import DevlogPage from './pages/admin/DevlogPage';
+import TeamPage from './pages/TeamPage';
+import SponsorPage from './pages/SponsorPage';
+import SponsorSuccessPage from './pages/SponsorSuccessPage';
 
 export default function App() {
   const { user, loading, login, register, logout } = useAuth();
@@ -83,6 +86,9 @@ export default function App() {
                 />
                 <Route path="/reports/:id" element={<ReportDetailPage />} />
                 <Route path="/sightings/new" element={<SightingSubmitPage />} />
+                <Route path="/team" element={<TeamPage />} />
+                <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
+                <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
               </Routes>
             </main>
             <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">

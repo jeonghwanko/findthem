@@ -5,6 +5,7 @@
   "nav": {
     "browse": "瀏覽全部",
     "devlog": "開發日誌",
+    "team": "團隊",
     "myReports": "我的報案",
     "newReport": "報案登記",
     "logout": "登出",
@@ -239,5 +240,41 @@
     "unsubscribe": "關閉通知",
     "permissionDenied": "瀏覽器通知權限已被拒絕。",
     "notSupported": "此瀏覽器不支援推播通知。"
+  },
+  "team": {
+    "title": "介紹我們的AI團隊",
+    "desc": "24小時為FindThem服務的AI代理人",
+    "agentImageMatching": {
+      "name": "偵探克勞德",
+      "role": "照片分析與比對",
+      "desc": "分析失蹤照片與目擊照片，判斷相似度"
+    },
+    "agentPromotion": {
+      "name": "宣傳王赫敏",
+      "role": "社群宣傳",
+      "desc": "在Twitter和KakaoTalk自動撰寫並發布宣傳文"
+    },
+    "agentChatbotAlert": {
+      "name": "導覽機器人阿里",
+      "role": "聊天機器人與通知",
+      "desc": "透過對話收集目擊線索，比對成功時通知報案人"
+    }
+  },
+  "sponsor": {
+    "title": "贊助 {{name}}",
+    "amountLabel": "贊助金額",
+    "nicknameLabel": "暱稱（選填）",
+    "nicknamePlaceholder": "未填寫則匿名顯示",
+    "messageLabel": "加油訊息（選填）",
+    "messagePlaceholder": "留下一句加油話",
+    "submit": "付款",
+    "processing": "處理中...",
+    "successTitle": "感謝您的贊助！",
+    "successDesc": "您鼓勵了 {{name}} 更努力工作",
+    "sponsorList": "贊助者名單",
+    "noSponsors": "尚無贊助者，成為第一位贊助者吧！",
+    "anonymous": "匿名",
+    "backToTeam": "返回團隊頁面",
+    "amount": "₩{{amount}}"
   }
 }

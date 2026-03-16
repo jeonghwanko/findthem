@@ -55,4 +55,5 @@ export const config = {
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
   vapidEmail: process.env.VAPID_EMAIL || 'mailto:admin@union.pryzm.gg',
+  tossSecretKey: process.env.TOSS_SECRET_KEY || '',
 } as const;

@@ -21,11 +21,11 @@ const upload = multer({
 
 const createSightingSchema = z.object({
   reportId: z.string().optional(),
-  description: z.string().min(1, '목격 내용을 입력하세요'),
+  description: z.string().min(1),
   sightedAt: z
     .string()
     .transform((s) => new Date(s))
-    .refine((d) => d <= new Date(), { message: '미래 날짜는 입력할 수 없습니다.' }),
+    .refine((d) => d <= new Date()),
   address: z.string().min(1),
   lat: z.number().optional(),
   lng: z.number().optional(),

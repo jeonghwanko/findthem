@@ -5,6 +5,7 @@
   "nav": {
     "browse": "전체 목록",
     "devlog": "데브로그",
+    "team": "팀",
     "myReports": "내 신고",
     "newReport": "실종 신고",
     "logout": "로그아웃",
@@ -239,5 +240,41 @@
     "unsubscribe": "알림 끄기",
     "permissionDenied": "브라우저 알림 권한이 거부되었습니다.",
     "notSupported": "이 브라우저는 푸시 알림을 지원하지 않습니다."
+  },
+  "team": {
+    "title": "AI 팀원을 소개합니다",
+    "desc": "찾아줘 서비스를 24시간 운영하는 AI 에이전트들입니다",
+    "agentImageMatching": {
+      "name": "탐정 클로드",
+      "role": "사진 분석 & 매칭",
+      "desc": "업로드된 실종 사진과 목격 사진을 분석하고 유사도를 판별합니다"
+    },
+    "agentPromotion": {
+      "name": "홍보왕 헤르미",
+      "role": "SNS 홍보",
+      "desc": "트위터와 카카오톡 채널에 홍보글을 작성하고 자동으로 게시합니다"
+    },
+    "agentChatbotAlert": {
+      "name": "안내봇 알리",
+      "role": "챗봇 & 알림",
+      "desc": "목격 제보를 대화로 수집하고, 매칭 시 신고자에게 알림을 발송합니다"
+    }
+  },
+  "sponsor": {
+    "title": "{{name}} 후원하기",
+    "amountLabel": "후원 금액",
+    "nicknameLabel": "닉네임 (선택)",
+    "nicknamePlaceholder": "익명으로 표시됩니다",
+    "messageLabel": "응원 메시지 (선택)",
+    "messagePlaceholder": "응원 한마디를 남겨주세요",
+    "submit": "결제하기",
+    "processing": "결제 중...",
+    "successTitle": "후원해주셔서 감사합니다!",
+    "successDesc": "{{name}}이(가) 더 열심히 일하도록 응원해주셨습니다",
+    "sponsorList": "후원자 목록",
+    "noSponsors": "아직 후원자가 없습니다. 첫 번째 후원자가 되어주세요!",
+    "anonymous": "익명",
+    "backToTeam": "팀 페이지로 돌아가기",
+    "amount": "{{amount}}원"
   }
 }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LogOut, LogIn, FileText, List, BookOpen, Bell, BellOff } from 'lucide-react';
+import { Search, LogOut, LogIn, FileText, List, BookOpen, Bell, BellOff, Users } from 'lucide-react';
 import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
 import { usePushNotification } from '../hooks/usePushNotification';
@@ -37,6 +37,10 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <BookOpen className="w-4 h-4" aria-hidden="true" />
             {t('nav.devlog')}
           </a>
+          <Link to="/team" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+            <Users className="w-4 h-4" aria-hidden="true" />
+            {t('nav.team')}
+          </Link>
           {user ? (
             <>
               <Link to="/my-reports" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">

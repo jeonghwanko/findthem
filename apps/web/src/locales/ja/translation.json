@@ -5,6 +5,7 @@
   "nav": {
     "browse": "一覧",
     "devlog": "開発ブログ",
+    "team": "チーム",
     "myReports": "マイ届出",
     "newReport": "届出登録",
     "logout": "ログアウト",
@@ -239,5 +240,41 @@
     "unsubscribe": "通知をオフにする",
     "permissionDenied": "ブラウザの通知権限が拒否されました。",
     "notSupported": "このブラウザはプッシュ通知をサポートしていません。"
+  },
+  "team": {
+    "title": "AIチームのご紹介",
+    "desc": "FindThemを24時間稼働させているAIエージェントたち",
+    "agentImageMatching": {
+      "name": "探偵クロード",
+      "role": "写真分析 & マッチング",
+      "desc": "失踪写真と目撃写真を分析し類似度を判定します"
+    },
+    "agentPromotion": {
+      "name": "宣伝屋ヘルミ",
+      "role": "SNS宣伝",
+      "desc": "TwitterとKakaoTalkに宣伝文を作成・自動投稿します"
+    },
+    "agentChatbotAlert": {
+      "name": "案内ボット アリ",
+      "role": "チャットボット & 通知",
+      "desc": "目撃情報をチャットで収集し、マッチング時に通報者へ通知します"
+    }
+  },
+  "sponsor": {
+    "title": "{{name}}を支援する",
+    "amountLabel": "支援金額",
+    "nicknameLabel": "ニックネーム（任意）",
+    "nicknamePlaceholder": "未入力の場合は匿名表示",
+    "messageLabel": "応援メッセージ（任意）",
+    "messagePlaceholder": "一言応援メッセージをどうぞ",
+    "submit": "支払う",
+    "processing": "処理中...",
+    "successTitle": "ご支援ありがとうございます！",
+    "successDesc": "{{name}}がより頑張れるよう応援してくださいました",
+    "sponsorList": "支援者一覧",
+    "noSponsors": "まだ支援者がいません。最初の支援者になりませんか？",
+    "anonymous": "匿名",
+    "backToTeam": "チームページへ戻る",
+    "amount": "₩{{amount}}"
   }
 }

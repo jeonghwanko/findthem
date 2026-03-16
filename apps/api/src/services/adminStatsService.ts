@@ -11,6 +11,7 @@ import {
   crawlSchedulerQueue,
   crawlQueue,
 } from '../jobs/queues.js';
+import { NOTIFY_THRESHOLD } from '@findthem/shared';
 import type { QueueStatusSummary, AdminOverviewStats } from '@findthem/shared';
 
 // ── 날짜 헬퍼 ──
@@ -97,7 +98,7 @@ export async function getOverviewStats(): Promise<AdminOverviewStats> {
     prisma.match.count({ where: { status: 'CONFIRMED' } }),
     prisma.match.count({ where: { status: 'PENDING' } }),
     prisma.match.aggregate({ _avg: { confidence: true } }),
-    prisma.match.count({ where: { confidence: { gte: 0.8 } } }),
+    prisma.match.count({ where: { confidence: { gte: NOTIFY_THRESHOLD } } }),
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: today } } }),
     prisma.user.count({ where: { isBlocked: true } }),
