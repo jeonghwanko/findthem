@@ -900,7 +900,7 @@ export function registerAdminRoutes(router: Router) {
   const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog', 'social-parsing'];
   const PROVIDER_MODELS: Record<string, string[]> = {
     anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
-    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro'],
+    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3-pro-preview'],
     openai: ['gpt-4o-mini', 'gpt-4o'],
   };
 

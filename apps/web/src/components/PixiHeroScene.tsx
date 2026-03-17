@@ -32,7 +32,9 @@ const AGENT_SPINE_CONFIGS = [
 interface CharState {
   char: import('../game/SpineCharacterLite').SpineCharacterLite;
   nameTag: Container;
-  bubbleLbl: Text;
+  bubble: Container;
+  bubbleText: Text;
+  bubbleBg: Graphics;
   x: number;
   targetX: number;
   speed: number;
@@ -95,8 +97,8 @@ function drawSceneGraphics(g: Graphics, W: number) {
   g.rect(0, GROUND_Y, W, 2).fill(0xc7d2fe);
 }
 
-// Build billboard speech-bubble
-function buildBillboard(W: number, subtitleText: string, dpr: number): Container {
+// Build billboard speech-bubble — returns { container, lbl } for live text updates
+function buildBillboard(W: number, subtitleText: string, dpr: number): { container: Container; lbl: Text } {
   const container = new Container();
   const { bbW, bbH, bbLeft, bbY } = getBillboardLayout(W);
   const bbR = 16;
@@ -132,15 +134,20 @@ function buildBillboard(W: number, subtitleText: string, dpr: number): Container
   lbl.position.set(bbLeft + bbW / 2, bbY + bbH / 2);
   container.addChild(lbl);
 
-  return container;
+  return { container, lbl };
 }
 
 export default function PixiHeroScene({ stats, recoveryRate }: Props) {
   const { t } = useTranslation();
+  const tRef = useRef(t);
+  tRef.current = t;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  // Mutable refs for live-updating text when language changes
+  const charStatesRef = useRef<CharState[] | null>(null);
+  const billboardRef = useRef<{ container: Container; lbl: Text } | null>(null);
   const [phase, setPhase] = useState<'init' | 'scene' | 'ready'>('init');
   const [error, setError] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -184,11 +191,12 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    const subtitleText = t('home.heroDesc');
+    const tr = tRef.current;
+    const subtitleText = tr('home.heroDesc');
     const AGENT_CONFIGS = AGENT_SPINE_CONFIGS.map((cfg) => ({
       ...cfg,
-      name: t(cfg.nameKey),
-      bubbles: cfg.bubbleKeys.map((k) => t(k)),
+      name: tr(cfg.nameKey),
+      bubbles: cfg.bubbleKeys.map((k) => tr(k)),
     }));
 
     let destroyed = false;
@@ -220,8 +228,9 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         app.stage.addChild(sceneGfx);
         drawSceneGraphics(sceneGfx, W);
 
-        let billboard = buildBillboard(W, subtitleText, dpr);
-        app.stage.addChild(billboard);
+        let bb = buildBillboard(W, subtitleText, dpr);
+        billboardRef.current = bb;
+        app.stage.addChild(bb.container);
 
         // Sync StatsStrip HTML position to billboard top
         const syncStats = (w: number) => {
@@ -291,22 +300,27 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             nameTag.position.set(W / 2, CHAR_Y + 20);
             charLayer.addChild(nameTag);
 
-            const bubbleLbl = new Text({
+            // Speech bubble container (bg + tail + text)
+            const bubble = new Container();
+            bubble.alpha = 0;
+            const bubbleBg = new Graphics();
+            bubble.addChild(bubbleBg);
+            const bubbleText = new Text({
               text: cfg.bubbles[0],
-              style: new TextStyle({ fontFamily: FONT, fontSize: 13, fill: '#4338ca', fontWeight: 'bold', align: 'center' }),
+              style: new TextStyle({ fontFamily: FONT, fontSize: 12, fill: '#4338ca', fontWeight: 'bold', align: 'center', wordWrap: true, wordWrapWidth: 120 }),
               resolution: dpr,
             });
-            bubbleLbl.anchor.set(0.5, 1);
-            bubbleLbl.position.set(W / 2, CHAR_Y - 65);
-            bubbleLbl.alpha = 0;
-            charLayer.addChild(bubbleLbl);
+            bubbleText.anchor.set(0.5, 0.5);
+            bubble.addChild(bubbleText);
+            bubble.position.set(W / 2, CHAR_Y - 80);
+            charLayer.addChild(bubble);
 
             // Start with run animation if available (will walk to initial target)
             if (hasRun) char.setBodyAnimation('run_1');
 
             const [lo, hi] = zones[i];
             return {
-              char, nameTag, bubbleLbl,
+              char, nameTag, bubble, bubbleText, bubbleBg,
               x: W / 2,
               targetX: randBetween(lo, hi),
               speed: randBetween(52, 88),
@@ -320,6 +334,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
               expressions: cfg.expressions,
             };
           });
+          charStatesRef.current = charStates;
 
           // ── ResizeObserver ──────────────────────────────────────────────
           const resizeOb = new ResizeObserver(([entry]) => {
@@ -330,10 +345,11 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             app.renderer.resize(newW, SCENE_H);
             drawSceneGraphics(sceneGfx, W);
 
-            app.stage.removeChild(billboard);
-            billboard.destroy({ children: true });
-            billboard = buildBillboard(W, subtitleText, dpr);
-            app.stage.addChildAt(billboard, 1);
+            app.stage.removeChild(bb.container);
+            bb.container.destroy({ children: true });
+            bb = buildBillboard(W, tRef.current('home.heroDesc'), dpr);
+            billboardRef.current = bb;
+            app.stage.addChildAt(bb.container, 1);
             syncStats(W);
 
             for (const s of charStates) {
@@ -368,7 +384,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
                 } else {
                   s.bubbleAlpha = 0;
                 }
-                s.bubbleLbl.alpha = clamp(s.bubbleAlpha, 0, 1);
+                s.bubble.alpha = clamp(s.bubbleAlpha, 0, 1);
 
                 if (s.waitTimer <= 0) {
                   s.targetX = randBetween(CHAR_MARGIN, cachedWalkRight);
@@ -383,8 +399,8 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
                 s.char.setPosition(s.x, CHAR_Y);
                 s.nameTag.position.set(s.x, CHAR_Y + 20);
-                s.bubbleLbl.position.set(s.x, CHAR_Y - 65);
-                s.bubbleLbl.alpha = 0;
+                s.bubble.position.set(s.x, CHAR_Y - 80);
+                s.bubble.alpha = 0;
 
                 if (Math.abs(s.x - s.targetX) < 4) {
                   s.x = s.targetX;
@@ -393,7 +409,20 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
                   if (hasRun) s.char.setBodyAnimation('idle');
 
                   s.bubbleIdx = (s.bubbleIdx + 1) % s.bubbles.length;
-                  s.bubbleLbl.text = s.bubbles[s.bubbleIdx];
+                  s.bubbleText.text = s.bubbles[s.bubbleIdx];
+                  // Redraw bubble background to fit new text
+                  const pad = 10;
+                  const tailH = 8;
+                  const bw = s.bubbleText.width + pad * 2;
+                  const bh = s.bubbleText.height + pad * 2;
+                  s.bubbleText.position.set(0, -bh / 2 - tailH);
+                  s.bubbleBg.clear();
+                  s.bubbleBg.roundRect(-bw / 2, -bh - tailH, bw, bh, 10).fill(0xffffff);
+                  s.bubbleBg.roundRect(-bw / 2, -bh - tailH, bw, bh, 10).stroke({ width: 1.5, color: 0xe0e7ff });
+                  // Tail pointing down
+                  s.bubbleBg.moveTo(-5, -tailH).lineTo(0, 0).lineTo(5, -tailH).closePath().fill(0xffffff);
+                  s.bubbleBg.moveTo(-5, -tailH).lineTo(0, 0).stroke({ width: 1.5, color: 0xe0e7ff });
+                  s.bubbleBg.moveTo(5, -tailH).lineTo(0, 0).stroke({ width: 1.5, color: 0xe0e7ff });
                   s.bubbleShowTimer = 3;
 
                   const expIdx = Math.floor(Math.random() * s.expressions.length);
@@ -407,6 +436,8 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           cleanupRef.current = () => {
             resizeOb.disconnect();
             for (const s of charStates) s.char.dispose();
+            charStatesRef.current = null;
+            billboardRef.current = null;
           };
 
           if (!destroyed) setPhase('ready');
@@ -428,7 +459,29 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         app.destroy(true, { children: true, texture: true });
       } catch { /* */ }
     };
-  }, [visible, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- t is accessed via tRef to avoid full scene teardown on language change
+  }, [visible]);
+
+  // Live-update text when language changes (no scene teardown)
+  useEffect(() => {
+    // Update billboard text
+    const bb = billboardRef.current;
+    if (bb) bb.lbl.text = t('home.heroDesc');
+
+    // Update character name tags & bubble texts
+    const states = charStatesRef.current;
+    if (states) {
+      for (let i = 0; i < states.length; i++) {
+        const cfg = AGENT_SPINE_CONFIGS[i];
+        const s = states[i];
+        // Update name tag text (first Text child inside nameTag container)
+        const nameText = s.nameTag.children[1] as Text;
+        if (nameText) nameText.text = t(cfg.nameKey);
+        // Update cached bubble strings
+        s.bubbles = cfg.bubbleKeys.map((k) => t(k));
+      }
+    }
+  }, [t]);
 
   if (error) {
     return (

@@ -109,7 +109,7 @@ export async function generateDevlogArticle(input: DevlogInput): Promise<DevlogO
   const systemPrompt = buildSystemPrompt(locale);
   const userMessage = buildUserMessage(input.context, input.diffResult, locale);
 
-  const markdown = await askClaude(systemPrompt, userMessage, { maxTokens: 4096, agentId: 'devlog' });
+  const markdown = await askClaude(systemPrompt, userMessage, { maxTokens: 8192, agentId: 'devlog' });
 
   const title = extractTitle(markdown);
   const excerpt = extractExcerpt(markdown);
