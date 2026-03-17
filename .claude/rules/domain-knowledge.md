@@ -237,42 +237,71 @@ AdminActionSource: 'DASHBOARD' | 'AGENT' | 'API'
 AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM'
 ```
 
-- **LOCAL**: 휴대폰 번호 + 비밀번호
-- **KAKAO**: 카카오 OAuth2 (`/auth/kakao` → 카카오 인가코드 → `/auth/kakao/callback`)
-- **NAVER**: 네이버 OAuth2 (`/auth/naver` → 네이버 인가코드 → `/auth/naver/callback`)
-- **TELEGRAM**: 텔레그램 로그인 위젯 (`/auth/telegram`)
+### 인증 방식
+
+| 방식 | 플로우 | 비고 |
+|------|--------|------|
+| **LOCAL** | 휴대폰 번호 + 비밀번호 | bcrypt 해싱, 중복 가입 시 P2002 → 409 |
+| **KAKAO** | `/auth/kakao` → 카카오 인가코드 → `/auth/kakao/callback` → `#token` | REST API 키 사용 |
+| **NAVER** | `/auth/naver` → 네이버 인가코드 → `/auth/naver/callback` → `#token` | CSRF state 쿠키 검증 |
+| **TELEGRAM** | `/auth/telegram` → telegram.org OAuth → `/auth/callback#tgAuthResult` → 프론트 파싱 → `POST /auth/telegram/callback` | fragment 기반 (서버 직접 수신 불가) |
+
+### 텔레그램 로그인 플로우 (특수)
+
+```
+1. 프론트: /api/auth/telegram (GET) → 302 → https://oauth.telegram.org/auth?bot_id=...&return_to=.../auth/callback
+2. 사용자: 텔레그램에서 인증 승인
+3. 텔레그램: /auth/callback#tgAuthResult=<base64 JSON> 으로 리다이렉트
+4. AuthCallbackPage: fragment 파싱 → atob(tgAuthResult) → JSON → POST /api/auth/telegram/callback
+5. 백엔드: hash 검증 (SHA256 HMAC) → auth_date 만료 체크 → findOrCreateSocialUser → { token }
+6. 프론트: localStorage에 토큰 저장 → 홈으로 이동
+```
+
+**주의사항:**
+- 텔레그램 `id`는 Int로 전달됨 → `String()`으로 변환 필수 (Prisma String 타입)
+- `providerId` 검증: `@@unique([provider, providerId])` 인덱스가 중복 계정 방지
+- BotFather에서 `/setdomain` → `union.pryzm.gg` 설정 필수
+
+### 공통 사항
+
 - JWT: HS256, 기본 7일 만료, payload: `{ userId: string }`
 - 프론트엔드 저장: `localStorage['ft_token']` (`TOKEN_STORAGE_KEY`)
 - 비인증 접근 가능: 신고 목록, 신고 상세, 챗봇 세션
-- 소셜 로그인 시 `phone` 필드는 `social_kakao_{providerId}` 형식 placeholder 생성 (unique 제약 충족)
+- 소셜 로그인 시 `phone` 필드는 `social_{provider}_{providerId}` 형식 placeholder (unique 제약 충족)
+- 소셜 fallback 닉네임: `KakaoUser`, `NaverUser`, `TelegramUser` (locale 중립)
+- 프론트 콜백 페이지: `/auth/callback` (`AuthCallbackPage.tsx`) — `#token` 또는 `#tgAuthResult` 처리
 
 **라우트**
 ```
-POST   /api/auth/register           LOCAL 회원가입
-POST   /api/auth/login              LOCAL 로그인
-GET    /api/auth/kakao              카카오 OAuth 시작 → 리다이렉트
-GET    /api/auth/kakao/callback     카카오 콜백 → JWT 발급
-GET    /api/auth/naver              네이버 OAuth 시작 → 리다이렉트
-GET    /api/auth/naver/callback     네이버 콜백 → JWT 발급
-POST   /api/auth/telegram           텔레그램 로그인 검증 → JWT 발급
-GET    /api/auth/me                 현재 사용자 정보 (requireAuth)
+POST   /api/auth/register              LOCAL 회원가입 (P2002 → 409)
+POST   /api/auth/login                 LOCAL 로그인
+GET    /api/auth/kakao                 카카오 OAuth 시작 → 카카오 리다이렉트
+GET    /api/auth/kakao/callback        카카오 콜백 → /auth/callback#token 리다이렉트
+GET    /api/auth/naver                 네이버 OAuth 시작 → 네이버 리다이렉트
+GET    /api/auth/naver/callback        네이버 콜백 → /auth/callback#token 리다이렉트
+GET    /api/auth/telegram              텔레그램 OAuth 시작 → telegram.org 리다이렉트
+POST   /api/auth/telegram/callback     텔레그램 인증 데이터 검증 → { token }
+GET    /api/auth/me                    현재 사용자 정보 (requireAuth)
 ```
 
 **환경 변수**
 | 변수 | 용도 |
 |------|------|
-| `KAKAO_CLIENT_ID` | 카카오 REST API 키 |
+| `JWT_SECRET` | JWT 서명 키 (프로덕션 필수) |
+| `KAKAO_REST_API_KEY` | 카카오 REST API 키 |
+| `KAKAO_REDIRECT_URI` | 카카오 콜백 URI |
 | `NAVER_CLIENT_ID` | 네이버 Client ID |
 | `NAVER_CLIENT_SECRET` | 네이버 Client Secret |
 | `NAVER_REDIRECT_URI` | 네이버 콜백 URI |
-| `TELEGRAM_BOT_TOKEN` | 텔레그램 봇 토큰 |
+| `TELEGRAM_BOT_TOKEN` | 텔레그램 봇 토큰 (BotFather 발급) |
 
 **미들웨어**
 | 미들웨어 | 용도 |
 |---------|------|
 | `requireAuth` | 로그인 필수 → `req.user.userId` 세팅 |
 | `optionalAuth` | 토큰 있으면 `req.user` 세팅, 없어도 통과 |
-| `requireAdmin` | `X-Api-Key` 헤더만 허용 |
+| `requireAdmin` | `X-Api-Key` 헤더만 허용 (`ADMIN_API_KEY_HEADER` 상수) |
+| `authLimiter` | 로그인/회원가입 rate limit |
 
 ---
 
