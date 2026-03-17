@@ -329,20 +329,21 @@ export function registerAuthRoutes(router: Router) {
   router.get('/auth/telegram', (req, res) => {
     const botId = config.telegramBotToken.split(':')[0] ?? '';
     // return_to: 인증 완료 후 리다이렉트될 콜백 URL
-    const callbackUrl = `${req.protocol}://${req.get('host') ?? 'localhost'}/api/auth/telegram/callback`;
+    // return_to를 프론트 콜백 페이지로 지정 (텔레그램은 fragment로 데이터 전달)
+    const callbackUrl = `${config.siteUrl}/auth/callback`;
     const params = new URLSearchParams({
       bot_id: botId,
-      origin: config.webOrigin,
+      origin: config.siteUrl,
       return_to: callbackUrl,
       request_access: 'write',
     });
     res.redirect(`https://oauth.telegram.org/auth?${params.toString()}`);
   });
 
-  // 텔레그램 OAuth 콜백 (Telegram이 query string으로 auth data를 전달)
-  router.get('/auth/telegram/callback', async (req, res) => {
-    const query = req.query as Record<string, string>;
-    const { hash, ...authData } = query;
+  // 텔레그램 OAuth 콜백 — 프론트가 fragment를 파싱하여 POST로 전달
+  router.post('/auth/telegram/callback', async (req, res) => {
+    const body = req.body as Record<string, string>;
+    const { hash, ...authData } = body;
 
     if (!hash) {
       log.warn('Telegram callback: hash missing');
@@ -398,6 +399,6 @@ export function registerAuthRoutes(router: Router) {
     log.info({ userId: user.id, telegramId }, 'Telegram login success');
 
     const token = signToken(user.id);
-    redirectWithToken(res, token);
+    res.json({ token });
   });
 }
