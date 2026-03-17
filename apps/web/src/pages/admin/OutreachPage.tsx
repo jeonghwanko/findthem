@@ -23,6 +23,7 @@ interface OutreachRequestItem {
     email: string | null;
     videoId: string | null;
     videoTitle: string | null;
+    youtubeChannelUrl: string | null;
   };
 }
 
@@ -80,6 +81,13 @@ function ChannelIcon({ channel, contactType }: { channel: string; contactType?: 
   return <span className="text-lg leading-none">📨</span>;
 }
 
+function contactLink(contact: OutreachRequestItem['contact']): string | null {
+  if (contact.videoId) return `https://www.youtube.com/watch?v=${contact.videoId}`;
+  if (contact.youtubeChannelUrl) return contact.youtubeChannelUrl;
+  if (contact.email) return `mailto:${contact.email}`;
+  return null;
+}
+
 interface OutreachCardProps {
   item: OutreachRequestItem;
   onApprove: (id: string, content: string) => Promise<void>;
@@ -118,7 +126,18 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
         <ChannelIcon channel={item.channel} contactType={item.contact.type} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-gray-900 text-sm">{item.contact.name}</span>
+            {contactLink(item.contact) ? (
+              <a
+                href={contactLink(item.contact)!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 hover:underline text-sm"
+              >
+                {item.contact.name} ↗
+              </a>
+            ) : (
+              <span className="font-semibold text-gray-900 text-sm">{item.contact.name}</span>
+            )}
             {item.contact.organization && (
               <span className="text-gray-500 text-sm">{item.contact.organization}</span>
             )}
