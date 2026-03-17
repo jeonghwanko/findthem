@@ -153,7 +153,10 @@ export default function App() {
                   </div>
                   <LanguageSwitcher variant="light" />
                 </div>
-                <p className="text-xs text-gray-400">Supported by Supervlabs (856-87-02886)</p>
+                <div className="text-xs text-gray-400 space-y-0.5">
+                  <p>운영: 주식회사 슈퍼빌랩스 (Supervlabs Inc.) | 사업자등록번호: 856-87-02886</p>
+                  <p>대표: 이성준, 고정환 | 이메일: contact@supervlabs.io</p>
+                </div>
               </div>
             </footer>
             <BottomTab user={user} />
