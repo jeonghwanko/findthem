@@ -113,13 +113,32 @@ PromoUrgency:  'HIGH' | 'MEDIUM' | 'LOW'
 - `maxReposts`: 기본 3회
 
 **PromotionLog** (행동 로그)
-- 모든 홍보 액션을 기록 (게시, 재게시, 삭제, 메트릭 수집 등)
+- 모든 홍보 액션을 기록 (게시, 재게시, 삭제, 메트릭 수집, 광고 부스트 등)
 
 **Workers**
 - `promotionJob`: 문구 생성 + SNS 게시 + 메트릭 큐 등록
 - `promotionMonitorJob`: 게시 1시간 후 메트릭 수집
 - `promotionRepostJob`: 재게시 스캔/스케줄링 (ACTIVE 신고 주기 검사)
 - `cleanupJob`: FOUND 처리 시 SNS 게시물 삭제
+
+**라우트**
+```
+GET    /api/reports/:id/promotions          홍보 이력 조회 (requireAuth, 본인만)
+POST   /api/reports/:id/promotions/repost   수동 재홍보 (requireAuth, 본인만)
+GET    /api/reports/:id/boost-status        오늘 부스트 잔여 횟수 (requireAuth, 본인만)
+POST   /api/reports/:id/boost              광고 시청 후 SNS 재홍보 부스트 (requireAuth, 본인만)
+```
+
+**광고 부스트 (Ad Boost)**
+- 앱(네이티브 전용): Google AdMob 리워드 광고 시청 → SNS 재홍보 트리거
+- 하루 최대 `MAX_BOOSTS_PER_DAY = 3`회 (신고별, 본인 신고만)
+- `PromotionLog.action = 'ad_boost'`로 기록 — UTC 자정 기준 집계 (`utcDayStart()` 헬퍼)
+- 에러 코드: `BOOST_LIMIT_REACHED` (429)
+- **레이스 컨디션 방지**: `/boost` 엔드포인트는 count + log.create를 `$transaction` 안에서 원자적 처리
+- 프론트: `BoostButton` 컴포넌트 (`apps/web/src/components/BoostButton.tsx`)
+  - `useRef` 기반 동기 잠금(`isBoostingRef`)으로 더블클릭 방지
+  - 에러 분기: 429 → `boost.limitReached`, 기타 → `boost.error`
+- 훅: `useRewardAd` (`apps/web/src/hooks/useRewardAd.ts`) — AdMob 동적 import, 네이티브 전용
 
 ---
 
@@ -351,6 +370,8 @@ MATCH_RADIUS_KM = 50        // 매칭 반경 (km)
 MAX_FILE_SIZE = 10MB
 MAX_REPORT_PHOTOS = 5
 MAX_ADDITIONAL_PHOTOS = 3
+
+MAX_BOOSTS_PER_DAY = 3      // 신고당 광고 부스트 일일 한도
 ```
 
 ### 파일 업로드
@@ -519,16 +540,26 @@ POST   /api/sponsors/crypto/verify      크립토 온체인 검증
 ```
 
 **DB 모델**
-- `OutreachContact`: 기자/유튜버 연락처 (type: JOURNALIST | YOUTUBER)
-- `OutreachRequest`: 승인 워크플로우 (status: PENDING_APPROVAL → APPROVED → SENT | FAILED)
+- `OutreachContact`: 기자/유튜버 연락처 (type: JOURNALIST | YOUTUBER | VIDEO)
+  - VIDEO 타입: `videoId`(YouTube 영상 ID), `videoTitle`, `viewCount` 필드 사용
+- `OutreachRequest`: 승인 워크플로우 (status: PENDING_APPROVAL → APPROVED → SENDING → SENT | FAILED)
+  - `SENDING`: 원자적 선점 상태 — 다른 worker가 동시에 발송하지 않도록 방지
+  - getTodaySentCount는 SENT + SENDING 모두 카운트하여 일일 한도 race 방지
 
-**라우트** (관리자 전용)
+**라우트 — 관리자 전용**
 ```
 GET    /admin/outreach              대기 중 목록
 PATCH  /admin/outreach/:id/approve  승인 → 즉시 발송
 PATCH  /admin/outreach/:id/reject   거부
 POST   /admin/outreach/trigger      수동 스캔 실행
 ```
+
+**라우트 — 공개**
+```
+GET    /api/outreach/highlights     SENT 상태 아웃리치 중 videoId 있는 것 최대 10개 (홈페이지 유튜버 카드용)
+```
+- videoId 형식 검증: `/^[a-zA-Z0-9_-]{11}$/` (XSS 방지)
+- 인증 불필요, `routes/outreach.ts`에 구현
 
 **일일 한도**: 이메일 20건, YouTube 댓글 10건
 **환경변수**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CSE_API_KEY`, `GOOGLE_CSE_ID`, `YOUTUBE_API_KEY`
@@ -540,7 +571,9 @@ POST   /admin/outreach/trigger      수동 스캔 실행
 AI Agent와 회원들이 자유롭게 이야기 나누는 게시판.
 
 **DB 모델**
-- `CommunityPost`: 게시글 (userId/agentId, title, content, viewCount, isPinned)
+- `CommunityPost`: 게시글 (userId/agentId, title, content, viewCount, isPinned, deduplicationKey)
+  - `deduplicationKey`: AI 에이전트 일일 중복 게시 방지 키 (`@@unique([agentId, deduplicationKey])`)
+  - 형식: `{YYYY-MM-DD}_{agentAlias}_{reportName}` (예: `2026-03-18_claude_홍길동`)
 - `CommunityComment`: 댓글 (userId/agentId, content)
 
 **작성자 구분**

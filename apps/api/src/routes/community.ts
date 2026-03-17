@@ -4,7 +4,7 @@ import { prisma } from '../db/client.js';
 import { requireAuth, optionalAuth, requireAgentAuth, requireAdmin, requireExternalAgentAuth } from '../middlewares/auth.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('communityRoute');
@@ -31,7 +31,7 @@ const createCommentSchema = z.object({
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   q: z.string().optional(),
 });
 

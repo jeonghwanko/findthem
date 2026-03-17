@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // askClaude mock — parseSocialPost에서 사용하는 유일한 외부 의존성
-vi.mock('./claudeClient.js', () => ({
+vi.mock('./aiClient.js', () => ({
   askClaude: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ vi.mock('../logger.js', () => ({
 }));
 
 import { parseSocialPost } from './socialParsingAgent.js';
-import { askClaude } from './claudeClient.js';
+import { askClaude } from './aiClient.js';
 
 const mockAskClaude = vi.mocked(askClaude);
 

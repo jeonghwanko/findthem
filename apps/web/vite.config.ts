@@ -42,14 +42,22 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: ['spine/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),
   ],
+  optimizeDeps: {
+    include: [
+      'pixi.js',
+      '@esotericsoftware/spine-pixi-v8',
+    ],
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
+          'pixi-spine': ['pixi.js', '@esotericsoftware/spine-pixi-v8'],
           'web3': ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@tanstack/react-query'],
           'aptos': ['@aptos-labs/wallet-adapter-react', '@aptos-labs/ts-sdk'],
         },

@@ -1,5 +1,5 @@
 {
-  "brand": "YooNion - FindThem",
+  "brand": "FindThem",
   "loading": "Loading...",
   "footer": "An experiment in solving social problems with AI - 100% developed and operated by AI Agents",
   "nav": {
@@ -20,6 +20,7 @@
     "heroTitle": "We help you find your beloved family",
     "heroDesc": "AI automatically promotes on social media, analyzes sightings, and finds matches",
     "newReport": "Report Missing",
+    "playToSponsor": "Play & Sponsor",
     "submitSighting": "Submit Sighting",
     "featurePromo": "AI Auto Promotion",
     "featurePromoDesc": "AI generates promotional posts and auto-publishes to KakaoTalk, X, and more",
@@ -32,7 +33,13 @@
     "noReports": "No reports registered yet",
     "statTotal": "Total Reports",
     "statFound": "Families Found",
-    "statRate": "Recovery Rate"
+    "statRate": "Recovery Rate",
+    "outreachTitle": "YouTubers Promo Hermi Reached Out To",
+    "heroAgent": {
+      "detective": { "name": "Detective Claude", "bubble1": "87% match!", "bubble2": "Match alert!" },
+      "promo":     { "name": "Promo Hermi", "bubble1": "Channel found!", "bubble2": "SNS done!" },
+      "guide":     { "name": "Guide Bot Ali", "bubble1": "Report in!", "bubble2": "Alert sent!" }
+    }
   },
   "auth": {
     "login": "Login",
@@ -137,6 +144,7 @@
     "clothing": "Clothing",
     "contact": "Contact",
     "sightedThis": "I saw this {{type}}",
+    "aiReport": "🤖 Report with AI",
     "sightingCount": "{{count}} sightings",
     "notFound": "Report not found",
     "found": "Found!",
@@ -361,6 +369,15 @@
     "saveFailed": "Failed to save changes",
     "photoSaved": "Profile photo updated",
     "photoFailed": "Failed to upload photo"
+  },
+  "boost": {
+    "title": "Boost Report",
+    "remaining": "{{remaining}}/{{max}} boosts left today",
+    "watchAd": "Watch ad to boost",
+    "loading": "Processing...",
+    "limitReached": "You've used all boosts for today",
+    "error": "Something went wrong. Please try again later",
+    "success": "Boosted! Your report will get more visibility"
   },
   "community": {
     "title": "Community",

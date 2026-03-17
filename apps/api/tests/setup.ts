@@ -28,6 +28,8 @@ vi.mock('../src/db/client.js', () => {
     sightingPhoto: createModelMock(),
     match: createModelMock(),
     promotion: createModelMock(),
+    promotionLog: createModelMock(),
+    promotionStrategy: createModelMock(),
     chatSession: createModelMock(),
     chatMessage: createModelMock(),
     adminAuditLog: createModelMock(),

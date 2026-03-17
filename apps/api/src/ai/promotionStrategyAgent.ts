@@ -1,4 +1,4 @@
-import { askClaude, askClaudeWithImage } from './claudeClient.js';
+import { askClaude, askClaudeWithImage } from './aiClient.js';
 import {
   getSubjectTypeLabel,
   REPOST_INTERVAL_HIGH,
@@ -102,8 +102,8 @@ export async function determineStrategy(
 
   try {
     const result = photoBase64
-      ? await askClaudeWithImage(STRATEGY_SYSTEM_PROMPT, photoBase64, context, { maxTokens: 512 })
-      : await askClaude(STRATEGY_SYSTEM_PROMPT, context, { maxTokens: 512 });
+      ? await askClaudeWithImage(STRATEGY_SYSTEM_PROMPT, photoBase64, context, { maxTokens: 512, agentId: 'promotion' })
+      : await askClaude(STRATEGY_SYSTEM_PROMPT, context, { maxTokens: 512, agentId: 'promotion' });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return DEFAULT_STRATEGY;

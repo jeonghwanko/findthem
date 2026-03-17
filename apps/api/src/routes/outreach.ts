@@ -1,13 +1,14 @@
 import type { Router } from 'express';
 import { prisma } from '../db/client.js';
+import { YT_VIDEO_ID_RE } from '@findthem/shared';
 
 export function registerOutreachRoutes(router: Router) {
   // 공개 엔드포인트 — 인증 불필요
-  // SENT/APPROVED 아웃리치 중 videoId 있는 것 최대 10개 반환
-  router.get('/outreach/highlights', async (req, res) => {
+  // SENT 아웃리치 중 videoId 있는 것 최대 10개 반환
+  router.get('/outreach/highlights', async (_req, res) => {
     const requests = await prisma.outreachRequest.findMany({
       where: {
-        status: { in: ['SENT', 'APPROVED'] },
+        status: 'SENT',
         contact: { videoId: { not: null } },
       },
       select: {
@@ -26,7 +27,7 @@ export function registerOutreachRoutes(router: Router) {
 
     const items = requests
       .filter((r): r is typeof r & { contact: { videoId: string } } =>
-        r.contact.videoId !== null,
+        r.contact.videoId !== null && YT_VIDEO_ID_RE.test(r.contact.videoId),
       )
       .map((r) => ({
         videoId: r.contact.videoId,

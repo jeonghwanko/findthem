@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { askClaude } from '../ai/claudeClient.js';
+import { askClaude } from '../ai/aiClient.js';
 import { prisma } from '../db/client.js';
 import { imageQueue } from '../jobs/queues.js';
 import {
@@ -351,7 +351,7 @@ export class ChatbotEngine {
       const result = await askClaude(
         prompt.system,
         `${prompt.userPrefix}: ${subjectType}\n${rawDesc}`,
-        { maxTokens: 256 },
+        { maxTokens: 256, agentId: 'chatbot' },
       );
       return result;
     } catch {

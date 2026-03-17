@@ -36,7 +36,7 @@ import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
 
@@ -74,7 +74,7 @@ const adminReportQuerySchema = z.object({
   subjectType: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 const adminReportStatusSchema = z.object({
@@ -86,7 +86,7 @@ const adminMatchQuerySchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED']).optional(),
   minConfidence: z.coerce.number().min(0).max(1).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 const adminMatchStatusSchema = z.object({
@@ -101,7 +101,7 @@ const adminUserQuerySchema = z.object({
     .transform((v) => v === 'true')
     .optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 const adminBlockSchema = z.object({
@@ -651,7 +651,7 @@ export function registerAdminRoutes(router: Router) {
   const outreachQuerySchema = z.object({
     status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'SENT', 'REJECTED', 'FAILED']).optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
+    limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
 
   const outreachApproveSchema = z.object({
@@ -662,7 +662,7 @@ export function registerAdminRoutes(router: Router) {
   const outreachContactQuerySchema = z.object({
     type: z.enum(['JOURNALIST', 'YOUTUBER']).optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
+    limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
 
   const outreachContactCreateSchema = z.object({
@@ -897,7 +897,7 @@ export function registerAdminRoutes(router: Router) {
     limit: z.coerce.number().int().min(1).max(200).default(50),
   });
 
-  const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog'];
+  const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog', 'social-parsing'];
   const PROVIDER_MODELS: Record<string, string[]> = {
     anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
     gemini: ['gemini-2.5-flash', 'gemini-2.5-pro'],
@@ -1162,7 +1162,7 @@ export function registerAdminRoutes(router: Router) {
 
   const externalAgentListQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
+    limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
 
   // GET /admin/external-agents

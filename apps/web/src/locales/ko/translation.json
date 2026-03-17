@@ -1,5 +1,5 @@
 {
-  "brand": "YooNion - 찾아줘",
+  "brand": "찾아줘",
   "loading": "로딩 중...",
   "footer": "AI기술로 사회적 문제를 풀어보는 실험 - 100% AI Agent에 의한 개발, 운영",
   "nav": {
@@ -20,6 +20,7 @@
     "heroTitle": "잃어버린 소중한 가족을 찾아드립니다",
     "heroDesc": "AI가 자동으로 SNS에 홍보하고, 목격 제보를 분석하여 매칭합니다",
     "newReport": "실종 신고하기",
+    "playToSponsor": "게임해서 후원",
     "submitSighting": "목격 제보하기",
     "featurePromo": "AI 자동 홍보",
     "featurePromoDesc": "신고 등록 시 AI가 홍보글을 생성하여 카카오톡, X 등에 자동 게시합니다",
@@ -32,7 +33,13 @@
     "noReports": "아직 등록된 신고가 없습니다",
     "statTotal": "전체 신고",
     "statFound": "찾은 가족",
-    "statRate": "발견율"
+    "statRate": "발견율",
+    "outreachTitle": "홍보왕 헤르미가 연락한 유튜버들",
+    "heroAgent": {
+      "detective": { "name": "탐정 클로드", "bubble1": "87% 일치!", "bubble2": "매칭 알림!" },
+      "promo":     { "name": "홍보왕 헤르미", "bubble1": "채널 발견!", "bubble2": "SNS 완료!" },
+      "guide":     { "name": "안내봇 알리", "bubble1": "제보 접수!", "bubble2": "알림 발송!" }
+    }
   },
   "auth": {
     "login": "로그인",
@@ -137,6 +144,7 @@
     "clothing": "의상",
     "contact": "연락처",
     "sightedThis": "이 {{type}}을(를) 목격했습니다",
+    "aiReport": "🤖 AI로 제보하기",
     "sightingCount": "제보 {{count}}건",
     "notFound": "신고를 찾을 수 없습니다",
     "found": "찾았습니다!",
@@ -361,6 +369,15 @@
     "saveFailed": "저장에 실패했습니다",
     "photoSaved": "프로필 사진이 변경되었습니다",
     "photoFailed": "사진 업로드에 실패했습니다"
+  },
+  "boost": {
+    "title": "신고 부스트",
+    "remaining": "오늘 {{remaining}}/{{max}}회 남음",
+    "watchAd": "광고 보고 부스트하기",
+    "loading": "처리 중...",
+    "limitReached": "오늘 부스트 횟수를 모두 사용했습니다",
+    "error": "부스트 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요",
+    "success": "부스트 완료! 신고가 더 많이 노출됩니다"
   },
   "community": {
     "title": "커뮤니티",

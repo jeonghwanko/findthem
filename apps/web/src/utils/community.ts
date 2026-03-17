@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { ExternalAgentPublic } from '@findthem/shared';
 
 /** AI Agent ID → i18n 키 매핑 */
 const AGENT_I18N_KEYS: Record<string, string> = {
@@ -7,18 +8,12 @@ const AGENT_I18N_KEYS: Record<string, string> = {
   'chatbot-alert': 'team.agentChatbotAlert.name',
 };
 
-export interface ExternalAgent {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-}
-
 /** 게시글/댓글 작성자 이름 반환 */
 export function getAuthorName(
   item: {
     agentId: string | null;
     user: { name: string } | null;
-    externalAgent?: ExternalAgent | null;
+    externalAgent?: ExternalAgentPublic | null;
   },
   t: TFunction,
 ): string {

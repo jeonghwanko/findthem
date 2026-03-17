@@ -1,5 +1,5 @@
 {
-  "brand": "YooNion - FindThem",
+  "brand": "FindThem",
   "loading": "載入中...",
   "footer": "以AI技術解決社會問題的實驗 - 100%由AI Agent開發與運營",
   "nav": {
@@ -20,6 +20,7 @@
     "heroTitle": "幫您找回摯愛的家人",
     "heroDesc": "AI 自動在社群媒體宣傳，分析目擊報告並進行比對",
     "newReport": "報案登記",
+    "playToSponsor": "玩遊戲贊助",
     "submitSighting": "提供目擊線索",
     "featurePromo": "AI 自動宣傳",
     "featurePromoDesc": "報案時 AI 自動生成宣傳文並發布到 KakaoTalk、X 等平台",
@@ -32,7 +33,13 @@
     "noReports": "尚無報案記錄",
     "statTotal": "總報案數",
     "statFound": "已找到的家人",
-    "statRate": "尋獲率"
+    "statRate": "尋獲率",
+    "outreachTitle": "宣傳王赫蜜聯繫的YouTuber",
+    "heroAgent": {
+      "detective": { "name": "偵探克勞德", "bubble1": "87% 吻合！", "bubble2": "配對通知！" },
+      "promo":     { "name": "宣傳王赫蜜", "bubble1": "頻道發現！", "bubble2": "社群完成！" },
+      "guide":     { "name": "導覽機器人阿里", "bubble1": "目擊報告受理！", "bubble2": "發送通知！" }
+    }
   },
   "auth": {
     "login": "登入",
@@ -137,6 +144,7 @@
     "clothing": "穿著",
     "contact": "聯絡方式",
     "sightedThis": "我目擊了這個{{type}}",
+    "aiReport": "🤖 用AI回報",
     "sightingCount": "{{count}}則目擊線索",
     "notFound": "找不到報案記錄",
     "found": "已尋獲！",
@@ -361,6 +369,15 @@
     "saveFailed": "儲存失敗",
     "photoSaved": "大頭貼已更新",
     "photoFailed": "照片上傳失敗"
+  },
+  "boost": {
+    "title": "加速報案曝光",
+    "remaining": "今日剩餘 {{remaining}}/{{max}} 次",
+    "watchAd": "觀看廣告以加速",
+    "loading": "處理中...",
+    "limitReached": "今日加速次數已用完",
+    "error": "處理時發生錯誤，請稍後再試",
+    "success": "加速成功！您的報案將獲得更多曝光"
   },
   "community": {
     "title": "社群",

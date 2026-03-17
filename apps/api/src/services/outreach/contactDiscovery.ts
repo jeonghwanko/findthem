@@ -462,25 +462,17 @@ export async function discoverAndSaveContacts(
     'Discovered contacts',
   );
 
-  const contactIds: string[] = [];
-  let journalistCount = 0;
-  let youtuberCount = 0;
+  const [journalistResults, youtuberResults] = await Promise.all([
+    Promise.all(journalists.map((contact) => upsertContact(contact))),
+    Promise.all(youtubers.map((contact) => upsertContact(contact))),
+  ]);
 
-  for (const contact of journalists) {
-    const id = await upsertContact(contact);
-    if (id) {
-      contactIds.push(id);
-      journalistCount++;
-    }
-  }
+  const journalistIds = journalistResults.filter((id): id is string => id !== null);
+  const youtuberIds = youtuberResults.filter((id): id is string => id !== null);
 
-  for (const contact of youtubers) {
-    const id = await upsertContact(contact);
-    if (id) {
-      contactIds.push(id);
-      youtuberCount++;
-    }
-  }
-
-  return { contactIds, journalistCount, youtuberCount };
+  return {
+    contactIds: [...journalistIds, ...youtuberIds],
+    journalistCount: journalistIds.length,
+    youtuberCount: youtuberIds.length,
+  };
 }

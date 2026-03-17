@@ -4,11 +4,11 @@ import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 
 const matchesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 export function registerMatchRoutes(router: Router) {

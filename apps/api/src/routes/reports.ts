@@ -8,7 +8,7 @@ import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue, cleanupQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import { postAli } from '../services/communityAgentService.js';
 import { createLogger } from '../logger.js';
 
@@ -45,7 +45,7 @@ const createReportSchema = z.object({
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   type: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
   status: z.enum(['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED']).optional(),
   q: z.string().optional(),
@@ -252,7 +252,7 @@ export function registerReportRoutes(router: Router) {
   // 내 신고 목록 (⚠️ /reports/:id 보다 먼저 등록)
   const mineQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
+    limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
 
   router.get('/reports/mine', requireAuth, validateQuery(mineQuerySchema), async (req, res) => {

@@ -4,7 +4,7 @@ import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -43,7 +43,7 @@ const cryptoVerifySchema = z.object({
 
 const listQuerySchema = z.object({
   agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(100).default(DEFAULT_PAGE_SIZE),
 });
 
 const prepareSchema = z.object({

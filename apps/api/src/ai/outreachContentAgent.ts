@@ -96,7 +96,7 @@ ${report.aiDescription ? `- AI 분석 설명: ${report.aiDescription}` : ''}
   try {
     const result = await askClaude(EMAIL_SYSTEM_PROMPT, userMessage, {
       maxTokens: 1024,
-      agentId: 'promotion',
+      agentId: 'outreach',
     });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
@@ -152,7 +152,7 @@ export async function generateYouTubeComment(
   try {
     const result = await askClaude(COMMENT_SYSTEM_PROMPT, userMessage, {
       maxTokens: 256,
-      agentId: 'promotion',
+      agentId: 'outreach',
     });
     const trimmed = result.trim();
     if (!trimmed || trimmed.length < 10) return defaultComment;
@@ -202,7 +202,7 @@ export async function generateVideoComment(
   try {
     const result = await askClaude(VIDEO_COMMENT_SYSTEM_PROMPT, userMessage, {
       maxTokens: 256,
-      agentId: 'promotion',
+      agentId: 'outreach',
     });
     const trimmed = result.trim();
     if (!trimmed || trimmed.length < 10) return defaultComment;

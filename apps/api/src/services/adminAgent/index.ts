@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { Prisma } from '@prisma/client';
-import { getClaudeClient } from '../../ai/claudeClient.js';
+import { getClaudeClient } from '../../ai/aiClient.js';
+import { getModelName } from '../../ai/aiSettings.js';
 import { config } from '../../config.js';
 import { prisma } from '../../db/client.js';
 import { ApiError, ADMIN_AGENT_MAX_TURNS, ADMIN_AGENT_MAX_TOKENS, ERROR_CODES } from '@findthem/shared';
@@ -75,7 +76,8 @@ export class AdminAgentService {
     ];
 
     // 3. Claude tool_use 루프
-    const claude = getClaudeClient();
+    const claude = await getClaudeClient();
+    const model = await getModelName('admin') ?? config.claudeModel;
     const toolResults: { tool: string; input: unknown; output: unknown }[] = [];
     let response!: Anthropic.Messages.Message;
     let turns = 0;
@@ -87,7 +89,7 @@ export class AdminAgentService {
         try {
           response = await claude.messages.create(
             {
-              model: config.claudeModel,
+              model,
               max_tokens: ADMIN_AGENT_MAX_TOKENS,
               system: ADMIN_AGENT_SYSTEM_PROMPT,
               tools: ADMIN_TOOL_DEFINITIONS,

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Bot, Trash2, Edit2, Eye, MessageSquare } from 'lucide-react';
+import { type ExternalAgentPublic } from '@findthem/shared';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { getAuthorName, type ExternalAgent } from '../utils/community';
+import { getAuthorName } from '../utils/community';
 
 interface Comment {
   id: string;
@@ -13,7 +14,7 @@ interface Comment {
   agentId: string | null;
   content: string;
   user: { id: string; name: string } | null;
-  externalAgent: ExternalAgent | null;
+  externalAgent: ExternalAgentPublic | null;
   createdAt: string;
 }
 
@@ -26,7 +27,7 @@ interface PostDetail {
   userId: string | null;
   agentId: string | null;
   user: { id: string; name: string } | null;
-  externalAgent: ExternalAgent | null;
+  externalAgent: ExternalAgentPublic | null;
   _count: { comments: number };
   comments: Comment[];
   createdAt: string;

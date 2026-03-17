@@ -23,7 +23,7 @@ async function getTodaySentCount(channel: string): Promise<number> {
   return prisma.outreachRequest.count({
     where: {
       channel,
-      status: 'SENT',
+      status: { in: ['SENT', 'SENDING'] },
       sentAt: { gte: startOfDay },
     },
   });
@@ -172,6 +172,18 @@ async function createChannelOutreachRequests(
 // ── send-outreach handler ──
 
 async function handleSendOutreach(outreachRequestId: string): Promise<void> {
+  // 원자적 선점: APPROVED → SENDING 전환 (동시 worker 중복 처리 방지)
+  const now = new Date();
+  const claimed = await prisma.outreachRequest.updateMany({
+    where: { id: outreachRequestId, status: 'APPROVED' },
+    data: { status: 'SENDING', sentAt: now },
+  });
+
+  if (claimed.count === 0) {
+    log.info({ outreachRequestId }, 'OutreachRequest already being processed or not approved, skipping');
+    return;
+  }
+
   const request = await prisma.outreachRequest.findUnique({
     where: { id: outreachRequestId },
     include: {
@@ -185,22 +197,21 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
   });
 
   if (!request) {
-    log.warn({ outreachRequestId }, 'OutreachRequest not found');
+    log.warn({ outreachRequestId }, 'OutreachRequest not found after claim');
     return;
   }
 
-  if (request.status !== 'APPROVED') {
-    log.warn({ outreachRequestId, status: request.status }, 'Request not approved, skipping send');
-    return;
-  }
-
-  // daily limit check
+  // daily limit check (SENDING도 포함하여 카운트)
   const channel = request.channel;
   const dailyLimit = channel === 'EMAIL' ? OUTREACH_EMAIL_DAILY_LIMIT : OUTREACH_COMMENT_DAILY_LIMIT;
   const sentToday = await getTodaySentCount(channel);
 
-  if (sentToday >= dailyLimit) {
-    log.warn({ outreachRequestId, channel, sentToday, dailyLimit }, 'Daily limit reached, keeping APPROVED for next run');
+  if (sentToday > dailyLimit) {
+    log.warn({ outreachRequestId, channel, sentToday, dailyLimit }, 'Daily limit reached, rolling back to APPROVED');
+    await prisma.outreachRequest.updateMany({
+      where: { id: outreachRequestId, status: 'SENDING' },
+      data: { status: 'APPROVED', sentAt: null },
+    });
     return;
   }
 
@@ -242,8 +253,8 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       throw new Error(`Unsupported channel: ${channel}`);
     }
 
-    await prisma.outreachRequest.update({
-      where: { id: outreachRequestId },
+    await prisma.outreachRequest.updateMany({
+      where: { id: outreachRequestId, status: 'SENDING' },
       data: {
         status: 'SENT',
         sentAt: new Date(),
@@ -271,10 +282,11 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
     const errorMessage = err instanceof Error ? err.message : String(err);
     log.error({ err, outreachRequestId }, 'Failed to send outreach');
 
-    await prisma.outreachRequest.update({
-      where: { id: outreachRequestId },
+    await prisma.outreachRequest.updateMany({
+      where: { id: outreachRequestId, status: 'SENDING' },
       data: {
         status: 'FAILED',
+        sentAt: null,
         errorMessage,
       },
     });

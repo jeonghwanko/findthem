@@ -8,7 +8,7 @@ import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, ERROR_CODES } from '@findthem/shared';
+import { MAX_FILE_SIZE, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -35,7 +35,7 @@ const createSightingSchema = z.object({
 
 const sightingListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
   radiusKm: z.coerce.number().min(1).max(200).default(50).optional(),

@@ -1,4 +1,4 @@
-import { askClaude } from './claudeClient.js';
+import { askClaude } from './aiClient.js';
 import { MIN_VIEWS_FOR_GOOD_PERFORMANCE, type PromotionMetrics, type PromoPlatform } from '@findthem/shared';
 
 export interface PerformanceAnalysisResult {
@@ -48,7 +48,7 @@ export async function analyzePerformance(
   ].join('\n');
 
   try {
-    const result = await askClaude(FEEDBACK_SYSTEM_PROMPT, context, { maxTokens: 512 });
+    const result = await askClaude(FEEDBACK_SYSTEM_PROMPT, context, { maxTokens: 512, agentId: 'promotion' });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return DEFAULT_RESULT;

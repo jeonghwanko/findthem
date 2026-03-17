@@ -1,4 +1,3 @@
-import '@esotericsoftware/spine-pixi-v8';
 import {
   AtlasAttachmentLoader,
   SkeletonBinary,
@@ -8,26 +7,45 @@ import {
   Skin,
   type SkeletonData,
 } from '@esotericsoftware/spine-pixi-v8';
-import { Assets, Texture } from 'pixi.js';
+import { Assets, type Texture } from 'pixi.js';
 
 const SPINE_BASE = '/spine/';
-const ATLAS_PAGES = ['human_type.png', 'human_type_2.png', 'human_type_3.png'];
+const ATLAS_PAGES = ['human_type.webp', 'human_type_2.webp', 'human_type_3.webp'];
 const SKELETON_URL = `${SPINE_BASE}human_type.skel.bytes`;
 const ATLAS_URL = `${SPINE_BASE}human_type.atlas.txt`;
 
-// Shared caches — reused across all instances
+// Shared caches
 const atlasTextureCache = new Map<string, SpineTexture>();
 const textureLoadingPromises = new Map<string, Promise<void>>();
 let sharedSkeletonData: SkeletonData | null = null;
 let skeletonPromise: Promise<SkeletonData> | null = null;
 
+/**
+ * Load texture via blob → dataURL → Assets.load (same as pryzm town).
+ * This ensures Pixi correctly detects the MIME type from the dataURL prefix.
+ */
 async function ensureTexture(file: string): Promise<void> {
   if (atlasTextureCache.has(file)) return;
 
   let loadPromise = textureLoadingPromises.get(file);
   if (!loadPromise) {
     loadPromise = (async () => {
-      const pixiTexture = await Assets.load<Texture>(`${SPINE_BASE}${file}`);
+      const url = `${SPINE_BASE}${file}`;
+
+      // Fetch as blob
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`Failed to fetch texture ${file}: ${resp.status}`);
+      const blob = await resp.blob();
+
+      // Convert blob → dataURL so Pixi detects MIME type
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const pixiTexture = await Assets.load<Texture>(dataUrl);
       atlasTextureCache.set(file, SpineTexture.from(pixiTexture.source));
     })().finally(() => {
       textureLoadingPromises.delete(file);
@@ -41,6 +59,7 @@ async function loadAtlas(): Promise<TextureAtlas> {
   await Promise.all(ATLAS_PAGES.map(ensureTexture));
 
   const response = await fetch(ATLAS_URL);
+  if (!response.ok) throw new Error(`Failed to fetch atlas: ${response.status}`);
   const atlasText = await response.text();
   if (!atlasText) throw new Error('Empty atlas text');
 
@@ -55,6 +74,7 @@ async function loadAtlas(): Promise<TextureAtlas> {
 
 async function loadSkeletonBinary(): Promise<Uint8Array> {
   const response = await fetch(SKELETON_URL);
+  if (!response.ok) throw new Error(`Failed to fetch skeleton: ${response.status}`);
   const buffer = await response.arrayBuffer();
   if (buffer.byteLength === 0) throw new Error('Empty skeleton binary');
   return new Uint8Array(buffer);
@@ -103,9 +123,10 @@ export class SpineCharacterLite {
     return skeletonPromise;
   }
 
-  static async create(skinNames: string[] = []): Promise<SpineCharacterLite> {
+  static async create(skinNames: readonly string[] = []): Promise<SpineCharacterLite> {
     const skeletonData = await SpineCharacterLite.getSkeletonData();
     const spine = new Spine({ skeletonData, autoUpdate: false });
+    spine.scale.set(1.0);
     spine.state.setAnimation(0, 'idle', true);
 
     const char = new SpineCharacterLite(spine);
@@ -113,7 +134,6 @@ export class SpineCharacterLite {
     return char;
   }
 
-  /** Call when completely leaving the scene to free memory. */
   static resetCache() {
     sharedSkeletonData = null;
     skeletonPromise = null;
@@ -136,7 +156,6 @@ export class SpineCharacterLite {
     if (this.disposed) return false;
     const anim = this.view.skeleton.data.findAnimation(name);
     if (!anim) return false;
-
     this.view.state.setAnimation(this.expressionTrackIndex, name, false);
     this.view.state.addEmptyAnimation(this.expressionTrackIndex, 0.2, 0);
     this.isPlayingExpression = true;
@@ -154,7 +173,7 @@ export class SpineCharacterLite {
     return this.isPlayingExpression;
   }
 
-  applySkins(skinNames: string[]) {
+  applySkins(skinNames: readonly string[]) {
     if (this.disposed) return;
     const normalized = Array.from(new Set(skinNames)).sort();
     const sig = normalized.join('|');
@@ -190,6 +209,7 @@ export class SpineCharacterLite {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.view.state.clearListeners();
     this.view.destroy({ children: true });
   }
 }

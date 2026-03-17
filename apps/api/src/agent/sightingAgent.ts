@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { AGENT_MAX_TOOL_ROUNDS, ERROR_CODES, ApiError, type AgentResponse, type AgentToolCall, type ChatPlatform } from '@findthem/shared';
-import { getClaudeClient } from '../ai/claudeClient.js';
+import { getClaudeClient } from '../ai/aiClient.js';
+import { getModelName } from '../ai/aiSettings.js';
 import { config } from '../config.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
@@ -31,7 +32,8 @@ export class SightingAgent {
       throw new ApiError(400, ERROR_CODES.MESSAGE_TOO_LONG);
     }
 
-    const claude = getClaudeClient();
+    const claude = await getClaudeClient();
+    const model = await getModelName('image-matching') ?? config.claudeModel;
 
     // 1. 기존 대화 히스토리 로드
     const history = await loadAsClaudeMessages(ctx.sessionId);
@@ -84,7 +86,7 @@ export class SightingAgent {
         try {
           response = await claude.messages.create(
             {
-              model: config.claudeModel,
+              model,
               max_tokens: 1024,
               system: SIGHTING_AGENT_SYSTEM_PROMPT,
               tools: SIGHTING_TOOLS,

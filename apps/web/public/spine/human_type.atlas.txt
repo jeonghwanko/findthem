@@ -1,4 +1,4 @@
-human_type.png
+human_type.webp
 size:4096,4096
 filter:Linear,Linear
 pma:true
@@ -10182,7 +10182,7 @@ bounds:3297,3411,224,224
 weapon/weapon_basic_01
 bounds:3524,3411,224,224
 
-human_type_2.png
+human_type_2.webp
 size:4096,4096
 filter:Linear,Linear
 pma:true
@@ -16478,7 +16478,7 @@ bounds:3731,2456,148,139
 weapon/weapon_1002
 bounds:693,2645,146,190
 
-human_type_3.png
+human_type_3.webp
 size:4096,4096
 filter:Linear,Linear
 pma:true

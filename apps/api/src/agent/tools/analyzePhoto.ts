@@ -1,5 +1,5 @@
 import type { SubjectType } from '@findthem/shared';
-import { askClaudeWithImage } from '../../ai/claudeClient.js';
+import { askClaudeWithImage } from '../../ai/aiClient.js';
 import { imageService } from '../../services/imageService.js';
 
 export interface PhotoAnalysisResult {
@@ -39,7 +39,7 @@ export async function analyzePhoto(
       systemPrompt,
       base64,
       `${subjectHint}. 이 이미지를 분석하여 JSON으로 응답하세요.`,
-      { maxTokens: 512 },
+      { maxTokens: 512, agentId: 'image-matching' },
     );
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);

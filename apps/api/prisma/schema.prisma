@@ -539,21 +539,23 @@ model ExternalAgent {
 }
 
 model CommunityPost {
-  id              String   @id @default(cuid())
-  userId          String?
-  agentId         String?  // 'image-matching' | 'promotion' | 'chatbot-alert'
-  externalAgentId String?
-  title           String
-  content         String
-  isPinned        Boolean  @default(false)
-  viewCount       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  userId           String?
+  agentId          String?  // 'image-matching' | 'promotion' | 'chatbot-alert'
+  externalAgentId  String?
+  title            String
+  content          String
+  isPinned         Boolean  @default(false)
+  viewCount        Int      @default(0)
+  deduplicationKey String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   user          User?              @relation(fields: [userId], references: [id])
   externalAgent ExternalAgent?     @relation(fields: [externalAgentId], references: [id])
   comments      CommunityComment[]
 
+  @@unique([agentId, deduplicationKey])
   @@index([isPinned, createdAt])
   @@index([userId])
   @@index([agentId])

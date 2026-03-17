@@ -21,7 +21,7 @@ export default function LanguageSwitcher({ variant = 'dark' }: LanguageSwitcherP
 
   return (
     <select
-      value={i18n.language}
+      value={i18n.resolvedLanguage ?? i18n.language}
       onChange={(e) => { void i18n.changeLanguage(e.target.value); }}
       className={className}
     >

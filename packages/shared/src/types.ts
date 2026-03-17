@@ -380,6 +380,7 @@ export interface CommunityPostSummary {
   user: { id: string; name: string } | null;
   _count: { comments: number };
   createdAt: string;
+  externalAgent?: ExternalAgentPublic | null;
 }
 
 export interface CommunityPostDetail extends CommunityPostSummary {
@@ -403,6 +404,12 @@ export interface ExternalAgentPublic {
   name: string;
   description: string | null;
   avatarUrl: string | null;
+}
+
+export interface ExternalAgentAdmin extends ExternalAgentPublic {
+  isActive: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 // ── Sponsor ──

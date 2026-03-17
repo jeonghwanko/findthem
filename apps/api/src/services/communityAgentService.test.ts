@@ -121,20 +121,25 @@ describe('communityAgentService', () => {
       expect(callArg.data.title).toContain('85%');
     });
 
-    it('당일 중복 방지: count=1 반환 시 create 미호출', async () => {
-      prismaMock.communityPost.count.mockResolvedValue(1);
-
+    it('deduplicationKey가 create 데이터에 포함됨', async () => {
       await postClaude('초코', 0.9, '서울시 강남구', 'DOG');
 
-      expect(prismaMock.communityPost.create).not.toHaveBeenCalled();
+      const callArg = prismaMock.communityPost.create.mock.calls[0][0];
+      expect(callArg.data).toHaveProperty('deduplicationKey');
+      expect(typeof callArg.data.deduplicationKey).toBe('string');
+      expect(callArg.data.deduplicationKey).toContain('claude');
+      expect(callArg.data.deduplicationKey).toContain('초코');
     });
 
-    it('count=0이면 create 호출', async () => {
-      prismaMock.communityPost.count.mockResolvedValue(0);
+    it('당일 중복(P2002) 시 에러 throw 없이 처리됨', async () => {
+      const p2002 = Object.assign(new Error('Unique constraint failed'), {
+        code: 'P2002',
+        clientVersion: '5.0.0',
+      });
+      // Prisma.PrismaClientKnownRequestError 인스턴스처럼 code 속성 보유
+      prismaMock.communityPost.create.mockRejectedValue(p2002);
 
-      await postClaude('바둑이', 0.75, '부산시 해운대구', 'DOG');
-
-      expect(prismaMock.communityPost.create).toHaveBeenCalledOnce();
+      await expect(postClaude('초코', 0.9, '서울시 강남구', 'DOG')).resolves.toBeUndefined();
     });
 
     it('AI 실패 시 fallback 텍스트로 게시', async () => {

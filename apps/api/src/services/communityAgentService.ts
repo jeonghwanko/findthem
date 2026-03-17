@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { askClaude } from '../ai/aiClient.js';
 import { createLogger } from '../logger.js';
@@ -20,6 +21,10 @@ function getSubjectLabel(subjectType: SubjectType | string): string {
 
 function safeName(s: string): string {
   return s.slice(0, 50);
+}
+
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }
 
 async function generateContent(systemPrompt: string, userMessage: string, agentId: string): Promise<string | null> {
@@ -63,19 +68,23 @@ export async function postHeimi(
 커뮤니티에 올릴 짧고 재미있는 보고 글을 써줘.`;
 
   const content = await generateContent(HEIMI_SYSTEM, userMsg, AGENT_IDS.HEIMI) ?? fallback;
+  const deduplicationKey = `${formatDate(new Date())}_heimi_${safeName_}_${channel}`;
 
-  try {
-    await prisma.communityPost.create({
-      data: {
-        agentId: AGENT_IDS.HEIMI,
-        title: `헤르미 보고 🐾 — '${safeName_}' 홍보 완료!`,
-        content,
-      },
-    });
-    log.info({ reportName, contactName, channel }, 'Heimi community post created');
-  } catch (err) {
+  await prisma.communityPost.create({
+    data: {
+      agentId: AGENT_IDS.HEIMI,
+      title: `헤르미 보고 🐾 — '${safeName_}' 홍보 완료!`,
+      content,
+      deduplicationKey,
+    },
+  }).catch((err) => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      log.info({ reportName, contactName, channel }, 'Heimi post already exists today, skipping');
+      return;
+    }
     log.error({ err, reportName }, 'Failed to create Heimi community post');
-  }
+  });
+  log.info({ reportName, contactName, channel }, 'Heimi community post created');
 }
 
 // ── 탐정 클로드 ──────────────────────────────────────────────────────────────
@@ -101,21 +110,6 @@ export async function postClaude(
   const safeName_ = safeName(reportName);
   const safeAddress = safeName(lastSeenAddress);
 
-  // 오늘 이미 같은 reportName으로 클로드가 게시했으면 skip
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const existing = await prisma.communityPost.count({
-    where: {
-      agentId: AGENT_IDS.CLAUDE,
-      title: { contains: safeName_ },
-      createdAt: { gte: today },
-    },
-  });
-  if (existing > 0) {
-    log.info({ reportName }, 'Claude post already exists today, skipping');
-    return;
-  }
-
   const fallback = `🔍 분석 완료. '${safeName_}' 신고와 목격 제보 간 유의미한 패턴이 감지됐습니다. 신뢰도 ${confidencePct}% — 유망한 단서입니다. 신고자에게 알림을 전송했습니다.`;
 
   const userMsg = `매칭 분석 결과 보고:
@@ -126,19 +120,23 @@ export async function postClaude(
 커뮤니티에 올릴 탐정 클로드 스타일의 분석 보고 글을 써줘.`;
 
   const content = await generateContent(CLAUDE_SYSTEM, userMsg, AGENT_IDS.CLAUDE) ?? fallback;
+  const deduplicationKey = `${formatDate(new Date())}_claude_${safeName_}`;
 
-  try {
-    await prisma.communityPost.create({
-      data: {
-        agentId: AGENT_IDS.CLAUDE,
-        title: `탐정 클로드 보고 🔍 — '${safeName_}' 매칭 신뢰도 ${confidencePct}%`,
-        content,
-      },
-    });
-    log.info({ reportName, confidence, lastSeenAddress }, 'Claude community post created');
-  } catch (err) {
+  await prisma.communityPost.create({
+    data: {
+      agentId: AGENT_IDS.CLAUDE,
+      title: `탐정 클로드 보고 🔍 — '${safeName_}' 매칭 신뢰도 ${confidencePct}%`,
+      content,
+      deduplicationKey,
+    },
+  }).catch((err) => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      log.info({ reportName }, 'Claude post already exists today, skipping');
+      return;
+    }
     log.error({ err, reportName }, 'Failed to create Claude community post');
-  }
+  });
+  log.info({ reportName, confidence, lastSeenAddress }, 'Claude community post created');
 }
 
 // ── 안내봇 알리 ──────────────────────────────────────────────────────────────
@@ -171,17 +169,21 @@ export async function postAli(
 커뮤니티 이웃들에게 목격 제보를 부탁하는 따뜻한 안내 글을 써줘.`;
 
   const content = await generateContent(ALI_SYSTEM, userMsg, AGENT_IDS.ALI) ?? fallback;
+  const deduplicationKey = `${formatDate(new Date())}_ali_${safeName_}`;
 
-  try {
-    await prisma.communityPost.create({
-      data: {
-        agentId: AGENT_IDS.ALI,
-        title: `알리 안내 📋 — ${subjectLabel} '${safeName_}' 실종 신고 접수`,
-        content,
-      },
-    });
-    log.info({ reportName, subjectType, lastSeenAddress }, 'Ali community post created');
-  } catch (err) {
+  await prisma.communityPost.create({
+    data: {
+      agentId: AGENT_IDS.ALI,
+      title: `알리 안내 📋 — ${subjectLabel} '${safeName_}' 실종 신고 접수`,
+      content,
+      deduplicationKey,
+    },
+  }).catch((err) => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      log.info({ reportName }, 'Ali post already exists today, skipping');
+      return;
+    }
     log.error({ err, reportName }, 'Failed to create Ali community post');
-  }
+  });
+  log.info({ reportName, subjectType, lastSeenAddress }, 'Ali community post created');
 }

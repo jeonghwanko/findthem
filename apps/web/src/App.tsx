@@ -36,6 +36,7 @@ import CommunityPostPage from './pages/CommunityPostPage';
 import CommunityNewPostPage from './pages/CommunityNewPostPage';
 import CommunityEditPostPage from './pages/CommunityEditPostPage';
 import ProfilePage from './pages/ProfilePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
@@ -119,6 +120,7 @@ export default function App() {
                   path="/community/:id/edit"
                   element={user ? <CommunityEditPostPage /> : <Navigate to="/login" />}
                 />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/team" element={<TeamPage />} />
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />

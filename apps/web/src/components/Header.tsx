@@ -123,6 +123,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Search className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <span className="text-lg font-bold text-gray-900">{t('brand')}</span>
+          <span className="hidden sm:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full">{t('home.heroBadge')}</span>
         </Link>
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}

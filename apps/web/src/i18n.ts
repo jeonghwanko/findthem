@@ -18,11 +18,15 @@ void i18n
       'zh-TW': { translation: zhTW },
     },
     fallbackLng: 'ko',
+    // 'en-US', 'ko-KR' 등 full locale → 'en', 'ko' 등 리소스 키로 자동 매핑
+    // 'zh-TW'는 목록에 명시되어 exact match로 처리됨
+    supportedLngs: ['ko', 'en', 'ja', 'zh-TW'],
+    nonExplicitSupportedLngs: true,
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'ft_locale',
     },

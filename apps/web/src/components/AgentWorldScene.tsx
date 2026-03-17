@@ -240,7 +240,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number) {
 
 function drawSceneLabel(
   ctx: CanvasRenderingContext2D,
-  W: number,
+  _W: number,
   label: string,
   sub: string,
 ) {
@@ -251,7 +251,6 @@ function drawSceneLabel(
   ctx.fillStyle = '#a5b4fc';
   ctx.font = '9px -apple-system, sans-serif';
   ctx.fillText(sub, 12, 30);
-  void W;
 }
 
 // Scene 0: Outreach — Hermi finds a YouTuber

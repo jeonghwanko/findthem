@@ -1,4 +1,4 @@
-import { askClaudeWithImage } from './claudeClient.js';
+import { askClaudeWithImage } from './aiClient.js';
 import { getSubjectTypeLabel, DEFAULT_LOCALE, type PlatformPromoTexts, type Locale } from '@findthem/shared';
 
 interface ReportInfo {
@@ -202,7 +202,7 @@ export async function generatePromoTexts(
     SYSTEM_PROMPTS[locale],
     photoBase64,
     context,
-    { maxTokens: 1024 },
+    { maxTokens: 1024, agentId: 'promotion' },
   );
 
   try {

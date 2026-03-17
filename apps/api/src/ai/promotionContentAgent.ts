@@ -1,4 +1,4 @@
-import { askClaude, askClaudeWithImage } from './claudeClient.js';
+import { askClaude, askClaudeWithImage } from './aiClient.js';
 import { getSubjectTypeLabel, type PlatformPromoTexts, type PromotionMetrics } from '@findthem/shared';
 
 // 기존 generatePromoTexts re-export
@@ -102,7 +102,7 @@ export async function generateRepostContent(
 
   try {
     const result = await askClaudeWithImage(REPOST_SYSTEM_PROMPT, photoBase64, context, {
-      maxTokens: 1024,
+      maxTokens: 1024, agentId: 'promotion',
     });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
@@ -126,7 +126,7 @@ export async function generateThankYouMessage(report: RepostReportInput): Promis
   ].join('\n');
 
   try {
-    const result = await askClaude(THANK_YOU_SYSTEM_PROMPT, context, { maxTokens: 512 });
+    const result = await askClaude(THANK_YOU_SYSTEM_PROMPT, context, { maxTokens: 512, agentId: 'promotion' });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return DEFAULT_PROMO_TEXTS;

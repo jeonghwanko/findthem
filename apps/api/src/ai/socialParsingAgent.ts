@@ -1,4 +1,4 @@
-import { askClaude } from './claudeClient.js';
+import { askClaude } from './aiClient.js';
 import { createLogger } from '../logger.js';
 import type { SubjectType } from '@findthem/shared';
 
@@ -45,7 +45,7 @@ export async function parseSocialPost(
   const input = `<user_post>\n[제목] ${title}\n\n[본문]\n${description}\n</user_post>`;
 
   try {
-    const result = await askClaude(SYSTEM_PROMPT, input, { maxTokens: 512 });
+    const result = await askClaude(SYSTEM_PROMPT, input, { maxTokens: 512, agentId: 'social-parsing' });
 
     const jsonMatch = result.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;

@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { getClaudeClient } from '../../ai/claudeClient.js';
+import { getClaudeClient } from '../../ai/aiClient.js';
+import { getModelName } from '../../ai/aiSettings.js';
 import { config } from '../../config.js';
 import { createLogger } from '../../logger.js';
 import { CRAWL_AGENT_MAX_ROUNDS, type CrawlAgentJobData } from '@findthem/shared';
@@ -19,7 +20,8 @@ interface CrawlAgentRunResult {
 
 export class CrawlAgentService {
   async run(data: CrawlAgentJobData): Promise<CrawlAgentRunResult> {
-    const anthropic = getClaudeClient();
+    const anthropic = await getClaudeClient();
+    const model = await getModelName('crawl') ?? config.claudeModel;
 
     const sourcesHint =
       data.sources && data.sources.length > 0
@@ -45,7 +47,7 @@ export class CrawlAgentService {
         try {
           response = await anthropic.messages.create(
             {
-              model: config.claudeModel,
+              model,
               max_tokens: MAX_TOKENS,
               system: CRAWL_AGENT_SYSTEM_PROMPT,
               tools: CRAWL_TOOL_DEFINITIONS,

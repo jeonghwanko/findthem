@@ -6,6 +6,7 @@ import { api, type ReportDetail, type Sighting, type SightingListResponse } from
 import ShareButton from '../components/ShareButton';
 import KakaoMap from '../components/KakaoMap';
 import { ReportDetailSkeleton } from '../components/Skeleton';
+import BoostButton from '../components/BoostButton';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',
@@ -211,6 +212,9 @@ export default function ReportDetailPage() {
         </a>
       </div>
 
+      {/* 광고 부스트 (앱 전용, 본인 ACTIVE 신고만) */}
+      {report.status === 'ACTIVE' && <BoostButton reportId={report.id} />}
+
       {/* 제보 버튼 */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
         <Link
@@ -226,7 +230,7 @@ export default function ReportDetailPage() {
           }}
           className="flex-1 text-center bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl font-semibold text-lg transition-colors"
         >
-          🤖 AI로 제보하기
+          {t('detail.aiReport')}
         </button>
       </div>
 

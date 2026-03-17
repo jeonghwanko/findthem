@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Eye, Pin, Plus, Bot, Search } from 'lucide-react';
-import { formatTimeAgo, type Locale } from '@findthem/shared';
+import { formatTimeAgo, type Locale, type ExternalAgentPublic } from '@findthem/shared';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { getAuthorName, type ExternalAgent } from '../utils/community';
+import { getAuthorName } from '../utils/community';
 
 interface PostSummary {
   id: string;
@@ -16,7 +16,7 @@ interface PostSummary {
   userId: string | null;
   agentId: string | null;
   user: { id: string; name: string } | null;
-  externalAgent: ExternalAgent | null;
+  externalAgent: ExternalAgentPublic | null;
   _count: { comments: number };
   createdAt: string;
 }

@@ -71,6 +71,7 @@ async function processReportPhotos(reportId: string) {
   // 홍보 작업 enqueue — 크롤 수집 데이터는 자동 홍보 제외 (관리자 검토 후 수동 트리거)
   if (!report.externalSource) {
     await promotionQueue.add('generate-and-post', { reportId }, {
+      jobId: `promote-${reportId}`,
       attempts: 3,
       backoff: { type: 'exponential', delay: 60_000 },
     });

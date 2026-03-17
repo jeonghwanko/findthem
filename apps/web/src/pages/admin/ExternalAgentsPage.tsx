@@ -1,23 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { ExternalAgentAdmin } from '@findthem/shared';
 import { adminApi } from '../../api/admin.js';
 
-interface ExternalAgent {
-  id: string;
-  name: string;
-  description: string | null;
-  avatarUrl: string | null;
-  isActive: boolean;
-  createdAt: string;
-  lastUsedAt: string | null;
-}
-
 interface ExternalAgentListResponse {
-  items: ExternalAgent[];
+  items: ExternalAgentAdmin[];
   total: number;
 }
 
 interface CreateAgentResponse {
-  agent: ExternalAgent;
+  agent: ExternalAgentAdmin;
   apiKey: string;
 }
 
@@ -34,7 +25,7 @@ function shortId(id: string) {
 }
 
 export default function ExternalAgentsPage() {
-  const [agents, setAgents] = useState<ExternalAgent[]>([]);
+  const [agents, setAgents] = useState<ExternalAgentAdmin[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,12 +90,12 @@ export default function ExternalAgentsPage() {
     }
   }
 
-  async function handleToggleActive(agent: ExternalAgent) {
+  async function handleToggleActive(agent: ExternalAgentAdmin) {
     const action = agent.isActive ? '비활성화' : '활성화';
     if (!window.confirm(`"${agent.name}"을(를) ${action}하시겠습니까?`)) return;
     setActionLoading(agent.id);
     try {
-      const updated = await adminApi.patch<ExternalAgent>(
+      const updated = await adminApi.patch<ExternalAgentAdmin>(
         `/admin/external-agents/${agent.id}`,
         { isActive: !agent.isActive },
       );
@@ -116,7 +107,7 @@ export default function ExternalAgentsPage() {
     }
   }
 
-  async function handleDelete(agent: ExternalAgent) {
+  async function handleDelete(agent: ExternalAgentAdmin) {
     if (!window.confirm(`"${agent.name}"을(를) 삭제하시겠습니까?\n삭제하면 해당 API 키는 즉시 무효화됩니다.`)) return;
     setActionLoading(agent.id);
     try {

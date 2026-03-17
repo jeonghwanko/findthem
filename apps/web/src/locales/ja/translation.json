@@ -1,5 +1,5 @@
 {
-  "brand": "YooNion - FindThem",
+  "brand": "FindThem",
   "loading": "読み込み中...",
   "footer": "AI技術で社会問題を解く実験 - 100% AIエージェントによる開発・運営",
   "nav": {
@@ -20,6 +20,7 @@
     "heroTitle": "大切な家族を見つけるお手伝いをします",
     "heroDesc": "AIが自動でSNSに宣伝し、目撃情報を分析してマッチングします",
     "newReport": "届出を登録",
+    "playToSponsor": "ゲームで後援",
     "submitSighting": "目撃情報を提供",
     "featurePromo": "AI自動宣伝",
     "featurePromoDesc": "届出登録時にAIが宣伝文を作成し、KakaoTalk、Xなどに自動投稿します",
@@ -32,7 +33,13 @@
     "noReports": "まだ届出がありません",
     "statTotal": "届出総数",
     "statFound": "見つかった家族",
-    "statRate": "発見率"
+    "statRate": "発見率",
+    "outreachTitle": "宣伝王ヘルミが連絡したYouTuber",
+    "heroAgent": {
+      "detective": { "name": "探偵クロード", "bubble1": "87%一致！", "bubble2": "マッチング通知！" },
+      "promo":     { "name": "宣伝王ヘルミ", "bubble1": "チャンネル発見！", "bubble2": "SNS完了！" },
+      "guide":     { "name": "案内ボットアリ", "bubble1": "目撃情報受付！", "bubble2": "通知送信！" }
+    }
   },
   "auth": {
     "login": "ログイン",
@@ -137,6 +144,7 @@
     "clothing": "服装",
     "contact": "連絡先",
     "sightedThis": "この{{type}}を目撃しました",
+    "aiReport": "🤖 AIで報告する",
     "sightingCount": "{{count}}件の目撃情報",
     "notFound": "届出が見つかりません",
     "found": "見つかりました！",
@@ -360,6 +368,15 @@
     "saveFailed": "保存に失敗しました",
     "photoSaved": "プロフィール写真を変更しました",
     "photoFailed": "写真のアップロードに失敗しました"
+  },
+  "boost": {
+    "title": "届出ブースト",
+    "remaining": "本日残り{{remaining}}/{{max}}回",
+    "watchAd": "広告を見てブーストする",
+    "loading": "処理中...",
+    "limitReached": "本日のブースト回数を使い切りました",
+    "error": "処理中にエラーが発生しました。しばらくしてから再試行してください",
+    "success": "ブースト完了！届出がより多く表示されます"
   },
   "community": {
     "title": "コミュニティ",

@@ -165,6 +165,7 @@ export const ERROR_CODES = {
   EXTERNAL_AGENT_NOT_FOUND: 'EXTERNAL_AGENT_NOT_FOUND',
   EXTERNAL_AGENT_AUTH_REQUIRED: 'EXTERNAL_AGENT_AUTH_REQUIRED',
   EXTERNAL_AGENT_INACTIVE: 'EXTERNAL_AGENT_INACTIVE',
+  BOOST_LIMIT_REACHED: 'BOOST_LIMIT_REACHED',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -211,6 +212,10 @@ export const REPOST_MAX_DEFAULT = 3;
 export const METRICS_COLLECT_INTERVAL_H = 6;
 export const MIN_VIEWS_FOR_GOOD_PERFORMANCE = 100;
 
+// ── 광고 부스트 ──
+
+export const MAX_BOOSTS_PER_DAY = 3;
+
 // ── 운영 에이전트 ──
 
 export const ADMIN_AGENT_MAX_TURNS = 10;
@@ -220,3 +225,7 @@ export const ADMIN_API_KEY_HEADER = 'x-api-key';
 export const AGENT_API_KEY_HEADER = 'x-agent-key';
 export const AGENT_ID_HEADER = 'x-agent-id';
 export const VALID_AGENT_IDS = ['image-matching', 'promotion', 'chatbot-alert'] as const;
+
+// ── YouTube ──
+
+export const YT_VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;

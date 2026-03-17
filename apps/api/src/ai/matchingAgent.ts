@@ -1,4 +1,4 @@
-import { askClaudeWithImage, compareImages } from './claudeClient.js';
+import { askClaudeWithImage, compareImages } from './aiClient.js';
 import { getSubjectTypeLabel, DEFAULT_LOCALE, type MatchResult, type Locale } from '@findthem/shared';
 
 // ── analyzeImage 시스템 프롬프트 다국어 ──
@@ -204,6 +204,7 @@ export async function analyzeImage(
     systemPrompt,
     photoBase64,
     userMessage,
+    { agentId: 'image-matching' },
   );
 
   try {
@@ -268,7 +269,7 @@ export async function matchImages(
     reportPhotoBase64,
     sightingPhotoBase64,
     userMessage,
-    { maxTokens: 1024 },
+    { maxTokens: 1024, agentId: 'image-matching' },
   );
 
   try {

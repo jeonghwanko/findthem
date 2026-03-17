@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FindThem</string>
+    <string name="title_activity_main">FindThem</string>
+    <string name="package_name">com.findthem.app</string>
+    <string name="custom_url_scheme">com.findthem.app</string>
+</resources>

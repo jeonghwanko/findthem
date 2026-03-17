@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, MessageSquare, ScanFace, ArrowRight, type LucideIcon } from 'lucide-react';
+import { Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
-import AgentWorldScene from '../components/AgentWorldScene';
+import PixiHeroScene from '../components/PixiHeroScene';
 import OutreachHighlights from '../components/OutreachHighlights';
 import type { SubjectType } from '@findthem/shared';
 
@@ -103,78 +103,8 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* Hero */}
-      <section
-        className="border-b border-primary-100 py-20 px-4 relative overflow-hidden"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #a5b4fc 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          backgroundColor: '#eef2ff',
-        }}
-      >
-        {/* 배경 그라디언트 페이드 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/50 pointer-events-none" />
-
-        <div className="max-w-3xl mx-auto text-center relative">
-          <span className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
-            {t('home.heroBadge')}
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">
-            {t('home.heroTitle')}
-          </h1>
-          <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            {t('home.heroDesc')}
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link
-              to="/reports/new"
-              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-            >
-              {t('home.newReport')}
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/browse"
-              className="border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-base transition-all hover:-translate-y-0.5"
-            >
-              {t('home.submitSighting')}
-            </Link>
-          </div>
-
-          {/* Stats strip */}
-          <div className="inline-flex items-center mt-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-2 py-1 shadow-sm divide-x divide-gray-100">
-            <div className="px-6 py-3 text-center">
-              {stats ? (
-                <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total.toLocaleString()}</p>
-              ) : (
-                <div className="h-8 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
-              )}
-              <p className="text-xs text-gray-500 mt-0.5">{t('home.statTotal')}</p>
-            </div>
-            <div className="px-6 py-3 text-center">
-              {stats ? (
-                <p className="text-2xl font-bold text-primary-600 tabular-nums">{stats.found.toLocaleString()}</p>
-              ) : (
-                <div className="h-8 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
-              )}
-              <p className="text-xs text-gray-500 mt-0.5">{t('home.statFound')}</p>
-            </div>
-            <div className="px-6 py-3 text-center">
-              {recoveryRate !== null ? (
-                <p className="text-2xl font-bold text-green-600 tabular-nums">{recoveryRate}%</p>
-              ) : (
-                <div className="h-8 w-12 mx-auto bg-gray-200 rounded animate-pulse" />
-              )}
-              <p className="text-xs text-gray-500 mt-0.5">{t('home.statRate')}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Agent World Scene */}
-      <div className="bg-[#eef2ff] border-b border-primary-100 flex justify-center overflow-hidden">
-        <AgentWorldScene />
-      </div>
+      {/* Hero — Pixi.js + Spine 씬 (실패 시 Canvas 폴백) */}
+      <PixiHeroScene stats={stats} recoveryRate={recoveryRate} />
 
       {/* 아웃리치 유튜버 하이라이트 */}
       <OutreachHighlights />

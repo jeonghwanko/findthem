@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { askClaude } from '../ai/claudeClient.js';
+import { askClaude } from '../ai/aiClient.js';
 import { createLogger } from '../logger.js';
 import type { DiffResult, CommitSummary } from './gitDiffService.js';
 
@@ -109,7 +109,7 @@ export async function generateDevlogArticle(input: DevlogInput): Promise<DevlogO
   const systemPrompt = buildSystemPrompt(locale);
   const userMessage = buildUserMessage(input.context, input.diffResult, locale);
 
-  const markdown = await askClaude(systemPrompt, userMessage, { maxTokens: 4096 });
+  const markdown = await askClaude(systemPrompt, userMessage, { maxTokens: 4096, agentId: 'devlog' });
 
   const title = extractTitle(markdown);
   const excerpt = extractExcerpt(markdown);
