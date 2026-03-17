@@ -46,7 +46,7 @@ export default function AgentChatWidget() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
+        className="fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
         aria-label={t('agent.openChat')}
       >
         🤖
@@ -55,7 +55,7 @@ export default function AgentChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[560px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
+    <div className="fixed bottom-24 md:bottom-6 right-4 left-4 md:left-auto md:right-6 md:w-96 h-[480px] md:h-[560px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
       {/* 헤더 */}
       <div className="bg-primary-600 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
         <div>

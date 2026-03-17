@@ -1,6 +1,8 @@
 import { config } from '../../config.js';
 import { prisma } from '../../db/client.js';
 import { createLogger } from '../../logger.js';
+import { YouTubeAdapter } from '../../platforms/youtube.js';
+import { generateVideoComment } from '../../ai/outreachContentAgent.js';
 import type { Prisma } from '@prisma/client';
 
 const log = createLogger('contactDiscovery');
@@ -62,6 +64,12 @@ interface ReportForOutreach {
   lastSeenAddress: string;
 }
 
+interface ReportForVideoOutreach extends ReportForOutreach {
+  lastSeenAt: Date;
+  contactName: string;
+  aiDescription?: string | null;
+}
+
 // ── 이메일 추출 헬퍼 ──
 
 function extractEmailsFromText(text: string): string[] {
@@ -114,8 +122,12 @@ export async function searchGoogleForContacts(keywords: string[]): Promise<Disco
           }
         }
 
+        const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
+        const DUMMY_PREFIXES = ['noreply', 'no-reply', 'donotreply', 'example', 'test'];
         const allEmails = [...new Set([...emails, ...metatagEmails])].filter(
-          (e) => !e.endsWith('.png') && !e.endsWith('.jpg'),
+          (e) =>
+            !IMAGE_EXTS.some((ext) => e.endsWith(ext)) &&
+            !DUMMY_PREFIXES.some((p) => e.toLowerCase().startsWith(p)),
         );
 
         // person metatag
@@ -124,9 +136,12 @@ export async function searchGoogleForContacts(keywords: string[]): Promise<Disco
           item.title?.split(' - ')[0]?.split(' | ')[0]?.trim() ??
           'Unknown';
 
-        const organization = item.link
-          ? new URL(item.link).hostname.replace(/^www\./, '')
-          : undefined;
+        let organization: string | undefined;
+        try {
+          organization = item.link ? new URL(item.link).hostname.replace(/^www\./, '') : undefined;
+        } catch {
+          organization = undefined;
+        }
 
         for (const email of allEmails.slice(0, 2)) {
           contacts.push({
@@ -313,6 +328,121 @@ async function upsertContact(contact: DiscoveredContact): Promise<string | null>
     log.warn({ err, contactName: contact.name }, 'Failed to upsert outreach contact');
     return null;
   }
+}
+
+// ── 영상 검색 키워드 (헤르미 — 반려동물 영상 대상) ──
+
+function buildVideoSearchKeywords(subjectType: string): string[] {
+  if (subjectType === 'DOG') {
+    return ['강아지 일상 브이로그', '유기견 입양 후기', '강아지 키우기'];
+  }
+  if (subjectType === 'CAT') {
+    return ['고양이 일상 브이로그', '길고양이 구조', '고양이 키우기'];
+  }
+  return [];
+}
+
+// ── 영상 기반 아웃리치 발굴 (헤르미) ──
+
+export async function discoverAndSaveVideoContacts(
+  report: ReportForVideoOutreach,
+): Promise<number> {
+  if (report.subjectType === 'PERSON') return 0;
+  if (!config.youtubeApiKey) {
+    log.warn('YouTube API key not configured, skipping video outreach');
+    return 0;
+  }
+
+  const keywords = buildVideoSearchKeywords(report.subjectType);
+  const youtubeAdapter = new YouTubeAdapter();
+
+  // 모든 키워드의 영상을 먼저 수집
+  const allVideos: Array<{ videoId: string; title: string; keyword: string }> = [];
+  for (const keyword of keywords.slice(0, 2)) {
+    try {
+      const videos = await youtubeAdapter.searchVideos(keyword, 3);
+      for (const v of videos) {
+        allVideos.push({ ...v, keyword });
+      }
+    } catch (err) {
+      log.warn({ err, keyword, reportId: report.id }, 'Video search error');
+    }
+  }
+
+  if (allVideos.length === 0) return 0;
+
+  const videoIds = allVideos.map((v) => v.videoId);
+
+  // 기존 컨택 일괄 조회 (N+1 방지)
+  const existingContacts = await prisma.outreachContact.findMany({
+    where: { videoId: { in: videoIds } },
+    select: { id: true, videoId: true },
+  });
+  const contactByVideoId = new Map(existingContacts.map((c) => [c.videoId, c.id]));
+
+  // 신규 컨택 일괄 생성 (없는 것만)
+  const newVideos = allVideos.filter((v) => !contactByVideoId.has(v.videoId));
+  if (newVideos.length > 0) {
+    await prisma.outreachContact.createMany({
+      data: newVideos.map((v) => ({
+        type: 'VIDEO',
+        name: v.title.slice(0, 100),
+        videoId: v.videoId,
+        videoTitle: v.title,
+        topics: [v.keyword],
+        source: 'VIDEO_SEARCH',
+        isActive: true,
+      })),
+      skipDuplicates: true,
+    });
+
+    // 생성된 컨택 ID 보충 조회
+    const created = await prisma.outreachContact.findMany({
+      where: { videoId: { in: newVideos.map((v) => v.videoId) } },
+      select: { id: true, videoId: true },
+    });
+    for (const c of created) {
+      if (c.videoId) contactByVideoId.set(c.videoId, c.id);
+    }
+  }
+
+  // 이 신고에 대해 이미 존재하는 요청 일괄 조회 (N+1 방지)
+  const contactIds = [...contactByVideoId.values()];
+  const existingRequests = await prisma.outreachRequest.findMany({
+    where: {
+      reportId: report.id,
+      contactId: { in: contactIds },
+      channel: 'YOUTUBE_COMMENT',
+    },
+    select: { contactId: true },
+  });
+  const alreadyRequestedContactIds = new Set(existingRequests.map((r) => r.contactId));
+
+  let createdCount = 0;
+  for (const video of allVideos) {
+    const contactId = contactByVideoId.get(video.videoId);
+    if (!contactId || alreadyRequestedContactIds.has(contactId)) continue;
+
+    try {
+      const commentText = await generateVideoComment(report, video.title);
+      await prisma.outreachRequest.create({
+        data: {
+          reportId: report.id,
+          contactId,
+          channel: 'YOUTUBE_COMMENT',
+          status: 'PENDING_APPROVAL',
+          draftContent: commentText,
+        },
+      });
+      alreadyRequestedContactIds.add(contactId); // 동일 루프 내 중복 방지
+      createdCount++;
+      log.info({ reportId: report.id, videoId: video.videoId }, 'Created video outreach request');
+    } catch (err) {
+      log.warn({ err, videoId: video.videoId, reportId: report.id }, 'Failed to create video outreach request');
+    }
+  }
+
+  return createdCount;
 }
 
 // ── Main orchestrator ──

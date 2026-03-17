@@ -21,6 +21,8 @@ interface OutreachRequestItem {
     organization: string | null;
     type: string;
     email: string | null;
+    videoId: string | null;
+    videoTitle: string | null;
   };
 }
 
@@ -65,12 +67,15 @@ function formatDate(iso: string) {
   });
 }
 
-function ChannelIcon({ channel }: { channel: string }) {
+function ChannelIcon({ channel, contactType }: { channel: string; contactType?: string }) {
   if (channel === 'EMAIL') {
     return <span className="text-lg leading-none" title="이메일">📧</span>;
   }
   if (channel === 'YOUTUBE_COMMENT') {
-    return <span className="text-lg leading-none" title="유튜브 댓글">🎬</span>;
+    if (contactType === 'VIDEO') {
+      return <span className="text-lg leading-none" title="유튜브 영상 댓글 (헤르미)">🎥</span>;
+    }
+    return <span className="text-lg leading-none" title="유튜버 채널 댓글">🎬</span>;
   }
   return <span className="text-lg leading-none">📨</span>;
 }
@@ -110,12 +115,17 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
     <div className="bg-white rounded-lg shadow border border-gray-100 p-5">
       {/* 헤더 */}
       <div className="flex items-start gap-3 mb-3">
-        <ChannelIcon channel={item.channel} />
+        <ChannelIcon channel={item.channel} contactType={item.contact.type} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-gray-900 text-sm">{item.contact.name}</span>
             {item.contact.organization && (
               <span className="text-gray-500 text-sm">{item.contact.organization}</span>
+            )}
+            {item.contact.type === 'VIDEO' && (
+              <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700">
+                영상 댓글
+              </span>
             )}
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[item.status] ?? 'bg-gray-100 text-gray-600'}`}
@@ -125,6 +135,16 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
           </div>
           {item.contact.email && (
             <div className="text-xs text-gray-400 mt-0.5">{item.contact.email}</div>
+          )}
+          {item.contact.videoId && (
+            <a
+              href={`https://www.youtube.com/watch?v=${item.contact.videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-red-500 hover:underline mt-0.5 block truncate"
+            >
+              🎥 {item.contact.videoTitle ?? item.contact.videoId}
+            </a>
           )}
         </div>
         <div className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">

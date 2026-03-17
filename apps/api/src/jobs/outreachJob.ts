@@ -3,14 +3,15 @@ import type { OutreachJobData } from './queues.js';
 import { createWorker, outreachQueue } from './queues.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
-import { discoverAndSaveContacts } from '../services/outreach/contactDiscovery.js';
+import { discoverAndSaveContacts, discoverAndSaveVideoContacts } from '../services/outreach/contactDiscovery.js';
 import { generateOutreachEmail, generateYouTubeComment } from '../ai/outreachContentAgent.js';
 import { GmailAdapter } from '../platforms/gmail.js';
 import { YouTubeAdapter } from '../platforms/youtube.js';
 
 const log = createLogger('outreachJob');
 
-const OUTREACH_CRON = '0 9 * * *'; // 매일 09:00
+const OUTREACH_CRON = '0 9 * * *'; // 매일 09:00 KST
+const OUTREACH_CRON_TZ = 'Asia/Seoul';
 
 // ── Daily limit check ──
 
@@ -57,24 +58,44 @@ async function handleDiscoverContacts(reportId: string): Promise<void> {
     return;
   }
 
-  // 이미 해당 신고에 아웃리치 요청이 있는지 확인
-  const existingCount = await prisma.outreachRequest.count({
-    where: { reportId },
+  // 채널 기반 아웃리치 — 이미 있으면 스킵
+  const existingChannelCount = await prisma.outreachRequest.count({
+    where: { reportId, contact: { type: { in: ['JOURNALIST', 'YOUTUBER'] } } },
   });
 
-  if (existingCount > 0) {
-    log.info({ reportId, existingCount }, 'Report already has outreach requests, skipping discovery');
-    return;
+  if (existingChannelCount === 0) {
+    const { contactIds } = await discoverAndSaveContacts(report);
+
+    if (contactIds.length > 0) {
+      // 발견된 각 컨택에 대해 AI 초안 생성 및 OutreachRequest 저장
+      await createChannelOutreachRequests(report, contactIds);
+    }
+  } else {
+    log.info({ reportId, existingChannelCount }, 'Channel outreach already exists, skipping channel discovery');
   }
 
-  const { contactIds } = await discoverAndSaveContacts(report);
-
-  if (contactIds.length === 0) {
-    log.info({ reportId }, 'No contacts discovered');
-    return;
+  // 영상 기반 아웃리치 (헤르미) — DOG/CAT만, 내부에서 중복 체크
+  if (report.subjectType !== 'PERSON') {
+    const videoCount = await discoverAndSaveVideoContacts(report);
+    log.info({ reportId, videoCount }, 'Video outreach requests created');
   }
+}
 
-  // 발견된 각 컨택에 대해 AI 초안 생성 및 OutreachRequest 저장
+// ── 채널 기반 OutreachRequest 생성 헬퍼 ──
+
+async function createChannelOutreachRequests(
+  report: {
+    id: string;
+    subjectType: string;
+    name: string;
+    features: string;
+    lastSeenAt: Date;
+    lastSeenAddress: string;
+    contactName: string;
+    aiDescription?: string | null;
+  },
+  contactIds: string[],
+): Promise<void> {
   const contacts = await prisma.outreachContact.findMany({
     where: { id: { in: contactIds }, isActive: true },
     select: {
@@ -92,11 +113,9 @@ async function handleDiscoverContacts(reportId: string): Promise<void> {
 
   for (const contact of contacts) {
     try {
-      // 채널 결정: 이메일 우선, 이메일 없으면 YouTube 댓글
       if (contact.email) {
         const draft = await generateOutreachEmail(report, contact);
 
-        // upsert 패턴: @@unique([reportId, contactId, channel])
         await prisma.outreachRequest.upsert({
           where: {
             reportId_contactId_channel: {
@@ -117,21 +136,9 @@ async function handleDiscoverContacts(reportId: string): Promise<void> {
         });
         created++;
       } else if (contact.youtubeChannelId) {
-        // YouTube 채널이 있으면 최신 영상을 찾아 댓글 초안 생성
-        const youtubeAdapter = new YouTubeAdapter();
-        const subjectLabel =
-          report.subjectType === 'DOG'
-            ? '유기동물 강아지'
-            : report.subjectType === 'CAT'
-              ? '유기동물 고양이'
-              : '실종자 찾기';
-
-        const videos = await youtubeAdapter.searchVideos(
-          `${subjectLabel} ${report.lastSeenAddress.split(' ').slice(0, 2).join(' ')}`,
-          3,
-        );
-
-        const videoTitle = videos[0]?.title ?? subjectLabel;
+        // 발송 시점에 getLatestVideo로 영상을 찾으므로 여기서는 채널명으로 초안 생성
+        // (searchVideos 호출 제거 — YouTube API quota 100 unit/call 절약)
+        const videoTitle = contact.name;
         const commentText = await generateYouTubeComment(report, videoTitle);
 
         await prisma.outreachRequest.upsert({
@@ -158,7 +165,7 @@ async function handleDiscoverContacts(reportId: string): Promise<void> {
     }
   }
 
-  log.info({ reportId, created }, 'Outreach requests created');
+  log.info({ reportId: report.id, created }, 'Channel outreach requests created');
 }
 
 // ── send-outreach handler ──
@@ -168,7 +175,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
     where: { id: outreachRequestId },
     include: {
       contact: {
-        select: { email: true, youtubeChannelId: true, name: true },
+        select: { email: true, youtubeChannelId: true, videoId: true, name: true, type: true },
       },
     },
   });
@@ -209,18 +216,24 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
         htmlBody,
       );
     } else if (channel === 'YOUTUBE_COMMENT') {
-      if (!request.contact.youtubeChannelId) {
-        throw new Error('Contact has no YouTube channel ID');
-      }
-      // YouTube 채널의 최신 영상에 댓글 게시
       const youtubeAdapter = new YouTubeAdapter();
-      const latestVideo = await youtubeAdapter.getLatestVideo(request.contact.youtubeChannelId);
+      let targetVideoId: string;
 
-      if (!latestVideo) {
-        throw new Error('No recent videos found for YouTube channel');
+      if (request.contact.videoId) {
+        // VIDEO 타입: 특정 영상에 직접 댓글
+        targetVideoId = request.contact.videoId;
+      } else if (request.contact.youtubeChannelId) {
+        // YOUTUBER 타입: 채널의 최신 영상에 댓글
+        const latestVideo = await youtubeAdapter.getLatestVideo(request.contact.youtubeChannelId);
+        if (!latestVideo) {
+          throw new Error('No recent videos found for YouTube channel');
+        }
+        targetVideoId = latestVideo.videoId;
+      } else {
+        throw new Error('Contact has no YouTube channel ID or video ID');
       }
 
-      externalId = await youtubeAdapter.postComment(latestVideo.videoId, request.draftContent);
+      externalId = await youtubeAdapter.postComment(targetVideoId, request.draftContent);
     } else {
       throw new Error(`Unsupported channel: ${channel}`);
     }
@@ -343,7 +356,7 @@ export async function scheduleOutreachJob(): Promise<void> {
   await outreachQueue.add(
     'discover-contacts-daily',
     { type: 'discover-contacts' },
-    { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, repeat: { pattern: OUTREACH_CRON } },
+    { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, repeat: { pattern: OUTREACH_CRON, tz: OUTREACH_CRON_TZ } },
   );
 
   log.info({ cron: OUTREACH_CRON }, 'Outreach cron scheduled');
