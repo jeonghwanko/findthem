@@ -34,6 +34,7 @@ interface AgentConfig {
   descKey: string;
   skins: readonly string[];
   iconBg: string;
+  portraitBorder: string;
   badgeBg: string;
   badgeText: string;
   onchainId: string;
@@ -50,6 +51,7 @@ const AGENTS: AgentConfig[] = [
     descKey: 'team.agentImageMatching.desc',
     skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const,
     iconBg: 'bg-blue-50',
+    portraitBorder: '#818cf8',
     badgeBg: 'bg-blue-50',
     badgeText: 'text-blue-700',
     onchainId: '32501',
@@ -62,6 +64,7 @@ const AGENTS: AgentConfig[] = [
     descKey: 'team.agentPromotion.desc',
     skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const,
     iconBg: 'bg-pink-50',
+    portraitBorder: '#f472b6',
     badgeBg: 'bg-pink-50',
     badgeText: 'text-pink-700',
     onchainId: '32502',
@@ -74,6 +77,7 @@ const AGENTS: AgentConfig[] = [
     descKey: 'team.agentChatbotAlert.desc',
     skins: ['body_043', 'cos_042', 'hair_000', 'hat_042', 'weapon_042'] as const,
     iconBg: 'bg-green-50',
+    portraitBorder: '#4ade80',
     badgeBg: 'bg-green-50',
     badgeText: 'text-green-700',
     onchainId: '32503',
@@ -193,8 +197,11 @@ export default function TeamPage() {
               className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
             >
               <div className="flex items-center gap-3">
-                <div className={`w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}>
-                  <SpinePortrait skins={agent.skins} />
+                <div
+                  className={`w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}
+                  style={{ border: `2px solid ${agent.portraitBorder}` }}
+                >
+                  <SpinePortrait skins={agent.skins} animate={false} />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{t(agent.nameKey)}</p>

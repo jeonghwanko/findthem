@@ -10,6 +10,8 @@ const SIZE = 80; // CSS px; actual resolution scales with devicePixelRatio
 
 interface Props {
   skins: readonly string[];
+  /** false = 포즈가 잡히면 애니메이션 정지 (정적 썸네일용). default: true */
+  animate?: boolean;
   className?: string;
 }
 
@@ -17,7 +19,7 @@ interface Props {
  * Renders a Spine character portrait (face/bust crop) in a small Pixi canvas.
  * Transparent background — overlay on any card background.
  */
-export function SpinePortrait({ skins, className }: Props) {
+export function SpinePortrait({ skins, animate = true, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -63,6 +65,11 @@ export function SpinePortrait({ skins, className }: Props) {
           char?.tick(ticker.deltaMS / 1000);
         });
         app.ticker.start();
+
+        // 정적 모드: 포즈가 안정될 때까지 몇 프레임 돌린 뒤 정지
+        if (!animate) {
+          setTimeout(() => { if (!destroyed) app?.ticker.stop(); }, 200);
+        }
       } catch {
         // Portrait fails silently — caller shows fallback icon
       }
