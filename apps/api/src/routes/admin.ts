@@ -37,7 +37,7 @@ import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
 import { ERROR_CODES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
-import { getAllSettings, invalidateSettingsCache } from '../ai/aiSettings.js';
+import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
 
 // ── 데브로그 트윗 헬퍼 ──
 
@@ -702,6 +702,8 @@ export function registerAdminRoutes(router: Router) {
               name: true,
               email: true,
               youtubeChannelUrl: true,
+              videoId: true,
+              videoTitle: true,
               organization: true,
             },
           },
@@ -916,11 +918,13 @@ export function registerAdminRoutes(router: Router) {
       };
     }
 
-    const availableProviders = Object.entries(PROVIDER_MODELS).map(([name, models]) => ({
-      name,
-      configured: name === 'anthropic' ? !!config.anthropicApiKey : name === 'gemini' ? !!config.geminiApiKey : !!config.openaiApiKey,
-      models,
-    }));
+    const availableProviders = await Promise.all(
+      Object.entries(PROVIDER_MODELS).map(async ([name, models]) => ({
+        name,
+        configured: !!(await getApiKey(name)),
+        models,
+      })),
+    );
 
     res.json({ defaultProvider, defaultModel, agents, availableProviders });
   });
