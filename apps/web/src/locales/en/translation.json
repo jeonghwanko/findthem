@@ -59,7 +59,8 @@
     "viewList": "List",
     "viewMap": "Map",
     "mapNoCoords": "Reports without location data are not shown on the map",
-    "mapKeyMissing": "Map API key is not configured"
+    "mapKeyMissing": "Map API key is not configured",
+    "myLocation": "My Location"
   },
   "myReports": {
     "title": "My Reports",

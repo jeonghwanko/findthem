@@ -59,7 +59,8 @@
     "viewList": "列表",
     "viewMap": "地圖",
     "mapNoCoords": "沒有位置資訊的報案不會顯示在地圖上",
-    "mapKeyMissing": "地圖API金鑰未設定"
+    "mapKeyMissing": "地圖API金鑰未設定",
+    "myLocation": "目前位置"
   },
   "myReports": {
     "title": "我的報案列表",

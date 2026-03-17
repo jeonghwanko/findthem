@@ -59,7 +59,8 @@
     "viewList": "목록",
     "viewMap": "지도",
     "mapNoCoords": "위치 정보가 없는 신고는 지도에 표시되지 않습니다",
-    "mapKeyMissing": "지도 API 키가 설정되지 않았습니다"
+    "mapKeyMissing": "지도 API 키가 설정되지 않았습니다",
+    "myLocation": "현재 위치"
   },
   "myReports": {
     "title": "내 신고 목록",

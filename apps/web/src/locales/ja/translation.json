@@ -59,7 +59,8 @@
     "viewList": "リスト",
     "viewMap": "地図",
     "mapNoCoords": "位置情報がない届出は地図に表示されません",
-    "mapKeyMissing": "地図APIキーが設定されていません"
+    "mapKeyMissing": "地図APIキーが設定されていません",
+    "myLocation": "現在地"
   },
   "myReports": {
     "title": "マイ届出一覧",

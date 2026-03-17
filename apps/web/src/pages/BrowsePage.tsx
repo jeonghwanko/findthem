@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Crosshair } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import { ReportCardSkeleton } from '../components/Skeleton';
@@ -73,6 +74,21 @@ export default function BrowsePage() {
       onClick: () => navigate(`/reports/${r.id}`),
     }));
 
+  const [locating, setLocating] = useState(false);
+
+  const handleLocateMe = useCallback(() => {
+    if (!navigator.geolocation || locating) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 5000 },
+    );
+  }, [locating]);
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
@@ -143,12 +159,23 @@ export default function BrowsePage() {
             </div>
           ) : (
             <>
-              <KakaoMap
-                markers={mapMarkers}
-                center={userCenter ?? (mapMarkers.length > 0 ? undefined : DEFAULT_CENTER)}
-                level={mapMarkers.length > 0 ? undefined : 7}
-                className="w-full h-[500px] rounded-xl"
-              />
+              <div className="relative">
+                <KakaoMap
+                  markers={mapMarkers}
+                  center={userCenter ?? (mapMarkers.length > 0 ? undefined : DEFAULT_CENTER)}
+                  level={mapMarkers.length > 0 ? undefined : 7}
+                  className="w-full h-[500px] rounded-xl"
+                />
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  disabled={locating}
+                  title={t('browse.myLocation')}
+                  className="absolute top-3 right-3 z-10 bg-white hover:bg-gray-50 shadow-md border border-gray-200 rounded-lg p-2.5 transition-colors disabled:opacity-50"
+                >
+                  <Crosshair className={`w-5 h-5 ${locating ? 'text-primary-500 animate-pulse' : 'text-gray-600'}`} />
+                </button>
+              </div>
               {mapMarkers.length < reports.length && (
                 <p className="text-xs text-gray-400 mt-2 text-center">
                   {t('browse.mapNoCoords')}
