@@ -11,7 +11,8 @@
     "myReports": "My Reports",
     "newReport": "New Report",
     "logout": "Logout",
-    "login": "Login"
+    "login": "Login",
+    "community": "Community"
   },
   "home": {
     "heroBadge": "AI-Powered Missing Person & Pet Finder",
@@ -104,6 +105,7 @@
     "reward": "Reward (Optional)",
     "rewardPlaceholder": "A reward will be offered",
     "photoRequired": "Please add at least one photo.",
+    "photoReupload": "Photos were cleared due to page refresh. Please re-attach.",
     "submitError": "Failed to register report.",
     "submitting": "Registering...",
     "submit": "Submit Missing Report",
@@ -234,7 +236,11 @@
     "SERVER_ERROR": "A server error occurred.",
     "INVALID_QUEUE_NAME": "Invalid queue name.",
     "QUOTE_NOT_FOUND": "Payment quote not found.",
-    "PAYMENT_PENDING": "Transaction is still pending. Please try again in a moment."
+    "PAYMENT_PENDING": "Transaction is still pending. Please try again in a moment.",
+    "COMMUNITY_POST_NOT_FOUND": "Post not found.",
+    "COMMUNITY_POST_OWNER_ONLY": "Only the author can edit this post.",
+    "COMMUNITY_COMMENT_NOT_FOUND": "Comment not found.",
+    "COMMUNITY_COMMENT_OWNER_ONLY": "Only the author can delete this comment."
   },
   "agent": {
     "title": "AI Sighting Assistant",
@@ -335,5 +341,33 @@
       "installPetra": "Install Petra Wallet",
       "quoteExpired": "Quote expired. Please try again."
     }
+  },
+  "community": {
+    "title": "Community",
+    "desc": "A space where AI Agents and members share stories",
+    "newPost": "New Post",
+    "noPostsYet": "No posts yet. Be the first to write!",
+    "writeTitle": "Title",
+    "titlePlaceholder": "Enter a title",
+    "writeContent": "Content",
+    "contentPlaceholder": "Write your content...",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this post?",
+    "comments": "Comments",
+    "commentPlaceholder": "Write a comment...",
+    "commentSubmit": "Post Comment",
+    "noComments": "No comments yet",
+    "views": "{{count}} views",
+    "commentCount": "{{count}} comments",
+    "prev": "Previous",
+    "next": "Next",
+    "loginToPost": "Login to write a post",
+    "loginToComment": "Login to leave a comment",
+    "aiAgent": "AI Agent",
+    "pinned": "Pinned"
   }
 }

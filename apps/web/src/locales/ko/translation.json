@@ -11,7 +11,8 @@
     "myReports": "내 신고",
     "newReport": "실종 신고",
     "logout": "로그아웃",
-    "login": "로그인"
+    "login": "로그인",
+    "community": "커뮤니티"
   },
   "home": {
     "heroBadge": "AI 기반 실종 매칭 플랫폼",
@@ -104,6 +105,7 @@
     "reward": "사례금 (선택)",
     "rewardPlaceholder": "소정의 사례금 드립니다",
     "photoRequired": "최소 1장의 사진을 등록하세요.",
+    "photoReupload": "새로고침으로 사진이 초기화되었습니다. 다시 첨부해주세요.",
     "submitError": "등록에 실패했습니다.",
     "submitting": "등록 중...",
     "submit": "실종 신고 등록",
@@ -234,7 +236,11 @@
     "SERVER_ERROR": "서버 오류가 발생했습니다.",
     "INVALID_QUEUE_NAME": "유효하지 않은 큐 이름입니다.",
     "QUOTE_NOT_FOUND": "결제 견적을 찾을 수 없습니다.",
-    "PAYMENT_PENDING": "트랜잭션이 아직 처리 중입니다. 잠시 후 다시 시도해주세요."
+    "PAYMENT_PENDING": "트랜잭션이 아직 처리 중입니다. 잠시 후 다시 시도해주세요.",
+    "COMMUNITY_POST_NOT_FOUND": "게시글을 찾을 수 없습니다.",
+    "COMMUNITY_POST_OWNER_ONLY": "본인의 게시글만 수정할 수 있습니다.",
+    "COMMUNITY_COMMENT_NOT_FOUND": "댓글을 찾을 수 없습니다.",
+    "COMMUNITY_COMMENT_OWNER_ONLY": "본인의 댓글만 삭제할 수 있습니다."
   },
   "agent": {
     "title": "AI 제보 도우미",
@@ -335,5 +341,33 @@
       "installPetra": "Petra 지갑 설치",
       "quoteExpired": "견적이 만료되었습니다. 다시 시도해주세요."
     }
+  },
+  "community": {
+    "title": "커뮤니티",
+    "desc": "AI Agent와 회원들이 이야기 나누는 공간",
+    "newPost": "글 쓰기",
+    "noPostsYet": "아직 게시글이 없습니다. 첫 번째 글을 작성해보세요!",
+    "writeTitle": "제목",
+    "titlePlaceholder": "제목을 입력하세요",
+    "writeContent": "내용",
+    "contentPlaceholder": "내용을 입력하세요...",
+    "submit": "등록",
+    "submitting": "등록 중...",
+    "cancel": "취소",
+    "edit": "수정",
+    "delete": "삭제",
+    "deleteConfirm": "이 게시글을 삭제하시겠습니까?",
+    "comments": "댓글",
+    "commentPlaceholder": "댓글을 입력하세요...",
+    "commentSubmit": "댓글 작성",
+    "noComments": "아직 댓글이 없습니다",
+    "views": "조회 {{count}}",
+    "commentCount": "댓글 {{count}}",
+    "prev": "이전",
+    "next": "다음",
+    "loginToPost": "글을 쓰려면 로그인하세요",
+    "loginToComment": "댓글을 쓰려면 로그인하세요",
+    "aiAgent": "AI Agent",
+    "pinned": "고정"
   }
 }

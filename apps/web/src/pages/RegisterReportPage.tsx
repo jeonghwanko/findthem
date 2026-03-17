@@ -1,33 +1,84 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import PhotoUpload from '../components/PhotoUpload';
 import LocationPicker from '../components/LocationPicker';
 
+const STORAGE_KEY = 'ft_report_draft';
+
+interface DraftData {
+  step: number;
+  subjectType: string;
+  name: string;
+  species: string;
+  gender: string;
+  age: string;
+  color: string;
+  features: string;
+  clothingDesc: string;
+  lastSeenAt: string;
+  lastSeenAddress: string;
+  lastSeenLat: number | null;
+  lastSeenLng: number | null;
+  contactPhone: string;
+  contactName: string;
+  reward: string;
+}
+
+function loadDraft(): Partial<DraftData> {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Partial<DraftData>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDraft(data: DraftData) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function clearDraft() {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
 export default function RegisterReportPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [subjectType, setSubjectType] = useState<string>('');
-  const [name, setName] = useState('');
-  const [species, setSpecies] = useState('');
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [color, setColor] = useState('');
-  const [features, setFeatures] = useState('');
-  const [clothingDesc, setClothingDesc] = useState('');
-  const [lastSeenAt, setLastSeenAt] = useState('');
-  const [lastSeenAddress, setLastSeenAddress] = useState('');
-  const [lastSeenLat, setLastSeenLat] = useState<number | null>(null);
-  const [lastSeenLng, setLastSeenLng] = useState<number | null>(null);
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactName, setContactName] = useState('');
-  const [reward, setReward] = useState('');
+  // 저장된 초안 복원
+  const [draft] = useState(loadDraft);
+  const [step, setStep] = useState(draft.step ?? 1);
+  const [subjectType, setSubjectType] = useState(draft.subjectType ?? '');
+  const [name, setName] = useState(draft.name ?? '');
+  const [species, setSpecies] = useState(draft.species ?? '');
+  const [gender, setGender] = useState(draft.gender ?? '');
+  const [age, setAge] = useState(draft.age ?? '');
+  const [color, setColor] = useState(draft.color ?? '');
+  const [features, setFeatures] = useState(draft.features ?? '');
+  const [clothingDesc, setClothingDesc] = useState(draft.clothingDesc ?? '');
+  const [lastSeenAt, setLastSeenAt] = useState(draft.lastSeenAt ?? '');
+  const [lastSeenAddress, setLastSeenAddress] = useState(draft.lastSeenAddress ?? '');
+  const [lastSeenLat, setLastSeenLat] = useState<number | null>(draft.lastSeenLat ?? null);
+  const [lastSeenLng, setLastSeenLng] = useState<number | null>(draft.lastSeenLng ?? null);
+  const [contactPhone, setContactPhone] = useState(draft.contactPhone ?? '');
+  const [contactName, setContactName] = useState(draft.contactName ?? '');
+  const [reward, setReward] = useState(draft.reward ?? '');
   const [photos, setPhotos] = useState<File[]>([]);
+
+  // 상태 변경 시 sessionStorage에 자동 저장
+  useEffect(() => {
+    saveDraft({
+      step, subjectType, name, species, gender, age, color, features, clothingDesc,
+      lastSeenAt, lastSeenAddress, lastSeenLat, lastSeenLng, contactPhone, contactName, reward,
+    });
+  }, [step, subjectType, name, species, gender, age, color, features, clothingDesc,
+    lastSeenAt, lastSeenAddress, lastSeenLat, lastSeenLng, contactPhone, contactName, reward]);
 
   const handleLocationChange = useCallback((lat: number, lng: number) => {
     setLastSeenLat(lat);
@@ -82,6 +133,7 @@ export default function RegisterReportPage() {
       formData.append('data', JSON.stringify(data));
 
       const result = await api.post<{ id: string }>('/reports', formData);
+      clearDraft();
       void navigate(`/reports/${result.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('report.submitError'));
@@ -158,6 +210,9 @@ export default function RegisterReportPage() {
               {t('report.photo')}
             </label>
             <PhotoUpload maxFiles={5} onChange={setPhotos} />
+            {photos.length === 0 && draft.step && draft.step >= 2 && (
+              <p className="text-xs text-amber-500 mt-1">{t('report.photoReupload')}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -11,7 +11,8 @@
     "myReports": "マイ届出",
     "newReport": "届出登録",
     "logout": "ログアウト",
-    "login": "ログイン"
+    "login": "ログイン",
+    "community": "コミュニティ"
   },
   "home": {
     "heroBadge": "AI搭載 行方不明者・ペット検索",
@@ -104,6 +105,7 @@
     "reward": "謝礼（任意）",
     "rewardPlaceholder": "謝礼をお渡しします",
     "photoRequired": "少なくとも1枚の写真を登録してください。",
+    "photoReupload": "ページ更新で写真がリセットされました。再度添付してください。",
     "submitError": "登録に失敗しました。",
     "submitting": "登録中...",
     "submit": "届出を登録",
@@ -234,7 +236,11 @@
     "SERVER_ERROR": "サーバーエラーが発生しました。",
     "INVALID_QUEUE_NAME": "無効なキュー名です。",
     "QUOTE_NOT_FOUND": "支払い見積もりが見つかりません。",
-    "PAYMENT_PENDING": "トランザクションはまだ処理中です。しばらくしてから再試行してください。"
+    "PAYMENT_PENDING": "トランザクションはまだ処理中です。しばらくしてから再試行してください。",
+    "COMMUNITY_POST_NOT_FOUND": "投稿が見つかりません。",
+    "COMMUNITY_POST_OWNER_ONLY": "本人の投稿のみ編集できます。",
+    "COMMUNITY_COMMENT_NOT_FOUND": "コメントが見つかりません。",
+    "COMMUNITY_COMMENT_OWNER_ONLY": "本人のコメントのみ削除できます。"
   },
   "agent": {
     "title": "AI目撃情報アシスタント",
@@ -334,5 +340,33 @@
       "installPetra": "Petraウォレットをインストール",
       "quoteExpired": "見積もりが期限切れです。再試行してください。"
     }
+  },
+  "community": {
+    "title": "コミュニティ",
+    "desc": "AIエージェントとメンバーが語り合う場",
+    "newPost": "投稿する",
+    "noPostsYet": "まだ投稿がありません。最初の投稿をしてみましょう！",
+    "writeTitle": "タイトル",
+    "titlePlaceholder": "タイトルを入力",
+    "writeContent": "内容",
+    "contentPlaceholder": "内容を入力してください...",
+    "submit": "投稿",
+    "submitting": "投稿中...",
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "削除",
+    "deleteConfirm": "この投稿を削除しますか？",
+    "comments": "コメント",
+    "commentPlaceholder": "コメントを入力...",
+    "commentSubmit": "コメント投稿",
+    "noComments": "まだコメントがありません",
+    "views": "閲覧 {{count}}",
+    "commentCount": "コメント {{count}}",
+    "prev": "前へ",
+    "next": "次へ",
+    "loginToPost": "投稿するにはログインしてください",
+    "loginToComment": "コメントするにはログインしてください",
+    "aiAgent": "AIエージェント",
+    "pinned": "ピン留め"
   }
 }
