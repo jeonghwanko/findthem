@@ -7,7 +7,7 @@ import { agentLimiter } from '../middlewares/rateLimit.js';
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
-import { MAX_FILE_SIZE, ERROR_CODES } from '@findthem/shared';
+import { MAX_FILE_SIZE, ERROR_CODES, STEP_MESSAGES, type Locale } from '@findthem/shared';
 import type { ChatMessage } from '@prisma/client';
 
 const upload = multer({
@@ -33,6 +33,13 @@ export function registerAgentRoutes(router: Router) {
   router.post('/agent/sessions', agentLimiter, optionalAuth, async (req, res) => {
     const { reportId, platform } = createSessionSchema.parse(req.body);
 
+    // 사용자 locale 조회 (로그인 시), 없으면 'ko'
+    let locale: Locale = 'ko';
+    if (req.user?.userId) {
+      const u = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { locale: true } });
+      if (u?.locale && u.locale in STEP_MESSAGES) locale = u.locale as Locale;
+    }
+
     const session = await prisma.chatSession.create({
       data: {
         userId: req.user?.userId ?? null,
@@ -41,25 +48,24 @@ export function registerAgentRoutes(router: Router) {
         state: { currentStep: 'GREETING' },
         context: {},
         status: 'ACTIVE',
+        locale,
         engineVersion: 'v2',
       },
     });
 
-    const response = await sightingAgent.processMessage(
-      {
-        sessionId: session.id,
-        userId: req.user?.userId,
-        platform,
-        reportId,
-      },
-      '안녕하세요',
-    );
+    // 정적 인사말 반환 (AI 호출 없음 — 빠른 응답)
+    const greetingText = STEP_MESSAGES[locale].GREETING;
+
+    // 인사말을 DB에 저장 (히스토리 유지)
+    await prisma.chatMessage.create({
+      data: { sessionId: session.id, role: 'assistant', content: greetingText },
+    });
 
     res.status(201).json({
       sessionId: session.id,
-      text: response.text,
-      completed: response.completed,
-      toolsUsed: response.toolsUsed,
+      text: greetingText,
+      completed: false,
+      toolsUsed: [],
     });
   });
 
