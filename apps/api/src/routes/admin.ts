@@ -882,7 +882,7 @@ export function registerAdminRoutes(router: Router) {
 
   const aiSettingUpdateSchema = z.object({
     key: z.string().min(1).max(200),
-    value: z.string().min(1).max(500),
+    value: z.string().min(1).max(500).nullable(),
   });
 
   const aiUsageQuerySchema = z.object({
@@ -929,11 +929,15 @@ export function registerAdminRoutes(router: Router) {
   router.put('/admin/ai/settings', requireAdmin, validateBody(aiSettingUpdateSchema), async (req, res) => {
     const { key, value } = req.body as z.infer<typeof aiSettingUpdateSchema>;
 
-    const setting = await prisma.aiSetting.upsert({
-      where: { key },
-      create: { key, value },
-      update: { value },
-    });
+    if (value === null) {
+      await prisma.aiSetting.deleteMany({ where: { key } });
+    } else {
+      await prisma.aiSetting.upsert({
+        where: { key },
+        create: { key, value },
+        update: { value },
+      });
+    }
 
     invalidateSettingsCache();
 
@@ -945,7 +949,7 @@ export function registerAdminRoutes(router: Router) {
       source: 'DASHBOARD' as AdminActionSource,
     });
 
-    res.json(setting);
+    res.json({ key, value });
   });
 
   // GET /admin/ai/usage
@@ -1102,7 +1106,9 @@ export function registerAdminRoutes(router: Router) {
       const rawKey = dbKey?.value || envKey;
       keys[provider] = {
         configured: !!rawKey,
-        masked: rawKey ? `${rawKey.slice(0, 8)}...${rawKey.slice(-4)}` : '',
+        masked: rawKey
+          ? (rawKey.length > 16 ? `${rawKey.slice(0, 8)}...${rawKey.slice(-4)}` : '***configured***')
+          : '',
       };
     }
     res.json(keys);
@@ -1140,7 +1146,7 @@ export function registerAdminRoutes(router: Router) {
     apiKey: z.string().optional(), // 생략 시 저장된 키 사용
   });
 
-  router.post('/admin/ai/keys/test', requireAdmin, validateBody(aiKeyTestSchema), async (req, res) => {
+  router.post('/admin/ai/keys/test', requireAdmin, adminLimiter, validateBody(aiKeyTestSchema), async (req, res) => {
     const { provider, apiKey: inputKey } = req.body as z.infer<typeof aiKeyTestSchema>;
 
     // 테스트할 키 결정: 입력 > DB > env
@@ -1171,9 +1177,9 @@ export function registerAdminRoutes(router: Router) {
         if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
         res.json({ success: true, model: (body.model as string) ?? 'claude', latencyMs: Date.now() - start });
       } else if (provider === 'gemini') {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`, {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'x-goog-api-key': testKey, 'content-type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 16 } }),
           signal: AbortSignal.timeout(15_000),
         });

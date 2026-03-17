@@ -1,4 +1,4 @@
-import { config } from '../../config.js';
+import { getApiKey } from '../aiSettings.js';
 import type { AiProvider, AiResponse } from './types.js';
 
 const DEFAULT_MODEL = 'gemini-2.0-flash';
@@ -39,7 +39,7 @@ async function callGemini(
   contents: GeminiContent[],
   maxTokens: number,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
-  const apiKey = config.geminiApiKey;
+  const apiKey = await getApiKey('gemini');
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.');
   }

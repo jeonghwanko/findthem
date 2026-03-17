@@ -23,7 +23,11 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
 
   adminApiKey: process.env.ADMIN_API_KEY || 'dev-admin-key',
-  agentApiKey: process.env.AGENT_API_KEY || 'dev-agent-key',
+  agentKeys: {
+    'image-matching': process.env.AGENT_KEY_IMAGE_MATCHING || 'dev-agent-key-im',
+    'promotion': process.env.AGENT_KEY_PROMOTION || 'dev-agent-key-promo',
+    'chatbot-alert': process.env.AGENT_KEY_CHATBOT_ALERT || 'dev-agent-key-chat',
+  } as Record<string, string>,
 
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',

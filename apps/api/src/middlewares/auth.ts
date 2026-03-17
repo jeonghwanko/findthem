@@ -70,18 +70,19 @@ export function requireAgentAuth(req: Request, _res: Response, next: NextFunctio
   const apiKey = req.headers[AGENT_API_KEY_HEADER] as string | undefined;
   const agentId = req.headers[AGENT_ID_HEADER] as string | undefined;
 
-  const agentKey = config.agentApiKey;
-  const valid =
-    apiKey &&
-    agentKey &&
-    apiKey.length === agentKey.length &&
-    timingSafeEqual(Buffer.from(apiKey), Buffer.from(agentKey));
-  if (!valid) {
-    throw new ApiError(403, ERROR_CODES.AGENT_AUTH_REQUIRED);
-  }
-
   if (!agentId || !(VALID_AGENT_IDS as readonly string[]).includes(agentId)) {
     throw new ApiError(400, ERROR_CODES.AGENT_INVALID_ID);
+  }
+
+  // 에이전트별 개별 키 검증
+  const expectedKey = config.agentKeys[agentId];
+  const valid =
+    apiKey &&
+    expectedKey &&
+    apiKey.length === expectedKey.length &&
+    timingSafeEqual(Buffer.from(apiKey), Buffer.from(expectedKey));
+  if (!valid) {
+    throw new ApiError(403, ERROR_CODES.AGENT_AUTH_REQUIRED);
   }
 
   req.agent = { agentId };

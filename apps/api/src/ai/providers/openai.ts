@@ -1,4 +1,4 @@
-import { config } from '../../config.js';
+import { getApiKey } from '../aiSettings.js';
 import type { AiProvider, AiResponse } from './types.js';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
@@ -36,7 +36,7 @@ async function callOpenAi(
   messages: OpenAiMessage[],
   maxTokens: number,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
-  const apiKey = config.openaiApiKey;
+  const apiKey = await getApiKey('openai');
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
   }

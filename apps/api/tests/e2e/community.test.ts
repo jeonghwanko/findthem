@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestApp, authHeader } from '../helpers.js';
 import { prisma } from '../../src/db/client.js';
+import { config } from '../../src/config.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prismaMock = prisma as any;
@@ -353,6 +354,165 @@ describe('Community E2E', () => {
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('COMMUNITY_COMMENT_NOT_FOUND');
+    });
+  });
+
+  // ── 검색 ──
+  describe('GET /api/community/posts?q=', () => {
+    it('검색어로 필터링', async () => {
+      prismaMock.communityPost.findMany.mockResolvedValue([testPost]);
+      prismaMock.communityPost.count.mockResolvedValue(1);
+
+      const res = await app.get('/api/community/posts?q=테스트');
+
+      expect(res.status).toBe(200);
+      expect(prismaMock.communityPost.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ title: { contains: '테스트', mode: 'insensitive' } }),
+            ]),
+          }),
+        }),
+      );
+    });
+  });
+
+  // ── AI Agent 엔드포인트 ──
+  describe('POST /api/community/agent/posts', () => {
+    const agentHeaders = {
+      'x-agent-key': config.agentKeys['image-matching'],
+      'x-agent-id': 'image-matching',
+    };
+
+    it('유효한 에이전트 인증 → 201', async () => {
+      prismaMock.communityPost.create.mockResolvedValue({
+        ...testPost,
+        userId: null,
+        agentId: 'image-matching',
+      });
+
+      const res = await app
+        .post('/api/community/agent/posts')
+        .set(agentHeaders)
+        .send({ title: 'AI 분석 리포트', content: '오늘의 매칭 결과입니다.' });
+
+      expect(res.status).toBe(201);
+      expect(prismaMock.communityPost.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            agentId: 'image-matching',
+            title: 'AI 분석 리포트',
+          }),
+        }),
+      );
+    });
+
+    it('에이전트 키 없음 → 403', async () => {
+      const res = await app
+        .post('/api/community/agent/posts')
+        .set({ 'x-agent-id': 'image-matching' })
+        .send({ title: '제목', content: '내용' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('AGENT_AUTH_REQUIRED');
+    });
+
+    it('다른 에이전트 키 사용 → 403', async () => {
+      const res = await app
+        .post('/api/community/agent/posts')
+        .set({ 'x-agent-key': config.agentKeys['promotion'], 'x-agent-id': 'image-matching' })
+        .send({ title: '제목', content: '내용' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('AGENT_AUTH_REQUIRED');
+    });
+
+    it('잘못된 에이전트 ID → 400', async () => {
+      const res = await app
+        .post('/api/community/agent/posts')
+        .set({ 'x-agent-key': 'some-key', 'x-agent-id': 'invalid-agent' })
+        .send({ title: '제목', content: '내용' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('AGENT_INVALID_ID');
+    });
+  });
+
+  describe('POST /api/community/agent/posts/:id/comments', () => {
+    it('에이전트 댓글 작성 → 201', async () => {
+      prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
+      prismaMock.communityComment.create.mockResolvedValue({
+        ...testComment,
+        userId: null,
+        agentId: 'promotion',
+      });
+
+      const res = await app
+        .post('/api/community/agent/posts/post-1/comments')
+        .set({ 'x-agent-key': config.agentKeys['promotion'], 'x-agent-id': 'promotion' })
+        .send({ content: 'AI 댓글입니다.' });
+
+      expect(res.status).toBe(201);
+      expect(prismaMock.communityComment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            agentId: 'promotion',
+            postId: 'post-1',
+          }),
+        }),
+      );
+    });
+  });
+
+  // ── 관리자 엔드포인트 ──
+  describe('PATCH /api/community/admin/posts/:id/pin', () => {
+    it('관리자 → 고정 토글', async () => {
+      prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
+      prismaMock.communityPost.update.mockResolvedValue({
+        ...testPost,
+        isPinned: true,
+      });
+
+      const res = await app
+        .patch('/api/community/admin/posts/post-1/pin')
+        .set('x-api-key', config.adminApiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body.isPinned).toBe(true);
+    });
+
+    it('비관리자 → 403', async () => {
+      const res = await app.patch('/api/community/admin/posts/post-1/pin');
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('DELETE /api/community/admin/posts/:id', () => {
+    it('관리자 → 삭제 성공', async () => {
+      prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
+      prismaMock.communityPost.delete.mockResolvedValue(testPost);
+
+      const res = await app
+        .delete('/api/community/admin/posts/post-1')
+        .set('x-api-key', config.adminApiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
+    });
+  });
+
+  describe('DELETE /api/community/admin/comments/:id', () => {
+    it('관리자 → 댓글 삭제 성공', async () => {
+      prismaMock.communityComment.findUnique.mockResolvedValue(testComment);
+      prismaMock.communityComment.delete.mockResolvedValue(testComment);
+
+      const res = await app
+        .delete('/api/community/admin/comments/comment-1')
+        .set('x-api-key', config.adminApiKey);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
     });
   });
 });

@@ -13,7 +13,7 @@ interface SettingsCache {
 
 let cache: SettingsCache | null = null;
 
-async function getSettings(): Promise<Map<string, string>> {
+async function getCachedSettings(): Promise<Map<string, string>> {
   const now = Date.now();
   if (cache && cache.expiresAt > now) {
     return cache.data;
@@ -37,7 +37,7 @@ export function invalidateSettingsCache(): void {
 
 /** agentId에 대한 provider 이름 반환. 없으면 default_provider → 'anthropic' */
 export async function getProviderName(agentId?: string): Promise<string> {
-  const settings = await getSettings();
+  const settings = await getCachedSettings();
 
   if (agentId) {
     const agentProvider = settings.get(`agent:${agentId}:provider`);
@@ -49,7 +49,7 @@ export async function getProviderName(agentId?: string): Promise<string> {
 
 /** agentId에 대한 model 이름 반환. 없으면 default_model → config.claudeModel */
 export async function getModelName(agentId?: string): Promise<string | undefined> {
-  const settings = await getSettings();
+  const settings = await getCachedSettings();
 
   if (agentId) {
     const agentModel = settings.get(`agent:${agentId}:model`);
@@ -61,5 +61,16 @@ export async function getModelName(agentId?: string): Promise<string | undefined
 
 /** 전체 설정 Map 반환 */
 export async function getAllSettings(): Promise<Map<string, string>> {
-  return getSettings();
+  return getCachedSettings();
+}
+
+/** provider에 대한 API 키 반환. DB에 저장된 키가 있으면 우선, 없으면 환경 변수 fallback */
+export async function getApiKey(provider: string): Promise<string> {
+  const settings = await getCachedSettings();
+  const dbKey = settings.get(`api_key_${provider}`);
+  if (dbKey) return dbKey;
+  if (provider === 'anthropic') return config.anthropicApiKey;
+  if (provider === 'gemini') return config.geminiApiKey;
+  if (provider === 'openai') return config.openaiApiKey;
+  return '';
 }

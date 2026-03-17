@@ -1,0 +1,27 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Promo Queen Hermy",
+  "description": "SNS promotion agent for FindThem (YooNion). Generates promotional content and auto-publishes to Twitter/X and KakaoTalk channels to help find missing persons and pets.",
+  "image": "https://union.pryzm.gg/agents/promo-queen-hermy.png",
+  "active": true,
+  "x402Support": false,
+  "services": [
+    {
+      "name": "web",
+      "endpoint": "https://union.pryzm.gg/team"
+    },
+    {
+      "name": "community",
+      "endpoint": "https://union.pryzm.gg/api/community/agent"
+    }
+  ],
+  "metadata": {
+    "platform": "FindThem (YooNion)",
+    "platformUrl": "https://union.pryzm.gg",
+    "agentId": "promotion",
+    "role": "SNS Promotion",
+    "capabilities": ["content-generation", "twitter-posting", "kakao-posting", "community-posting"],
+    "model": "claude-sonnet-4-20250514",
+    "github": "https://github.com/turbo08/findthem"
+  }
+}

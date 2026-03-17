@@ -1,15 +1,19 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../../config.js';
+import { getApiKey } from '../aiSettings.js';
 import type { AiProvider, AiResponse } from './types.js';
 
 let client: Anthropic | null = null;
+let lastKey = '';
 
-function getClient(): Anthropic {
-  if (!client) {
-    if (!config.anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY가 설정되지 않았습니다.');
-    }
-    client = new Anthropic({ apiKey: config.anthropicApiKey });
+async function getClient(): Promise<Anthropic> {
+  const key = await getApiKey('anthropic');
+  if (!key) {
+    throw new Error('ANTHROPIC_API_KEY가 설정되지 않았습니다.');
+  }
+  if (!client || key !== lastKey) {
+    lastKey = key;
+    client = new Anthropic({ apiKey: key });
   }
   return client;
 }
@@ -26,7 +30,7 @@ export const anthropicProvider: AiProvider = {
   name: 'anthropic',
 
   async ask(systemPrompt, userMessage, options): Promise<AiResponse> {
-    const claude = getClient();
+    const claude = await getClient();
     const model = options?.model ?? config.claudeModel;
     const startMs = Date.now();
     const response = await claude.messages.create({
@@ -46,7 +50,7 @@ export const anthropicProvider: AiProvider = {
   },
 
   async askWithImage(systemPrompt, imageBase64, userMessage, options): Promise<AiResponse> {
-    const claude = getClient();
+    const claude = await getClient();
     const model = options?.model ?? config.claudeModel;
     const startMs = Date.now();
     const response = await claude.messages.create({
@@ -81,7 +85,7 @@ export const anthropicProvider: AiProvider = {
   },
 
   async compareImages(systemPrompt, img1Base64, img2Base64, userMessage, options): Promise<AiResponse> {
-    const claude = getClient();
+    const claude = await getClient();
     const model = options?.model ?? config.claudeModel;
     const startMs = Date.now();
     const response = await claude.messages.create({
@@ -117,6 +121,6 @@ export const anthropicProvider: AiProvider = {
 };
 
 /** Raw Anthropic SDK client (for agentic tool_use loops) */
-export function getAnthropicClient(): Anthropic {
+export async function getAnthropicClient(): Promise<Anthropic> {
   return getClient();
 }

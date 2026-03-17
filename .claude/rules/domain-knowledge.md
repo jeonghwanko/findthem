@@ -20,6 +20,7 @@
 10. 후원 결제 (Sponsor)
 11. 아웃리치 (Outreach)
 12. 커뮤니티 (Community)
+13. AI 프로바이더 관리
 
 ---
 
@@ -531,6 +532,43 @@ DELETE /api/community/comments/:id       댓글 삭제 (requireAuth, 본인만)
 - 고정글(`isPinned`)은 목록 상단에 표시
 - 조회수(`viewCount`)는 상세 조회 시 자동 증가 (fire-and-forget)
 - 작성자만 수정/삭제 가능 (본인 확인 필수)
+
+---
+
+## 13. AI 프로바이더 관리
+
+멀티 AI 프로바이더 (Anthropic/Gemini/OpenAI) 런타임 전환 + 토큰 사용량 추적.
+
+**아키텍처**
+- `aiClient.ts` — 프로바이더 추상화 (기존 claudeClient.ts의 drop-in replacement)
+- `providers/anthropic.ts`, `providers/gemini.ts`, `providers/openai.ts`
+- `aiSettings.ts` — DB 기반 설정 (60초 캐시)
+- `aiUsageTracker.ts` — 매 AI 호출 토큰 사용량 기록
+
+**DB 모델**
+- `AiSetting`: key-value 설정 (프로바이더, 모델, API 키)
+- `AiUsageLog`: 토큰 사용량 로그 (agentId, provider, model, inputTokens, outputTokens, latencyMs)
+
+**관리자 라우트**
+```
+GET    /admin/ai/settings          프로바이더/모델 설정 조회
+PUT    /admin/ai/settings          설정 변경
+GET    /admin/ai/keys              API 키 상태 (마스킹)
+PUT    /admin/ai/keys              API 키 저장
+POST   /admin/ai/keys/test         API 키 연결 테스트
+GET    /admin/ai/usage/summary     토큰 사용량 집계
+```
+
+**에이전트별 프로바이더 오버라이드**
+- 기본 프로바이더/모델 + 에이전트별 개별 설정 가능
+- 예: image-matching은 Claude, promotion은 Gemini, outreach는 GPT-4o
+
+**환경 변수**
+| 변수 | 용도 |
+|------|------|
+| `ANTHROPIC_API_KEY` | Anthropic Claude API |
+| `GEMINI_API_KEY` | Google Gemini API |
+| `OPENAI_API_KEY` | OpenAI GPT API |
 
 ---
 

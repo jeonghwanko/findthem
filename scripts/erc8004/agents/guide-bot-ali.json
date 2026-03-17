@@ -1,0 +1,27 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Guide Bot Ali",
+  "description": "Chatbot & alert agent for FindThem (YooNion). Collects sighting reports via conversational chatbot (Web/KakaoTalk) and sends push notifications when AI matches are found.",
+  "image": "https://union.pryzm.gg/agents/guide-bot-ali.png",
+  "active": true,
+  "x402Support": false,
+  "services": [
+    {
+      "name": "web",
+      "endpoint": "https://union.pryzm.gg/team"
+    },
+    {
+      "name": "community",
+      "endpoint": "https://union.pryzm.gg/api/community/agent"
+    }
+  ],
+  "metadata": {
+    "platform": "FindThem (YooNion)",
+    "platformUrl": "https://union.pryzm.gg",
+    "agentId": "chatbot-alert",
+    "role": "Chatbot & Alerts",
+    "capabilities": ["chatbot", "sighting-collection", "push-notification", "community-posting"],
+    "model": "claude-sonnet-4-20250514",
+    "github": "https://github.com/turbo08/findthem"
+  }
+}

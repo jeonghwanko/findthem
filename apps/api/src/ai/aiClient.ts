@@ -127,6 +127,6 @@ export async function compareImages(
  * Anthropic tool_use 형식을 직접 사용하는 agentic 루프 전용
  * (sightingAgent, crawlAgent, adminAgent).
  */
-export function getClaudeClient(): Anthropic {
+export async function getClaudeClient(): Promise<Anthropic> {
   return getAnthropicClient();
 }

@@ -117,11 +117,11 @@ function SettingsTab({ settings, onSaved }: SettingsTabProps) {
     setSaveError(null);
     try {
       // 기본 프로바이더/모델 저장
-      await adminApi.patch('/admin/ai/settings', {
+      await adminApi.put('/admin/ai/settings', {
         key: 'default_provider',
         value: defaultProvider,
       });
-      await adminApi.patch('/admin/ai/settings', {
+      await adminApi.put('/admin/ai/settings', {
         key: 'default_model',
         value: defaultModel,
       });
@@ -129,12 +129,12 @@ function SettingsTab({ settings, onSaved }: SettingsTabProps) {
       // 에이전트별 오버라이드 저장
       for (const agent of AGENT_LIST) {
         const override = agentOverrides[agent.id];
-        await adminApi.patch('/admin/ai/settings', {
-          key: `agent_${agent.id}_provider`,
+        await adminApi.put('/admin/ai/settings', {
+          key: `agent:${agent.id}:provider`,
           value: override.provider || null,
         });
-        await adminApi.patch('/admin/ai/settings', {
-          key: `agent_${agent.id}_model`,
+        await adminApi.put('/admin/ai/settings', {
+          key: `agent:${agent.id}:model`,
           value: override.model || null,
         });
       }
