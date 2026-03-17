@@ -123,31 +123,31 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
 
       {/* 후원 XP & 레벨 */}
       {xpStats && (
-        <div className="mb-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4">
+        <div className="mb-6 bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-indigo-700 font-semibold text-sm">
-              <Star className="w-4 h-4 fill-indigo-500 text-indigo-500" />
+            <div className="flex items-center gap-1.5 text-pink-600 font-semibold text-sm">
+              <Star className="w-4 h-4 fill-pink-400 text-pink-400" />
               {t('profile.sponsorLevel', { level: xpStats.userLevel })}
             </div>
-            <span className="text-xs text-indigo-500">
+            <span className="text-xs text-pink-400">
               {t('profile.xpProgress', { current: xpStats.currentXP.toLocaleString(), total: xpStats.xpRequiredForLevel.toLocaleString() })}
             </span>
           </div>
-          <div className="w-full h-3 bg-indigo-100 rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-pink-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700"
+              className="h-full bg-gradient-to-r from-pink-400 to-rose-400 rounded-full transition-all duration-700"
               style={{ width: `${xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 100}%` }}
             />
           </div>
           {xpStats.xpToNextLevel > 0 && (
-            <p className="text-[11px] text-indigo-400 mt-1.5">
+            <p className="text-[11px] text-pink-400 mt-1.5">
               {t('profile.xpToNext', { xp: xpStats.xpToNextLevel.toLocaleString() })}
             </p>
           )}
           {xpStats.xpToNextLevel === 0 && (
-            <p className="text-[11px] text-purple-500 mt-1.5 font-semibold">{t('profile.xpMaxLevel')}</p>
+            <p className="text-[11px] text-rose-500 mt-1.5 font-semibold">{t('profile.xpMaxLevel')}</p>
           )}
-          <p className="text-[11px] text-indigo-400 mt-1">{t('profile.xpTotal', { xp: xpStats.sponsorXp.toLocaleString() })}</p>
+          <p className="text-[11px] text-pink-400 mt-1">{t('profile.xpTotal', { xp: xpStats.sponsorXp.toLocaleString() })}</p>
         </div>
       )}
 
