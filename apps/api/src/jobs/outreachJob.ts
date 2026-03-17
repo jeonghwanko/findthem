@@ -238,12 +238,22 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
         // VIDEO 타입: 특정 영상에 직접 댓글
         targetVideoId = request.contact.videoId;
       } else if (request.contact.youtubeChannelId) {
-        // YOUTUBER 타입: 채널의 최신 영상에 댓글
+        // YOUTUBER 타입: 채널의 최신 영상에 댓글 (실패 시 검색 폴백)
         const latestVideo = await youtubeAdapter.getLatestVideo(request.contact.youtubeChannelId);
-        if (!latestVideo) {
-          throw new Error('No recent videos found for YouTube channel');
+        if (latestVideo) {
+          targetVideoId = latestVideo.videoId;
+        } else {
+          // 폴백: 채널명 + 실종 키워드로 관련 영상 검색
+          const searchResults = await youtubeAdapter.searchVideos(
+            `${request.contact.name} 실종`,
+            1,
+            request.contact.youtubeChannelId,
+          );
+          if (searchResults.length === 0) {
+            throw new Error(`No videos found for YouTube channel: ${request.contact.name}`);
+          }
+          targetVideoId = searchResults[0].videoId;
         }
-        targetVideoId = latestVideo.videoId;
       } else {
         throw new Error('Contact has no YouTube channel ID or video ID');
       }
