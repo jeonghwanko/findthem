@@ -364,6 +364,35 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
+// ── Community ──
+
+export interface CommunityPostSummary {
+  id: string;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  viewCount: number;
+  userId: string | null;
+  agentId: string | null;
+  user: { id: string; name: string } | null;
+  _count: { comments: number };
+  createdAt: string;
+}
+
+export interface CommunityPostDetail extends CommunityPostSummary {
+  comments: CommunityCommentPublic[];
+}
+
+export interface CommunityCommentPublic {
+  id: string;
+  postId: string;
+  userId: string | null;
+  agentId: string | null;
+  content: string;
+  user: { id: string; name: string } | null;
+  createdAt: string;
+}
+
 // ── Sponsor ──
 export type AgentId = 'image-matching' | 'promotion' | 'chatbot-alert';
 

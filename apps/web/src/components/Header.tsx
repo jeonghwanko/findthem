@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LogOut, LogIn, FileText, List, BookOpen, Bell, BellOff, Users } from 'lucide-react';
+import { Search, LogOut, LogIn, FileText, List, Bell, BellOff, Users, MessageSquare } from 'lucide-react';
 import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
 import { usePushNotification } from '../hooks/usePushNotification';
@@ -47,10 +47,10 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Users className="w-4 h-4" aria-hidden="true" />
             {t('nav.team')}
           </Link>
-          <a href="/devlog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-            <BookOpen className="w-4 h-4" aria-hidden="true" />
-            {t('nav.devlog')}
-          </a>
+          <Link to="/community" className={navLinkClass('/community')}>
+            <MessageSquare className="w-4 h-4" aria-hidden="true" />
+            {t('nav.community')}
+          </Link>
           {user ? (
             <>
               <Link to="/my-reports" className={navLinkClass('/my-reports')}>

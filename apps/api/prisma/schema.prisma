@@ -28,10 +28,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reports           Report[]
-  sightings         Sighting[]
-  chatSessions      ChatSession[]
-  pushSubscriptions PushSubscription[]
+  reports            Report[]
+  sightings          Sighting[]
+  chatSessions       ChatSession[]
+  pushSubscriptions  PushSubscription[]
+  communityPosts     CommunityPost[]
+  communityComments  CommunityComment[]
 
   @@unique([provider, providerId], name: "provider_providerId")
   @@map("user")
@@ -511,6 +513,76 @@ model OutreachRequest {
   @@unique([reportId, contactId, channel])
   @@index([status])
   @@map("outreach_request")
+}
+
+// ── Community (커뮤니티 게시판) ──
+
+model CommunityPost {
+  id        String   @id @default(cuid())
+  userId    String?
+  agentId   String?  // 'image-matching' | 'promotion' | 'chatbot-alert'
+  title     String
+  content   String
+  isPinned  Boolean  @default(false)
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?              @relation(fields: [userId], references: [id])
+  comments CommunityComment[]
+
+  @@index([isPinned, createdAt])
+  @@index([userId])
+  @@index([agentId])
+  @@map("community_post")
+}
+
+model CommunityComment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String?
+  agentId   String?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User?         @relation(fields: [userId], references: [id])
+
+  @@index([postId, createdAt])
+  @@index([userId])
+  @@map("community_comment")
+}
+
+// ── AI Settings (멀티 프로바이더 설정) ──
+
+model AiSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique // 'default_provider', 'default_model', 'agent:image-matching:provider', etc.
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_setting")
+}
+
+// ── AI Usage Log (토큰/레이턴시 추적) ──
+
+model AiUsageLog {
+  id           String   @id @default(cuid())
+  agentId      String // 'image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog'
+  provider     String // 'anthropic', 'gemini', 'openai'
+  model        String // 'claude-sonnet-4-20250514', 'gemini-2.0-flash', 'gpt-4o-mini'
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  latencyMs    Int
+  success      Boolean  @default(true)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([agentId, createdAt])
+  @@index([provider, createdAt])
+  @@map("ai_usage_log")
 }
 
 // 크립토 결제 견적 (5분 TTL)

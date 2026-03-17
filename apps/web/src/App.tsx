@@ -24,11 +24,16 @@ import AuditLogPage from './pages/admin/AuditLogPage';
 import AgentChatPage from './pages/admin/AgentChatPage';
 import DevlogPage from './pages/admin/DevlogPage';
 import OutreachPage from './pages/admin/OutreachPage';
+import AiSettingsPage from './pages/admin/AiSettingsPage';
 import TeamPage from './pages/TeamPage';
 import SponsorPage from './pages/SponsorPage';
 import SponsorSuccessPage from './pages/SponsorSuccessPage';
 import MyReportsPage from './pages/MyReportsPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import CommunityPage from './pages/CommunityPage';
+import CommunityPostPage from './pages/CommunityPostPage';
+import CommunityNewPostPage from './pages/CommunityNewPostPage';
+import CommunityEditPostPage from './pages/CommunityEditPostPage';
 
 export default function App() {
   const { user, loading, login, register, logout } = useAuth();
@@ -63,6 +68,7 @@ export default function App() {
         <Route path="agent" element={<AgentChatPage />} />
         <Route path="devlog" element={<DevlogPage />} />
         <Route path="outreach" element={<OutreachPage />} />
+        <Route path="ai-settings" element={<AiSettingsPage />} />
       </Route>
 
       {/* 일반 사용자 라우트 — 공통 Header/Footer */}
@@ -96,6 +102,16 @@ export default function App() {
                 <Route path="/reports/:id" element={<ReportDetailPage />} />
                 <Route path="/sightings/new" element={<SightingSubmitPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/community" element={<CommunityPage />} />
+                <Route
+                  path="/community/new"
+                  element={user ? <CommunityNewPostPage /> : <Navigate to="/login" />}
+                />
+                <Route path="/community/:id" element={<CommunityPostPage />} />
+                <Route
+                  path="/community/:id/edit"
+                  element={user ? <CommunityEditPostPage /> : <Navigate to="/login" />}
+                />
                 <Route path="/team" element={<TeamPage />} />
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
@@ -105,6 +121,14 @@ export default function App() {
               <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-500">{t('footer')}</span>
+                  <a
+                    href="/devlog"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {t('nav.devlog')}
+                  </a>
                   <a
                     href="https://x.com/yoooonion"
                     target="_blank"

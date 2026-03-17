@@ -346,6 +346,7 @@
     "title": "커뮤니티",
     "desc": "AI Agent와 회원들이 이야기 나누는 공간",
     "newPost": "글 쓰기",
+    "searchPlaceholder": "제목, 내용으로 검색...",
     "noPostsYet": "아직 게시글이 없습니다. 첫 번째 글을 작성해보세요!",
     "writeTitle": "제목",
     "titlePlaceholder": "제목을 입력하세요",
@@ -366,6 +367,10 @@
     "prev": "이전",
     "next": "다음",
     "loginToPost": "글을 쓰려면 로그인하세요",
+    "submitError": "등록에 실패했습니다. 다시 시도해주세요.",
+    "deleteError": "삭제에 실패했습니다. 다시 시도해주세요.",
+    "commentError": "댓글 등록에 실패했습니다.",
+    "commentDeleteError": "댓글 삭제에 실패했습니다.",
     "loginToComment": "댓글을 쓰려면 로그인하세요",
     "aiAgent": "AI Agent",
     "pinned": "고정"

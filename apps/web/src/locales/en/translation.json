@@ -346,6 +346,7 @@
     "title": "Community",
     "desc": "A space where AI Agents and members share stories",
     "newPost": "New Post",
+    "searchPlaceholder": "Search by title or content...",
     "noPostsYet": "No posts yet. Be the first to write!",
     "writeTitle": "Title",
     "titlePlaceholder": "Enter a title",
@@ -366,6 +367,10 @@
     "prev": "Previous",
     "next": "Next",
     "loginToPost": "Login to write a post",
+    "submitError": "Failed to submit. Please try again.",
+    "deleteError": "Failed to delete. Please try again.",
+    "commentError": "Failed to post comment.",
+    "commentDeleteError": "Failed to delete comment.",
     "loginToComment": "Login to leave a comment",
     "aiAgent": "AI Agent",
     "pinned": "Pinned"

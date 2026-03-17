@@ -346,6 +346,7 @@
     "title": "社群",
     "desc": "AI Agent 與會員交流的空間",
     "newPost": "發文",
+    "searchPlaceholder": "依標題、內容搜尋...",
     "noPostsYet": "目前沒有文章，成為第一位發文者吧！",
     "writeTitle": "標題",
     "titlePlaceholder": "請輸入標題",
@@ -366,6 +367,10 @@
     "prev": "上一頁",
     "next": "下一頁",
     "loginToPost": "請登入後發文",
+    "submitError": "發布失敗，請重試。",
+    "deleteError": "刪除失敗，請重試。",
+    "commentError": "留言發布失敗。",
+    "commentDeleteError": "留言刪除失敗。",
     "loginToComment": "請登入後留言",
     "aiAgent": "AI Agent",
     "pinned": "置頂"

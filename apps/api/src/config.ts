@@ -23,9 +23,12 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
 
   adminApiKey: process.env.ADMIN_API_KEY || 'dev-admin-key',
+  agentApiKey: process.env.AGENT_API_KEY || 'dev-agent-key',
 
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
 
   kakaoRestApiKey: process.env.KAKAO_REST_API_KEY || '',
   kakaoAdminKey: process.env.KAKAO_ADMIN_KEY || '',

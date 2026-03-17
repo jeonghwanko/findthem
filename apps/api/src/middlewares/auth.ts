@@ -3,17 +3,22 @@ import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'crypto';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
-import { ERROR_CODES, ADMIN_API_KEY_HEADER } from '@findthem/shared';
+import { ERROR_CODES, ADMIN_API_KEY_HEADER, AGENT_API_KEY_HEADER, AGENT_ID_HEADER, VALID_AGENT_IDS } from '@findthem/shared';
 import { prisma } from '../db/client.js';
 
 export interface JwtPayload {
   userId: string;
 }
 
+export interface AgentPayload {
+  agentId: string;
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
+      agent?: AgentPayload;
     }
   }
 }
@@ -58,6 +63,28 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   } catch {
     // 무효한 토큰이어도 계속 진행
   }
+  next();
+}
+
+export function requireAgentAuth(req: Request, _res: Response, next: NextFunction) {
+  const apiKey = req.headers[AGENT_API_KEY_HEADER] as string | undefined;
+  const agentId = req.headers[AGENT_ID_HEADER] as string | undefined;
+
+  const agentKey = config.agentApiKey;
+  const valid =
+    apiKey &&
+    agentKey &&
+    apiKey.length === agentKey.length &&
+    timingSafeEqual(Buffer.from(apiKey), Buffer.from(agentKey));
+  if (!valid) {
+    throw new ApiError(403, ERROR_CODES.AGENT_AUTH_REQUIRED);
+  }
+
+  if (!agentId || !(VALID_AGENT_IDS as readonly string[]).includes(agentId)) {
+    throw new ApiError(400, ERROR_CODES.AGENT_INVALID_ID);
+  }
+
+  req.agent = { agentId };
   next();
 }
 

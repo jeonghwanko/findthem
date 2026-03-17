@@ -345,6 +345,7 @@
     "title": "コミュニティ",
     "desc": "AIエージェントとメンバーが語り合う場",
     "newPost": "投稿する",
+    "searchPlaceholder": "タイトル、内容で検索...",
     "noPostsYet": "まだ投稿がありません。最初の投稿をしてみましょう！",
     "writeTitle": "タイトル",
     "titlePlaceholder": "タイトルを入力",
@@ -365,6 +366,10 @@
     "prev": "前へ",
     "next": "次へ",
     "loginToPost": "投稿するにはログインしてください",
+    "submitError": "投稿に失敗しました。もう一度お試しください。",
+    "deleteError": "削除に失敗しました。もう一度お試しください。",
+    "commentError": "コメントの投稿に失敗しました。",
+    "commentDeleteError": "コメントの削除に失敗しました。",
     "loginToComment": "コメントするにはログインしてください",
     "aiAgent": "AIエージェント",
     "pinned": "ピン留め"

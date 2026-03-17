@@ -37,6 +37,7 @@ import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
 import { ERROR_CODES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
+import { getAllSettings, invalidateSettingsCache } from '../ai/aiSettings.js';
 
 // ── 데브로그 트윗 헬퍼 ──
 
@@ -875,5 +876,214 @@ export function registerAdminRoutes(router: Router) {
     });
 
     res.json({ jobId: job.id });
+  });
+
+  // ── AI 설정 API ──
+
+  const aiSettingUpdateSchema = z.object({
+    key: z.string().min(1).max(200),
+    value: z.string().min(1).max(500),
+  });
+
+  const aiUsageQuerySchema = z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    agentId: z.string().optional(),
+    provider: z.string().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+  });
+
+  const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog'];
+  const PROVIDER_MODELS: Record<string, string[]> = {
+    anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
+    gemini: ['gemini-2.0-flash', 'gemini-2.5-pro'],
+    openai: ['gpt-4o-mini', 'gpt-4o'],
+  };
+
+  // GET /admin/ai/settings
+  router.get('/admin/ai/settings', requireAdmin, async (_req, res) => {
+    const settings = await getAllSettings();
+
+    const defaultProvider = settings.get('default_provider') ?? 'anthropic';
+    const defaultModel = settings.get('default_model') ?? config.claudeModel;
+
+    const agents: Record<string, { provider: string | null; model: string | null }> = {};
+    for (const agentId of AGENT_IDS) {
+      agents[agentId] = {
+        provider: settings.get(`agent:${agentId}:provider`) ?? null,
+        model: settings.get(`agent:${agentId}:model`) ?? null,
+      };
+    }
+
+    const availableProviders = Object.entries(PROVIDER_MODELS).map(([name, models]) => ({
+      name,
+      configured: name === 'anthropic' ? !!config.anthropicApiKey : name === 'gemini' ? !!config.geminiApiKey : !!config.openaiApiKey,
+      models,
+    }));
+
+    res.json({ defaultProvider, defaultModel, agents, availableProviders });
+  });
+
+  // PUT /admin/ai/settings
+  router.put('/admin/ai/settings', requireAdmin, validateBody(aiSettingUpdateSchema), async (req, res) => {
+    const { key, value } = req.body as z.infer<typeof aiSettingUpdateSchema>;
+
+    const setting = await prisma.aiSetting.upsert({
+      where: { key },
+      create: { key, value },
+      update: { value },
+    });
+
+    invalidateSettingsCache();
+
+    await createAuditLog({
+      action: 'ai.setting.update',
+      targetType: 'AiSetting',
+      targetId: key,
+      detail: { key, value },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json(setting);
+  });
+
+  // GET /admin/ai/usage
+  router.get('/admin/ai/usage', requireAdmin, validateQuery(aiUsageQuerySchema), async (req, res) => {
+    const { from, to, agentId, provider, page, limit } = req.query as unknown as z.infer<typeof aiUsageQuerySchema>;
+
+    const where: {
+      createdAt?: { gte?: Date; lte?: Date };
+      agentId?: string;
+      provider?: string;
+    } = {};
+
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from);
+      if (to) where.createdAt.lte = new Date(to);
+    }
+    if (agentId) where.agentId = agentId;
+    if (provider) where.provider = provider;
+
+    const [items, totalCalls] = await Promise.all([
+      prisma.aiUsageLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.aiUsageLog.count({ where }),
+    ]);
+
+    // 집계: byAgent, byProvider
+    const allInRange = await prisma.aiUsageLog.findMany({
+      where,
+      select: {
+        agentId: true,
+        provider: true,
+        inputTokens: true,
+        outputTokens: true,
+        totalTokens: true,
+        latencyMs: true,
+        success: true,
+      },
+    });
+
+    const byAgent: Record<string, { calls: number; tokens: number }> = {};
+    const byProvider: Record<string, { calls: number; tokens: number }> = {};
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalLatency = 0;
+    let successCount = 0;
+
+    for (const row of allInRange) {
+      totalInputTokens += row.inputTokens;
+      totalOutputTokens += row.outputTokens;
+      totalLatency += row.latencyMs;
+      if (row.success) successCount++;
+
+      const aEntry = byAgent[row.agentId] ?? { calls: 0, tokens: 0 };
+      aEntry.calls++;
+      aEntry.tokens += row.totalTokens;
+      byAgent[row.agentId] = aEntry;
+
+      const pEntry = byProvider[row.provider] ?? { calls: 0, tokens: 0 };
+      pEntry.calls++;
+      pEntry.tokens += row.totalTokens;
+      byProvider[row.provider] = pEntry;
+    }
+
+    const total = allInRange.length;
+
+    res.json({
+      items,
+      summary: {
+        totalCalls,
+        totalInputTokens,
+        totalOutputTokens,
+        avgLatencyMs: total > 0 ? Math.round(totalLatency / total) : 0,
+        successRate: total > 0 ? Math.round((successCount / total) * 10000) / 10000 : 1,
+        byAgent,
+        byProvider,
+      },
+    });
+  });
+
+  // GET /admin/ai/usage/summary — 집계 전용 (빠른 대시보드용)
+  router.get('/admin/ai/usage/summary', requireAdmin, async (req, res) => {
+    const { from, to } = req.query as { from?: string; to?: string };
+
+    const where: {
+      createdAt?: { gte?: Date; lte?: Date };
+    } = {};
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from as string);
+      if (to) where.createdAt.lte = new Date(to as string);
+    }
+
+    const [totalCalls, byAgentRaw, byProviderRaw, latencyStats] = await Promise.all([
+      prisma.aiUsageLog.count({ where }),
+      prisma.aiUsageLog.groupBy({
+        by: ['agentId'],
+        where,
+        _count: { id: true },
+        _sum: { totalTokens: true },
+      }),
+      prisma.aiUsageLog.groupBy({
+        by: ['provider'],
+        where,
+        _count: { id: true },
+        _sum: { totalTokens: true },
+      }),
+      prisma.aiUsageLog.aggregate({
+        where,
+        _avg: { latencyMs: true },
+        _sum: { inputTokens: true, outputTokens: true },
+      }),
+    ]);
+
+    const successCount = await prisma.aiUsageLog.count({ where: { ...where, success: true } });
+
+    const byAgent: Record<string, { calls: number; tokens: number }> = {};
+    for (const row of byAgentRaw) {
+      byAgent[row.agentId] = { calls: row._count.id, tokens: row._sum.totalTokens ?? 0 };
+    }
+
+    const byProvider: Record<string, { calls: number; tokens: number }> = {};
+    for (const row of byProviderRaw) {
+      byProvider[row.provider] = { calls: row._count.id, tokens: row._sum.totalTokens ?? 0 };
+    }
+
+    res.json({
+      totalCalls,
+      totalInputTokens: latencyStats._sum.inputTokens ?? 0,
+      totalOutputTokens: latencyStats._sum.outputTokens ?? 0,
+      avgLatencyMs: Math.round(latencyStats._avg.latencyMs ?? 0),
+      successRate: totalCalls > 0 ? Math.round((successCount / totalCalls) * 10000) / 10000 : 1,
+      byAgent,
+      byProvider,
+    });
   });
 }
