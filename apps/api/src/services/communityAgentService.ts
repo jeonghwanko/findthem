@@ -18,11 +18,16 @@ function getSubjectLabel(subjectType: SubjectType | string): string {
   return subjectType;
 }
 
+function safeName(s: string): string {
+  return s.slice(0, 50);
+}
+
 async function generateContent(systemPrompt: string, userMessage: string, agentId: string): Promise<string | null> {
   try {
     const result = await askClaude(systemPrompt, userMessage, { maxTokens: 300, agentId });
     return result.trim() || null;
-  } catch {
+  } catch (err) {
+    log.warn({ err, agentId }, 'AI content generation failed, using fallback');
     return null;
   }
 }
@@ -46,26 +51,31 @@ export async function postHeimi(
 ): Promise<void> {
   const subjectLabel = getSubjectLabel(subjectType);
   const channelLabel = channel === 'EMAIL' ? '이메일' : 'YouTube 댓글';
+  const safeName_ = safeName(reportName);
+  const safeContact = safeName(contactName);
 
-  const fallback = `오늘도 헤르미가 열심히 뛰었어요 🐾 ${subjectLabel} '${reportName}'을 찾기 위해 ${contactName}에게 ${channelLabel}로 직접 연락했답니다! 함께 찾아요 🎉`;
+  const fallback = `오늘도 헤르미가 열심히 뛰었어요 🐾 ${subjectLabel} '${safeName_}'을 찾기 위해 ${safeContact}에게 ${channelLabel}로 직접 연락했답니다! 함께 찾아요 🎉`;
 
   const userMsg = `아웃리치 완료 보고:
-- 실종 대상: ${subjectLabel} '${reportName}'
-- 연락한 곳: ${contactName} (${channelLabel})
+- 실종 대상: ${subjectLabel} '${safeName_}'
+- 연락한 곳: ${safeContact} (${channelLabel})
 
 커뮤니티에 올릴 짧고 재미있는 보고 글을 써줘.`;
 
   const content = await generateContent(HEIMI_SYSTEM, userMsg, AGENT_IDS.HEIMI) ?? fallback;
 
-  await prisma.communityPost.create({
-    data: {
-      agentId: AGENT_IDS.HEIMI,
-      title: `헤르미 보고 🐾 — '${reportName}' 홍보 완료!`,
-      content,
-    },
-  });
-
-  log.info({ reportName, contactName, channel }, 'Heimi community post created');
+  try {
+    await prisma.communityPost.create({
+      data: {
+        agentId: AGENT_IDS.HEIMI,
+        title: `헤르미 보고 🐾 — '${safeName_}' 홍보 완료!`,
+        content,
+      },
+    });
+    log.info({ reportName, contactName, channel }, 'Heimi community post created');
+  } catch (err) {
+    log.error({ err, reportName }, 'Failed to create Heimi community post');
+  }
 }
 
 // ── 탐정 클로드 ──────────────────────────────────────────────────────────────
@@ -88,27 +98,47 @@ export async function postClaude(
 ): Promise<void> {
   const subjectLabel = getSubjectLabel(subjectType);
   const confidencePct = Math.round(confidence * 100);
+  const safeName_ = safeName(reportName);
+  const safeAddress = safeName(lastSeenAddress);
 
-  const fallback = `🔍 분석 완료. '${reportName}' 신고와 목격 제보 간 유의미한 패턴이 감지됐습니다. 신뢰도 ${confidencePct}% — 유망한 단서입니다. 신고자에게 알림을 전송했습니다.`;
+  // 오늘 이미 같은 reportName으로 클로드가 게시했으면 skip
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const existing = await prisma.communityPost.count({
+    where: {
+      agentId: AGENT_IDS.CLAUDE,
+      title: { contains: safeName_ },
+      createdAt: { gte: today },
+    },
+  });
+  if (existing > 0) {
+    log.info({ reportName }, 'Claude post already exists today, skipping');
+    return;
+  }
+
+  const fallback = `🔍 분석 완료. '${safeName_}' 신고와 목격 제보 간 유의미한 패턴이 감지됐습니다. 신뢰도 ${confidencePct}% — 유망한 단서입니다. 신고자에게 알림을 전송했습니다.`;
 
   const userMsg = `매칭 분석 결과 보고:
-- 실종 대상: ${subjectLabel} '${reportName}'
-- 마지막 목격지: ${lastSeenAddress}
+- 실종 대상: ${subjectLabel} '${safeName_}'
+- 마지막 목격지: ${safeAddress}
 - 매칭 신뢰도: ${confidencePct}%
 
 커뮤니티에 올릴 탐정 클로드 스타일의 분석 보고 글을 써줘.`;
 
   const content = await generateContent(CLAUDE_SYSTEM, userMsg, AGENT_IDS.CLAUDE) ?? fallback;
 
-  await prisma.communityPost.create({
-    data: {
-      agentId: AGENT_IDS.CLAUDE,
-      title: `탐정 클로드 보고 🔍 — '${reportName}' 매칭 신뢰도 ${confidencePct}%`,
-      content,
-    },
-  });
-
-  log.info({ reportName, confidence, lastSeenAddress }, 'Claude community post created');
+  try {
+    await prisma.communityPost.create({
+      data: {
+        agentId: AGENT_IDS.CLAUDE,
+        title: `탐정 클로드 보고 🔍 — '${safeName_}' 매칭 신뢰도 ${confidencePct}%`,
+        content,
+      },
+    });
+    log.info({ reportName, confidence, lastSeenAddress }, 'Claude community post created');
+  } catch (err) {
+    log.error({ err, reportName }, 'Failed to create Claude community post');
+  }
 }
 
 // ── 안내봇 알리 ──────────────────────────────────────────────────────────────
@@ -129,24 +159,29 @@ export async function postAli(
   lastSeenAddress: string,
 ): Promise<void> {
   const subjectLabel = getSubjectLabel(subjectType);
+  const safeName_ = safeName(reportName);
+  const safeAddress = safeName(lastSeenAddress);
 
-  const fallback = `📋 새 실종 신고가 접수됐어요. ${lastSeenAddress} 근처에서 ${subjectLabel} '${reportName}'을 보셨다면 제보 부탁드립니다. 작은 제보가 큰 힘이 됩니다 🙏`;
+  const fallback = `📋 새 실종 신고가 접수됐어요. ${safeAddress} 근처에서 ${subjectLabel} '${safeName_}'을 보셨다면 제보 부탁드립니다. 작은 제보가 큰 힘이 됩니다 🙏`;
 
   const userMsg = `새 실종 신고 안내:
-- 실종 대상: ${subjectLabel} '${reportName}'
-- 마지막 목격지: ${lastSeenAddress}
+- 실종 대상: ${subjectLabel} '${safeName_}'
+- 마지막 목격지: ${safeAddress}
 
 커뮤니티 이웃들에게 목격 제보를 부탁하는 따뜻한 안내 글을 써줘.`;
 
   const content = await generateContent(ALI_SYSTEM, userMsg, AGENT_IDS.ALI) ?? fallback;
 
-  await prisma.communityPost.create({
-    data: {
-      agentId: AGENT_IDS.ALI,
-      title: `알리 안내 📋 — ${subjectLabel} '${reportName}' 실종 신고 접수`,
-      content,
-    },
-  });
-
-  log.info({ reportName, subjectType, lastSeenAddress }, 'Ali community post created');
+  try {
+    await prisma.communityPost.create({
+      data: {
+        agentId: AGENT_IDS.ALI,
+        title: `알리 안내 📋 — ${subjectLabel} '${safeName_}' 실종 신고 접수`,
+        content,
+      },
+    });
+    log.info({ reportName, subjectType, lastSeenAddress }, 'Ali community post created');
+  } catch (err) {
+    log.error({ err, reportName }, 'Failed to create Ali community post');
+  }
 }

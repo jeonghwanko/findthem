@@ -120,7 +120,7 @@ export default function ExternalAgentsPage() {
     if (!window.confirm(`"${agent.name}"을(를) 삭제하시겠습니까?\n삭제하면 해당 API 키는 즉시 무효화됩니다.`)) return;
     setActionLoading(agent.id);
     try {
-      await adminApi.patch<unknown>(`/admin/external-agents/${agent.id}/delete`, {});
+      await adminApi.delete<unknown>(`/admin/external-agents/${agent.id}`);
       setAgents((prev) => prev.filter((a) => a.id !== agent.id));
       setTotal((prev) => prev - 1);
     } catch (e: unknown) {

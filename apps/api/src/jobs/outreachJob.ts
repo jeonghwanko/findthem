@@ -264,7 +264,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       request.contact.name,
       channel,
       request.report.subjectType,
-    ).catch(() => {});
+    ).catch((err) => log.warn({ err }, 'Heimi community post failed'));
 
     log.info({ outreachRequestId, channel, externalId }, 'Outreach sent successfully');
   } catch (err) {

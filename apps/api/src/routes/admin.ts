@@ -1,6 +1,6 @@
 import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
@@ -1195,7 +1195,8 @@ export function registerAdminRoutes(router: Router) {
   router.post('/admin/external-agents', requireAdmin, validateBody(externalAgentCreateSchema), async (req, res) => {
     const { name, description, avatarUrl } = req.body as z.infer<typeof externalAgentCreateSchema>;
 
-    const apiKey = randomBytes(32).toString('hex');
+    const rawKey = randomBytes(32).toString('hex');
+    const apiKey = createHash('sha256').update(rawKey).digest('hex');
 
     const agent = await prisma.externalAgent.create({
       data: { name, description, avatarUrl, apiKey },
@@ -1209,15 +1210,17 @@ export function registerAdminRoutes(router: Router) {
       source: 'DASHBOARD' as AdminActionSource,
     });
 
-    // apiKey는 생성 시 한 번만 응답에 포함
+    // rawKey는 생성 시 한 번만 응답에 포함 (DB에는 해시만 저장)
     res.status(201).json({
-      id: agent.id,
-      name: agent.name,
-      description: agent.description,
-      avatarUrl: agent.avatarUrl,
-      isActive: agent.isActive,
-      createdAt: agent.createdAt,
-      apiKey,
+      agent: {
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        avatarUrl: agent.avatarUrl,
+        isActive: agent.isActive,
+        createdAt: agent.createdAt,
+      },
+      apiKey: rawKey,
     });
   });
 

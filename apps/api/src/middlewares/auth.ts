@@ -1,10 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHash } from 'crypto';
 import { config } from '../config.js';
 import { ApiError } from './errors.js';
 import { ERROR_CODES, ADMIN_API_KEY_HEADER, AGENT_API_KEY_HEADER, AGENT_ID_HEADER, VALID_AGENT_IDS } from '@findthem/shared';
 import { prisma } from '../db/client.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('auth');
 
 export interface JwtPayload {
   userId: string;
@@ -102,8 +105,10 @@ export async function requireExternalAgentAuth(req: Request, _res: Response, nex
     throw new ApiError(401, ERROR_CODES.EXTERNAL_AGENT_AUTH_REQUIRED);
   }
 
+  const hashedKey = createHash('sha256').update(apiKey).digest('hex');
+
   const agent = await prisma.externalAgent.findUnique({
-    where: { apiKey },
+    where: { apiKey: hashedKey },
     select: { id: true, name: true, isActive: true },
   });
 
@@ -117,8 +122,8 @@ export async function requireExternalAgentAuth(req: Request, _res: Response, nex
 
   // lastUsedAt 업데이트 (fire-and-forget)
   void prisma.externalAgent
-    .update({ where: { apiKey }, data: { lastUsedAt: new Date() } })
-    .catch(() => {});
+    .update({ where: { apiKey: hashedKey }, data: { lastUsedAt: new Date() } })
+    .catch((err) => log.warn({ err, agentId: agent.id }, 'lastUsedAt update failed'));
 
   req.externalAgent = { id: agent.id, name: agent.name };
   next();

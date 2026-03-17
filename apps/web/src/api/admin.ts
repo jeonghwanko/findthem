@@ -40,6 +40,7 @@ export const adminApi = {
   post: <T>(path: string, body?: unknown) => adminRequest<T>('POST', path, body),
   put: <T>(path: string, body: unknown) => adminRequest<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => adminRequest<T>('PATCH', path, body),
+  delete: <T>(path: string) => adminRequest<T>('DELETE', path),
 };
 
 // --- 데브로그 ---
