@@ -33,7 +33,7 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
   >(
     Prisma.sql`
       SELECT DISTINCT ON ("reportId") "reportId", "postedAt", "version", "platform"
-      FROM "Promotion"
+      FROM "promotion"
       WHERE "reportId" = ANY(${reportIds}::text[])
         AND "status" IN ('POSTED', 'DELETED')
       ORDER BY "reportId", "postedAt" DESC
