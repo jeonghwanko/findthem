@@ -55,11 +55,11 @@ describe('KakaoMap', () => {
     expect(mapDiv.children.length).toBe(0);
   });
 
-  it('마커 없으면 서울 중심 좌표를 기본값으로 사용', () => {
+  it('마커 없으면 판교역 좌표를 기본값으로 사용', () => {
     render(<KakaoMap markers={[]} />);
     const callArgs = mockUseKakaoMap.mock.calls[0];
     expect(callArgs[1]).toEqual(
-      expect.objectContaining({ lat: 37.5665, lng: 126.978 }),
+      expect.objectContaining({ lat: 37.3947, lng: 127.1112 }),
     );
   });
 
