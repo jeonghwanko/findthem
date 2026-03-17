@@ -380,7 +380,7 @@ export function registerAuthRoutes(router: Router) {
       throw new ApiError(401, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
     }
 
-    const telegramId = authData['id'];
+    const telegramId = String(authData['id'] ?? '');
     if (!telegramId) {
       log.warn('Telegram callback: id missing');
       throw new ApiError(400, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
