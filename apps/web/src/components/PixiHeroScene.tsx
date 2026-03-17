@@ -24,9 +24,9 @@ const CHAR_MARGIN = 44;
 
 // Spine/layout config only — name & bubbles come from i18n inside the component
 const AGENT_SPINE_CONFIGS = [
-  { skins: ['body_036', 'cos_012', 'hat_012', 'weapon_012'] as const, scale: 0.30, expressions: ['expression_thinking_2', 'expression_surprise_1'] as const, nameKey: 'home.heroAgent.detective.name', bubbleKeys: ['home.heroAgent.detective.bubble1', 'home.heroAgent.detective.bubble2'] as const },
-  { skins: ['body_052', 'cos_018', 'hat_008', 'weapon_022'] as const, scale: 0.30, expressions: ['expression_fun', 'expression_preen'] as const,           nameKey: 'home.heroAgent.promo.name',     bubbleKeys: ['home.heroAgent.promo.bubble1',     'home.heroAgent.promo.bubble2']     as const },
-  { skins: ['body_043', 'cos_006', 'hat_005', 'weapon_005'] as const, scale: 0.30, expressions: ['expression_joke_1', 'expression_surprise_1'] as const,   nameKey: 'home.heroAgent.guide.name',     bubbleKeys: ['home.heroAgent.guide.bubble1',     'home.heroAgent.guide.bubble2']     as const },
+  { skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const, scale: 0.30, expressions: ['expression_thinking_2', 'expression_surprise_1'] as const, nameKey: 'home.heroAgent.detective.name', bubbleKeys: ['home.heroAgent.detective.bubble1', 'home.heroAgent.detective.bubble2'] as const },
+  { skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const, scale: 0.30, expressions: ['expression_fun', 'expression_preen'] as const,           nameKey: 'home.heroAgent.promo.name',     bubbleKeys: ['home.heroAgent.promo.bubble1',     'home.heroAgent.promo.bubble2']     as const },
+  { skins: ['body_043', 'cos_042', 'hair_000', 'hat_042', 'weapon_042'] as const, scale: 0.30, expressions: ['expression_joke_1', 'expression_surprise_1'] as const,   nameKey: 'home.heroAgent.guide.name',     bubbleKeys: ['home.heroAgent.guide.bubble1',     'home.heroAgent.guide.bubble2']     as const },
 ] as const;
 
 interface CharState {
@@ -312,7 +312,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             });
             bubbleText.anchor.set(0.5, 0.5);
             bubble.addChild(bubbleText);
-            bubble.position.set(W / 2, CHAR_Y - 80);
+            bubble.position.set(W / 2, CHAR_Y - 90);
             charLayer.addChild(bubble);
 
             // Start with run animation if available (will walk to initial target)
@@ -399,7 +399,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
                 s.char.setPosition(s.x, CHAR_Y);
                 s.nameTag.position.set(s.x, CHAR_Y + 20);
-                s.bubble.position.set(s.x, CHAR_Y - 80);
+                s.bubble.position.set(s.x, CHAR_Y - 90);
                 s.bubble.alpha = 0;
 
                 if (Math.abs(s.x - s.targetX) < 4) {
@@ -506,7 +506,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             </Link>
           </div>
           <AgentWorldScene />
-          <StatsStrip stats={stats} recoveryRate={recoveryRate} t={t} />
+          <StatsStrip stats={stats} recoveryRate={recoveryRate} />
         </div>
       </section>
     );
@@ -554,13 +554,14 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
       {/* StatsStrip — positioned at billboard top (synced by Pixi effect) */}
       <div ref={statsRef} className="absolute z-20" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
-        <StatsStrip stats={stats} recoveryRate={recoveryRate} t={t} />
+        <StatsStrip stats={stats} recoveryRate={recoveryRate} />
       </div>
     </section>
   );
 }
 
-function StatsStrip({ stats, recoveryRate, t }: { stats: Props['stats']; recoveryRate: number | null; t: (k: string) => string }) {
+function StatsStrip({ stats, recoveryRate }: { stats: Props['stats']; recoveryRate: number | null }) {
+  const { t } = useTranslation();
   return (
     <div className="inline-flex items-center bg-indigo-600/85 backdrop-blur-sm border border-indigo-500 rounded-xl px-1 py-0.5 shadow-sm divide-x divide-indigo-400/40 whitespace-nowrap">
       <div className="px-5 py-1.5 text-center">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { YT_VIDEO_ID_RE } from '@findthem/shared';
 import { api } from '../api/client';
@@ -82,7 +83,10 @@ export default function OutreachHighlights() {
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            {t('home.outreachTitle')}
+            <Link to="/team" className="text-pink-500 font-bold hover:underline">
+              {t('home.heroAgent.promo.name')}
+            </Link>
+            {t('home.outreachTitleSuffix')}
           </p>
 
           {!loading && totalSets > 1 && (

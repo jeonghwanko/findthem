@@ -34,7 +34,8 @@
     "statTotal": "總報案數",
     "statFound": "已找到的家人",
     "statRate": "尋獲率",
-    "outreachTitle": "宣傳王赫蜜聯繫的YouTuber",
+    "outreachTitle": "宣傳王赫蜜正在聯繫的YouTuber",
+    "outreachTitleSuffix": "正在聯繫的YouTuber",
     "heroAgent": {
       "detective": { "name": "偵探克勞德", "bubble1": "87% 吻合！", "bubble2": "配對通知！" },
       "promo":     { "name": "宣傳王赫蜜", "bubble1": "頻道發現！", "bubble2": "社群完成！" },

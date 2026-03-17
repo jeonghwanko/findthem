@@ -101,6 +101,7 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
   const [editedContent, setEditedContent] = useState(item.draftContent);
 
   const isPending = item.status === 'PENDING_APPROVAL';
+  const isFailed = item.status === 'FAILED';
   const isLoading = actionLoading === item.id;
 
   function handleEditToggle() {
@@ -222,6 +223,7 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
       </div>
 
       {/* 액션 버튼 */}
+      {/* 대기 중 → 승인/거부 */}
       {isPending && (
         <div className="flex items-center gap-2">
           <button
@@ -244,6 +246,25 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
             className="rounded px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
           >
             {isLoading ? '처리 중...' : '거부 ✗'}
+          </button>
+        </div>
+      )}
+      {/* 실패 → 재시도 */}
+      {isFailed && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleEditToggle}
+            disabled={isLoading}
+            className="border border-gray-300 rounded px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            {editing ? '편집 취소' : '수정'}
+          </button>
+          <button
+            onClick={() => { void handleApprove(); }}
+            disabled={isLoading}
+            className="rounded px-3 py-1.5 text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50 transition-colors"
+          >
+            {isLoading ? '처리 중...' : '재시도 ↻'}
           </button>
         </div>
       )}

@@ -172,15 +172,15 @@ export async function searchYouTubeChannels(keywords: string[]): Promise<Discove
 
   const contacts: DiscoveredContact[] = [];
 
-  for (const keyword of keywords.slice(0, 3)) {
+  // search.list = 100 units/call — 키워드 1개만 사용해 쿼터 절약 (일일 10,000 units)
+  for (const keyword of keywords.slice(0, 1)) {
     try {
-      // search.list — 채널 검색
       const searchParams = new URLSearchParams({
         key: config.youtubeApiKey,
         q: keyword,
         type: 'channel',
         part: 'snippet',
-        maxResults: '10',
+        maxResults: '5',
         relevanceLanguage: 'ko',
       });
 
@@ -358,9 +358,10 @@ export async function discoverAndSaveVideoContacts(
 
   // 모든 키워드의 영상을 먼저 수집
   const allVideos: Array<{ videoId: string; title: string; keyword: string }> = [];
-  for (const keyword of keywords.slice(0, 2)) {
+  // search.list = 100 units/call — 키워드 1개, 영상 2개로 쿼터 절약
+  for (const keyword of keywords.slice(0, 1)) {
     try {
-      const videos = await youtubeAdapter.searchVideos(keyword, 3);
+      const videos = await youtubeAdapter.searchVideos(keyword, 2);
       for (const v of videos) {
         allVideos.push({ ...v, keyword });
       }

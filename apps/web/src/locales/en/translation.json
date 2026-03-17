@@ -34,7 +34,8 @@
     "statTotal": "Total Reports",
     "statFound": "Families Found",
     "statRate": "Recovery Rate",
-    "outreachTitle": "YouTubers Promo Hermi Reached Out To",
+    "outreachTitle": "YouTubers Promo Hermi Is Reaching Out To",
+    "outreachTitleSuffix": " Is Reaching Out To YouTubers",
     "heroAgent": {
       "detective": { "name": "Detective Claude", "bubble1": "87% match!", "bubble2": "Match alert!" },
       "promo":     { "name": "Promo Hermi", "bubble1": "Channel found!", "bubble2": "SNS done!" },

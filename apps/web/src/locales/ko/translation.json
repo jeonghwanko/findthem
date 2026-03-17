@@ -34,7 +34,8 @@
     "statTotal": "전체 신고",
     "statFound": "찾은 가족",
     "statRate": "발견율",
-    "outreachTitle": "홍보왕 헤르미가 연락한 유튜버들",
+    "outreachTitle": "홍보왕 헤르미가 연락하려는 유튜버들",
+    "outreachTitleSuffix": "가 연락하려는 유튜버들",
     "heroAgent": {
       "detective": { "name": "탐정 클로드", "bubble1": "87% 일치!", "bubble2": "매칭 알림!" },
       "promo":     { "name": "홍보왕 헤르미", "bubble1": "채널 발견!", "bubble2": "SNS 완료!" },

@@ -34,7 +34,8 @@
     "statTotal": "届出総数",
     "statFound": "見つかった家族",
     "statRate": "発見率",
-    "outreachTitle": "宣伝王ヘルミが連絡したYouTuber",
+    "outreachTitle": "宣伝王ヘルミが連絡しようとしているYouTuber",
+    "outreachTitleSuffix": "が連絡しようとしているYouTuber",
     "heroAgent": {
       "detective": { "name": "探偵クロード", "bubble1": "87%一致！", "bubble2": "マッチング通知！" },
       "promo":     { "name": "宣伝王ヘルミ", "bubble1": "チャンネル発見！", "bubble2": "SNS完了！" },
