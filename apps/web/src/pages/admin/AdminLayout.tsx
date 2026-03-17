@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/admin/devlog', label: '데브로그', icon: '✍️' },
   { to: '/admin/outreach', label: '아웃리치', icon: '📬' },
   { to: '/admin/ai-settings', label: 'AI 설정', icon: '🤖' },
+  { to: '/admin/external-agents', label: '외부 에이전트', icon: '🔌' },
 ];
 
 export default function AdminLayout() {

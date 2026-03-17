@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Megaphone, MessageSquare, ScanFace, ArrowRight, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
+import AgentWorldScene from '../components/AgentWorldScene';
+import OutreachHighlights from '../components/OutreachHighlights';
 import type { SubjectType } from '@findthem/shared';
 
 const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
@@ -168,6 +170,14 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Agent World Scene */}
+      <div className="bg-[#eef2ff] border-b border-primary-100 flex justify-center overflow-hidden">
+        <AgentWorldScene />
+      </div>
+
+      {/* 아웃리치 유튜버 하이라이트 */}
+      <OutreachHighlights />
 
       {/* 기능 소개 - 인디고 틴트 밴드 */}
       <div className="bg-gray-50 border-y border-gray-100 py-12 px-4">

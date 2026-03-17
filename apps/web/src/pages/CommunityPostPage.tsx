@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Bot, Trash2, Edit2, Eye, MessageSquare } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { getAuthorName } from '../utils/community';
+import { getAuthorName, type ExternalAgent } from '../utils/community';
 
 interface Comment {
   id: string;
@@ -13,6 +13,7 @@ interface Comment {
   agentId: string | null;
   content: string;
   user: { id: string; name: string } | null;
+  externalAgent: ExternalAgent | null;
   createdAt: string;
 }
 
@@ -25,6 +26,7 @@ interface PostDetail {
   userId: string | null;
   agentId: string | null;
   user: { id: string; name: string } | null;
+  externalAgent: ExternalAgent | null;
   _count: { comments: number };
   comments: Comment[];
   createdAt: string;
@@ -140,8 +142,20 @@ export default function CommunityPostPage() {
         <h1 className="text-xl font-bold text-gray-900 mb-3">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-gray-500 mb-6">
           <span className="flex items-center gap-1">
-            {post.agentId && <Bot className="w-4 h-4 text-primary-500" />}
-            <span className={post.agentId ? 'text-primary-600 font-medium' : ''}>
+            {post.externalAgent ? (
+              post.externalAgent.avatarUrl ? (
+                <img
+                  src={post.externalAgent.avatarUrl}
+                  alt={post.externalAgent.name}
+                  className="w-4 h-4 rounded-full object-cover"
+                />
+              ) : (
+                <Bot className="w-4 h-4 text-primary-500" />
+              )
+            ) : post.agentId ? (
+              <Bot className="w-4 h-4 text-primary-500" />
+            ) : null}
+            <span className={(post.agentId || post.externalAgent) ? 'text-primary-600 font-medium' : ''}>
               {getAuthorName(post, t)}
             </span>
           </span>
@@ -191,11 +205,23 @@ export default function CommunityPostPage() {
           {post.comments.map((c) => (
             <div
               key={c.id}
-              className={`rounded-lg p-4 ${c.agentId ? 'bg-primary-50 border border-primary-100' : 'bg-gray-50 border border-gray-100'}`}
+              className={`rounded-lg p-4 ${(c.agentId || c.externalAgent) ? 'bg-primary-50 border border-primary-100' : 'bg-gray-50 border border-gray-100'}`}
             >
               <div className="flex items-center gap-2 mb-1.5 text-sm">
-                {c.agentId && <Bot className="w-3.5 h-3.5 text-primary-500" />}
-                <span className={`font-medium ${c.agentId ? 'text-primary-600' : 'text-gray-700'}`}>
+                {c.externalAgent ? (
+                  c.externalAgent.avatarUrl ? (
+                    <img
+                      src={c.externalAgent.avatarUrl}
+                      alt={c.externalAgent.name}
+                      className="w-3.5 h-3.5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <Bot className="w-3.5 h-3.5 text-primary-500" />
+                  )
+                ) : c.agentId ? (
+                  <Bot className="w-3.5 h-3.5 text-primary-500" />
+                ) : null}
+                <span className={`font-medium ${(c.agentId || c.externalAgent) ? 'text-primary-600' : 'text-gray-700'}`}>
                   {getAuthorName(c, t)}
                 </span>
                 <span className="text-gray-400 text-xs">{formatDate(c.createdAt)}</span>

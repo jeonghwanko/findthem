@@ -1,5 +1,6 @@
 import type { Router } from 'express';
 import type { Prisma } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
@@ -1138,6 +1139,140 @@ export function registerAdminRoutes(router: Router) {
       targetType: 'AiSetting',
       targetId: `api_key_${provider}`,
       detail: { provider, masked: `${apiKey.slice(0, 8)}...` },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json({ success: true });
+  });
+
+  // ── 외부 에이전트 관리 API ──
+
+  const externalAgentCreateSchema = z.object({
+    name: z.string().min(1).max(100),
+    description: z.string().max(500).optional(),
+    avatarUrl: z.string().url().optional(),
+  });
+
+  const externalAgentUpdateSchema = z.object({
+    name: z.string().min(1).max(100).optional(),
+    description: z.string().max(500).optional().nullable(),
+    avatarUrl: z.string().url().optional().nullable(),
+    isActive: z.boolean().optional(),
+  });
+
+  const externalAgentListQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  });
+
+  // GET /admin/external-agents
+  router.get('/admin/external-agents', requireAdmin, validateQuery(externalAgentListQuerySchema), async (req, res) => {
+    const { page, limit } = req.query as unknown as z.infer<typeof externalAgentListQuerySchema>;
+
+    const [items, total] = await Promise.all([
+      prisma.externalAgent.findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          avatarUrl: true,
+          isActive: true,
+          createdAt: true,
+          lastUsedAt: true,
+          _count: { select: { posts: true, comments: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.externalAgent.count(),
+    ]);
+
+    res.json({ items, total, page, totalPages: Math.ceil(total / limit) });
+  });
+
+  // POST /admin/external-agents
+  router.post('/admin/external-agents', requireAdmin, validateBody(externalAgentCreateSchema), async (req, res) => {
+    const { name, description, avatarUrl } = req.body as z.infer<typeof externalAgentCreateSchema>;
+
+    const apiKey = randomBytes(32).toString('hex');
+
+    const agent = await prisma.externalAgent.create({
+      data: { name, description, avatarUrl, apiKey },
+    });
+
+    await createAuditLog({
+      action: 'external_agent.create',
+      targetType: 'ExternalAgent',
+      targetId: agent.id,
+      detail: { name },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    // apiKey는 생성 시 한 번만 응답에 포함
+    res.status(201).json({
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      avatarUrl: agent.avatarUrl,
+      isActive: agent.isActive,
+      createdAt: agent.createdAt,
+      apiKey,
+    });
+  });
+
+  // PATCH /admin/external-agents/:id
+  router.patch('/admin/external-agents/:id', requireAdmin, validateBody(externalAgentUpdateSchema), async (req, res) => {
+    const id = req.params.id as string;
+    const body = req.body as z.infer<typeof externalAgentUpdateSchema>;
+
+    const existing = await prisma.externalAgent.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, ERROR_CODES.EXTERNAL_AGENT_NOT_FOUND);
+
+    const updated = await prisma.externalAgent.update({
+      where: { id },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        avatarUrl: true,
+        isActive: true,
+        createdAt: true,
+        lastUsedAt: true,
+      },
+    });
+
+    await createAuditLog({
+      action: 'external_agent.update',
+      targetType: 'ExternalAgent',
+      targetId: id,
+      detail: body,
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json(updated);
+  });
+
+  // DELETE /admin/external-agents/:id
+  router.delete('/admin/external-agents/:id', requireAdmin, async (req, res) => {
+    const id = req.params.id as string;
+
+    const existing = await prisma.externalAgent.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, ERROR_CODES.EXTERNAL_AGENT_NOT_FOUND);
+
+    await prisma.externalAgent.delete({ where: { id } });
+
+    await createAuditLog({
+      action: 'external_agent.delete',
+      targetType: 'ExternalAgent',
+      targetId: id,
+      detail: { name: existing.name },
       source: 'DASHBOARD' as AdminActionSource,
     });
 

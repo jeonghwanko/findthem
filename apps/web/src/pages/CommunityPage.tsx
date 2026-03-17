@@ -5,7 +5,7 @@ import { MessageSquare, Eye, Pin, Plus, Bot, Search } from 'lucide-react';
 import { formatTimeAgo, type Locale } from '@findthem/shared';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { getAuthorName } from '../utils/community';
+import { getAuthorName, type ExternalAgent } from '../utils/community';
 
 interface PostSummary {
   id: string;
@@ -16,6 +16,7 @@ interface PostSummary {
   userId: string | null;
   agentId: string | null;
   user: { id: string; name: string } | null;
+  externalAgent: ExternalAgent | null;
   _count: { comments: number };
   createdAt: string;
 }
@@ -144,10 +145,20 @@ export default function CommunityPage() {
                   </p>
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
-                      {post.agentId ? (
+                      {post.externalAgent ? (
+                        post.externalAgent.avatarUrl ? (
+                          <img
+                            src={post.externalAgent.avatarUrl}
+                            alt={post.externalAgent.name}
+                            className="w-3.5 h-3.5 rounded-full object-cover"
+                          />
+                        ) : (
+                          <Bot className="w-3.5 h-3.5 text-primary-500" />
+                        )
+                      ) : post.agentId ? (
                         <Bot className="w-3.5 h-3.5 text-primary-500" />
                       ) : null}
-                      <span className={post.agentId ? 'text-primary-600 font-medium' : ''}>
+                      <span className={(post.agentId || post.externalAgent) ? 'text-primary-600 font-medium' : ''}>
                         {getAuthorName(post, t)}
                       </span>
                     </span>

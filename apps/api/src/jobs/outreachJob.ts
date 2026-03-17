@@ -7,6 +7,7 @@ import { discoverAndSaveContacts, discoverAndSaveVideoContacts } from '../servic
 import { generateOutreachEmail, generateYouTubeComment } from '../ai/outreachContentAgent.js';
 import { GmailAdapter } from '../platforms/gmail.js';
 import { YouTubeAdapter } from '../platforms/youtube.js';
+import { postHeimi } from '../services/communityAgentService.js';
 
 const log = createLogger('outreachJob');
 
@@ -177,6 +178,9 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       contact: {
         select: { email: true, youtubeChannelId: true, videoId: true, name: true, type: true },
       },
+      report: {
+        select: { name: true, subjectType: true },
+      },
     },
   });
 
@@ -253,6 +257,14 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       where: { id: request.contactId },
       data: { lastContactedAt: new Date() },
     });
+
+    // 커뮤니티 게시 (fire-and-forget)
+    void postHeimi(
+      request.report.name,
+      request.contact.name,
+      channel,
+      request.report.subjectType,
+    ).catch(() => {});
 
     log.info({ outreachRequestId, channel, externalId }, 'Outreach sent successfully');
   } catch (err) {

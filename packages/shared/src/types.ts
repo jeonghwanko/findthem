@@ -396,6 +396,15 @@ export interface CommunityCommentPublic {
   createdAt: string;
 }
 
+// ── External Agent ──
+
+export interface ExternalAgentPublic {
+  id: string;
+  name: string;
+  description: string | null;
+  avatarUrl: string | null;
+}
+
 // ── Sponsor ──
 export type AgentId = 'image-matching' | 'promotion' | 'chatbot-alert';
 

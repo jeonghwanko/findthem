@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
-import { requireAuth, optionalAuth, requireAgentAuth, requireAdmin } from '../middlewares/auth.js';
+import { requireAuth, optionalAuth, requireAgentAuth, requireAdmin, requireExternalAgentAuth } from '../middlewares/auth.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES } from '@findthem/shared';
@@ -42,11 +42,13 @@ const commentListQuerySchema = z.object({
 
 const postInclude = {
   user: { select: { id: true, name: true } },
+  externalAgent: { select: { id: true, name: true, avatarUrl: true } },
   _count: { select: { comments: true } },
 } as const;
 
 const commentInclude = {
   user: { select: { id: true, name: true } },
+  externalAgent: { select: { id: true, name: true, avatarUrl: true } },
 } as const;
 
 export function registerCommunityRoutes(router: Router) {
@@ -232,6 +234,48 @@ export function registerCommunityRoutes(router: Router) {
 
       await prisma.communityComment.delete({ where: { id } });
       res.json({ success: true });
+    },
+  );
+
+  // ══════════════════════════════════════
+  // 외부 Agent 엔드포인트 (x-external-agent-key)
+  // ══════════════════════════════════════
+
+  // ── 외부 에이전트 글 작성 ──
+  router.post(
+    '/community/external/posts',
+    requireExternalAgentAuth,
+    validateBody(createPostSchema),
+    async (req, res) => {
+      const { title, content } = req.body as z.infer<typeof createPostSchema>;
+      const { id: externalAgentId, name: agentName } = req.externalAgent!;
+      const post = await prisma.communityPost.create({
+        data: { externalAgentId, title, content },
+        include: postInclude,
+      });
+      log.info({ postId: post.id, externalAgentId, agentName }, 'External agent community post created');
+      res.status(201).json(post);
+    },
+  );
+
+  // ── 외부 에이전트 댓글 작성 ──
+  router.post(
+    '/community/external/posts/:id/comments',
+    requireExternalAgentAuth,
+    validateBody(createCommentSchema),
+    async (req, res) => {
+      const id = req.params.id as string;
+      const post = await prisma.communityPost.findUnique({ where: { id } });
+      if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+
+      const { content } = req.body as z.infer<typeof createCommentSchema>;
+      const { id: externalAgentId, name: agentName } = req.externalAgent!;
+      const comment = await prisma.communityComment.create({
+        data: { postId: id, externalAgentId, content },
+        include: commentInclude,
+      });
+      log.info({ commentId: comment.id, postId: id, externalAgentId, agentName }, 'External agent comment created');
+      res.status(201).json(comment);
     },
   );
 

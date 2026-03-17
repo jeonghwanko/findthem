@@ -13,6 +13,7 @@ import { registerSponsorRoutes } from './sponsors.js';
 import { registerAgentsRoutes } from './agents.js';
 import { registerOgRoutes } from './og.js';
 import { registerCommunityRoutes } from './community.js';
+import { registerOutreachRoutes } from './outreach.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -31,6 +32,7 @@ export function createRouter(): Router {
   registerSponsorRoutes(router);
   registerAgentsRoutes(router);
   registerCommunityRoutes(router);
+  registerOutreachRoutes(router);
 
   return router;
 }

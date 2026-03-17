@@ -25,6 +25,7 @@ import AgentChatPage from './pages/admin/AgentChatPage';
 import DevlogPage from './pages/admin/DevlogPage';
 import OutreachPage from './pages/admin/OutreachPage';
 import AiSettingsPage from './pages/admin/AiSettingsPage';
+import ExternalAgentsPage from './pages/admin/ExternalAgentsPage';
 import TeamPage from './pages/TeamPage';
 import SponsorPage from './pages/SponsorPage';
 import SponsorSuccessPage from './pages/SponsorSuccessPage';
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="devlog" element={<DevlogPage />} />
         <Route path="outreach" element={<OutreachPage />} />
         <Route path="ai-settings" element={<AiSettingsPage />} />
+        <Route path="external-agents" element={<ExternalAgentsPage />} />
       </Route>
 
       {/* 일반 사용자 라우트 — 공통 Header/Footer */}

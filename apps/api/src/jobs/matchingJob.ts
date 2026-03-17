@@ -13,6 +13,7 @@ import {
   MAX_CANDIDATES,
 } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { postClaude } from '../services/communityAgentService.js';
 
 const log = createLogger('matchingJob');
 
@@ -110,7 +111,7 @@ async function matchReportAgainstSightings(reportId: string) {
 
 /** 한 쌍 비교 (이미 로드된 데이터 사용 → N+1 방지) */
 async function comparePairDirect(
-  report: { id: string; subjectType: string; features: string; aiDescription: string | null; photos: { photoUrl: string; aiAnalysis: unknown }[] },
+  report: { id: string; name: string; subjectType: string; features: string; aiDescription: string | null; lastSeenAddress: string; photos: { photoUrl: string; aiAnalysis: unknown }[] },
   sighting: { id: string; description: string; photos: { photoUrl: string; aiAnalysis: unknown }[] },
 ) {
   if (report.photos.length === 0 || sighting.photos.length === 0) return;
@@ -161,6 +162,14 @@ async function comparePairDirect(
           { matchId: match.id, reportId: report.id },
           { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
         );
+
+        // 커뮤니티 게시 (fire-and-forget)
+        void postClaude(
+          report.name,
+          result.confidence,
+          report.lastSeenAddress,
+          report.subjectType,
+        ).catch(() => {});
       }
     }
   } catch (err) {

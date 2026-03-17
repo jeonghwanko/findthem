@@ -9,6 +9,7 @@ import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue, cleanupQueue } from '../jobs/queues.js';
 import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES } from '@findthem/shared';
+import { postAli } from '../services/communityAgentService.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -123,6 +124,9 @@ export function registerReportRoutes(router: Router) {
         { type: 'report', reportId: report.id },
         { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-report-${report.id}` },
       );
+
+      // 커뮤니티 게시 (fire-and-forget)
+      void postAli(report.name, report.subjectType, report.lastSeenAddress).catch(() => {});
 
       res.status(201).json({ ...report, photos });
     },

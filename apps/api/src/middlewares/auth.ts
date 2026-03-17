@@ -14,11 +14,17 @@ export interface AgentPayload {
   agentId: string;
 }
 
+export interface ExternalAgentPayload {
+  id: string;
+  name: string;
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
       agent?: AgentPayload;
+      externalAgent?: ExternalAgentPayload;
     }
   }
 }
@@ -86,6 +92,35 @@ export function requireAgentAuth(req: Request, _res: Response, next: NextFunctio
   }
 
   req.agent = { agentId };
+  next();
+}
+
+export async function requireExternalAgentAuth(req: Request, _res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-external-agent-key'] as string | undefined;
+
+  if (!apiKey) {
+    throw new ApiError(401, ERROR_CODES.EXTERNAL_AGENT_AUTH_REQUIRED);
+  }
+
+  const agent = await prisma.externalAgent.findUnique({
+    where: { apiKey },
+    select: { id: true, name: true, isActive: true },
+  });
+
+  if (!agent) {
+    throw new ApiError(401, ERROR_CODES.EXTERNAL_AGENT_AUTH_REQUIRED);
+  }
+
+  if (!agent.isActive) {
+    throw new ApiError(403, ERROR_CODES.EXTERNAL_AGENT_INACTIVE);
+  }
+
+  // lastUsedAt 업데이트 (fire-and-forget)
+  void prisma.externalAgent
+    .update({ where: { apiKey }, data: { lastUsedAt: new Date() } })
+    .catch(() => {});
+
+  req.externalAgent = { id: agent.id, name: agent.name };
   next();
 }
 
