@@ -4,8 +4,9 @@ import { useKakaoMap } from '../hooks/useKakaoMap';
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
 
-const DEFAULT_LAT = 37.5665;
-const DEFAULT_LNG = 126.978;
+// 판교역 (기본 위치)
+const DEFAULT_LAT = 37.3947;
+const DEFAULT_LNG = 127.1112;
 
 // Daum Postcode 스크립트 로딩 상태 (모듈 레벨 — 중복 로드 방지)
 let daumLoading = false;

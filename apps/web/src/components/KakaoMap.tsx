@@ -18,7 +18,7 @@ interface KakaoMapProps {
 }
 
 function computeCenter(markers: MapMarker[]): { lat: number; lng: number } {
-  if (markers.length === 0) return { lat: 37.5665, lng: 126.978 };
+  if (markers.length === 0) return { lat: 37.3947, lng: 127.1112 }; // 판교역
   const lat = markers.reduce((s, m) => s + m.lat, 0) / markers.length;
   const lng = markers.reduce((s, m) => s + m.lng, 0) / markers.length;
   return { lat, lng };

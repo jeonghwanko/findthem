@@ -7,7 +7,8 @@ import { ReportCardSkeleton } from '../components/Skeleton';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
-const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
+// 판교역 (기본 위치)
+const DEFAULT_CENTER = { lat: 37.3947, lng: 127.1112 };
 
 function esc(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -145,6 +146,7 @@ export default function BrowsePage() {
               <KakaoMap
                 markers={mapMarkers}
                 center={userCenter ?? (mapMarkers.length > 0 ? undefined : DEFAULT_CENTER)}
+                level={mapMarkers.length > 0 ? undefined : 7}
                 className="w-full h-[500px] rounded-xl"
               />
               {mapMarkers.length < reports.length && (
