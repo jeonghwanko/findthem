@@ -78,9 +78,9 @@ export function SpinePortrait({ skins, animate = true, className }: Props) {
 
     return () => {
       destroyed = true;
-      app?.ticker.stop();
+      app?.ticker?.stop();
       char?.dispose();
-      app?.destroy();
+      try { app?.destroy(); } catch { /* init 미완료 상태에서 destroy 무시 */ }
       app = null;
       char = null;
     };
