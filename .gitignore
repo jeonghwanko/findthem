@@ -4,6 +4,7 @@ uploads/
 .env
 .env.local
 .env.*.local
+scripts/erc8004/registration-result.json
 *.log
 .DS_Store
 Thumbs.db

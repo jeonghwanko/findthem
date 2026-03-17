@@ -101,6 +101,10 @@ async function main() {
       console.error(`  .env에 추가: ${agent.pkEnv}=0x...`);
       process.exit(1);
     }
+    // 0x 접두사 자동 보정
+    if (!pk.startsWith('0x')) {
+      process.env[agent.pkEnv] = `0x${pk}`;
+    }
   }
 
   const results = [];
@@ -155,11 +159,12 @@ async function main() {
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       console.log(`  Status: ${receipt.status}`);
 
-      // agentId 추출
-      const registeredLog = receipt.logs.find(
-        (log) => log.address.toLowerCase() === IDENTITY_REGISTRY.toLowerCase() && log.topics.length >= 2,
+      // agentId 추출 — ERC-721 Transfer(address(0), to, tokenId) 이벤트의 topics[3]
+      const ERC721_TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+      const transferLog = receipt.logs.find(
+        (log) => log.topics.length === 4 && log.topics[0] === ERC721_TRANSFER_TOPIC,
       );
-      const agentId = registeredLog ? BigInt(registeredLog.topics[1]).toString() : 'unknown';
+      const agentId = transferLog ? BigInt(transferLog.topics[3]).toString() : 'unknown';
       console.log(`  Agent ID (on-chain): ${agentId}`);
 
       results.push({ ...agent, wallet: account.address, agentId, txHash: hash, status: 'success' });

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ScanFace, Megaphone, MessageSquare, Heart } from 'lucide-react';
+import { ScanFace, Megaphone, MessageSquare, Heart, ExternalLink } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
@@ -36,7 +36,11 @@ interface AgentConfig {
   iconColor: string;
   badgeBg: string;
   badgeText: string;
+  onchainId: string;
+  wallet: string;
 }
+
+const BASESCAN_NFT_URL = 'https://basescan.org/nft/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432';
 
 const AGENTS: AgentConfig[] = [
   {
@@ -49,6 +53,8 @@ const AGENTS: AgentConfig[] = [
     iconColor: 'text-blue-500',
     badgeBg: 'bg-blue-50',
     badgeText: 'text-blue-700',
+    onchainId: '32501',
+    wallet: '0xAd7714D358DC67Dc5491b8B7152f1a056F49C089',
   },
   {
     id: 'promotion',
@@ -60,6 +66,8 @@ const AGENTS: AgentConfig[] = [
     iconColor: 'text-pink-500',
     badgeBg: 'bg-pink-50',
     badgeText: 'text-pink-700',
+    onchainId: '32502',
+    wallet: '0xB192B0d602fcd9392e81DF375e25888fB029ff2A',
   },
   {
     id: 'chatbot-alert',
@@ -71,6 +79,8 @@ const AGENTS: AgentConfig[] = [
     iconColor: 'text-green-500',
     badgeBg: 'bg-green-50',
     badgeText: 'text-green-700',
+    onchainId: '32503',
+    wallet: '0xB6B02dbd3957791710Dc226d264d0184c40EB94d',
   },
 ];
 
@@ -200,6 +210,21 @@ export default function TeamPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(agent.descKey)}</p>
+
+              {/* ERC-8004 On-chain Identity */}
+              <a
+                href={`${BASESCAN_NFT_URL}/${agent.onchainId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+              >
+                <span className="text-xs font-mono text-gray-400">ERC-8004</span>
+                <span className="text-sm font-semibold text-gray-700">#{agent.onchainId}</span>
+                <span className="text-[10px] text-gray-400 truncate hidden sm:inline" title={agent.wallet}>
+                  {agent.wallet.slice(0, 6)}...{agent.wallet.slice(-4)}
+                </span>
+                <ExternalLink className="w-3 h-3 text-gray-300 group-hover:text-gray-500 ml-auto shrink-0" />
+              </a>
 
               {/* 활동 통계 */}
               <ActivitySection agent={agent} activity={activity[agent.id]} loading={activityLoading} />
