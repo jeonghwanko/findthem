@@ -208,6 +208,79 @@ describe('Auth E2E', () => {
     });
   });
 
+  // ── POST /api/auth/me/photo ──
+  describe('POST /api/auth/me/photo', () => {
+    // 1x1 픽셀 최소 PNG (유효한 이미지 바이너리)
+    const tinyPng = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64',
+    );
+
+    it('인증 없이 접근 → 401', async () => {
+      const res = await app
+        .post('/api/auth/me/photo')
+        .attach('photo', tinyPng, { filename: 'avatar.png', contentType: 'image/png' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('파일 없이 요청 → 400 (PHOTO_REQUIRED)', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const res = await app
+        .post('/api/auth/me/photo')
+        .set('Authorization', authHeader());
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('PHOTO_REQUIRED');
+    });
+
+    it('이미지 파일 업로드 성공 → 200, profileImage 필드 포함', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+      prismaMock.user.update.mockResolvedValue({
+        id: testUser.id,
+        name: testUser.name,
+        phone: testUser.phone,
+        email: testUser.email,
+        profileImage: '/uploads/profiles/mock-photo.jpg',
+        provider: 'LOCAL',
+        createdAt: testUser.createdAt,
+      });
+
+      const res = await app
+        .post('/api/auth/me/photo')
+        .set('Authorization', authHeader())
+        .attach('photo', tinyPng, { filename: 'avatar.png', contentType: 'image/png' });
+
+      // setup.ts의 imageService mock은 photoUrl: '/uploads/reports/mock-photo.jpg' 반환
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('profileImage', '/uploads/profiles/mock-photo.jpg');
+      expect(prismaMock.user.update).toHaveBeenCalledOnce();
+      expect(prismaMock.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: testUser.id },
+          data: { profileImage: '/uploads/reports/mock-photo.jpg' }, // imageService mock 고정 반환값
+        }),
+      );
+    });
+
+    it('이미지가 아닌 파일 업로드 → multer fileFilter 에러', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const textBuffer = Buffer.from('not an image content');
+
+      const res = await app
+        .post('/api/auth/me/photo')
+        .set('Authorization', authHeader())
+        .attach('photo', textBuffer, { filename: 'document.txt', contentType: 'text/plain' });
+
+      // multer fileFilter가 cb(new Error(ERROR_CODES.IMAGE_ONLY))를 throw
+      // → errorHandler에서 ApiError/ZodError 외 에러로 처리 → 500
+      expect(res.status).toBe(500);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+    });
+  });
+
   // ── PATCH /api/auth/me ──
   describe('PATCH /api/auth/me', () => {
     it('이름 수정 성공 → 200 + 수정된 유저 정보', async () => {
