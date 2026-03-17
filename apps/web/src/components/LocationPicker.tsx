@@ -126,23 +126,21 @@ export default function LocationPicker({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => { onAddressChange(e.target.value); }}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-          placeholder={t('report.lastSeenPlaceholder')}
-        />
-        <button
-          type="button"
-          onClick={handleAddressSearch}
-          aria-label={t('report.addressSearch')}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors whitespace-nowrap"
-        >
-          {t('report.addressSearch')}
-        </button>
-      </div>
+      {/* 클릭하면 주소 검색 팝업이 바로 열림 */}
+      <button
+        type="button"
+        onClick={handleAddressSearch}
+        className="w-full flex items-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg text-left hover:border-primary-400 hover:bg-gray-50 transition-colors cursor-pointer"
+      >
+        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        {address ? (
+          <span className="text-gray-900 truncate">{address}</span>
+        ) : (
+          <span className="text-gray-400">{t('report.addressSearchPlaceholder')}</span>
+        )}
+      </button>
 
       {geoError && (
         <p className="text-xs text-red-500">{geoError}</p>

@@ -108,6 +108,7 @@
     "submitting": "Registering...",
     "submit": "Submit Missing Report",
     "addressSearch": "Search Address",
+    "addressSearchPlaceholder": "Click to search for an address",
     "mapClickHint": "Click on the map to fine-tune the location",
     "coordsLabel": "Lat {{lat}}, Lng {{lng}}",
     "geoError": "Could not find coordinates for this address. Please click on the map to set the location.",
