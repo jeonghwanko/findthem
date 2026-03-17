@@ -38,6 +38,7 @@ async function adminRequest<T>(method: string, path: string, body?: unknown): Pr
 export const adminApi = {
   get: <T>(path: string) => adminRequest<T>('GET', path),
   post: <T>(path: string, body?: unknown) => adminRequest<T>('POST', path, body),
+  put: <T>(path: string, body: unknown) => adminRequest<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => adminRequest<T>('PATCH', path, body),
 };
 

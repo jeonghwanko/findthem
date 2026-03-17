@@ -473,9 +473,118 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ── API 키 관리 탭 ──────────────────────────────────────────────────────
+
+interface KeyStatus { configured: boolean; masked: string }
+interface TestResult { success: boolean; model?: string; error?: string; latencyMs: number }
+
+const PROVIDERS = [
+  { id: 'anthropic', name: 'Anthropic (Claude)', placeholder: 'sk-ant-api03-...' },
+  { id: 'gemini', name: 'Google Gemini', placeholder: 'AIzaSy...' },
+  { id: 'openai', name: 'OpenAI (GPT)', placeholder: 'sk-...' },
+] as const;
+
+function ApiKeysTab() {
+  const { data: keys, loading, refresh } = useAdminData<Record<string, KeyStatus>>('/admin/ai/keys');
+  const [inputs, setInputs] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+
+  async function handleSave(provider: string) {
+    const apiKey = inputs[provider]?.trim();
+    if (!apiKey) return;
+    setSaving(provider);
+    try {
+      await adminApi.put('/admin/ai/keys', { provider, apiKey });
+      setInputs((prev) => ({ ...prev, [provider]: '' }));
+      void refresh();
+    } catch { /* ignore */ }
+    finally { setSaving(null); }
+  }
+
+  async function handleTest(provider: string) {
+    setTesting(provider);
+    setTestResults((prev) => ({ ...prev, [provider]: undefined as unknown as TestResult }));
+    try {
+      const apiKey = inputs[provider]?.trim() || undefined;
+      const result = await adminApi.post<TestResult>('/admin/ai/keys/test', { provider, apiKey });
+      setTestResults((prev) => ({ ...prev, [provider]: result }));
+    } catch {
+      setTestResults((prev) => ({ ...prev, [provider]: { success: false, error: '요청 실패', latencyMs: 0 } }));
+    } finally {
+      setTesting(null);
+    }
+  }
+
+  if (loading && !keys) return <div className="text-sm text-gray-400">로딩 중...</div>;
+
+  return (
+    <div className="space-y-4">
+      {PROVIDERS.map(({ id, name, placeholder }) => {
+        const status = keys?.[id];
+        const result = testResults[id];
+        return (
+          <div key={id} className="bg-white rounded-lg shadow p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">{name}</h3>
+                {status?.configured ? (
+                  <span className="text-xs text-green-600 font-mono">{status.masked}</span>
+                ) : (
+                  <span className="text-xs text-gray-400">미설정</span>
+                )}
+              </div>
+              <div className={`w-2.5 h-2.5 rounded-full ${status?.configured ? 'bg-green-400' : 'bg-gray-300'}`} />
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={inputs[id] ?? ''}
+                onChange={(e) => setInputs((prev) => ({ ...prev, [id]: e.target.value }))}
+                placeholder={placeholder}
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                onClick={() => { void handleSave(id); }}
+                disabled={!inputs[id]?.trim() || saving === id}
+                className="bg-indigo-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap"
+              >
+                {saving === id ? '저장 중...' : '저장'}
+              </button>
+              <button
+                onClick={() => { void handleTest(id); }}
+                disabled={testing === id || (!status?.configured && !inputs[id]?.trim())}
+                className="border border-gray-300 rounded px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap"
+              >
+                {testing === id ? '테스트 중...' : '🧪 테스트'}
+              </button>
+            </div>
+
+            {result && (
+              <div className={`mt-3 text-sm px-3 py-2 rounded ${result.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {result.success ? (
+                  <span>✅ 연결 성공 — 모델: {result.model}, 응답: {result.latencyMs}ms</span>
+                ) : (
+                  <span>❌ 실패 — {result.error}</span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <p className="text-xs text-gray-400">
+        API 키는 DB에 암호화 없이 저장됩니다. .env에 설정된 키가 있으면 DB 키가 우선합니다.
+      </p>
+    </div>
+  );
+}
+
 // ── 메인 페이지 ────────────────────────────────────────────────────────
 
-type Tab = 'settings' | 'usage';
+type Tab = 'settings' | 'keys' | 'usage';
 
 export default function AiSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('settings');
@@ -495,6 +604,7 @@ export default function AiSettingsPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'settings', label: '프로바이더 설정' },
+    { id: 'keys', label: 'API 키 관리' },
     { id: 'usage', label: '사용량 통계' },
   ];
 
@@ -543,6 +653,7 @@ export default function AiSettingsPage() {
         </>
       )}
 
+      {activeTab === 'keys' && <ApiKeysTab />}
       {activeTab === 'usage' && <UsageTab />}
     </div>
   );

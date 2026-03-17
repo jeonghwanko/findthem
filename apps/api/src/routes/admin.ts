@@ -1086,4 +1086,113 @@ export function registerAdminRoutes(router: Router) {
       byProvider,
     });
   });
+
+  // ── API 키 관리 ──
+
+  const API_KEY_PROVIDERS = ['anthropic', 'gemini', 'openai'] as const;
+
+  // GET /admin/ai/keys — API 키 상태 (마스킹)
+  router.get('/admin/ai/keys', requireAdmin, async (_req, res) => {
+    const keys: Record<string, { configured: boolean; masked: string }> = {};
+    for (const provider of API_KEY_PROVIDERS) {
+      const dbKey = await prisma.aiSetting.findUnique({ where: { key: `api_key_${provider}` } });
+      const envKey = provider === 'anthropic' ? config.anthropicApiKey
+        : provider === 'gemini' ? config.geminiApiKey
+        : config.openaiApiKey;
+      const rawKey = dbKey?.value || envKey;
+      keys[provider] = {
+        configured: !!rawKey,
+        masked: rawKey ? `${rawKey.slice(0, 8)}...${rawKey.slice(-4)}` : '',
+      };
+    }
+    res.json(keys);
+  });
+
+  // PUT /admin/ai/keys — API 키 저장 (DB에 저장, 런타임 반영)
+  const aiKeyUpdateSchema = z.object({
+    provider: z.enum(['anthropic', 'gemini', 'openai']),
+    apiKey: z.string().min(1).max(500),
+  });
+
+  router.put('/admin/ai/keys', requireAdmin, validateBody(aiKeyUpdateSchema), async (req, res) => {
+    const { provider, apiKey } = req.body as z.infer<typeof aiKeyUpdateSchema>;
+
+    await prisma.aiSetting.upsert({
+      where: { key: `api_key_${provider}` },
+      create: { key: `api_key_${provider}`, value: apiKey },
+      update: { value: apiKey },
+    });
+
+    await createAuditLog({
+      action: 'ai.key.update',
+      targetType: 'AiSetting',
+      targetId: `api_key_${provider}`,
+      detail: { provider, masked: `${apiKey.slice(0, 8)}...` },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json({ success: true });
+  });
+
+  // POST /admin/ai/keys/test — API 키 테스트
+  const aiKeyTestSchema = z.object({
+    provider: z.enum(['anthropic', 'gemini', 'openai']),
+    apiKey: z.string().optional(), // 생략 시 저장된 키 사용
+  });
+
+  router.post('/admin/ai/keys/test', requireAdmin, validateBody(aiKeyTestSchema), async (req, res) => {
+    const { provider, apiKey: inputKey } = req.body as z.infer<typeof aiKeyTestSchema>;
+
+    // 테스트할 키 결정: 입력 > DB > env
+    let testKey = inputKey;
+    if (!testKey) {
+      const dbKey = await prisma.aiSetting.findUnique({ where: { key: `api_key_${provider}` } });
+      const envKey = provider === 'anthropic' ? config.anthropicApiKey
+        : provider === 'gemini' ? config.geminiApiKey
+        : config.openaiApiKey;
+      testKey = dbKey?.value || envKey;
+    }
+
+    if (!testKey) {
+      res.json({ success: false, error: 'API 키가 설정되지 않았습니다.', latencyMs: 0 });
+      return;
+    }
+
+    const start = Date.now();
+    try {
+      if (provider === 'anthropic') {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'x-api-key': testKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 16, messages: [{ role: 'user', content: 'Hi' }] }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        const body = await r.json() as Record<string, unknown>;
+        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
+        res.json({ success: true, model: (body.model as string) ?? 'claude', latencyMs: Date.now() - start });
+      } else if (provider === 'gemini') {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 16 } }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        const body = await r.json() as Record<string, unknown>;
+        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
+        res.json({ success: true, model: 'gemini-2.0-flash', latencyMs: Date.now() - start });
+      } else {
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${testKey}`, 'content-type': 'application/json' },
+          body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: 'Hi' }], max_tokens: 16 }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        const body = await r.json() as Record<string, unknown>;
+        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
+        res.json({ success: true, model: (body.model as string) ?? 'gpt-4o-mini', latencyMs: Date.now() - start });
+      }
+    } catch (err) {
+      res.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error', latencyMs: Date.now() - start });
+    }
+  });
 }
