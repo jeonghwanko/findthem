@@ -614,6 +614,23 @@ model AiUsageLog {
   @@map("ai_usage_log")
 }
 
+// 에이전트 의사결정 로그 (향후 RL 데이터 기반)
+model AgentDecisionLog {
+  id             String   @id @default(cuid())
+  agentId        String
+  eventType      String   // 'match_detected' | 'outreach_sent' | 'report_created' | 'case_resolved'
+  selectedAction String   // 선택된 행동 타입
+  stayedSilent   Boolean  @default(false)
+  confidence     Float?   // match_detected 이벤트 전용
+  reportId       String?
+  postId         String?  // 생성된 CommunityPost id
+  candidateScores Json    // 점수 기록 (RL 데이터용)
+  createdAt      DateTime @default(now())
+
+  @@index([agentId, createdAt])
+  @@map("agent_decision_log")
+}
+
 // 크립토 결제 견적 (5분 TTL)
 model SponsorCryptoQuote {
   id             String    @id @default(cuid())

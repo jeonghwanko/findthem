@@ -45,7 +45,9 @@ export default function OutreachHighlights() {
     api
       .get<OutreachHighlightsResponse>('/outreach/highlights')
       .then((data) => {
-        const safe = (data.items ?? []).filter((i) => YT_VIDEO_ID_RE.test(i.videoId));
+        const safe = (data.items ?? []).filter(
+          (i) => (i.videoId ? YT_VIDEO_ID_RE.test(i.videoId) : true) && (i.videoId ?? i.channelId),
+        );
         setItems(safe);
       })
       .catch(() => setItems([]))

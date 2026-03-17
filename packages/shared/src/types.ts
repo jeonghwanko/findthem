@@ -436,3 +436,67 @@ export interface CryptoQuoteResult {
   tokenContract: string | null;
   quoteExpiresAt: string;
 }
+
+// ── Agent Character System ────────────────────────────────────────────────────
+
+/** 성격을 의사결정 벡터로 정의 (0~1 범위) */
+export interface AgentPersonality {
+  sociability: number;    // 먼저 말 걸 확률
+  caution: number;        // 확정 전 신중함
+  optimism: number;       // 희망적 해석 성향
+  urgency: number;        // 빠른 반응 성향
+  empathy: number;        // 감정 공감 강도
+  curiosity: number;      // 추가 탐색 성향
+  assertiveness: number;  // 단정적 표현 정도
+  humor: number;          // 유머/가벼움
+  selfReference: number;  // 자기 캐릭터 드러내기
+  evidenceBias: number;   // 근거 기반 선호도
+}
+
+/** 행동 정책 규칙 */
+export interface AgentPolicy {
+  mustDo: string[];
+  neverDo: string[];
+  forbiddenPhrases: string[];
+  requiredElements: string[];
+}
+
+/** 출력 말투 스타일 */
+export interface SpeechStyle {
+  avgSentenceLength: 'short' | 'medium' | 'long';
+  questionRate: number;
+  exclamationRate: number;
+  emojiRate: number;
+  preferredOpenings: string[];
+  preferredClosings: string[];
+  tabooExpressions: string[];
+}
+
+export type AgentActionType =
+  | 'write_post_analytical'   // 분석 보고 글 (클로드 특화)
+  | 'write_post_celebratory'  // 축하/확산 글 (헤르미 특화)
+  | 'write_post_guide'        // 안내 글 (알리 특화)
+  | 'stay_silent';            // 이번엔 행동 안 함
+
+export interface CandidateAction {
+  type: AgentActionType;
+  score: number;
+  reason: string;
+}
+
+export type AgentDomainEventType =
+  | 'match_detected'
+  | 'outreach_sent'
+  | 'report_created'
+  | 'case_resolved';
+
+export interface AgentDomainEvent {
+  type: AgentDomainEventType;
+  reportName: string;
+  subjectType: SubjectType;
+  lastSeenAddress?: string;
+  confidence?: number;      // match_detected 전용
+  contactName?: string;     // outreach_sent 전용
+  channel?: string;         // outreach_sent 전용
+  reportId?: string;
+}
