@@ -356,7 +356,9 @@
     "save": "保存",
     "saving": "保存中...",
     "saved": "保存しました",
-    "saveFailed": "保存に失敗しました"
+    "saveFailed": "保存に失敗しました",
+    "photoSaved": "プロフィール写真を変更しました",
+    "photoFailed": "写真のアップロードに失敗しました"
   },
   "community": {
     "title": "コミュニティ",

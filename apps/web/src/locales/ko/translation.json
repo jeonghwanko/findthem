@@ -357,7 +357,9 @@
     "save": "저장",
     "saving": "저장 중...",
     "saved": "저장되었습니다",
-    "saveFailed": "저장에 실패했습니다"
+    "saveFailed": "저장에 실패했습니다",
+    "photoSaved": "프로필 사진이 변경되었습니다",
+    "photoFailed": "사진 업로드에 실패했습니다"
   },
   "community": {
     "title": "커뮤니티",

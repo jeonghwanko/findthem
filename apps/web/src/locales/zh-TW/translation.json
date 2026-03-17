@@ -357,7 +357,9 @@
     "save": "儲存",
     "saving": "儲存中...",
     "saved": "已儲存",
-    "saveFailed": "儲存失敗"
+    "saveFailed": "儲存失敗",
+    "photoSaved": "大頭貼已更新",
+    "photoFailed": "照片上傳失敗"
   },
   "community": {
     "title": "社群",

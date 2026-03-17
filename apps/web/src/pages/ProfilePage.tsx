@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User as UserIcon, Mail, Calendar, Shield, Save } from 'lucide-react';
+import { User as UserIcon, Mail, Calendar, Shield, Save, Camera } from 'lucide-react';
 import { api, type User } from '../api/client';
 
 interface ProfilePageProps {
@@ -13,7 +13,9 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email ?? '');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
   const hasChanges = name !== user.name || (email || null) !== (user.email || null);
@@ -24,8 +26,8 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     setMessage(null);
     try {
       const updated = await api.patch<User>('/auth/me', {
-        name: name !== user.name ? name : undefined,
-        email: email !== (user.email ?? '') ? (email || null) : undefined,
+        ...(name !== user.name && { name }),
+        ...(email !== (user.email ?? '') && { email: email || null }),
       });
       onUserUpdate(updated);
       setName(updated.name);
@@ -38,24 +40,65 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     }
   }
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMessage(null);
+    try {
+      const form = new FormData();
+      form.append('photo', file);
+      const updated = await api.post<User>('/auth/me/photo', form);
+      onUserUpdate(updated);
+      setMessage({ type: 'success', text: t('profile.photoSaved') });
+    } catch {
+      setMessage({ type: 'error', text: t('profile.photoFailed') });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 pt-12 pb-8">
       <h1 className="text-2xl font-bold mb-8">{t('profile.title')}</h1>
 
-      {/* 프로필 이미지 */}
+      {/* 프로필 이미지 — hover 시 카메라 오버레이 */}
       <div className="flex justify-center mb-8">
-        {user.profileImage ? (
-          <img
-            src={user.profileImage}
-            alt={user.name}
-            className="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-3xl font-bold border-4 border-gray-100">
-            {initial}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="relative group w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 cursor-pointer disabled:cursor-wait"
+        >
+          {user.profileImage ? (
+            <img
+              src={user.profileImage}
+              alt={user.name}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-full h-full bg-primary-100 text-primary-700 flex items-center justify-center text-3xl font-bold">
+              {initial}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera className="w-6 h-6 text-white" />
           </div>
-        )}
+          {uploading && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={(e) => void handlePhotoUpload(e)}
+          className="hidden"
+        />
       </div>
 
       {/* 정보 폼 */}

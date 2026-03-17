@@ -4,14 +4,16 @@ import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import multer from 'multer';
 import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { authLimiter } from '../middlewares/rateLimit.js';
-import { ERROR_CODES } from '@findthem/shared';
+import { ERROR_CODES, MAX_FILE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { imageService } from '../services/imageService.js';
 
 const log = createLogger('auth');
 
@@ -158,6 +160,31 @@ export function registerAuthRoutes(router: Router) {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
+    });
+    res.json(user);
+  });
+
+  // ── 프로필 이미지 업로드 ──────────────────────────────────────────────────
+  const profileUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_FILE_SIZE },
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) cb(null, true);
+      else cb(new Error(ERROR_CODES.IMAGE_ONLY));
+    },
+  });
+
+  router.post('/auth/me/photo', requireAuth, profileUpload.single('photo'), async (req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!;
+    if (!req.file) throw new ApiError(400, ERROR_CODES.PHOTO_REQUIRED);
+
+    const { photoUrl } = await imageService.processAndSave('profiles', req.file);
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { profileImage: photoUrl },
       select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
     });
     res.json(user);

@@ -357,7 +357,9 @@
     "save": "Save",
     "saving": "Saving...",
     "saved": "Changes saved",
-    "saveFailed": "Failed to save changes"
+    "saveFailed": "Failed to save changes",
+    "photoSaved": "Profile photo updated",
+    "photoFailed": "Failed to upload photo"
   },
   "community": {
     "title": "Community",
