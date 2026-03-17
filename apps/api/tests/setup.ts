@@ -33,6 +33,7 @@ vi.mock('../src/db/client.js', () => {
     adminAuditLog: createModelMock(),
     communityPost: createModelMock(),
     communityComment: createModelMock(),
+    externalAgent: createModelMock(),
     $connect: vi.fn(),
     $disconnect: vi.fn(),
     $queryRaw: vi.fn(),
