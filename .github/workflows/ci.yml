@@ -10,7 +10,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── CI: 타입체크 → 테스트 → 빌드 ──
+  # ── CI: 타입체크 → 테스트 → 빌드 → artifact 업로드 ──
   ci:
     runs-on: ubuntu-latest
 
@@ -48,14 +48,56 @@ jobs:
           VITE_KAKAO_JS_KEY: ${{ secrets.VITE_KAKAO_JS_KEY }}
           VITE_TOSS_CLIENT_KEY: ${{ secrets.VITE_TOSS_CLIENT_KEY }}
 
-  # ── CD: main 머지 시 서버 자동 배포 ──
+      # CI에서 빌드한 결과물을 artifact로 업로드 → CD에서 재사용
+      - name: 빌드 결과물 패키징
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          tar czf /tmp/deploy-bundle.tar.gz \
+            apps/api/dist \
+            apps/api/prisma \
+            apps/web/dist \
+            packages/shared/dist \
+            packages/web3-payment/dist \
+            package.json \
+            package-lock.json \
+            apps/api/package.json \
+            apps/web/package.json \
+            packages/shared/package.json \
+            packages/web3-payment/package.json \
+            ecosystem.config.cjs \
+            deploy/
+
+      - name: artifact 업로드
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-bundle
+          path: /tmp/deploy-bundle.tar.gz
+          retention-days: 1
+
+  # ── CD: artifact 전송 → 서버 배포 (install/build 스킵) ──
   deploy:
     needs: ci
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
-      - name: 서버 코드 업데이트
+      - name: artifact 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-bundle
+
+      - name: 서버에 빌드 결과물 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: deploy-bundle.tar.gz
+          target: /tmp/
+
+      - name: 서버 배포
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -63,19 +105,35 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
             cd ~/findthem
+
+            # 소스 코드 업데이트 (config, migration 등 빌드에 포함 안 된 파일)
             git pull origin master
-            npm ci || (rm -rf node_modules && npm ci)
-            cd apps/api && npx prisma generate && cd ~/findthem
-            npm run build
-            cd apps/api && npx prisma migrate deploy && cd ~/findthem
+
+            # CI 빌드 결과물 덮어쓰기 (install/build 스킵)
+            tar xzf /tmp/deploy-bundle.tar.gz --overwrite
+            rm -f /tmp/deploy-bundle.tar.gz
+
+            # node_modules는 lock 변경 시에만 재설치
+            npm ci --prefer-offline --ignore-scripts 2>/dev/null || npm ci
+
+            # Prisma: generate + migrate
+            cd apps/api
+            npx prisma generate
+            npx prisma migrate deploy
+            cd ~/findthem
+
+            # 웹 배포
             cp -r apps/web/dist/. /var/www/union/
+
+            # API 재시작
             pm2 restart findthem-api || pm2 start ecosystem.config.cjs --env production
             pm2 save
 
-            # 크롤링 이미지 복구 (파일 없는 사진을 공공 API에서 재다운로드)
-            cd ~/findthem && npx tsx apps/api/scripts/repair-missing-images.ts || true
+            # 크롤링 이미지 복구
+            npx tsx apps/api/scripts/repair-missing-images.ts || true
 
-            # Nginx 설정 업데이트 (Ghost /devlog 포함)
-            sudo cp ~/findthem/deploy/nginx.conf /etc/nginx/sites-available/yoonion
+            # Nginx 설정
+            sudo cp ~/findthem/deploy/union.pryzm.gg.conf /etc/nginx/sites-available/yoonion
             sudo nginx -t && sudo systemctl reload nginx
