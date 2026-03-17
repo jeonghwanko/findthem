@@ -5,7 +5,7 @@ import { Heart, ExternalLink } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
-import { SpinePortrait } from '../components/SpinePortrait';
+import { AgentPortrait } from '../components/AgentPortrait';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -201,7 +201,7 @@ export default function TeamPage() {
                   className={`w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}
                   style={{ border: `2px solid ${agent.portraitBorder}` }}
                 >
-                  <SpinePortrait skins={agent.skins} animate={false} />
+                  <AgentPortrait agentId={agent.id} skins={agent.skins} />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{t(agent.nameKey)}</p>

@@ -38,6 +38,7 @@ import CommunityEditPostPage from './pages/CommunityEditPostPage';
 import ProfilePage from './pages/ProfilePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import GamePage from './pages/GamePage';
+import CapturePortraitsPage from './pages/CapturePortraitsPage';
 
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
@@ -126,6 +127,7 @@ export default function App() {
                 <Route path="/team" element={<TeamPage />} />
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
+                <Route path="/dev/portraits" element={<CapturePortraitsPage />} />
               </Routes>
             </main>
             <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">
@@ -137,9 +139,9 @@ export default function App() {
                       href="/devlog"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 hover:shadow-sm transition-all duration-150 cursor-pointer"
                     >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                       </svg>
@@ -149,10 +151,10 @@ export default function App() {
                       href="https://x.com/yoooonion"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 hover:shadow-sm transition-all duration-150 cursor-pointer"
                       aria-label="Twitter"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
                     </a>
