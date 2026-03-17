@@ -30,8 +30,6 @@ export interface UserPublic {
   createdAt?: string;
 }
 
-export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM';
-
 export interface ReportPhoto {
   id: string;
   photoUrl: string;
