@@ -60,9 +60,10 @@ async function findOrCreateSocialUser(params: {
   const { provider, providerId, name, profileImage } = params;
   const phone = `social_${provider.toLowerCase()}_${providerId}`;
 
+  // 재로그인 시 사용자가 직접 수정한 name/profileImage를 덮어쓰지 않음
   return prisma.user.upsert({
     where: { provider_providerId: { provider, providerId } },
-    update: { name, ...(profileImage ? { profileImage } : {}) },
+    update: {},
     create: {
       name,
       phone,
