@@ -43,6 +43,14 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: t('errors.IMAGE_ONLY') });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: t('upload.limit', { max: 1 }) });
+      return;
+    }
     setUploading(true);
     setMessage(null);
     try {
@@ -51,8 +59,9 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       const updated = await api.post<User>('/auth/me/photo', form);
       onUserUpdate(updated);
       setMessage({ type: 'success', text: t('profile.photoSaved') });
-    } catch {
-      setMessage({ type: 'error', text: t('profile.photoFailed') });
+    } catch (err) {
+      const code = err instanceof Error ? err.message : '';
+      setMessage({ type: 'error', text: t(`errors.${code}`, { defaultValue: t('profile.photoFailed') }) });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -83,9 +92,11 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
               {initial}
             </div>
           )}
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Camera className="w-6 h-6 text-white" />
-          </div>
+          {!uploading && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="w-6 h-6 text-white" />
+            </div>
+          )}
           {uploading && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />

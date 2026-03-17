@@ -10,10 +10,11 @@ import { config } from '../config.js';
 import { validateBody } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { requireAuth } from '../middlewares/auth.js';
-import { authLimiter } from '../middlewares/rateLimit.js';
+import { authLimiter, apiLimiter } from '../middlewares/rateLimit.js';
 import { ERROR_CODES, MAX_FILE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
+import { storageService } from '../services/storageService.js';
 
 const log = createLogger('auth');
 
@@ -175,12 +176,24 @@ export function registerAuthRoutes(router: Router) {
     },
   });
 
-  router.post('/auth/me/photo', requireAuth, profileUpload.single('photo'), async (req, res) => {
+  router.post('/auth/me/photo', requireAuth, apiLimiter, profileUpload.single('photo'), async (req, res) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { userId } = req.user!;
     if (!req.file) throw new ApiError(400, ERROR_CODES.PHOTO_REQUIRED);
 
-    const { photoUrl } = await imageService.processAndSave('profiles', req.file);
+    // 이전 프로필 이미지 삭제 (로컬 파일만, 외부 URL 제외)
+    const current = await prisma.user.findUnique({ where: { id: userId }, select: { profileImage: true } });
+    if (current?.profileImage?.startsWith('/uploads/')) {
+      await storageService.deleteFile(current.profileImage).catch(() => { /* ignore */ });
+    }
+
+    let photoUrl: string;
+    try {
+      ({ photoUrl } = await imageService.processAndSave('profiles', req.file));
+    } catch (err) {
+      log.error({ err, userId }, 'Profile photo processing failed');
+      throw new ApiError(500, ERROR_CODES.SERVER_ERROR);
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
