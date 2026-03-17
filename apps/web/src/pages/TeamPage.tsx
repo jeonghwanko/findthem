@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ScanFace, Megaphone, MessageSquare, Heart, ExternalLink } from 'lucide-react';
+import { Heart, ExternalLink } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
+import { SpinePortrait } from '../components/SpinePortrait';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -31,9 +32,8 @@ interface AgentConfig {
   nameKey: string;
   roleKey: string;
   descKey: string;
-  icon: React.ElementType;
+  skins: readonly string[];
   iconBg: string;
-  iconColor: string;
   badgeBg: string;
   badgeText: string;
   onchainId: string;
@@ -48,9 +48,8 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentImageMatching.name',
     roleKey: 'team.agentImageMatching.role',
     descKey: 'team.agentImageMatching.desc',
-    icon: ScanFace,
+    skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const,
     iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-500',
     badgeBg: 'bg-blue-50',
     badgeText: 'text-blue-700',
     onchainId: '32501',
@@ -61,9 +60,8 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentPromotion.name',
     roleKey: 'team.agentPromotion.role',
     descKey: 'team.agentPromotion.desc',
-    icon: Megaphone,
+    skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const,
     iconBg: 'bg-pink-50',
-    iconColor: 'text-pink-500',
     badgeBg: 'bg-pink-50',
     badgeText: 'text-pink-700',
     onchainId: '32502',
@@ -74,9 +72,8 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentChatbotAlert.name',
     roleKey: 'team.agentChatbotAlert.role',
     descKey: 'team.agentChatbotAlert.desc',
-    icon: MessageSquare,
+    skins: ['body_043', 'cos_042', 'hair_000', 'hat_042', 'weapon_042'] as const,
     iconBg: 'bg-green-50',
-    iconColor: 'text-green-500',
     badgeBg: 'bg-green-50',
     badgeText: 'text-green-700',
     onchainId: '32503',
@@ -174,8 +171,8 @@ export default function TeamPage() {
   }, []);
 
   const agentNameMap = useMemo(() => {
-    const map: Record<string, { nameKey: string; iconColor: string }> = {};
-    for (const a of AGENTS) map[a.id] = { nameKey: a.nameKey, iconColor: a.iconColor };
+    const map: Record<string, { nameKey: string }> = {};
+    for (const a of AGENTS) map[a.id] = { nameKey: a.nameKey };
     return map;
   }, []);
 
@@ -190,15 +187,14 @@ export default function TeamPage() {
       {/* 에이전트 카드 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         {AGENTS.map((agent) => {
-          const Icon = agent.icon;
           return (
             <div
               key={agent.id}
               className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
             >
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${agent.iconBg}`}>
-                  <Icon className={`w-6 h-6 ${agent.iconColor}`} aria-hidden="true" />
+                <div className={`w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}>
+                  <SpinePortrait skins={agent.skins} />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{t(agent.nameKey)}</p>

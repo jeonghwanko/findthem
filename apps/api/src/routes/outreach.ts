@@ -10,7 +10,10 @@ export function registerOutreachRoutes(router: Router) {
     const requests = await prisma.outreachRequest.findMany({
       where: {
         status: { in: ['PENDING_APPROVAL', 'APPROVED', 'SENT'] },
-        contact: { videoId: { not: null } },
+        contact: {
+          type: { in: ['YOUTUBER', 'VIDEO'] },
+          OR: [{ videoId: { not: null } }, { youtubeChannelId: { not: null } }],
+        },
       },
       select: {
         reportId: true,
@@ -18,9 +21,12 @@ export function registerOutreachRoutes(router: Router) {
         contact: {
           select: {
             name: true,
+            type: true,
             videoId: true,
             videoTitle: true,
             viewCount: true,
+            youtubeChannelId: true,
+            youtubeChannelUrl: true,
           },
         },
       },
@@ -28,12 +34,21 @@ export function registerOutreachRoutes(router: Router) {
       take: 20,
     });
 
+    // 채널별 중복 제거 (같은 채널이 여러 신고에 연결될 수 있음)
+    const seen = new Set<string>();
     const items = requests
-      .filter((r): r is typeof r & { contact: { videoId: string } } =>
-        r.contact.videoId !== null && YT_VIDEO_ID_RE.test(r.contact.videoId),
-      )
+      .filter((r) => {
+        const key = r.contact.videoId ?? r.contact.youtubeChannelId;
+        if (!key) return false;
+        if (r.contact.videoId && !YT_VIDEO_ID_RE.test(r.contact.videoId)) return false;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
       .map((r) => ({
-        videoId: r.contact.videoId,
+        videoId: r.contact.videoId ?? null,
+        channelId: r.contact.youtubeChannelId ?? null,
+        channelUrl: r.contact.youtubeChannelUrl ?? null,
         videoTitle: r.contact.videoTitle ?? r.contact.name,
         channelName: r.contact.name,
         reportId: r.reportId,

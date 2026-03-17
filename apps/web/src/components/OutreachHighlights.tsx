@@ -5,7 +5,9 @@ import { YT_VIDEO_ID_RE } from '@findthem/shared';
 import { api } from '../api/client';
 
 interface OutreachHighlight {
-  videoId: string;
+  videoId: string | null;
+  channelId: string | null;
+  channelUrl: string | null;
   videoTitle: string;
   channelName: string;
   reportId: string;
@@ -115,19 +117,32 @@ export default function OutreachHighlights() {
               ? Array.from({ length: SET_SIZE }).map((_, i) => <SkeletonCard key={i} />)
               : currentItems.map((item) => (
                   <a
-                    key={item.videoId}
-                    href={`https://www.youtube.com/watch?v=${item.videoId}`}
+                    key={item.videoId ?? item.channelId}
+                    href={
+                      item.videoId
+                        ? `https://www.youtube.com/watch?v=${item.videoId}`
+                        : (item.channelUrl ?? `https://www.youtube.com/channel/${item.channelId}`)
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 w-48 rounded-xl overflow-hidden border border-gray-100 bg-white hover:border-primary-200 hover:shadow-md transition-all group"
                   >
                     <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                      <img
-                        src={`https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg`}
-                        alt={item.videoTitle}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
+                      {item.videoId ? (
+                        <img
+                          src={`https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg`}
+                          alt={item.videoTitle}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                          <svg viewBox="0 0 90 63" fill="white" className="w-16 h-12">
+                            <path d="M88.1 9.9C87 5.8 83.8 2.6 79.7 1.5 72.8 0 45 0 45 0S17.2 0 10.3 1.5C6.2 2.6 3 5.8 1.9 9.9 0 16.8 0 31.5 0 31.5s0 14.7 1.9 21.6c1.1 4.1 4.3 7.3 8.4 8.4C17.2 63 45 63 45 63s27.8 0 34.7-1.5c4.1-1.1 7.3-4.3 8.4-8.4C90 46.2 90 31.5 90 31.5s0-14.7-1.9-21.6z" />
+                            <path d="M36 45l24-13.5L36 18v27z" fill="red" />
+                          </svg>
+                        </div>
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
                         <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
                           <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4 ml-0.5">
