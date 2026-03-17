@@ -19,6 +19,11 @@ export interface GhostPostResult {
   status: string;
 }
 
+export interface GhostSettingInput {
+  key: string;
+  value: string | number | boolean | null;
+}
+
 function buildGhostJwt(): string {
   const apiKey = config.ghostAdminApiKey;
   if (!apiKey) {
@@ -82,7 +87,7 @@ export async function createGhostPost(post: GhostPostInput): Promise<GhostPostRe
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, body: errorBody }, 'Ghost API 오류');
-    throw new Error(`Ghost API 오류: ${response.status} ${errorBody}`);
+    throw new Error(`Ghost API 오류: ${response.status}`);
   }
 
   const data = (await response.json()) as { posts: GhostPostResult[] };
@@ -94,4 +99,83 @@ export async function createGhostPost(post: GhostPostInput): Promise<GhostPostRe
 
   log.info({ id: created.id, url: created.url }, 'Ghost 포스트 생성 완료');
   return created;
+}
+
+export interface GhostPostListItem {
+  id: string;
+  title: string;
+  url: string;
+  status: string;
+  published_at: string | null;
+  updated_at: string;
+  excerpt: string | null;
+}
+
+export interface GhostPostListResult {
+  posts: GhostPostListItem[];
+  meta: {
+    pagination: {
+      page: number;
+      limit: number;
+      pages: number;
+      total: number;
+    };
+  };
+}
+
+export async function listGhostPosts(page = 1, limit = 15): Promise<GhostPostListResult> {
+  const token = buildGhostJwt();
+  const url = `${config.ghostApiUrl}/ghost/api/admin/posts/?limit=${limit}&page=${page}&fields=id,title,url,status,published_at,updated_at,excerpt&order=updated_at+desc`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Ghost ${token}` },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    log.error({ status: response.status, body: errorBody }, 'Ghost 포스트 목록 조회 오류');
+    throw new Error(`Ghost API 오류: ${response.status}`);
+  }
+
+  return (await response.json()) as GhostPostListResult;
+}
+
+export async function deleteGhostPost(postId: string): Promise<void> {
+  const token = buildGhostJwt();
+  const url = `${config.ghostApiUrl}/ghost/api/admin/posts/${postId}/`;
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: { Authorization: `Ghost ${token}` },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    log.error({ status: response.status, postId, body: errorBody }, 'Ghost 포스트 삭제 오류');
+    throw new Error(`Ghost API 오류: ${response.status}`);
+  }
+
+  log.info({ postId }, 'Ghost 포스트 삭제 완료');
+}
+
+export async function updateGhostSettings(settings: GhostSettingInput[]): Promise<void> {
+  const token = buildGhostJwt();
+  const url = `${config.ghostApiUrl}/ghost/api/admin/settings/`;
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Ghost ${token}`,
+    },
+    body: JSON.stringify({ settings }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    log.error({ status: response.status, body: errorBody }, 'Ghost 설정 업데이트 오류');
+    throw new Error(`Ghost API 오류: ${response.status}`);
+  }
+
+  log.info({ keys: settings.map((s) => s.key) }, 'Ghost 설정 업데이트 완료');
 }

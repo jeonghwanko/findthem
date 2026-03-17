@@ -518,3 +518,27 @@ export interface AgentDomainEvent {
   channel?: string;         // outreach_sent 전용
   reportId?: string;
 }
+
+// ── Ghost CMS ──
+
+export interface GhostPostListItem {
+  id: string;
+  title: string;
+  url: string;
+  status: string;
+  published_at: string | null;
+  updated_at: string;
+  excerpt: string | null;
+}
+
+export interface GhostPostListResult {
+  posts: GhostPostListItem[];
+  meta: {
+    pagination: {
+      page: number;
+      limit: number;
+      pages: number;
+      total: number;
+    };
+  };
+}

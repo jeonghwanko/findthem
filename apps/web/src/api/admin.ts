@@ -1,4 +1,4 @@
-import { ADMIN_KEY_STORAGE_KEY, ADMIN_API_KEY_HEADER } from '@findthem/shared';
+import { ADMIN_KEY_STORAGE_KEY, ADMIN_API_KEY_HEADER, type GhostPostListItem, type GhostPostListResult } from '@findthem/shared';
 
 const BASE = '/api';
 
@@ -77,4 +77,10 @@ export const devlogApi = {
     adminApi.post<DevlogPreviewResponse>('/admin/devlog/preview', body),
   generate: (body: DevlogPreviewRequest) =>
     adminApi.post<DevlogGenerateResponse>('/admin/devlog/generate', body),
+  list: (page = 1, limit = 15) =>
+    adminApi.get<GhostPostListResult>(`/admin/devlog/list?page=${page}&limit=${limit}`),
+  delete: (id: string) =>
+    adminApi.delete<{ ok: boolean }>(`/admin/devlog/${id}`),
+  applySiteSettings: () =>
+    adminApi.post<{ ok: boolean }>('/admin/devlog/site-settings'),
 };

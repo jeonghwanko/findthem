@@ -33,12 +33,15 @@ import { getRecentDiff } from '../services/gitDiffService.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { generateDevlogArticle } from '../services/devlogService.js';
-import { createGhostPost } from '../services/ghostService.js';
+import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('adminRoutes');
 
 // ── 데브로그 트윗 헬퍼 ──
 
@@ -559,10 +562,14 @@ export function registerAdminRoutes(router: Router) {
     let tweetId: string | null = null;
     let tweetUrl: string | null = null;
     if (twitterShare && publishStatus === 'published' && ghostResult.url) {
-      const tweetText = buildDevlogTweet(title, excerpt, ghostResult.url);
-      const tweetResult = await twitterAdapter.post(tweetText, []);
-      tweetId = tweetResult.postId;
-      tweetUrl = tweetResult.postUrl;
+      try {
+        const tweetText = buildDevlogTweet(title, excerpt, ghostResult.url);
+        const tweetResult = await twitterAdapter.post(tweetText, []);
+        tweetId = tweetResult.postId;
+        tweetUrl = tweetResult.postUrl ?? null;
+      } catch (twitterErr) {
+        log.warn({ err: twitterErr }, 'Twitter 게시 실패 (non-fatal) — Ghost 포스트는 정상 게시됨');
+      }
     }
 
     await createAuditLog({
@@ -585,6 +592,53 @@ export function registerAdminRoutes(router: Router) {
       commitsSummary: diffResult.commitsSummary,
       diffStats: diffResult.diffStats,
     });
+  });
+
+  // POST /admin/devlog/site-settings — Ghost 네비게이션/구독버튼 일괄 설정
+  router.post('/admin/devlog/site-settings', requireAdmin, async (_req, res) => {
+    const siteUrl = config.siteUrl;
+    const navSettings: GhostSettingInput[] = [
+      {
+        key: 'navigation',
+        value: JSON.stringify([
+          { label: 'Home', url: siteUrl },
+          { label: 'About', url: `${siteUrl}/team` },
+          { label: 'Sign in', url: `${siteUrl}/login` },
+        ]),
+      },
+      { key: 'portal_button', value: false },
+    ];
+    await updateGhostSettings(navSettings);
+    res.json({ ok: true });
+  });
+
+  // GET /admin/devlog/list — Ghost 포스트 목록 조회
+  const devlogListQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(15),
+  });
+
+  router.get('/admin/devlog/list', requireAdmin, validateQuery(devlogListQuerySchema), async (req, res) => {
+    const { page, limit } = req.query as unknown as z.infer<typeof devlogListQuerySchema>;
+    const result = await listGhostPosts(page, limit);
+    res.json(result);
+  });
+
+  // DELETE /admin/devlog/:id — Ghost 포스트 삭제
+  router.delete('/admin/devlog/:id', requireAdmin, async (req, res) => {
+    const id = req.params.id as string;
+    if (!id || !/^[0-9a-f]{24}$/.test(id)) {
+      throw new ApiError(400, ERROR_CODES.PATH_TRAVERSAL);
+    }
+    await deleteGhostPost(id);
+    await createAuditLog({
+      action: 'devlog.delete',
+      targetType: 'Devlog',
+      targetId: id,
+      detail: {},
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+    res.json({ ok: true });
   });
 
   // POST /admin/devlog/tweet — 기존 Ghost 아티클을 Twitter에 직접 게시 (수동 + 테스트용)

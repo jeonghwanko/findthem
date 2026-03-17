@@ -57,6 +57,8 @@ export const config = {
   safe182EsntlId: process.env.SAFE182_ESNTL_ID || '',
   safe182ApiKey: process.env.SAFE182_API_KEY || '',
 
+  enableWorkers: process.env.ENABLE_WORKERS !== 'false',
+
   ghostAdminApiKey: process.env.GHOST_ADMIN_API_KEY || '',
   ghostApiUrl: process.env.GHOST_API_URL || 'https://union.pryzm.gg/devlog',
   devlogRepoPath: process.env.DEVLOG_REPO_PATH || process.cwd(),

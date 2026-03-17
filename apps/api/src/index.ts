@@ -20,20 +20,25 @@ async function main() {
   await prisma.$connect();
   log.info('Database connected');
 
-  // BullMQ 워커 시작
-  startImageWorker();
-  startPromotionWorker();
-  startMatchingWorker();
-  startNotificationWorker();
-  startCleanupWorker();
-  startCrawlWorker();
-  startCrawlAgentWorker();
-  startPromotionMonitorWorker();
-  startPromotionRepostWorker();
-  startOutreachWorker();
-  await scheduleCrawlJob();
-  await schedulePromotionRepostJob();
-  await scheduleOutreachJob();
+  // BullMQ 워커 시작 (ENABLE_WORKERS=false 이면 스킵)
+  if (config.enableWorkers) {
+    startImageWorker();
+    startPromotionWorker();
+    startMatchingWorker();
+    startNotificationWorker();
+    startCleanupWorker();
+    startCrawlWorker();
+    startCrawlAgentWorker();
+    startPromotionMonitorWorker();
+    startPromotionRepostWorker();
+    startOutreachWorker();
+    await scheduleCrawlJob();
+    await schedulePromotionRepostJob();
+    await scheduleOutreachJob();
+    log.info('Workers started');
+  } else {
+    log.info('Workers disabled (ENABLE_WORKERS=false) — API only mode');
+  }
 
   // 서버 시작
   app.listen(config.port, () => {

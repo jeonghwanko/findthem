@@ -41,6 +41,7 @@ export function SpinePortrait({ skins, animate = true, className }: Props) {
           autoStart: false,
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
+          preserveDrawingBuffer: true, // canvas.toBlob() 지원 (WebGL 기본값은 false → 캡처 불가)
         });
 
         if (destroyed) {
