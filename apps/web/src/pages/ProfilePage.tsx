@@ -25,10 +25,10 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     setSaving(true);
     setMessage(null);
     try {
-      const updated = await api.patch<User>('/auth/me', {
-        ...(name !== user.name && { name }),
-        ...(email !== (user.email ?? '') && { email: email || null }),
-      });
+      const body: Record<string, unknown> = {};
+      if (name !== user.name) body.name = name;
+      if (email !== (user.email ?? '')) body.email = email || null;
+      const updated = await api.patch<User>('/auth/me', body);
       onUserUpdate(updated);
       setName(updated.name);
       setEmail(updated.email ?? '');
@@ -170,17 +170,15 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         )}
 
         {/* 저장 버튼 */}
-        {hasChanges && (
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={saving || !name.trim()}
-            className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? t('profile.saving') : t('profile.save')}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving || !hasChanges || !name.trim()}
+          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          {saving ? t('profile.saving') : t('profile.save')}
+        </button>
 
         {message && (
           <p className={`text-sm text-center ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
