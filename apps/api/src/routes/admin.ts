@@ -897,7 +897,7 @@ export function registerAdminRoutes(router: Router) {
   const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog'];
   const PROVIDER_MODELS: Record<string, string[]> = {
     anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
-    gemini: ['gemini-2.0-flash', 'gemini-2.5-pro'],
+    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['gpt-4o-mini', 'gpt-4o'],
   };
 
@@ -1177,7 +1177,7 @@ export function registerAdminRoutes(router: Router) {
         if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
         res.json({ success: true, model: (body.model as string) ?? 'claude', latencyMs: Date.now() - start });
       } else if (provider === 'gemini') {
-        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
           method: 'POST',
           headers: { 'x-goog-api-key': testKey, 'content-type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 16 } }),
@@ -1185,7 +1185,7 @@ export function registerAdminRoutes(router: Router) {
         });
         const body = await r.json() as Record<string, unknown>;
         if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
-        res.json({ success: true, model: 'gemini-2.0-flash', latencyMs: Date.now() - start });
+        res.json({ success: true, model: 'gemini-2.5-flash', latencyMs: Date.now() - start });
       } else {
         const r = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
