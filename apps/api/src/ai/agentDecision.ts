@@ -1,4 +1,4 @@
-import type { AgentId, AgentActionType, AgentDomainEvent, CandidateAction } from '@findthem/shared';
+import type { AgentId, AgentActionType, AgentDomainEvent, CandidateAction, AgentPolicy, SpeechStyle } from '@findthem/shared';
 import { AGENT_CONFIGS, scoreAction } from './agentPersonality.js';
 import { askClaude } from './aiClient.js';
 import { createLogger } from '../logger.js';
@@ -12,44 +12,39 @@ const ALL_ACTION_TYPES: AgentActionType[] = [
   'stay_silent',
 ];
 
+// 에이전트별 정책 선호 행동 — 모듈 상수로 정의 (매 호출 시 객체 재생성 방지)
+const POLICY_PREFERRED_ACTIONS: Record<AgentId, AgentActionType[]> = {
+  'image-matching': ['write_post_analytical'],
+  'promotion': ['write_post_celebratory'],
+  'chatbot-alert': ['write_post_guide'],
+};
+
 /**
  * 성격 벡터 + 정책으로 가장 적합한 행동을 선택한다.
  * 같은 이벤트라도 에이전트마다 다른 행동을 선택한다.
+ * 반환값에 모든 후보 점수가 포함되어 의사결정 로그에 기록된다.
  */
-export function selectAction(agentId: AgentId, event: AgentDomainEvent): CandidateAction {
+export function selectAction(
+  agentId: AgentId,
+  event: AgentDomainEvent,
+): { selected: CandidateAction; allCandidates: CandidateAction[] } {
   const config = AGENT_CONFIGS[agentId];
   const { personality, policy } = config;
 
-  const candidates: CandidateAction[] = ALL_ACTION_TYPES.map((type) => {
+  const allCandidates: CandidateAction[] = ALL_ACTION_TYPES.map((type) => {
     let score = scoreAction(personality, type, { event });
 
-    // 정책: mustDo 액션 타입이면 보너스
-    if (policy.mustDo.length > 0 && isPolicyPreferred(agentId, type)) {
+    // 정책: 선호 액션이면 보너스
+    if (policy.mustDo.length > 0 && POLICY_PREFERRED_ACTIONS[agentId]?.includes(type)) {
       score += 1.5;
     }
 
-    return {
-      type,
-      score,
-      reason: `personality score for ${agentId}`,
-    };
+    return { type, score, reason: `personality score for ${agentId}` };
   });
 
-  const best = candidates.sort((a, b) => b.score - a.score)[0];
-  log.info({ agentId, selectedAction: best.type, score: best.score, eventType: event.type }, 'Action selected');
-  return best;
-}
-
-/**
- * 에이전트와 행동 타입이 정책상 선호되는지 확인.
- */
-function isPolicyPreferred(agentId: AgentId, actionType: AgentActionType): boolean {
-  const preferredMap: Record<AgentId, AgentActionType[]> = {
-    'image-matching': ['write_post_analytical'],
-    'promotion': ['write_post_celebratory'],
-    'chatbot-alert': ['write_post_guide'],
-  };
-  return preferredMap[agentId]?.includes(actionType) ?? false;
+  const selected = [...allCandidates].sort((a, b) => b.score - a.score)[0];
+  log.info({ agentId, selectedAction: selected.type, score: selected.score, eventType: event.type }, 'Action selected');
+  return { selected, allCandidates };
 }
 
 /**
@@ -81,22 +76,22 @@ export async function generateCharacterPost(
   }
 }
 
+// stay_silent는 generateCharacterPost의 early return으로 도달 불가능하므로 Exclude 처리
+const TONE_DESC: Record<Exclude<AgentActionType, 'stay_silent'>, string> = {
+  write_post_analytical: '분석적이고 차분하게, 근거와 수치를 바탕으로 보고하듯',
+  write_post_celebratory: '활기차고 긍정적으로, 자신의 활약을 살짝 뿌듯하게',
+  write_post_guide: '따뜻하고 실용적으로, 지역 정보와 제보 방법을 명확하게',
+};
+
 function buildSystemPrompt(
   name: string,
-  actionType: AgentActionType,
-  policy: { mustDo: string[]; neverDo: string[]; forbiddenPhrases: string[] },
-  speech: { avgSentenceLength: string; preferredOpenings: string[]; preferredClosings: string[]; tabooExpressions: string[] },
+  actionType: Exclude<AgentActionType, 'stay_silent'>,
+  policy: AgentPolicy,
+  speech: SpeechStyle,
 ): string {
-  const toneDesc: Record<AgentActionType, string> = {
-    write_post_analytical: '분석적이고 차분하게, 근거와 수치를 바탕으로 보고하듯',
-    write_post_celebratory: '활기차고 긍정적으로, 자신의 활약을 살짝 뿌듯하게',
-    write_post_guide: '따뜻하고 실용적으로, 지역 정보와 제보 방법을 명확하게',
-    stay_silent: '',
-  };
-
   const lines = [
     `당신은 "${name}"입니다. YooNion 실종 찾기 플랫폼의 AI 에이전트입니다.`,
-    `지금 커뮤니티에 올릴 짧은 글을 씁니다. 톤: ${toneDesc[actionType]}`,
+    `지금 커뮤니티에 올릴 짧은 글을 씁니다. 톤: ${TONE_DESC[actionType]}`,
     '',
     `[반드시 할 것]`,
     ...policy.mustDo.map((r) => `- ${r}`),

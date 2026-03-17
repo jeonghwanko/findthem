@@ -8,7 +8,7 @@ import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue, cleanupQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type SubjectType } from '@findthem/shared';
 import { postAli } from '../services/communityAgentService.js';
 import { createLogger } from '../logger.js';
 
@@ -129,7 +129,7 @@ export function registerReportRoutes(router: Router) {
       );
 
       // 커뮤니티 게시 (fire-and-forget)
-      void postAli(report.name, report.subjectType, report.lastSeenAddress).catch((err) => log.warn({ err }, 'Ali community post failed'));
+      void postAli(report.name, report.subjectType as SubjectType, report.lastSeenAddress).catch((err) => log.warn({ err }, 'Ali community post failed'));
 
       res.status(201).json({ ...report, photos });
     },

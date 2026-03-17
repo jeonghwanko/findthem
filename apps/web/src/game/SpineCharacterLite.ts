@@ -20,6 +20,31 @@ const textureLoadingPromises = new Map<string, Promise<void>>();
 let sharedSkeletonData: SkeletonData | null = null;
 let skeletonPromise: Promise<SkeletonData> | null = null;
 
+// Loading progress — 5 steps: 3 textures + atlas text + skeleton binary
+const TOTAL_LOAD_STEPS = 5;
+type ProgressCallback = (loaded: number, total: number) => void;
+let _progressCb: ProgressCallback | null = null;
+let _loadedSteps = 0;
+
+function _notifyStep(): void {
+  if (!_progressCb) return;
+  _loadedSteps = Math.min(_loadedSteps + 1, TOTAL_LOAD_STEPS);
+  _progressCb(_loadedSteps, TOTAL_LOAD_STEPS);
+}
+
+/** Register a callback to receive loading progress (0–5 / 5).
+ *  If assets are already cached, cb is called immediately with (5, 5).
+ *  Pass null to unregister. */
+export function setSpineLoadProgress(cb: ProgressCallback | null): void {
+  _progressCb = cb;
+  if (!cb) return;
+  if (sharedSkeletonData) {
+    cb(TOTAL_LOAD_STEPS, TOTAL_LOAD_STEPS);
+    return;
+  }
+  _loadedSteps = 0;
+}
+
 /**
  * Load texture via blob → dataURL → Assets.load (same as pryzm town).
  * This ensures Pixi correctly detects the MIME type from the dataURL prefix.
@@ -47,6 +72,7 @@ async function ensureTexture(file: string): Promise<void> {
 
       const pixiTexture = await Assets.load<Texture>(dataUrl);
       atlasTextureCache.set(file, SpineTexture.from(pixiTexture.source));
+      _notifyStep(); // step 1 / 2 / 3
     })().finally(() => {
       textureLoadingPromises.delete(file);
     });
@@ -62,6 +88,7 @@ async function loadAtlas(): Promise<TextureAtlas> {
   if (!response.ok) throw new Error(`Failed to fetch atlas: ${response.status}`);
   const atlasText = await response.text();
   if (!atlasText) throw new Error('Empty atlas text');
+  _notifyStep(); // step 4
 
   const atlas = new TextureAtlas(atlasText);
   atlas.pages.forEach((page: { name: string; setTexture: (t: SpineTexture) => void }) => {
@@ -77,6 +104,7 @@ async function loadSkeletonBinary(): Promise<Uint8Array> {
   if (!response.ok) throw new Error(`Failed to fetch skeleton: ${response.status}`);
   const buffer = await response.arrayBuffer();
   if (buffer.byteLength === 0) throw new Error('Empty skeleton binary');
+  _notifyStep(); // step 5
   return new Uint8Array(buffer);
 }
 

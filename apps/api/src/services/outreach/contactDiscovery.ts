@@ -34,7 +34,7 @@ interface YouTubeSearchResponse {
 
 interface YouTubeChannelItem {
   id?: string;
-  snippet?: { title?: string; description?: string; customUrl?: string };
+  snippet?: { title?: string; description?: string; customUrl?: string; thumbnails?: { high?: { url?: string }; medium?: { url?: string }; default?: { url?: string } } };
   statistics?: { subscriberCount?: string };
 }
 
@@ -48,6 +48,7 @@ interface DiscoveredContact {
   email?: string;
   youtubeChannelId?: string;
   youtubeChannelUrl?: string;
+  thumbnailUrl?: string;
   organization?: string;
   topics: string[];
   subscriberCount?: number;
@@ -234,11 +235,18 @@ export async function searchYouTubeChannels(keywords: string[]): Promise<Discove
           ? `https://www.youtube.com/${ch.snippet.customUrl}`
           : `https://www.youtube.com/channel/${ch.id}`;
 
+        const thumbnailUrl =
+          ch.snippet?.thumbnails?.high?.url ??
+          ch.snippet?.thumbnails?.medium?.url ??
+          ch.snippet?.thumbnails?.default?.url ??
+          undefined;
+
         contacts.push({
           type: 'YOUTUBER',
           name: ch.snippet?.title ?? 'Unknown Channel',
           youtubeChannelId: ch.id,
           youtubeChannelUrl: channelUrl,
+          thumbnailUrl,
           topics: [keyword],
           subscriberCount,
           source: 'YOUTUBE_API',

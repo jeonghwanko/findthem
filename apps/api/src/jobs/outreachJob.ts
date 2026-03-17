@@ -1,4 +1,4 @@
-import { QUEUE_NAMES, OUTREACH_EMAIL_DAILY_LIMIT, OUTREACH_COMMENT_DAILY_LIMIT } from '@findthem/shared';
+import { QUEUE_NAMES, OUTREACH_EMAIL_DAILY_LIMIT, OUTREACH_COMMENT_DAILY_LIMIT, type SubjectType } from '@findthem/shared';
 import type { OutreachJobData } from './queues.js';
 import { createWorker, outreachQueue } from './queues.js';
 import { prisma } from '../db/client.js';
@@ -284,7 +284,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       request.report.name,
       request.contact.name,
       channel,
-      request.report.subjectType,
+      request.report.subjectType as SubjectType,
     ).catch((err) => log.warn({ err }, 'Heimi community post failed'));
 
     log.info({ outreachRequestId, channel, externalId }, 'Outreach sent successfully');

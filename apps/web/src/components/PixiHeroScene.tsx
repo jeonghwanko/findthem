@@ -5,6 +5,7 @@ import { ArrowRight, Gamepad2, Volume2, VolumeX } from 'lucide-react';
 import { Application, Graphics, Text, TextStyle, Container, extensions } from 'pixi.js';
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import { getBgmEngine } from '../audio/BgmEngine';
+import { HeroLoadingOverlay } from './HeroLoadingOverlay';
 
 // Explicitly register Spine render pipe (Vite may tree-shake the side-effect import)
 extensions.add(SpinePipe);
@@ -149,6 +150,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
   const charStatesRef = useRef<CharState[] | null>(null);
   const billboardRef = useRef<{ container: Container; lbl: Text } | null>(null);
   const [phase, setPhase] = useState<'init' | 'scene' | 'ready'>('init');
+  const [loadProgress, setLoadProgress] = useState(0);
   const [error, setError] = useState(false);
   const [visible, setVisible] = useState(false);
   const [bgmOn, setBgmOn] = useState(() => typeof window !== 'undefined' && localStorage.getItem('ft_bgm') !== 'off');
@@ -256,12 +258,15 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
           app.ticker.stop();
 
-          const { SpineCharacterLite } = await import('../game/SpineCharacterLite');
+          const { SpineCharacterLite, setSpineLoadProgress } = await import('../game/SpineCharacterLite');
           if (destroyed) return;
+
+          setSpineLoadProgress((loaded, _t) => { if (!destroyed) setLoadProgress(loaded); });
 
           const chars = await Promise.all(
             AGENT_CONFIGS.map((c) => SpineCharacterLite.create(c.skins)),
           );
+          setSpineLoadProgress(null);
           if (destroyed) return;
 
           const hasRun = !!chars[0].view.skeleton.data.findAnimation('run_1');
@@ -453,6 +458,8 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
     return () => {
       destroyed = true;
+      // Fire-and-forget unregister (module may not be imported yet if destroyed early)
+      void import('../game/SpineCharacterLite').then(({ setSpineLoadProgress }) => setSpineLoadProgress(null)).catch(() => {});
       try {
         cleanupRef.current?.();
         cleanupRef.current = null;
@@ -519,13 +526,12 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         <canvas ref={canvasRef} style={{ display: 'block', opacity: phase !== 'init' ? 1 : 0, transition: 'opacity 1s ease' }} />
       </div>
 
-      {/* Loading spinner — visible until characters are ready */}
-      <div
-        className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-        style={{ opacity: phase === 'ready' ? 0 : phase === 'init' ? 1 : 0.6, transition: 'opacity 0.5s ease' }}
-      >
-        {phase !== 'ready' && <div className="w-8 h-8 border-3 border-indigo-300 border-t-white rounded-full animate-spin" />}
-      </div>
+      {/* Loading overlay — silhouettes + progress + typing message */}
+      <HeroLoadingOverlay
+        progress={loadProgress}
+        total={5}
+        visible={phase !== 'ready'}
+      />
 
       {/* Buttons — top center */}
       <div className="absolute inset-x-0 flex justify-center gap-3 z-20" style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>

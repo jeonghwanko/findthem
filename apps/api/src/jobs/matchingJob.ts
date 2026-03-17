@@ -11,6 +11,7 @@ import {
   MATCH_THRESHOLD,
   NOTIFY_THRESHOLD,
   MAX_CANDIDATES,
+  type SubjectType,
 } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { postClaude } from '../services/communityAgentService.js';
@@ -168,7 +169,7 @@ async function comparePairDirect(
           report.name,
           result.confidence,
           report.lastSeenAddress,
-          report.subjectType,
+          report.subjectType as SubjectType,
         ).catch((err) => log.warn({ err }, 'Claude community post failed'));
       }
     }

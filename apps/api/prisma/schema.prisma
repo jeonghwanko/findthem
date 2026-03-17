@@ -477,6 +477,7 @@ model OutreachContact {
   email             String?
   youtubeChannelId  String?
   youtubeChannelUrl String?
+  thumbnailUrl      String?   // 채널/영상 썸네일 URL
   videoId           String?   // VIDEO 타입: 유튜브 영상 ID
   videoTitle        String?   // VIDEO 타입: 영상 제목
   organization      String?

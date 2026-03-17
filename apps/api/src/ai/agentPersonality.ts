@@ -1,4 +1,4 @@
-import type { AgentId, AgentPersonality, AgentPolicy, SpeechStyle } from '@findthem/shared';
+import type { AgentId, AgentPersonality, AgentPolicy, SpeechStyle, AgentActionType, AgentDomainEvent } from '@findthem/shared';
 
 export interface AgentConfig {
   id: AgentId;
@@ -141,8 +141,6 @@ export const AGENT_CONFIGS: Record<AgentId, AgentConfig> = {
 };
 
 // ── 행동 점수화 ───────────────────────────────────────────────────────────────
-
-import type { AgentActionType, AgentDomainEvent } from '@findthem/shared';
 
 interface ScoringContext {
   event: AgentDomainEvent;
