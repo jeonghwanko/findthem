@@ -166,6 +166,9 @@ export const ERROR_CODES = {
   EXTERNAL_AGENT_AUTH_REQUIRED: 'EXTERNAL_AGENT_AUTH_REQUIRED',
   EXTERNAL_AGENT_INACTIVE: 'EXTERNAL_AGENT_INACTIVE',
   BOOST_LIMIT_REACHED: 'BOOST_LIMIT_REACHED',
+  GAME_PLAY_LIMIT_REACHED: 'GAME_PLAY_LIMIT_REACHED',
+  INVALID_GAME_CHARACTER: 'INVALID_GAME_CHARACTER',
+  AD_REWARD_COOLDOWN: 'AD_REWARD_COOLDOWN',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -215,6 +218,37 @@ export const MIN_VIEWS_FOR_GOOD_PERFORMANCE = 100;
 // ── 광고 부스트 ──
 
 export const MAX_BOOSTS_PER_DAY = 3;
+
+// ── 후원 XP & 레벨 ──
+
+export const XP_PER_AD = 50;
+export const AD_REWARD_COOLDOWN_SECS = 60;
+
+/** pryzm 동일 공식: base 1000 XP, +15%/레벨, 50단위 반올림 */
+export function requirementForSponsorLevel(level: number): number {
+  if (level <= 1) return 1000;
+  const base = 1000 * Math.pow(1.15, level - 1);
+  return Math.round(base / 50) * 50;
+}
+
+export const LEVEL_REWARDS: Record<number, { type: string; value: string; label: string }> = {
+  2:  { type: 'BADGE', value: 'supporter', label: '서포터 배지' },
+  3:  { type: 'BADGE', value: 'helper',    label: '도우미 배지' },
+  5:  { type: 'TITLE', value: 'champion',  label: '챔피언 칭호' },
+  7:  { type: 'BADGE', value: 'hero',      label: '영웅 배지' },
+  10: { type: 'TITLE', value: 'legend',    label: '전설 칭호' },
+};
+
+// ── 게임 ──
+
+/** 일일 무료 플레이 횟수 */
+export const MAX_FREE_PLAYS_PER_DAY = 3;
+
+/** 광고 시청으로 추가 가능한 최대 플레이 횟수/일 */
+export const MAX_AD_PLAYS_PER_DAY = 5;
+
+/** 점수 1점당 적립 XP (나중에 XP 지급 시 사용) */
+export const XP_PER_GAME_SCORE = 1;
 
 // ── 운영 에이전트 ──
 

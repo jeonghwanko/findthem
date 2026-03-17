@@ -26,6 +26,11 @@ model User {
   blockedAt   DateTime?
   blockReason String?
 
+  // 후원 XP & 레벨
+  sponsorXp        Int       @default(0)
+  userLevel        Int       @default(1)
+  sponsorXpLastAt  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -35,6 +40,8 @@ model User {
   pushSubscriptions  PushSubscription[]
   communityPosts     CommunityPost[]
   communityComments  CommunityComment[]
+  userRewards        UserReward[]
+  gamePlays          GamePlay[]
 
   @@unique([provider, providerId], name: "provider_providerId")
   @@map("user")
@@ -47,6 +54,23 @@ enum AuthProvider {
   TELEGRAM
 
   @@map("auth_provider")
+}
+
+// ── User Reward (레벨업 선물) ──
+
+model UserReward {
+  id          String   @id @default(cuid())
+  userId      String
+  level       Int
+  rewardType  String   // 'BADGE' | 'TITLE' | 'EFFECT'
+  rewardValue String?
+  claimedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, level])
+  @@index([userId])
+  @@map("user_reward")
 }
 
 // ── Report (실종 신고) ──
@@ -105,6 +129,7 @@ model Report {
   @@index([subjectType, status])
   @@index([externalSource])
   @@index([lastSeenLat, lastSeenLng])
+  @@index([userId])
   @@map("report")
 }
 
@@ -386,6 +411,7 @@ model PromotionLog {
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId, createdAt])
+  @@index([reportId, action, createdAt])
   @@map("promotion_log")
 }
 
@@ -518,6 +544,7 @@ model OutreachRequest {
 
   @@unique([reportId, contactId, channel])
   @@index([status])
+  @@index([reportId, status])
   @@map("outreach_request")
 }
 
@@ -630,6 +657,22 @@ model AgentDecisionLog {
 
   @@index([agentId, createdAt])
   @@map("agent_decision_log")
+}
+
+// ── Game Play (게임 플레이 기록) ──
+
+model GamePlay {
+  id        String   @id @default(cuid())
+  userId    String?
+  character String   // 'image-matching' | 'promotion' | 'chatbot-alert'
+  score     Int
+  usedAd    Boolean  @default(false)
+  playedAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, playedAt])
+  @@map("game_play")
 }
 
 // 크립토 결제 견적 (5분 TTL)

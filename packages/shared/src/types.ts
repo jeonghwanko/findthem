@@ -412,6 +412,24 @@ export interface ExternalAgentAdmin extends ExternalAgentPublic {
   lastUsedAt: string | null;
 }
 
+// ── 후원 XP ──
+
+export interface SponsorXpStats {
+  sponsorXp: number;
+  userLevel: number;
+  currentXP: number;         // 현재 레벨 내 XP
+  xpToNextLevel: number;     // 다음 레벨까지 필요 XP (0 = 최고 레벨)
+  xpRequiredForLevel: number; // 현재 레벨 총 XP 요구량
+}
+
+export interface AdRewardResult {
+  newXp: number;
+  newLevel: number;
+  leveledUp: boolean;
+  xpGained: number;
+  reward?: { type: string; value: string; label: string };
+}
+
 // ── Sponsor ──
 export type AgentId = 'image-matching' | 'promotion' | 'chatbot-alert';
 

@@ -33,7 +33,7 @@ BEGIN
     RETURN;
   END IF;
 
-  INSERT INTO outreach_request (id, "reportId", "contactId", channel, status, "draftContent", "createdAt")
+  INSERT INTO outreach_request (id, "reportId", "contactId", channel, status, "draftContent", "createdAt", "updatedAt")
   SELECT
     'or-seed-' || oc.id,
     v_report_id,
@@ -41,6 +41,7 @@ BEGIN
     'YOUTUBE_COMMENT',
     'PENDING_APPROVAL',
     '',
+    now(),
     now()
   FROM outreach_contact oc
   WHERE oc.id IN ('oc-001','oc-002','oc-003','oc-004','oc-005','oc-006')

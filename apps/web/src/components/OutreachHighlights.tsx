@@ -18,8 +18,8 @@ interface OutreachHighlightsResponse {
 }
 
 const SET_SIZE = 5;
-const PAUSE_MS = 5000;     // 5초간 정지
-const SLIDE_MS = 600;      // 슬라이드 애니메이션 시간
+const PAUSE_MS = 8000;     // 8초간 정지
+const SLIDE_MS = 1200;     // 슬라이드 애니메이션 시간
 
 function SkeletonCard() {
   return (

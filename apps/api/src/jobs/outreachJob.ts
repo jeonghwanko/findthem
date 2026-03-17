@@ -17,8 +17,8 @@ const OUTREACH_CRON_TZ = 'Asia/Seoul';
 // ── Daily limit check ──
 
 async function getTodaySentCount(channel: string): Promise<number> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   return prisma.outreachRequest.count({
     where: {

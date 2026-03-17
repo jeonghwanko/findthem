@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, type SubjectType, type CollectedInfo, type Locale } from './types.js';
-import { SUBJECT_TYPE_LABELS } from './constants.js';
+import { SUBJECT_TYPE_LABELS, requirementForSponsorLevel } from './constants.js';
 
 /** SubjectType 라벨 반환 (다국어) */
 export function getSubjectTypeLabel(type: SubjectType | string, locale: Locale = DEFAULT_LOCALE): string {
@@ -297,6 +297,29 @@ const TIME_AGO_LABELS: Record<Locale, {
   ja: { just: 'たった今', min: '分前', hour: '時間前', day: '日前', month: 'ヶ月前', year: '年前' },
   'zh-TW': { just: '剛才', min: '分鐘前', hour: '小時前', day: '天前', month: '個月前', year: '年前' },
 };
+
+// ── 후원 XP 레벨 계산 (pryzm 동일 공식) ──
+
+export interface SponsorLevelSnapshot {
+  level: number;
+  currentXP: number;
+  xpToNextLevel: number;
+}
+
+/** 누적 후원XP → 레벨 + 현재 레벨 내 XP + 다음 레벨까지 필요 XP (pryzm 동일 공식) */
+export function computeSponsorLevel(xpTotal: number): SponsorLevelSnapshot {
+  const total = Math.max(0, Math.floor(xpTotal || 0));
+  let remaining = total;
+  for (let i = 1; i <= 500; i++) {
+    const need = requirementForSponsorLevel(i);
+    if (remaining < need) {
+      return { level: i, currentXP: remaining, xpToNextLevel: need - remaining };
+    }
+    remaining -= need;
+  }
+  const need = requirementForSponsorLevel(500);
+  return { level: 500, currentXP: need, xpToNextLevel: 0 };
+}
 
 /** 상대 시간 포맷 (다국어) */
 export function formatTimeAgo(dateStr: string, locale: Locale = DEFAULT_LOCALE): string {

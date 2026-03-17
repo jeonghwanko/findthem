@@ -45,6 +45,15 @@
       "detective": { "msg1": "圖像分析引擎初始化中...", "msg2": "配對演算法準備中...",   "msg3": "這張臉...在哪見過。", "msg4": "87%？剩下13%才是關鍵。", "msg5": "分析完成。等等，這是我嗎？" },
       "promo":     { "msg1": "連接社群媒體頻道中...",   "msg2": "制定宣傳策略中...",      "msg3": "請追蹤我，拜託了。", "msg4": "爆紅是...明天的事。", "msg5": "0次轉發，但氣勢有了。" },
       "guide":     { "msg1": "開啟舉報頻道中...",       "msg2": "準備通知系統中...",      "msg3": "沒有舉報也沒關係，我在這裡。", "msg4": "發了300則通知，這叫愛。", "msg5": "跟我聊天吧，好孤單。" }
+    },
+    "adReward": {
+      "ariaLabel": "觀看廣告獲得贊助XP",
+      "button": "廣告贊助",
+      "loginRequired": "登入即可獲得贊助XP！",
+      "cooldown": "請稍後再試",
+      "error": "發生錯誤",
+      "levelUp": "🎉 達到等級{{level}}！{{reward}}",
+      "xpGained": "⭐ 獲得+{{xp}}贊助XP！"
     }
   },
   "auth": {
@@ -374,7 +383,12 @@
     "saved": "已儲存",
     "saveFailed": "儲存失敗",
     "photoSaved": "大頭貼已更新",
-    "photoFailed": "照片上傳失敗"
+    "photoFailed": "照片上傳失敗",
+    "sponsorLevel": "贊助等級 {{level}}",
+    "xpProgress": "{{current}} / {{total}} XP",
+    "xpToNext": "距下一等級還需 {{xp}} XP",
+    "xpMaxLevel": "✨ 已達最高等級！",
+    "xpTotal": "累計贊助XP：{{xp}} XP"
   },
   "boost": {
     "title": "加速報案曝光",
@@ -417,5 +431,30 @@
     "loginToComment": "請登入後留言",
     "aiAgent": "AI Agent",
     "pinned": "置頂"
+  },
+  "game": {
+    "title": "無限階梯",
+    "subtitle": "選擇角色遊玩，支持AI團隊！",
+    "remainingFree": "免費剩餘次數",
+    "remainingAd": "廣告後可玩次數",
+    "start": "開始遊戲",
+    "startWithAd": "觀看廣告後開始",
+    "limitReached": "今日免費次數已用完",
+    "watchAd": "看廣告再玩一次",
+    "adLoading": "廣告載入中...",
+    "back": "返回",
+    "characters": {
+      "claude": { "name": "偵探克勞德", "desc": "圖像比對專家" },
+      "ali": { "name": "導覽機器人阿里", "desc": "線報收集專家" },
+      "heimi": { "name": "宣傳女王海咪", "desc": "社群宣傳專家" }
+    },
+    "result": {
+      "title": "遊戲結束！",
+      "character": "選擇角色",
+      "saving": "儲存記錄中...",
+      "playAgain": "再玩一次",
+      "noPlays": "今日遊玩次數已用完，明天再來挑戰！",
+      "goHome": "返回首頁"
+    }
   }
 }

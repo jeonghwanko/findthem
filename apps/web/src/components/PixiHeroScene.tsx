@@ -6,6 +6,10 @@ import { Application, Graphics, Text, TextStyle, Container, extensions } from 'p
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import { getBgmEngine } from '../audio/BgmEngine';
 import { HeroLoadingOverlay } from './HeroLoadingOverlay';
+import { XP_PER_AD } from '@findthem/shared';
+import type { AdRewardResult, SponsorXpStats } from '@findthem/shared';
+import { api } from '../api/client';
+import { useRewardAd } from '../hooks/useRewardAd';
 
 // Explicitly register Spine render pipe (Vite may tree-shake the side-effect import)
 extensions.add(SpinePipe);
@@ -47,6 +51,14 @@ interface CharState {
   bubbleIdx: number;
   bubbles: readonly string[];
   expressions: readonly string[];
+}
+
+interface AdEventRef {
+  charIdx: number;
+  startedAt: number;
+  duration: number;
+  handled: boolean;
+  lastExpressionAt: number;
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -155,6 +167,16 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
   const [visible, setVisible] = useState(false);
   const [bgmOn, setBgmOn] = useState(() => typeof window !== 'undefined' && localStorage.getItem('ft_bgm') !== 'off');
 
+  // ── 광고 이벤트 상태 ─────────────────────────────────────────────────
+  const adEventRef = useRef<AdEventRef | null>(null);
+  const nextAdEventAtRef = useRef<number>(Date.now() + randBetween(15_000, 30_000));
+  const [adEventDisplay, setAdEventDisplay] = useState<{ charIdx: number; x: number } | null>(null);
+  const isHandlingAdRef = useRef(false);
+  const [xpStats, setXpStats] = useState<SponsorXpStats | null>(null);
+  const [xpToast, setXpToast] = useState<string | null>(null);
+
+  const { showRewardAd, isNative } = useRewardAd();
+
   const handleBgmToggle = useCallback(async () => {
     const engine = getBgmEngine();
     const nowPlaying = await engine.toggle();
@@ -169,6 +191,79 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
     }
     return () => getBgmEngine().dispose();
   }, []);
+
+  // XP 통계 초기 로드 (로그인 상태일 때만)
+  useEffect(() => {
+    void api.get<SponsorXpStats>('/users/me/xp-stats')
+      .then((data) => setXpStats(data))
+      .catch(() => {/* 비로그인 또는 네트워크 오류 무시 */});
+  }, []);
+
+  // XP 토스트 자동 숨김
+  useEffect(() => {
+    if (!xpToast) return;
+    const t = setTimeout(() => setXpToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [xpToast]);
+
+  // 광고 이벤트 overlay 위치 동기화 (200ms 폴링)
+  useEffect(() => {
+    if (phase !== 'ready') return;
+    const iv = setInterval(() => {
+      const ev = adEventRef.current;
+      const states = charStatesRef.current;
+      if (!ev || ev.handled || !states) {
+        setAdEventDisplay(null);
+        return;
+      }
+      const elapsed = Date.now() - ev.startedAt;
+      if (elapsed > ev.duration) {
+        adEventRef.current = null;
+        setAdEventDisplay(null);
+        return;
+      }
+      setAdEventDisplay({ charIdx: ev.charIdx, x: states[ev.charIdx].x });
+    }, 200);
+    return () => clearInterval(iv);
+  }, [phase]);
+
+  // 광고 클릭 핸들러
+  const handleAdClick = useCallback(async () => {
+    if (!adEventRef.current || adEventRef.current.handled || isHandlingAdRef.current) return;
+    isHandlingAdRef.current = true;
+    adEventRef.current.handled = true;
+    setAdEventDisplay(null);
+
+    try {
+      // 네이티브: AdMob 광고 시청 먼저 (거부/실패 시 XP 미지급)
+      if (isNative) {
+        const rewarded = await showRewardAd();
+        if (!rewarded) {
+          isHandlingAdRef.current = false;
+          return;
+        }
+      }
+
+      const result = await api.post<AdRewardResult>('/users/me/ad-reward');
+      setXpStats((prev) => prev ? { ...prev, sponsorXp: result.newXp, userLevel: result.newLevel } : null);
+      if (result.leveledUp) {
+        setXpToast(tRef.current('home.adReward.levelUp', { level: result.newLevel, reward: result.reward?.label ?? '' }));
+      } else {
+        setXpToast(tRef.current('home.adReward.xpGained', { xp: XP_PER_AD }));
+      }
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg === 'AUTH_REQUIRED') {
+        setXpToast(tRef.current('home.adReward.loginRequired'));
+      } else if (msg === 'AD_REWARD_COOLDOWN') {
+        setXpToast(tRef.current('home.adReward.cooldown'));
+      } else {
+        setXpToast(tRef.current('home.adReward.error'));
+      }
+    } finally {
+      isHandlingAdRef.current = false;
+    }
+  }, [showRewardAd, isNative]);
 
   // 히어로 섹션이 뷰포트에 가까워질 때만 Pixi/Spine 로드 시작
   useEffect(() => {
@@ -435,6 +530,24 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
                 }
               }
             }
+
+            // ── 광고 이벤트 트리거 & 표정 유지 ──────────────────────────────
+            const now = Date.now();
+            if (!adEventRef.current && now >= nextAdEventAtRef.current) {
+              const idx = Math.floor(Math.random() * charStates.length);
+              adEventRef.current = { charIdx: idx, startedAt: now, duration: 15_000, handled: false, lastExpressionAt: 0 };
+              nextAdEventAtRef.current = now + randBetween(60_000, 120_000);
+            }
+            if (adEventRef.current && !adEventRef.current.handled) {
+              const ev = adEventRef.current;
+              if (now - ev.lastExpressionAt > 1800) {
+                charStates[ev.charIdx].char.playExpression('expression_surprise_1');
+                ev.lastExpressionAt = now;
+              }
+              if (now - ev.startedAt > ev.duration) {
+                adEventRef.current = null;
+              }
+            }
           });
 
           // Store cleanup via ref (no side-channel on app)
@@ -562,6 +675,50 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
       <div ref={statsRef} className="absolute z-20" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
         <StatsStrip stats={stats} recoveryRate={recoveryRate} />
       </div>
+
+      {/* XP 레벨 배지 */}
+      {xpStats && phase === 'ready' && (
+        <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 bg-white/85 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-sm border border-indigo-100">
+          <span className="text-xs font-bold text-indigo-700">⭐ Lv.{xpStats.userLevel}</span>
+          <div className="w-14 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+              style={{ width: `${xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 0}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 광고 이벤트 클릭 버튼 (캐릭터 머리 위) */}
+      {adEventDisplay && phase === 'ready' && (
+        <button
+          onClick={() => { void handleAdClick(); }}
+          style={{
+            position: 'absolute',
+            left: adEventDisplay.x - 36,
+            top: CHAR_Y - 105,
+            zIndex: 30,
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+          }}
+          className="flex flex-col items-center gap-0.5 animate-bounce"
+          aria-label={t('home.adReward.ariaLabel')}
+        >
+          <span style={{ fontSize: 26 }}>🎁</span>
+          <span className="text-[10px] font-bold bg-yellow-400 text-yellow-900 rounded px-1.5 py-0.5 whitespace-nowrap shadow-sm">
+            {t('home.adReward.button')}
+          </span>
+        </button>
+      )}
+
+      {/* XP 획득 토스트 */}
+      {xpToast && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg animate-bounce whitespace-nowrap">
+          {xpToast}
+        </div>
+      )}
     </section>
   );
 }

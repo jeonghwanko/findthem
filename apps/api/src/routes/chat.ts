@@ -5,11 +5,11 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ERROR_CODES, type Locale } from '@findthem/shared';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new ApiError(400, ERROR_CODES.IMAGE_ONLY) as unknown as Error);

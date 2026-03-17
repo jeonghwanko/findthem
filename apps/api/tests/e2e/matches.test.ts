@@ -69,15 +69,10 @@ describe('Matches E2E', () => {
   // ── PATCH /api/matches/:id ──
   describe('PATCH /api/matches/:id', () => {
     it('매칭 확인 (CONFIRMED) → 200', async () => {
-      prismaMock.match.findUnique.mockResolvedValue({
-        ...testMatch,
-        report: testReport,
-      });
-      prismaMock.match.update.mockResolvedValue({
-        ...testMatch,
-        status: 'CONFIRMED',
-        reviewedAt: new Date(),
-      });
+      prismaMock.match.findUnique
+        .mockResolvedValueOnce({ ...testMatch, report: testReport })
+        .mockResolvedValueOnce({ ...testMatch, status: 'CONFIRMED', reviewedAt: new Date() });
+      prismaMock.match.updateMany.mockResolvedValue({ count: 1 });
 
       const res = await app
         .patch(`/api/matches/${testMatch.id}`)
@@ -89,15 +84,10 @@ describe('Matches E2E', () => {
     });
 
     it('매칭 거부 (REJECTED) → 200', async () => {
-      prismaMock.match.findUnique.mockResolvedValue({
-        ...testMatch,
-        report: testReport,
-      });
-      prismaMock.match.update.mockResolvedValue({
-        ...testMatch,
-        status: 'REJECTED',
-        reviewedAt: new Date(),
-      });
+      prismaMock.match.findUnique
+        .mockResolvedValueOnce({ ...testMatch, report: testReport })
+        .mockResolvedValueOnce({ ...testMatch, status: 'REJECTED', reviewedAt: new Date() });
+      prismaMock.match.updateMany.mockResolvedValue({ count: 1 });
 
       const res = await app
         .patch(`/api/matches/${testMatch.id}`)

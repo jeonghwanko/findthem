@@ -13,15 +13,15 @@ export interface QueryStatsInput {
 
 function periodStart(period: Period): Date | undefined {
   if (period === 'all') return undefined;
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   if (period === 'today') return d;
   if (period === 'week') {
-    d.setDate(d.getDate() - 7);
+    d.setUTCDate(d.getUTCDate() - 7);
     return d;
   }
   if (period === 'month') {
-    d.setDate(d.getDate() - 30);
+    d.setUTCDate(d.getUTCDate() - 30);
     return d;
   }
   return undefined;

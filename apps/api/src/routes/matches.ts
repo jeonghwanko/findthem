@@ -32,7 +32,13 @@ export function registerMatchRoutes(router: Router) {
       prisma.match.findMany({
         where: { reportId: id },
         include: {
-          sighting: { include: { photos: true } },
+          sighting: {
+            include: {
+              photos: {
+                select: { id: true, photoUrl: true, thumbnailUrl: true },
+              },
+            },
+          },
         },
         orderBy: { confidence: 'desc' },
         skip: (page - 1) * limit,
@@ -63,11 +69,16 @@ export function registerMatchRoutes(router: Router) {
       throw new ApiError(403, ERROR_CODES.MATCH_OWNER_ONLY);
     }
 
-    const updated = await prisma.match.update({
-      where: { id },
+    const updated = await prisma.match.updateMany({
+      where: { id, status: { in: ['PENDING', 'NOTIFIED'] } },
       data: { status, reviewedAt: new Date() },
     });
 
-    res.json(updated);
+    if (updated.count === 0) {
+      throw new ApiError(409, ERROR_CODES.REPORT_STATUS_CONFLICT);
+    }
+
+    const result = await prisma.match.findUnique({ where: { id } });
+    res.json(result);
   });
 }

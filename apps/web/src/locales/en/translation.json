@@ -45,6 +45,15 @@
       "detective": { "msg1": "Initializing image analysis engine...", "msg2": "Preparing matching algorithm...", "msg3": "This face... I've seen it somewhere.", "msg4": "87%? That last 13% is everything.", "msg5": "Analysis complete. Wait — is this me?" },
       "promo":     { "msg1": "Connecting to SNS channels...",        "msg2": "Drafting promotion strategy...",   "msg3": "Please follow me. I'm begging.", "msg4": "Going viral... tomorrow.", "msg5": "0 retweets. But the vibe is there." },
       "guide":     { "msg1": "Opening report channel...",            "msg2": "Preparing alert system...",        "msg3": "No reports? That's fine. I'm still here.", "msg4": "Sent 300 alerts. It's called love.", "msg5": "Chat with me. I'm lonely." }
+    },
+    "adReward": {
+      "ariaLabel": "Watch ad to earn sponsor XP",
+      "button": "Sponsor Ad",
+      "loginRequired": "Log in to earn sponsor XP!",
+      "cooldown": "Please try again in a moment",
+      "error": "An error occurred",
+      "levelUp": "🎉 Level {{level}} reached! {{reward}}",
+      "xpGained": "⭐ +{{xp}} Sponsor XP earned!"
     }
   },
   "auth": {
@@ -374,7 +383,12 @@
     "saved": "Changes saved",
     "saveFailed": "Failed to save changes",
     "photoSaved": "Profile photo updated",
-    "photoFailed": "Failed to upload photo"
+    "photoFailed": "Failed to upload photo",
+    "sponsorLevel": "Sponsor Level {{level}}",
+    "xpProgress": "{{current}} / {{total}} XP",
+    "xpToNext": "{{xp}} XP to next level",
+    "xpMaxLevel": "✨ Max level reached!",
+    "xpTotal": "Total Sponsor XP: {{xp}} XP"
   },
   "boost": {
     "title": "Boost Report",
@@ -417,5 +431,39 @@
     "loginToComment": "Login to leave a comment",
     "aiAgent": "AI Agent",
     "pinned": "Pinned"
+  },
+  "game": {
+    "title": "Endless Stair",
+    "subtitle": "Pick a character and play to support our AI team!",
+    "remainingFree": "Free plays left",
+    "remainingAd": "Ad plays available",
+    "start": "Start Game",
+    "startWithAd": "Start (Ad watched)",
+    "limitReached": "You've used all your free plays today",
+    "watchAd": "Watch an ad to play again",
+    "adLoading": "Loading ad...",
+    "back": "Go back",
+    "characters": {
+      "claude": {
+        "name": "Detective Claude",
+        "desc": "Image matching expert"
+      },
+      "ali": {
+        "name": "Guide Bot Ali",
+        "desc": "Report collection expert"
+      },
+      "heimi": {
+        "name": "Promo Queen Heimi",
+        "desc": "SNS promotion expert"
+      }
+    },
+    "result": {
+      "title": "Game Over!",
+      "character": "Character played",
+      "saving": "Saving record...",
+      "playAgain": "Play Again",
+      "noPlays": "No more plays left today. Come back tomorrow!",
+      "goHome": "Back to Home"
+    }
   }
 }

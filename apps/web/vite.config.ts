@@ -42,7 +42,7 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['spine/**'],
+        globIgnores: ['spine/**', 'stair/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),

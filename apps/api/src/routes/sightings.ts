@@ -162,7 +162,11 @@ export function registerSightingRoutes(router: Router) {
 
     const [sightings, total] = await Promise.all([
       prisma.sighting.findMany({
-        include: { photos: true },
+        include: {
+          photos: {
+            select: { id: true, photoUrl: true, thumbnailUrl: true },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

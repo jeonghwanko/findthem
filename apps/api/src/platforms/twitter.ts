@@ -3,7 +3,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config.js';
 import type { PlatformAdapter, PlatformPostResult } from './types.js';
-import type { PromotionMetrics } from '@findthem/shared';
+import { ERROR_CODES, type PromotionMetrics } from '@findthem/shared';
+import { ApiError } from '../middlewares/errors.js';
 import { createLogger } from '../logger.js';
 
 const UPLOAD_ROOT = path.resolve(config.uploadDir);
@@ -11,7 +12,7 @@ const UPLOAD_ROOT = path.resolve(config.uploadDir);
 function getAbsolutePath(relativePath: string): string {
   const fullPath = path.resolve(UPLOAD_ROOT, relativePath.replace(/^\/uploads\//, ''));
   if (!fullPath.startsWith(UPLOAD_ROOT + path.sep) && fullPath !== UPLOAD_ROOT) {
-    throw new Error('PATH_TRAVERSAL');
+    throw new ApiError(400, ERROR_CODES.PATH_TRAVERSAL);
   }
   return fullPath;
 }

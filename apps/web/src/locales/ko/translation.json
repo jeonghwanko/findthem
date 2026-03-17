@@ -45,6 +45,15 @@
       "detective": { "msg1": "사진 분석 엔진 초기화 중...", "msg2": "매칭 알고리즘 준비 중...", "msg3": "이 얼굴... 어디서 봤는데.", "msg4": "87%? 나머지 13%가 제일 중요한데.", "msg5": "분석 완료. 근데 이 사람 저 아닌가요?" },
       "promo":     { "msg1": "SNS 채널 연결 중...",         "msg2": "홍보 전략 수립 중...",   "msg3": "저도 팔로우해주세요. 제발요.", "msg4": "바이럴은... 내일부터.", "msg5": "리트윗 0건. 근데 기세는 있어요." },
       "guide":     { "msg1": "제보 채널 열리는 중...",       "msg2": "알림 시스템 준비 중...", "msg3": "제보 없어도 괜찮아요. 저 여기 있어요.", "msg4": "알림 300개 보냈어요. 사랑이에요.", "msg5": "채팅해주세요. 외로워요." }
+    },
+    "adReward": {
+      "ariaLabel": "광고 보고 후원XP 받기",
+      "button": "광고보고 후원",
+      "loginRequired": "로그인하면 후원XP를 받을 수 있어요!",
+      "cooldown": "잠시 후 다시 시도해주세요",
+      "error": "오류가 발생했어요",
+      "levelUp": "🎉 레벨 {{level}} 달성! {{reward}}",
+      "xpGained": "⭐ +{{xp}} 후원XP 획득!"
     }
   },
   "auth": {
@@ -374,7 +383,12 @@
     "saved": "저장되었습니다",
     "saveFailed": "저장에 실패했습니다",
     "photoSaved": "프로필 사진이 변경되었습니다",
-    "photoFailed": "사진 업로드에 실패했습니다"
+    "photoFailed": "사진 업로드에 실패했습니다",
+    "sponsorLevel": "후원 레벨 {{level}}",
+    "xpProgress": "{{current}} / {{total}} XP",
+    "xpToNext": "다음 레벨까지 {{xp}} XP 남음",
+    "xpMaxLevel": "✨ 최고 레벨 달성!",
+    "xpTotal": "누적 후원XP: {{xp}} XP"
   },
   "boost": {
     "title": "신고 부스트",
@@ -417,5 +431,39 @@
     "loginToComment": "댓글을 쓰려면 로그인하세요",
     "aiAgent": "AI Agent",
     "pinned": "고정"
+  },
+  "game": {
+    "title": "무한의 계단",
+    "subtitle": "캐릭터를 골라서 게임하고 AI 팀을 후원하세요!",
+    "remainingFree": "무료 남은 횟수",
+    "remainingAd": "광고 후 가능 횟수",
+    "start": "게임 시작",
+    "startWithAd": "광고 보고 시작",
+    "limitReached": "오늘 무료 플레이 횟수를 모두 사용했어요",
+    "watchAd": "광고 보고 1판 더 하기",
+    "adLoading": "광고 불러오는 중...",
+    "back": "돌아가기",
+    "characters": {
+      "claude": {
+        "name": "탐정 클로드",
+        "desc": "이미지 매칭 전문"
+      },
+      "ali": {
+        "name": "안내봇 알리",
+        "desc": "제보 수집 전문"
+      },
+      "heimi": {
+        "name": "홍보왕 헤르미",
+        "desc": "SNS 홍보 전문"
+      }
+    },
+    "result": {
+      "title": "게임 종료!",
+      "character": "선택한 캐릭터",
+      "saving": "기록 저장 중...",
+      "playAgain": "한 판 더",
+      "noPlays": "오늘 플레이 횟수를 모두 사용했어요. 내일 다시 도전하세요!",
+      "goHome": "홈으로 돌아가기"
+    }
   }
 }

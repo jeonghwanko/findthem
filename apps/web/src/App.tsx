@@ -37,6 +37,7 @@ import CommunityNewPostPage from './pages/CommunityNewPostPage';
 import CommunityEditPostPage from './pages/CommunityEditPostPage';
 import ProfilePage from './pages/ProfilePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import GamePage from './pages/GamePage';
 
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
@@ -121,6 +122,7 @@ export default function App() {
                   element={user ? <CommunityEditPostPage /> : <Navigate to="/login" />}
                 />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/game" element={<GamePage />} />
                 <Route path="/team" element={<TeamPage />} />
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />

@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User as UserIcon, Mail, Calendar, Shield, Save, Camera } from 'lucide-react';
+import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star } from 'lucide-react';
 import { api, type User } from '../api/client';
+import { MAX_FILE_SIZE } from '@findthem/shared';
+import type { SponsorXpStats } from '@findthem/shared';
 
 interface ProfilePageProps {
   user: User;
@@ -16,6 +18,13 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [xpStats, setXpStats] = useState<SponsorXpStats | null>(null);
+
+  useEffect(() => {
+    void api.get<SponsorXpStats>('/users/me/xp-stats')
+      .then((data) => setXpStats(data))
+      .catch(() => {/* 무시 */});
+  }, []);
 
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
   const hasChanges = name !== user.name || (email || null) !== (user.email || null);
@@ -47,7 +56,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       setMessage({ type: 'error', text: t('errors.IMAGE_ONLY') });
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       setMessage({ type: 'error', text: t('upload.limit', { max: 1 }) });
       return;
     }
@@ -111,6 +120,36 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           className="hidden"
         />
       </div>
+
+      {/* 후원 XP & 레벨 */}
+      {xpStats && (
+        <div className="mb-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 text-indigo-700 font-semibold text-sm">
+              <Star className="w-4 h-4 fill-indigo-500 text-indigo-500" />
+              {t('profile.sponsorLevel', { level: xpStats.userLevel })}
+            </div>
+            <span className="text-xs text-indigo-500">
+              {t('profile.xpProgress', { current: xpStats.currentXP.toLocaleString(), total: xpStats.xpRequiredForLevel.toLocaleString() })}
+            </span>
+          </div>
+          <div className="w-full h-3 bg-indigo-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700"
+              style={{ width: `${xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 100}%` }}
+            />
+          </div>
+          {xpStats.xpToNextLevel > 0 && (
+            <p className="text-[11px] text-indigo-400 mt-1.5">
+              {t('profile.xpToNext', { xp: xpStats.xpToNextLevel.toLocaleString() })}
+            </p>
+          )}
+          {xpStats.xpToNextLevel === 0 && (
+            <p className="text-[11px] text-purple-500 mt-1.5 font-semibold">{t('profile.xpMaxLevel')}</p>
+          )}
+          <p className="text-[11px] text-indigo-400 mt-1">{t('profile.xpTotal', { xp: xpStats.sponsorXp.toLocaleString() })}</p>
+        </div>
+      )}
 
       {/* 정보 폼 */}
       <div className="space-y-5">

@@ -21,6 +21,9 @@
 11. 아웃리치 (Outreach)
 12. 커뮤니티 (Community)
 13. AI 프로바이더 관리
+14. 후원 XP & 레벨 (Sponsor XP)
+15. 게임 (Game)
+14. 후원 XP & 레벨 (Sponsor XP)
 
 ---
 
@@ -709,6 +712,61 @@ GET    /admin/ai/usage/summary     토큰 사용량 집계
 | `ANTHROPIC_API_KEY` | Anthropic Claude API |
 | `GEMINI_API_KEY` | Google Gemini API |
 | `OPENAI_API_KEY` | OpenAI GPT API |
+
+---
+
+## 14. 후원 XP & 레벨 (Sponsor XP)
+
+홈페이지 히어로 씬(PixiHeroScene)에서 광고를 시청하면 후원 XP가 적립되고 레벨이 오른다.
+
+### XP 공식
+
+```ts
+XP_PER_AD = 50                           // 광고 1회당 XP
+AD_REWARD_COOLDOWN_SECS = 60             // 쿨다운 (동일 유저)
+requirementForSponsorLevel(level)        // base 1000, +15%/레벨, 50단위 반올림
+```
+
+`computeSponsorLevel(xpTotal)` → `{ level, currentXP, xpToNextLevel }`
+
+### 레벨업 보상
+
+```ts
+LEVEL_REWARDS: {
+  2:  { type: 'BADGE', value: 'supporter', label: '서포터 배지' },
+  3:  { type: 'BADGE', value: 'helper',    label: '도우미 배지' },
+  5:  { type: 'TITLE', value: 'champion',  label: '챔피언 칭호' },
+  7:  { type: 'BADGE', value: 'hero',      label: '영웅 배지' },
+  10: { type: 'TITLE', value: 'legend',    label: '전설 칭호' },
+}
+```
+
+### DB 모델
+
+- `User.sponsorXp` (Int, 기본 0) — 누적 XP
+- `User.userLevel` (Int, 기본 1) — 현재 레벨
+- `User.sponsorXpLastAt` (DateTime?) — 쿨다운 체크용
+- `UserReward` — 레벨업 보상 기록 (`@@unique([userId, level])`)
+
+### 라우트
+
+```
+GET    /api/users/me/xp-stats   현재 XP & 레벨 조회 (requireAuth)
+POST   /api/users/me/ad-reward  광고 시청 후 XP 지급 (requireAuth)
+```
+
+### 레이스 컨디션 방지
+
+`POST /users/me/ad-reward`는 `$transaction` 내에서:
+1. `$executeRaw` 조건부 UPDATE로 쿨다운 원자적 선점 (`sponsorXpLastAt` 갱신)
+2. `claimed === 0` → `429 AD_REWARD_COOLDOWN`
+3. XP 계산 + `user.update` + `userReward.upsert` (중복 보상 방지)
+
+### 프론트엔드
+
+- **PixiHeroScene**: 15~30초마다 랜덤 캐릭터에 광고 이벤트 발생 → `expression_surprise_1` + 🎁 아이콘
+- **useRewardAd**: 네이티브(Capacitor)에서만 AdMob 리워드 광고 시청, 웹은 즉시 완료
+- **ProfilePage**: XP 게이지 + 레벨 표시
 
 ---
 

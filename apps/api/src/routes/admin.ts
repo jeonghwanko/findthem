@@ -242,10 +242,14 @@ export function registerAdminRoutes(router: Router) {
     const report = await prisma.report.findUnique({ where: { id } });
     if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
 
-    const updated = await prisma.report.update({
-      where: { id },
+    const result = await prisma.report.updateMany({
+      where: { id, status: report.status },
       data: { status },
     });
+
+    if (result.count === 0) throw new ApiError(409, ERROR_CODES.REPORT_STATUS_CONFLICT);
+
+    const updated = await prisma.report.findUnique({ where: { id } });
 
     await createAuditLog({
       action: `report.status.${status.toLowerCase()}`,
@@ -299,10 +303,14 @@ export function registerAdminRoutes(router: Router) {
     const match = await prisma.match.findUnique({ where: { id } });
     if (!match) throw new ApiError(404, ERROR_CODES.MATCH_NOT_FOUND);
 
-    const updated = await prisma.match.update({
-      where: { id },
+    const result = await prisma.match.updateMany({
+      where: { id, status: match.status },
       data: { status, reviewedAt: new Date() },
     });
+
+    if (result.count === 0) throw new ApiError(409, ERROR_CODES.REPORT_STATUS_CONFLICT);
+
+    const updated = await prisma.match.findUnique({ where: { id } });
 
     await createAuditLog({
       action: `match.status.${status.toLowerCase()}`,
@@ -612,38 +620,54 @@ export function registerAdminRoutes(router: Router) {
     },
   );
 
-  // ── 깨진 사진 레코드 정리 ──
+  // ── 깨진 사진 레코드 정리 (배치 처리) ──
   router.post('/admin/cleanup-broken-photos', requireAdmin, async (_req, res) => {
-    const photos = await prisma.reportPhoto.findMany({
-      select: { id: true, photoUrl: true },
-    });
+    const BATCH_SIZE = 500;
+    let totalScanned = 0;
+    let totalBroken = 0;
+    let totalDeleted = 0;
+    let cursor: string | undefined;
 
-    const brokenIds: string[] = [];
-    for (const photo of photos) {
-      const url = photo.photoUrl;
-      // 외부 URL(http)이면 무조건 깨진 것으로 판정 (로컬 저장 이전 데이터)
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        brokenIds.push(photo.id);
-        continue;
-      }
-      // 로컬 파일이면 실제 존재 여부 확인
-      const filePath = url.startsWith('/uploads/')
-        ? resolve(config.uploadDir, url.replace('/uploads/', ''))
-        : resolve(config.uploadDir, url);
-      if (!existsSync(filePath)) {
-        brokenIds.push(photo.id);
-      }
-    }
-
-    let deleted = 0;
-    if (brokenIds.length > 0) {
-      const result = await prisma.reportPhoto.deleteMany({
-        where: { id: { in: brokenIds } },
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const photos = await prisma.reportPhoto.findMany({
+        select: { id: true, photoUrl: true },
+        take: BATCH_SIZE,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        orderBy: { id: 'asc' },
       });
-      deleted = result.count;
+
+      if (photos.length === 0) break;
+      cursor = photos[photos.length - 1].id;
+      totalScanned += photos.length;
+
+      const brokenIds: string[] = [];
+      for (const photo of photos) {
+        const url = photo.photoUrl;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          brokenIds.push(photo.id);
+          continue;
+        }
+        const filePath = url.startsWith('/uploads/')
+          ? resolve(config.uploadDir, url.replace('/uploads/', ''))
+          : resolve(config.uploadDir, url);
+        if (!existsSync(filePath)) {
+          brokenIds.push(photo.id);
+        }
+      }
+
+      if (brokenIds.length > 0) {
+        const result = await prisma.reportPhoto.deleteMany({
+          where: { id: { in: brokenIds } },
+        });
+        totalBroken += brokenIds.length;
+        totalDeleted += result.count;
+      }
+
+      if (photos.length < BATCH_SIZE) break;
     }
 
-    res.json({ total: photos.length, broken: brokenIds.length, deleted });
+    res.json({ total: totalScanned, broken: totalBroken, deleted: totalDeleted });
   });
 
   // ── 아웃리치 관리 API ──

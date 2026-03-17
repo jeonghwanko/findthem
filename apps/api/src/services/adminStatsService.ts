@@ -16,15 +16,14 @@ import { NOTIFY_THRESHOLD, type QueueStatusSummary, type AdminOverviewStats } fr
 // ── 날짜 헬퍼 ──
 
 function todayStart(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
 function weekStart(): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - 7);
   return d;
 }
 
