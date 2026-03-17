@@ -54,5 +54,9 @@ export function useAuth() {
     setState({ user: null, loading: false });
   }, []);
 
-  return { ...state, login, register, logout };
+  const updateUser = useCallback((user: User) => {
+    setState((prev) => ({ ...prev, user }));
+  }, []);
+
+  return { ...state, login, register, logout, updateUser };
 }

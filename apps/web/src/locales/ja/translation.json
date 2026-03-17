@@ -12,7 +12,8 @@
     "newReport": "届出登録",
     "logout": "ログアウト",
     "login": "ログイン",
-    "community": "コミュニティ"
+    "community": "コミュニティ",
+    "profile": "マイページ"
   },
   "home": {
     "heroBadge": "AI搭載 行方不明者・ペット検索",
@@ -340,6 +341,22 @@
       "installPetra": "Petraウォレットをインストール",
       "quoteExpired": "見積もりが期限切れです。再試行してください。"
     }
+  },
+  "profile": {
+    "title": "マイページ",
+    "name": "名前",
+    "email": "メール",
+    "emailPlaceholder": "メールアドレスを入力",
+    "provider": "ログイン方法",
+    "joinDate": "登録日",
+    "provider_local": "電話番号 / パスワード",
+    "provider_kakao": "カカオ",
+    "provider_naver": "Naver",
+    "provider_telegram": "Telegram",
+    "save": "保存",
+    "saving": "保存中...",
+    "saved": "保存しました",
+    "saveFailed": "保存に失敗しました"
   },
   "community": {
     "title": "コミュニティ",

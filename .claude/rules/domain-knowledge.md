@@ -269,6 +269,8 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM'
 - 비인증 접근 가능: 신고 목록, 신고 상세, 챗봇 세션
 - 소셜 로그인 시 `phone` 필드는 `social_{provider}_{providerId}` 형식 placeholder (unique 제약 충족)
 - 소셜 fallback 닉네임: `KakaoUser`, `NaverUser`, `TelegramUser` (locale 중립)
+- 소셜 로그인 시 프로필 이미지 저장: 카카오(`profile_image_url`), 네이버(`profile_image`), 텔레그램(`photo_url`) — 없으면 null
+- 재로그인 시 `name`, `profileImage` 최신값으로 갱신 (upsert update)
 - 프론트 콜백 페이지: `/auth/callback` (`AuthCallbackPage.tsx`) — `#token` 또는 `#tgAuthResult` 처리
 
 **라우트**
@@ -282,6 +284,7 @@ GET    /api/auth/naver/callback        네이버 콜백 → /auth/callback#token
 GET    /api/auth/telegram              텔레그램 OAuth 시작 → telegram.org 리다이렉트
 POST   /api/auth/telegram/callback     텔레그램 인증 데이터 검증 → { token }
 GET    /api/auth/me                    현재 사용자 정보 (requireAuth)
+PATCH  /api/auth/me                    이름/이메일 수정 (requireAuth)
 ```
 
 **환경 변수**

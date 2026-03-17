@@ -19,6 +19,7 @@ model User {
   providerId   String?
   isVerified   Boolean      @default(false)
   locale       String       @default("ko")
+  profileImage String?
 
   // 관리자 차단
   isBlocked   Boolean   @default(false)

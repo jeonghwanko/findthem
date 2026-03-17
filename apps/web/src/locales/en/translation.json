@@ -12,7 +12,8 @@
     "newReport": "New Report",
     "logout": "Logout",
     "login": "Login",
-    "community": "Community"
+    "community": "Community",
+    "profile": "My Profile"
   },
   "home": {
     "heroBadge": "AI-Powered Missing Person & Pet Finder",
@@ -341,6 +342,22 @@
       "installPetra": "Install Petra Wallet",
       "quoteExpired": "Quote expired. Please try again."
     }
+  },
+  "profile": {
+    "title": "My Profile",
+    "name": "Name",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "provider": "Login Method",
+    "joinDate": "Joined",
+    "provider_local": "Phone / Password",
+    "provider_kakao": "Kakao",
+    "provider_naver": "Naver",
+    "provider_telegram": "Telegram",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Changes saved",
+    "saveFailed": "Failed to save changes"
   },
   "community": {
     "title": "Community",

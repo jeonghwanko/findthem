@@ -12,7 +12,8 @@
     "newReport": "報案登記",
     "logout": "登出",
     "login": "登入",
-    "community": "社群"
+    "community": "社群",
+    "profile": "我的資料"
   },
   "home": {
     "heroBadge": "AI 驅動失蹤配對平台",
@@ -341,6 +342,22 @@
       "installPetra": "安裝 Petra 錢包",
       "quoteExpired": "報價已過期，請重試。"
     }
+  },
+  "profile": {
+    "title": "我的資料",
+    "name": "姓名",
+    "email": "電子郵件",
+    "emailPlaceholder": "請輸入電子郵件",
+    "provider": "登入方式",
+    "joinDate": "註冊日期",
+    "provider_local": "電話 / 密碼",
+    "provider_kakao": "Kakao",
+    "provider_naver": "Naver",
+    "provider_telegram": "Telegram",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "saved": "已儲存",
+    "saveFailed": "儲存失敗"
   },
   "community": {
     "title": "社群",

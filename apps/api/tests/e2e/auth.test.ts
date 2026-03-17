@@ -140,5 +140,215 @@ describe('Auth E2E', () => {
 
       expect(res.status).toBe(401);
     });
+
+    it('응답에 profileImage, provider 필드 포함', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce({ isBlocked: false })
+        .mockResolvedValueOnce({
+          id: testUser.id,
+          name: testUser.name,
+          phone: testUser.phone,
+          email: testUser.email,
+          profileImage: 'https://example.com/avatar.jpg',
+          provider: 'LOCAL',
+          createdAt: testUser.createdAt,
+        });
+
+      const res = await app
+        .get('/api/auth/me')
+        .set('Authorization', authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('profileImage', 'https://example.com/avatar.jpg');
+      expect(res.body).toHaveProperty('provider', 'LOCAL');
+    });
+
+    it('소셜 로그인 유저 — provider가 LOCAL 이외 값으로 응답', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce({ isBlocked: false })
+        .mockResolvedValueOnce({
+          id: 'kakao-user-id',
+          name: '카카오유저',
+          phone: 'social_kakao_12345678',
+          email: null,
+          profileImage: 'https://k.kakaocdn.net/dn/profile.jpg',
+          provider: 'KAKAO',
+          createdAt: new Date('2025-01-01'),
+        });
+
+      const res = await app
+        .get('/api/auth/me')
+        .set('Authorization', authHeader('kakao-user-id'));
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('provider', 'KAKAO');
+      expect(res.body).toHaveProperty('profileImage', 'https://k.kakaocdn.net/dn/profile.jpg');
+    });
+
+    it('profileImage가 null인 경우도 정상 응답', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce({ isBlocked: false })
+        .mockResolvedValueOnce({
+          id: testUser.id,
+          name: testUser.name,
+          phone: testUser.phone,
+          email: null,
+          profileImage: null,
+          provider: 'LOCAL',
+          createdAt: testUser.createdAt,
+        });
+
+      const res = await app
+        .get('/api/auth/me')
+        .set('Authorization', authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('profileImage', null);
+      expect(res.body).toHaveProperty('provider', 'LOCAL');
+    });
+  });
+
+  // ── PATCH /api/auth/me ──
+  describe('PATCH /api/auth/me', () => {
+    it('이름 수정 성공 → 200 + 수정된 유저 정보', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+      prismaMock.user.update.mockResolvedValue({
+        id: testUser.id,
+        name: '새이름',
+        phone: testUser.phone,
+        email: null,
+        profileImage: null,
+        provider: 'LOCAL',
+        createdAt: testUser.createdAt,
+      });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ name: '새이름' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('새이름');
+      expect(prismaMock.user.update).toHaveBeenCalledOnce();
+    });
+
+    it('이메일 수정 성공 → 200 + 수정된 유저 정보', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+      prismaMock.user.update.mockResolvedValue({
+        id: testUser.id,
+        name: testUser.name,
+        phone: testUser.phone,
+        email: 'new@example.com',
+        profileImage: null,
+        provider: 'LOCAL',
+        createdAt: testUser.createdAt,
+      });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ email: 'new@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.email).toBe('new@example.com');
+    });
+
+    it('이름 + 이메일 동시 수정 → 200', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+      prismaMock.user.update.mockResolvedValue({
+        id: testUser.id,
+        name: '동시수정',
+        phone: testUser.phone,
+        email: 'both@example.com',
+        profileImage: null,
+        provider: 'LOCAL',
+        createdAt: testUser.createdAt,
+      });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ name: '동시수정', email: 'both@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('동시수정');
+      expect(res.body.email).toBe('both@example.com');
+    });
+
+    it('빈 body → 400 (NO_FIELDS_TO_UPDATE)', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({});
+
+      expect(res.status).toBe(400);
+      // ApiError → { error: errorCode }, ZodError → { error: "field: message" }
+      expect(res.body).toHaveProperty('error');
+    });
+
+    it('인증 없이 접근 → 401', async () => {
+      const res = await app
+        .patch('/api/auth/me')
+        .send({ name: '수정시도' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('유효하지 않은 이메일 형식 → 400', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ email: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('이름이 빈 문자열 → 400', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ name: '' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('이름이 50자 초과 → 400', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ name: 'a'.repeat(51) });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('응답에 profileImage, provider 필드 포함', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+      prismaMock.user.update.mockResolvedValue({
+        id: testUser.id,
+        name: '수정된이름',
+        phone: testUser.phone,
+        email: null,
+        profileImage: 'https://example.com/avatar.jpg',
+        provider: 'LOCAL',
+        createdAt: testUser.createdAt,
+      });
+
+      const res = await app
+        .patch('/api/auth/me')
+        .set('Authorization', authHeader())
+        .send({ name: '수정된이름' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('profileImage');
+      expect(res.body).toHaveProperty('provider');
+    });
   });
 });

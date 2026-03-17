@@ -34,9 +34,10 @@ import CommunityPage from './pages/CommunityPage';
 import CommunityPostPage from './pages/CommunityPostPage';
 import CommunityNewPostPage from './pages/CommunityNewPostPage';
 import CommunityEditPostPage from './pages/CommunityEditPostPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
-  const { user, loading, login, register, logout } = useAuth();
+  const { user, loading, login, register, logout, updateUser } = useAuth();
   const { t } = useTranslation();
 
   if (loading) {
@@ -91,6 +92,10 @@ export default function App() {
                   }
                 />
                 <Route path="/browse" element={<BrowsePage />} />
+                <Route
+                  path="/profile"
+                  element={user ? <ProfilePage user={user} onUserUpdate={updateUser} /> : <Navigate to="/login" />}
+                />
                 <Route
                   path="/my-reports"
                   element={user ? <MyReportsPage /> : <Navigate to="/login" />}

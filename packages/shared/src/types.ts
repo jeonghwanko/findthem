@@ -25,7 +25,12 @@ export interface UserPublic {
   name: string;
   phone: string;
   email?: string | null;
+  profileImage?: string | null;
+  provider?: AuthProvider;
+  createdAt?: string;
 }
+
+export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM';
 
 export interface ReportPhoto {
   id: string;

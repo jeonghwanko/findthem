@@ -52,19 +52,21 @@ async function findOrCreateSocialUser(params: {
   provider: 'KAKAO' | 'NAVER' | 'TELEGRAM';
   providerId: string;
   name: string;
+  profileImage?: string | null;
 }) {
-  const { provider, providerId, name } = params;
+  const { provider, providerId, name, profileImage } = params;
   const phone = `social_${provider.toLowerCase()}_${providerId}`;
 
   return prisma.user.upsert({
     where: { provider_providerId: { provider, providerId } },
-    update: {},
+    update: { name, ...(profileImage ? { profileImage } : {}) },
     create: {
       name,
       phone,
       passwordHash: null,
       provider,
       providerId,
+      ...(profileImage ? { profileImage } : {}),
     },
   });
 }
@@ -95,7 +97,7 @@ export function registerAuthRoutes(router: Router) {
 
     const token = signToken(user.id);
     res.status(201).json({
-      user: { id: user.id, name: user.name, phone: user.phone },
+      user: { id: user.id, name: user.name, phone: user.phone, profileImage: user.profileImage, provider: user.provider },
       token,
     });
   });
@@ -116,7 +118,7 @@ export function registerAuthRoutes(router: Router) {
 
     const token = signToken(user.id);
     res.json({
-      user: { id: user.id, name: user.name, phone: user.phone },
+      user: { id: user.id, name: user.name, phone: user.phone, profileImage: user.profileImage, provider: user.provider },
       token,
     });
   });
@@ -127,9 +129,37 @@ export function registerAuthRoutes(router: Router) {
     const { userId } = req.user!; // requireAuth가 보장
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, phone: true, email: true, createdAt: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
     });
     if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
+    res.json(user);
+  });
+
+  // ── 내 정보 수정 ─────────────────────────────────────────────────────────
+  const updateProfileSchema = z.object({
+    name: z.string().min(1).max(50).optional(),
+    email: z.string().email().optional().nullable(),
+  });
+
+  router.patch('/auth/me', requireAuth, validateBody(updateProfileSchema), async (req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!;
+    const { name, email } = req.body;
+
+    const data: Prisma.UserUpdateInput = {
+      ...(name !== undefined && { name }),
+      ...(email !== undefined && { email }),
+    };
+
+    if (Object.keys(data).length === 0) {
+      throw new ApiError(400, ERROR_CODES.NO_FIELDS_TO_UPDATE);
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
+    });
     res.json(user);
   });
 
@@ -182,6 +212,7 @@ export function registerAuthRoutes(router: Router) {
     // 2. 사용자 정보 조회
     let kakaoId: string;
     let nickname: string;
+    let kakaoProfileImage: string | null = null;
     try {
       const userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -192,10 +223,11 @@ export function registerAuthRoutes(router: Router) {
       }
       const userData = (await userRes.json()) as {
         id: number;
-        kakao_account?: { profile?: { nickname?: string } };
+        kakao_account?: { profile?: { nickname?: string; profile_image_url?: string } };
       };
       kakaoId = String(userData.id);
       nickname = userData.kakao_account?.profile?.nickname ?? 'KakaoUser';
+      kakaoProfileImage = userData.kakao_account?.profile?.profile_image_url ?? null;
     } catch (err) {
       if (err instanceof ApiError) throw err;
       log.error({ err }, 'Kakao userinfo error');
@@ -207,6 +239,7 @@ export function registerAuthRoutes(router: Router) {
       provider: 'KAKAO',
       providerId: kakaoId,
       name: nickname,
+      profileImage: kakaoProfileImage,
     });
     log.info({ userId: user.id, kakaoId }, 'Kakao login success');
 
@@ -288,6 +321,7 @@ export function registerAuthRoutes(router: Router) {
     // 2. 사용자 정보 조회
     let naverId: string;
     let naverName: string;
+    let naverProfileImage: string | null = null;
     try {
       const userRes = await fetch('https://openapi.naver.com/v1/nid/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -297,10 +331,11 @@ export function registerAuthRoutes(router: Router) {
         throw new ApiError(502, ERROR_CODES.OAUTH_FAILED);
       }
       const userData = (await userRes.json()) as {
-        response?: { id?: string; name?: string };
+        response?: { id?: string; name?: string; profile_image?: string };
       };
       naverId = userData.response?.id ?? '';
       naverName = userData.response?.name ?? 'NaverUser';
+      naverProfileImage = userData.response?.profile_image ?? null;
       if (!naverId) {
         log.error({ userData }, 'Naver userinfo: id missing');
         throw new ApiError(502, ERROR_CODES.OAUTH_FAILED);
@@ -316,6 +351,7 @@ export function registerAuthRoutes(router: Router) {
       provider: 'NAVER',
       providerId: naverId,
       name: naverName,
+      profileImage: naverProfileImage,
     });
     log.info({ userId: user.id, naverId }, 'Naver login success');
 
@@ -389,12 +425,14 @@ export function registerAuthRoutes(router: Router) {
     const firstName = authData['first_name'] ?? '';
     const lastName = authData['last_name'] ?? '';
     const name = [firstName, lastName].filter(Boolean).join(' ') || 'TelegramUser';
+    const telegramPhoto = authData['photo_url'] ?? null;
 
     // DB 유저 조회/생성
     const user = await findOrCreateSocialUser({
       provider: 'TELEGRAM',
       providerId: telegramId,
       name,
+      profileImage: telegramPhoto,
     });
     log.info({ userId: user.id, telegramId }, 'Telegram login success');
 
