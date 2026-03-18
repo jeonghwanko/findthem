@@ -474,11 +474,28 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
             const dt = ticker.deltaMS / 1000;
 
-            for (const s of charStates) {
+            for (let i = 0; i < charStates.length; i++) {
+              const s = charStates[i];
               s.char.tick(dt);
 
               if (s.startDelay > 0) {
                 s.startDelay -= dt;
+                continue;
+              }
+
+              // 광고 이벤트 발생 시: 해당 캐릭터 이동 정지 + idle 유지
+              const isAdTarget = adEventRef.current && !adEventRef.current.handled && adEventRef.current.charIdx === i;
+              if (isAdTarget && !s.isWaiting) {
+                s.isWaiting = true;
+                s.waitTimer = 99;
+                s.bubbleAlpha = 0;
+                s.bubbleShowTimer = 0;
+                if (hasRun) s.char.setBodyAnimation('idle');
+              }
+              if (isAdTarget && s.isWaiting) {
+                // 광고 이벤트 동안 waitTimer 소진 방지 (표정 루프는 ad 섹션에서 처리)
+                s.waitTimer = Math.max(s.waitTimer, 5);
+                s.bubble.alpha = 0;
                 continue;
               }
 
@@ -729,7 +746,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           style={{
             position: 'absolute',
             left: adEventDisplay.x - 36,
-            top: CHAR_Y - 105,
+            top: CHAR_Y - 125,
             zIndex: 30,
             cursor: 'pointer',
             background: 'none',
