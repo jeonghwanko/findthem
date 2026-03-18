@@ -39,6 +39,7 @@ import ProfilePage from './pages/ProfilePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import GamePage from './pages/GamePage';
 import CapturePortraitsPage from './pages/CapturePortraitsPage';
+import CaptureHeimiPage from './pages/CaptureHeimiPage';
 
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
@@ -128,6 +129,7 @@ export default function App() {
                 <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
                 <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
                 <Route path="/dev/portraits" element={<CapturePortraitsPage />} />
+                <Route path="/dev/capture-heimi" element={<CaptureHeimiPage />} />
               </Routes>
             </main>
             <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">

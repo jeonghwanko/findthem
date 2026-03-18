@@ -6,10 +6,10 @@ import { SpineCharacterLite } from '../game/SpineCharacterLite';
 // Register SpinePipe (idempotent — safe to call multiple times)
 extensions.add(SpinePipe);
 
-const SIZE = 80; // CSS px; actual resolution scales with devicePixelRatio
-
 interface Props {
   skins: readonly string[];
+  /** Canvas size in CSS px (width = height). default: 80 */
+  size?: number;
   /** false = 포즈가 잡히면 애니메이션 정지 (정적 썸네일용). default: true */
   animate?: boolean;
   /** true = preserveDrawingBuffer 활성화 → canvas.toBlob() 캡처 가능. 성능 비용 있으므로 캡처 도구에서만 사용. */
@@ -21,7 +21,7 @@ interface Props {
  * Renders a Spine character portrait (face/bust crop) in a small Pixi canvas.
  * Transparent background — overlay on any card background.
  */
-export function SpinePortrait({ skins, animate = true, enableCapture = false, className }: Props) {
+export function SpinePortrait({ skins, size = 80, animate = true, enableCapture = false, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -37,8 +37,8 @@ export function SpinePortrait({ skins, animate = true, enableCapture = false, cl
         app = new Application();
         await app.init({
           canvas,
-          width: SIZE,
-          height: SIZE,
+          width: size,
+          height: size,
           backgroundAlpha: 0,
           autoStart: false,
           resolution: window.devicePixelRatio || 1,
@@ -60,8 +60,8 @@ export function SpinePortrait({ skins, animate = true, enableCapture = false, cl
         }
 
         // Position feet well below canvas so only face/bust is visible
-        char.setPosition(SIZE / 2, SIZE + 30);
-        char.setScale(0.38);
+        char.setPosition(size / 2, size * 1.375);
+        char.setScale(0.38 * (size / 80));
         app.stage.addChild(char.view);
 
         app.ticker.add((ticker) => {
@@ -94,7 +94,7 @@ export function SpinePortrait({ skins, animate = true, enableCapture = false, cl
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: SIZE, height: SIZE, display: 'block' }}
+      style={{ width: size, height: size, display: 'block' }}
     />
   );
 }
