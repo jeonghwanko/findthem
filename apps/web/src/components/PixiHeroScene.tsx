@@ -701,46 +701,88 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
       </button>
 
-      {/* 모바일: 게임해서 후원 — 가로형 버튼 */}
+      {/* 모바일: 2열 하단 버튼 그룹 (게임+Lv / 신고+제보) */}
       {isMobile && (
-        <Link
-          to="/game"
-          className="absolute left-2 z-20 flex flex-row items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all px-3"
-          style={{ bottom: 48, height: 38, width: 148, opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
-          aria-label={t('home.playToSponsor')}
-        >
-          <Gamepad2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-          <span className="text-xs font-semibold leading-tight">{t('home.playToSponsor')}</span>
-        </Link>
-      )}
-
-      {/* 모바일: Lv 배지 + XP 게이지 (항상 표시, 비회원=Lv.1) */}
-      {isMobile && phase === 'ready' && (
         <div
-          className="absolute left-2 z-20 flex items-center gap-2 bg-white/85 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-sm border border-indigo-100"
-          style={{ bottom: 10, width: 148 }}
+          className="absolute z-20 flex gap-2 items-stretch"
+          style={{
+            bottom: 13,
+            left: 8,
+            right: 8,
+            pointerEvents: 'none',
+            opacity: phase === 'ready' ? 1 : 0,
+            transition: 'opacity 0.6s ease 0.2s',
+          }}
         >
-          <span className="text-xs font-bold text-indigo-700 shrink-0">⭐ Lv.{xpStats?.userLevel ?? 1}</span>
-          <div className="flex-1 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-              style={{ width: `${xpStats && xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 0}%` }}
-            />
+          {/* 왼쪽 열: 게임 버튼 + Lv 게이지 */}
+          <div className="flex flex-col gap-2 flex-1" style={{ pointerEvents: 'auto' }}>
+            <Link
+              to="/game"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all py-2.5 px-2"
+              aria-label={t('home.playToSponsor')}
+            >
+              <Gamepad2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="text-xs font-semibold leading-tight">{t('home.playToSponsor')}</span>
+            </Link>
+            <div className="flex flex-col gap-0.5 px-1">
+              {/* Lv 행 */}
+              <span
+                className="text-sm font-bold text-white leading-none"
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}
+              >
+                ⭐ Lv.{xpStats?.userLevel ?? 1}
+              </span>
+              {/* XP 행 */}
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="text-sm font-bold text-amber-300 leading-none shrink-0"
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}
+                >
+                  ⚡ XP
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-white/70 leading-none mb-0.5">
+                    {xpStats?.sponsorXp ?? 0}
+                  </span>
+                  <div className="h-1.5 bg-white/20 rounded-full overflow-hidden w-16">
+                    <div
+                      className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${xpStats && xpStats.xpRequiredForLevel > 0
+                          ? Math.min(100, Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100))
+                          : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 오른쪽 열: 신고 + 제보 */}
+          <div className="flex flex-col gap-2 flex-1" style={{ pointerEvents: 'auto' }}>
+            <Link
+              to="/reports/new"
+              className="flex items-center justify-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md py-2.5 px-2"
+            >
+              {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </Link>
+            <Link
+              to="/browse"
+              className="flex items-center justify-center gap-1.5 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all py-2.5 px-2"
+            >
+              {t('home.submitSighting')}
+            </Link>
           </div>
         </div>
       )}
 
-      {/* Buttons — 데스크탑: 상단 중앙 가로 / 모바일: 우측 세로 2개 */}
-      <div
-        className={`absolute flex z-20 ${isMobile ? 'flex-col gap-2 items-end' : 'inset-x-0 flex-row justify-center gap-3 px-3'}`}
-        style={{
-          ...(isMobile ? { bottom: 10, right: 12, justifyContent: 'flex-end' } : { top: 16 }),
-          pointerEvents: 'none',
-          opacity: phase === 'ready' ? 1 : 0,
-          transition: 'opacity 0.6s ease 0.2s',
-        }}
-      >
-        {!isMobile && (
+      {/* Buttons — 데스크탑: 상단 중앙 가로 */}
+      {!isMobile && (
+        <div
+          className="absolute inset-x-0 flex flex-row justify-center gap-3 px-3 z-20"
+          style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
+        >
           <Link
             to="/game"
             className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
@@ -748,22 +790,22 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           >
             <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
           </Link>
-        )}
-        <Link
-          to="/reports/new"
-          className={`inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
-          style={{ pointerEvents: 'auto' }}
-        >
-          {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-        </Link>
-        <Link
-          to="/browse"
-          className={`inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
-          style={{ pointerEvents: 'auto' }}
-        >
-          {t('home.submitSighting')}
-        </Link>
-      </div>
+          <Link
+            to="/reports/new"
+            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 px-5 py-2.5"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </Link>
+          <Link
+            to="/browse"
+            className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {t('home.submitSighting')}
+          </Link>
+        </div>
+      )}
 
       {/* StatsStrip — positioned at billboard top (synced by Pixi effect) */}
       <div ref={statsRef} className="absolute z-20" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>

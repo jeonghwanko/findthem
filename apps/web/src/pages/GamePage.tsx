@@ -80,7 +80,21 @@ type CharacterId = (typeof CHARACTERS)[number]['id'];
 
 type Phase = 'select' | 'playing' | 'result';
 
-const GAME_URL = '/stair/index.html';
+// FindThem agentId → 게임 Spine 스킨 이름 매핑
+// 값은 apps/stair/src/lib/assets.ts 의 PLAYER_SKIN_LIST와 일치해야 함
+const AGENT_SKIN_MAP = {
+  'image-matching': 'skin_male_090',   // 탐정 클로드 (body_090)
+  'chatbot-alert':  'skin_female_101', // 안내봇 알리
+  'promotion':      'skin_female_102', // 홍보왕 헤르미 (body_102)
+} as const satisfies Record<CharacterId, string>;
+
+const GAME_BASE_URL = '/stair/index.html';
+
+function buildGameUrl(characterId: CharacterId | null): string {
+  if (!characterId) return GAME_BASE_URL;
+  const skin = AGENT_SKIN_MAP[characterId];
+  return `${GAME_BASE_URL}?skin=${skin}`;
+}
 
 export default function GamePage() {
   const { t } = useTranslation();
@@ -89,7 +103,7 @@ export default function GamePage() {
   const { showRewardAd, loading: adLoading, isNative } = useRewardAd();
 
   const [phase, setPhase] = useState<Phase>('select');
-  const [selected, setSelected] = useState<CharacterId | null>(null);
+  const [selected, setSelected] = useState<CharacterId | null>('image-matching');
   const [status, setStatus] = useState<GameStatus | null>(null);
   const [localPlays, setLocalPlaysState] = useState<LocalPlayRecord>(getLocalPlays);
   const [resultScore, setResultScore] = useState<number>(0);
@@ -99,11 +113,16 @@ export default function GamePage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const isSubmittingRef = useRef(false);
   const isWatchingAdRef = useRef(false);
+  const isExitingRef = useRef(false);
+
   // ref로 최신 상태 추적 (stale closure 방지)
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
   const adGrantedRef = useRef(adGranted);
   adGrantedRef.current = adGranted;
+
+  // remainingFree를 ref로도 추적 — savePlay 클로저 내에서 최신값 사용
+  const remainingFreeRef = useRef(0);
 
   // 오늘 플레이 현황 로드
   const refreshStatus = useCallback(async () => {
@@ -122,9 +141,12 @@ export default function GamePage() {
     ? (status?.remainingAd ?? MAX_AD)
     : Math.max(0, MAX_AD - localPlays.ad);
 
+  // 렌더마다 ref를 최신값으로 동기화
+  remainingFreeRef.current = remainingFree;
+
   const canPlay = remainingFree > 0 || (adGranted && remainingAd > 0);
 
-  // 점수 기록 (ref를 통해 최신 상태 사용)
+  // 점수 기록 — 모든 상태를 ref로 읽어 클로저 스탤 방지
   const savePlay = useCallback(async (score: number) => {
     const char = selectedRef.current;
     if (!char) return;
@@ -132,7 +154,7 @@ export default function GamePage() {
     isSubmittingRef.current = true;
     setSaving(true);
     try {
-      const usedAd = adGrantedRef.current && remainingFree <= 0;
+      const usedAd = adGrantedRef.current && remainingFreeRef.current <= 0;
       if (user) {
         await recordGamePlay(char, score, usedAd);
         await refreshStatus();
@@ -150,23 +172,26 @@ export default function GamePage() {
       setSaving(false);
       isSubmittingRef.current = false;
     }
-  }, [user, remainingFree, refreshStatus]);
+  }, [user, refreshStatus]); // remainingFree 제거 — ref로 추적
 
-  // iframe → game score 수신
+  // savePlay를 ref로 래핑 — message 리스너 재등록 없이 항상 최신 함수 호출
+  const savePlayRef = useRef(savePlay);
+  savePlayRef.current = savePlay;
+
+  // iframe → GAME_OVER 메시지 수신 (deps: [] 고정 — savePlayRef로 최신 savePlay 호출)
   useEffect(() => {
     const handler = (e: MessageEvent) => {
-      // origin 검증: 동일 origin (로컬 서빙)이거나 postMessage from iframe
-      if (e.origin !== window.location.origin && e.origin !== 'null') return;
+      if (e.origin !== window.location.origin) return;
       if (typeof e.data !== 'object' || !e.data) return;
       if (e.data.type === 'GAME_OVER' && typeof e.data.score === 'number') {
-        setResultScore(e.data.score);
+        setResultScore(e.data.score as number);
         setPhase('result');
-        void savePlay(e.data.score);
+        void savePlayRef.current(e.data.score as number);
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [savePlay]);
+  }, []); // 리스너 재등록 없음
 
   const handleStartGame = () => {
     if (!selected || !canPlay) return;
@@ -196,8 +221,11 @@ export default function GamePage() {
   };
 
   const handleExitGame = () => {
+    // 중복 호출 방지
+    if (isExitingRef.current) return;
+    isExitingRef.current = true;
     // 게임 중 나가기 → 점수 0으로 1판 소진 처리
-    void savePlay(0);
+    void savePlay(0).finally(() => { isExitingRef.current = false; });
     setPhase('select');
   };
 
@@ -227,34 +255,44 @@ export default function GamePage() {
         </div>
 
         {/* 캐릭터 선택 */}
-        <div className="grid grid-cols-3 gap-4 w-full max-w-lg mb-6">
+        <div className="grid grid-cols-3 gap-3 w-full max-w-lg mb-6">
           {CHARACTERS.map((ch) => (
             <button
               key={ch.id}
               onClick={() => setSelected(ch.id)}
               className={[
-                'relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all',
+                'relative flex flex-col items-center rounded-2xl border-2 transition-all overflow-hidden',
                 ch.bg,
                 ch.border,
                 selected === ch.id
                   ? `ring-2 ring-offset-2 ${ch.ring} scale-105 shadow-lg`
-                  : 'hover:scale-102 hover:shadow-md opacity-80 hover:opacity-100',
+                  : 'hover:shadow-md opacity-80 hover:opacity-100',
               ].join(' ')}
             >
-              <div
-                className="w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
-                style={{ border: `2px solid ${ch.portraitBorder}` }}
-              >
-                <SpinePortrait skins={ch.skins} animate={false} />
+              {/* 전신 캐릭터 영역 */}
+              <div className="w-full flex items-end justify-center" style={{ height: 130 }}>
+                <SpinePortrait
+                  skins={ch.skins}
+                  animate={true}
+                  fullBody={true}
+                  width={79}
+                  height={130}
+                />
               </div>
-              <span className="text-xs font-bold text-gray-800 text-center leading-tight">
-                {t(ch.nameKey)}
-              </span>
-              <span className="text-[10px] text-gray-500 text-center leading-tight">
-                {t(ch.descKey)}
-              </span>
+              {/* 이름 */}
+              <div
+                className="w-full py-2 px-1 text-center"
+                style={{ borderTop: `2px solid ${ch.portraitBorder}` }}
+              >
+                <span className="text-xs font-bold text-gray-800 leading-tight block">
+                  {t(ch.nameKey)}
+                </span>
+                <span className="text-[10px] text-gray-500 leading-tight block mt-0.5">
+                  {t(ch.descKey)}
+                </span>
+              </div>
               {selected === ch.id && (
-                <div className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">✓</span>
                 </div>
               )}
@@ -302,7 +340,7 @@ export default function GamePage() {
   if (phase === 'playing') {
     const ch = CHARACTERS.find((c) => c.id === selected);
     return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#87ceeb' }}>
         <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-sm">
           <span className="text-white text-sm font-semibold">
             {ch ? t(ch.nameKey) : ''}
@@ -317,7 +355,7 @@ export default function GamePage() {
         </div>
         <iframe
           ref={iframeRef}
-          src={GAME_URL}
+          src={buildGameUrl(selected)}
           className="flex-1 w-full border-none"
           allow="autoplay"
           title={t('game.title')}
@@ -328,6 +366,7 @@ export default function GamePage() {
 
   // ── 결과 화면 ──
   const resultChar = CHARACTERS.find((c) => c.id === selected);
+  const canPlayAgain = remainingFree > 0 || remainingAd > 0;
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm text-center">
@@ -356,12 +395,13 @@ export default function GamePage() {
 
         {saving && <p className="text-xs text-gray-400 mb-4">{t('game.result.saving')}</p>}
 
-        {(remainingFree > 0 || remainingAd > 0) ? (
+        {canPlayAgain ? (
           <button
             onClick={handlePlayAgain}
             className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition mb-3"
           >
-            <Play className="w-4 h-4" /> {t('game.result.playAgain')}
+            <Play className="w-4 h-4" />
+            {remainingFree > 0 ? t('game.result.playAgain') : t('game.result.playAgainWithAd')}
           </button>
         ) : (
           <div className="text-sm text-gray-500 mb-3">{t('game.result.noPlays')}</div>

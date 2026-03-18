@@ -16,7 +16,7 @@ export default function BottomTab({ user }: BottomTabProps) {
     { to: '/browse', label: t('nav.browse'), icon: '🔍', match: (p: string) => p.startsWith('/browse') },
     { to: '/reports/new', label: t('nav.newReport'), icon: '➕', match: (p: string) => p === '/reports/new', requireAuth: true },
     { to: '/community', label: t('nav.community'), icon: '💬', match: (p: string) => p.startsWith('/community') },
-    { to: user ? '/my-reports' : '/login', label: user ? t('nav.myReports') : t('nav.login'), icon: user ? '📋' : '👤', match: (p: string) => p === '/my-reports' || (!user && p === '/login') },
+    { to: user ? '/profile' : '/login', label: user ? t('nav.profile') : t('nav.login'), icon: '👤', match: (p: string) => p === '/profile' || (!user && p === '/login') },
   ];
 
   return (
