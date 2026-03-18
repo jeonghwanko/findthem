@@ -344,7 +344,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           if (!el) return;
           const { bbLeft, bbW } = getBillboardLayout(w);
           el.style.left = `${bbLeft + bbW / 2}px`;
-          el.style.top = `52px`;
+          el.style.top = `82px`;
         };
         syncStats(W);
 
@@ -701,23 +701,37 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
       </button>
 
-      {/* Buttons — top center (desktop) / bottom center stacked (mobile) */}
+      {/* 모바일: 게임해서 후원 — Lv 배지 위 정사각형 버튼 */}
+      {isMobile && (
+        <Link
+          to="/game"
+          className="absolute left-2 z-20 w-12 h-12 flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all"
+          style={{ bottom: 42, opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
+          aria-label={t('home.playToSponsor')}
+        >
+          <Gamepad2 className="w-5 h-5" aria-hidden="true" />
+        </Link>
+      )}
+
+      {/* Buttons — 데스크탑: 상단 중앙 가로 / 모바일: 우측 세로 2개 */}
       <div
-        className={`absolute inset-x-0 flex z-20 px-3 ${isMobile ? 'flex-col items-center gap-2' : 'flex-row justify-center gap-3'}`}
+        className={`absolute flex z-20 ${isMobile ? 'flex-col gap-2 items-end' : 'inset-x-0 flex-row justify-center gap-3 px-3'}`}
         style={{
-          ...(isMobile ? { bottom: 10 } : { top: 16 }),
+          ...(isMobile ? { bottom: 10, right: 12 } : { top: 16 }),
           pointerEvents: 'none',
           opacity: phase === 'ready' ? 1 : 0,
           transition: 'opacity 0.6s ease 0.2s',
         }}
       >
-        <Link
-          to="/game"
-          className={`inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
-          style={{ pointerEvents: 'auto' }}
-        >
-          <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
-        </Link>
+        {!isMobile && (
+          <Link
+            to="/game"
+            className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
+          </Link>
+        )}
         <Link
           to="/reports/new"
           className={`inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
