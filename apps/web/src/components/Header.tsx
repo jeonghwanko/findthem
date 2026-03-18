@@ -48,7 +48,7 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
       >
         {user.profileImage ? (
           <img
-            src={user.profileImage}
+            src={user.profileImage.replace(/^http:\/\//, 'https://')}
             alt={user.name}
             className="w-7 h-7 rounded-full object-cover"
             referrerPolicy="no-referrer"

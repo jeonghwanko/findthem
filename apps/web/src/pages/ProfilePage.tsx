@@ -175,7 +175,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         >
           {user.profileImage ? (
             <img
-              src={user.profileImage}
+              src={user.profileImage.replace(/^http:\/\//, 'https://')}
               alt={user.name}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"

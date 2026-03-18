@@ -312,7 +312,7 @@ export function registerAuthRoutes(router: Router) {
       };
       kakaoId = String(userData.id);
       nickname = userData.kakao_account?.profile?.nickname ?? 'KakaoUser';
-      kakaoProfileImage = userData.kakao_account?.profile?.profile_image_url ?? null;
+      kakaoProfileImage = (userData.kakao_account?.profile?.profile_image_url ?? null)?.replace(/^http:\/\//, 'https://') ?? null;
     } catch (err) {
       if (err instanceof ApiError) throw err;
       log.error({ err }, 'Kakao userinfo error');
@@ -420,7 +420,7 @@ export function registerAuthRoutes(router: Router) {
       };
       naverId = userData.response?.id ?? '';
       naverName = userData.response?.name ?? 'NaverUser';
-      naverProfileImage = userData.response?.profile_image ?? null;
+      naverProfileImage = (userData.response?.profile_image ?? null)?.replace(/^http:\/\//, 'https://') ?? null;
       if (!naverId) {
         log.error({ userData }, 'Naver userinfo: id missing');
         throw new ApiError(502, ERROR_CODES.OAUTH_FAILED);
