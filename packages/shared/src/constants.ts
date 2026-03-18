@@ -219,6 +219,17 @@ export const MIN_VIEWS_FOR_GOOD_PERFORMANCE = 100;
 
 export const MAX_BOOSTS_PER_DAY = 3;
 
+// ── 크롤/에이전트 ──
+
+/** 네이버 검색 API 1회 요청 당 반환 결과 수 */
+export const NAVER_SEARCH_DISPLAY_SIZE = 20;
+/** AI 소셜 파싱 동시 처리 제한 */
+export const AI_PARSING_CONCURRENCY = 3;
+/** 관리자 에이전트 도구의 기본 검색 결과 수 */
+export const AGENT_SEARCH_LIMIT = 5;
+/** 공공 API 기본 페이지 행 수 */
+export const PUBLIC_API_DEFAULT_ROWS = 50;
+
 // ── 후원 XP & 레벨 ──
 
 export const XP_PER_AD = 50;

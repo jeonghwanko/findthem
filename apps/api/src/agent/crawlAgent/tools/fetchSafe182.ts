@@ -1,3 +1,4 @@
+import { PUBLIC_API_DEFAULT_ROWS } from '@findthem/shared';
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
 import type { ExternalReport } from '../../../jobs/crawl/types.js';
@@ -48,7 +49,7 @@ function mapSex(code: string | undefined): 'MALE' | 'FEMALE' | 'UNKNOWN' {
 }
 
 export async function fetchSafe182(input: unknown): Promise<FetchResult> {
-  const { pageNo, numOfRows = 50 } = input as FetchSafe182Input;
+  const { pageNo, numOfRows = PUBLIC_API_DEFAULT_ROWS } = input as FetchSafe182Input;
 
   if (!config.safe182EsntlId || !config.safe182ApiKey) {
     log.warn('SAFE182_ESNTL_ID or SAFE182_API_KEY not configured, skipping fetch_safe182');

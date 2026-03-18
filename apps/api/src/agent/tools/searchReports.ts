@@ -1,3 +1,4 @@
+import { AGENT_SEARCH_LIMIT } from '@findthem/shared';
 import type { SubjectType } from '@findthem/shared';
 import { prisma } from '../../db/client.js';
 
@@ -18,7 +19,7 @@ export async function searchReports(
   subjectType: SubjectType,
   description?: string,
   address?: string,
-  limit = 5,
+  limit = AGENT_SEARCH_LIMIT,
 ): Promise<SearchReportsResult> {
   const take = Math.min(limit, 20);
 

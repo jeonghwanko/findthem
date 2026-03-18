@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { NAVER_SEARCH_DISPLAY_SIZE, AI_PARSING_CONCURRENCY } from '@findthem/shared';
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
 import { parseSocialPost } from '../../../ai/socialParsingAgent.js';
@@ -8,11 +9,11 @@ const log = createLogger('crawl:naver-search');
 
 const CAFE_URL = 'https://openapi.naver.com/v1/search/cafearticle.json';
 const BLOG_URL = 'https://openapi.naver.com/v1/search/blog.json';
-const DISPLAY = 20;
+const DISPLAY = NAVER_SEARCH_DISPLAY_SIZE;
 const FETCH_TIMEOUT_MS = 10_000;
 
 /** AI 파싱 동시 처리 제한 */
-const AI_CONCURRENCY = 3;
+const AI_CONCURRENCY = AI_PARSING_CONCURRENCY;
 
 /** AI 호출 전 제목/본문에서 실종 관련 신호가 있는지 사전 필터링 */
 const RELEVANCE_KEYWORDS = /실종|잃어버|찾습니다|발견|보호중|유기|목격|주인.*찾/;

@@ -1,3 +1,4 @@
+import { PUBLIC_API_DEFAULT_ROWS } from '@findthem/shared';
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
 import type { ExternalReport } from '../../../jobs/crawl/types.js';
@@ -59,7 +60,7 @@ function parseHappenDt(dt: string): Date {
 }
 
 export async function fetchAnimalApi(input: unknown): Promise<FetchResult> {
-  const { pageNo, numOfRows = 50, state = 'protect' } = input as FetchAnimalApiInput;
+  const { pageNo, numOfRows = PUBLIC_API_DEFAULT_ROWS, state = 'protect' } = input as FetchAnimalApiInput;
 
   if (!config.publicDataApiKey) {
     log.warn('PUBLIC_DATA_API_KEY not configured, skipping fetch_animal_api');

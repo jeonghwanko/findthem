@@ -1,3 +1,4 @@
+import { PUBLIC_API_DEFAULT_ROWS } from '@findthem/shared';
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
 import type { ExternalReport } from '../../../jobs/crawl/types.js';
@@ -54,7 +55,7 @@ function calcAge(birthYmd: string | undefined): string | undefined {
 }
 
 export async function fetchAmberAlerts(input: unknown): Promise<FetchResult> {
-  const { pageNo, numOfRows = 50 } = input as FetchAmberAlertsInput;
+  const { pageNo, numOfRows = PUBLIC_API_DEFAULT_ROWS } = input as FetchAmberAlertsInput;
 
   if (!config.safe182EsntlId || !config.safe182ApiKey) {
     log.warn('SAFE182_ESNTL_ID or SAFE182_API_KEY not configured, skipping fetch_amber_alerts');
