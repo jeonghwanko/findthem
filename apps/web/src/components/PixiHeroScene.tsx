@@ -6,7 +6,7 @@ import { Application, Graphics, Text, TextStyle, Container, extensions } from 'p
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import { getBgmEngine } from '../audio/BgmEngine';
 import { HeroLoadingOverlay } from './HeroLoadingOverlay';
-import { XP_PER_AD } from '@findthem/shared';
+import { XP_PER_AD, TOKEN_STORAGE_KEY } from '@findthem/shared';
 import type { AdRewardResult, SponsorXpStats } from '@findthem/shared';
 import { api } from '../api/client';
 import { useRewardAd } from '../hooks/useRewardAd';
@@ -21,6 +21,7 @@ interface Props {
 }
 
 const SCENE_H = 360;
+const MOBILE_SCENE_H = 480;
 const FONT = '-apple-system, "Segoe UI", "Helvetica Neue", sans-serif';
 const GROUND_H = 42;
 const GROUND_Y = SCENE_H - GROUND_H;
@@ -166,6 +167,13 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
   const [error, setError] = useState(false);
   const [visible, setVisible] = useState(false);
   const [bgmOn, setBgmOn] = useState(() => typeof window !== 'undefined' && localStorage.getItem('ft_bgm') !== 'off');
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // ── 광고 이벤트 상태 ─────────────────────────────────────────────────
   const adEventRef = useRef<AdEventRef | null>(null);
@@ -194,9 +202,10 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
   // XP 통계 초기 로드 (로그인 상태일 때만)
   useEffect(() => {
+    if (!localStorage.getItem(TOKEN_STORAGE_KEY)) return;
     void api.get<SponsorXpStats>('/users/me/xp-stats')
       .then((data) => setXpStats(data))
-      .catch(() => {/* 비로그인 또는 네트워크 오류 무시 */});
+      .catch(() => {/* 네트워크 오류 무시 */});
   }, []);
 
   // XP 토스트 자동 숨김
@@ -632,10 +641,12 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
     );
   }
 
+  const sectionH = isMobile ? MOBILE_SCENE_H : SCENE_H;
+
   return (
-    <section className="border-b border-primary-100" style={{ position: 'relative', height: SCENE_H, overflow: 'hidden', backgroundColor: '#1e1b4b' }}>
-      {/* Pixi canvas — fades in as scene loads */}
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }}>
+    <section className="border-b border-primary-100" style={{ position: 'relative', height: sectionH, overflow: 'hidden', backgroundColor: '#1e1b4b' }}>
+      {/* Pixi canvas — fades in as scene loads, always SCENE_H tall */}
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0, height: SCENE_H }}>
         <canvas ref={canvasRef} style={{ display: 'block', opacity: phase !== 'init' ? 1 : 0, transition: 'opacity 1s ease' }} />
       </div>
 
@@ -646,20 +657,40 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         visible={phase !== 'ready'}
       />
 
-      {/* Buttons — top center */}
-      <div className="absolute inset-x-0 flex justify-center gap-3 z-20" style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
-        <Link to="/game" className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5" style={{ pointerEvents: 'auto' }}>
+      {/* Buttons — top center (desktop) / bottom center stacked (mobile) */}
+      <div
+        className={`absolute inset-x-0 flex z-20 px-3 ${isMobile ? 'flex-col items-center gap-2' : 'flex-row justify-center gap-3'}`}
+        style={{
+          ...(isMobile ? { bottom: 10 } : { top: 16 }),
+          pointerEvents: 'none',
+          opacity: phase === 'ready' ? 1 : 0,
+          transition: 'opacity 0.6s ease 0.2s',
+        }}
+      >
+        <Link
+          to="/game"
+          className={`inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
+          style={{ pointerEvents: 'auto' }}
+        >
           <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
         </Link>
-        <Link to="/reports/new" className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5" style={{ pointerEvents: 'auto' }}>
+        <Link
+          to="/reports/new"
+          className={`inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
+          style={{ pointerEvents: 'auto' }}
+        >
           {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
         </Link>
-        <Link to="/browse" className="border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5" style={{ pointerEvents: 'auto' }}>
+        <Link
+          to="/browse"
+          className={`inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 ${isMobile ? 'px-4 py-2.5 w-52 justify-center' : 'px-5 py-2.5'}`}
+          style={{ pointerEvents: 'auto' }}
+        >
           {t('home.submitSighting')}
         </Link>
         <button
           onClick={handleBgmToggle}
-          className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${
+          className={`flex items-center justify-center rounded-lg border transition-all ${isMobile ? 'w-52 h-9 gap-2 text-sm font-semibold' : 'w-9 h-9'} ${
             bgmOn
               ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
               : 'bg-white/90 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
@@ -668,6 +699,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
         >
           {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          {isMobile && <span className="text-inherit">{bgmOn ? t('home.bgmOff') : t('home.bgmOn')}</span>}
         </button>
       </div>
 

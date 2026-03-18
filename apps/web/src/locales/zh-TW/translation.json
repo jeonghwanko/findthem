@@ -46,6 +46,8 @@
       "promo":     { "msg1": "連接社群媒體頻道中...",   "msg2": "制定宣傳策略中...",      "msg3": "請追蹤我，拜託了。", "msg4": "爆紅是...明天的事。", "msg5": "0次轉發，但氣勢有了。" },
       "guide":     { "msg1": "開啟舉報頻道中...",       "msg2": "準備通知系統中...",      "msg3": "沒有舉報也沒關係，我在這裡。", "msg4": "發了300則通知，這叫愛。", "msg5": "跟我聊天吧，好孤單。" }
     },
+    "bgmOn": "開啟BGM",
+    "bgmOff": "關閉BGM",
     "adReward": {
       "ariaLabel": "觀看廣告獲得贊助XP",
       "button": "廣告贊助",
@@ -388,7 +390,14 @@
     "xpProgress": "{{current}} / {{total}} XP",
     "xpToNext": "距下一等級還需 {{xp}} XP",
     "xpMaxLevel": "✨ 已達最高等級！",
-    "xpTotal": "累計贊助XP：{{xp}} XP"
+    "xpTotal": "累計贊助XP：{{xp}} XP",
+    "referralCode": "推薦碼",
+    "referralCopy": "複製",
+    "referralCopied": "已複製",
+    "referralInvite": "用推薦碼邀請",
+    "referralShareTitle": "FindThem — AI失蹤人員配對平台",
+    "referralShareDesc": "幫助尋找失蹤的家人。一起能更快找到他們。",
+    "referralJoin": "立即加入"
   },
   "boost": {
     "title": "加速報案曝光",

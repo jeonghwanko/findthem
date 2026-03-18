@@ -46,6 +46,8 @@
       "promo":     { "msg1": "SNSチャンネル接続中...",     "msg2": "プロモーション戦略立案中...",   "msg3": "フォローしてください。お願いします。", "msg4": "バズるのは…明日から。", "msg5": "リツイート0件。でも気合いはあります。" },
       "guide":     { "msg1": "通報チャンネルを開設中...",  "msg2": "通知システム準備中...",          "msg3": "通報なくてもいいです。ここにいます。", "msg4": "アラート300件送りました。愛情です。", "msg5": "チャットしてください。寂しいです。" }
     },
+    "bgmOn": "BGMオン",
+    "bgmOff": "BGMオフ",
     "adReward": {
       "ariaLabel": "広告を見てスポンサーXPを獲得",
       "button": "広告で支援",
@@ -387,7 +389,14 @@
     "xpProgress": "{{current}} / {{total}} XP",
     "xpToNext": "次のレベルまであと{{xp}} XP",
     "xpMaxLevel": "✨ 最高レベル達成！",
-    "xpTotal": "累計スポンサーXP: {{xp}} XP"
+    "xpTotal": "累計スポンサーXP: {{xp}} XP",
+    "referralCode": "紹介コード",
+    "referralCopy": "コピー",
+    "referralCopied": "コピーしました",
+    "referralInvite": "紹介コードで招待",
+    "referralShareTitle": "FindThem — AI行方不明者マッチングプラットフォーム",
+    "referralShareDesc": "行方不明の家族を見つける手助けをしてください。一緒ならもっと早く見つかります。",
+    "referralJoin": "今すぐ参加"
   },
   "boost": {
     "title": "届出ブースト",

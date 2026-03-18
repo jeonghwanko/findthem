@@ -18,6 +18,41 @@ import { storageService } from '../services/storageService.js';
 
 const log = createLogger('auth');
 
+/** 8자리 대문자 영숫자 레퍼럴 코드 생성 */
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 혼동 문자(0,O,1,I) 제외
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+/** DB에 referralCode가 없는 유저에게 유일한 코드 발급 */
+async function ensureReferralCode(userId: string): Promise<string> {
+  // 이미 있으면 즉시 반환
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { referralCode: true },
+  });
+  if (existing?.referralCode) return existing.referralCode;
+
+  // 원자적 update: referralCode가 null인 경우에만 갱신 → race condition 방지
+  for (let i = 0; i < 5; i++) {
+    const code = generateReferralCode();
+    const result = await prisma.user.updateMany({
+      where: { id: userId, referralCode: null },
+      data: { referralCode: code },
+    });
+    if (result.count > 0) return code;
+
+    // 다른 요청이 먼저 설정한 경우 → 현재값 반환
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { referralCode: true },
+    });
+    if (current?.referralCode) return current.referralCode;
+    // unique 충돌(코드 값 중복) 시 재시도
+  }
+  throw new ApiError(500, ERROR_CODES.SERVER_ERROR);
+}
+
 const registerSchema = z.object({
   name: z.string().min(1),
   phone: z.string().regex(/^01[016789]\d{7,8}$/),
@@ -133,9 +168,10 @@ export function registerAuthRoutes(router: Router) {
     const { userId } = req.user!; // requireAuth가 보장
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
     });
     if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
+
     res.json(user);
   });
 
@@ -162,7 +198,7 @@ export function registerAuthRoutes(router: Router) {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
     });
     res.json(user);
   });
@@ -199,9 +235,17 @@ export function registerAuthRoutes(router: Router) {
     const user = await prisma.user.update({
       where: { id: userId },
       data: { profileImage: photoUrl },
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
     });
     res.json(user);
+  });
+
+  // ── 레퍼럴 코드 발급 ─────────────────────────────────────────────────────
+  // POST /auth/me/referral-code — 레퍼럴 코드 발급 (없는 경우에만 생성)
+  router.post('/auth/me/referral-code', requireAuth, async (req, res) => {
+    const { userId } = req.user!;
+    const code = await ensureReferralCode(userId);
+    res.json({ referralCode: code });
   });
 
   // ── Kakao OAuth ───────────────────────────────────────────────────────────

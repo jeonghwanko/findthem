@@ -30,6 +30,7 @@ model User {
   sponsorXp        Int       @default(0)
   userLevel        Int       @default(1)
   sponsorXpLastAt  DateTime?
+  referralCode     String?   @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -46,6 +46,8 @@
       "promo":     { "msg1": "SNS 채널 연결 중...",         "msg2": "홍보 전략 수립 중...",   "msg3": "저도 팔로우해주세요. 제발요.", "msg4": "바이럴은... 내일부터.", "msg5": "리트윗 0건. 근데 기세는 있어요." },
       "guide":     { "msg1": "제보 채널 열리는 중...",       "msg2": "알림 시스템 준비 중...", "msg3": "제보 없어도 괜찮아요. 저 여기 있어요.", "msg4": "알림 300개 보냈어요. 사랑이에요.", "msg5": "채팅해주세요. 외로워요." }
     },
+    "bgmOn": "BGM 켜기",
+    "bgmOff": "BGM 끄기",
     "adReward": {
       "ariaLabel": "광고 보고 후원XP 받기",
       "button": "광고보고 후원",
@@ -388,7 +390,14 @@
     "xpProgress": "{{current}} / {{total}} XP",
     "xpToNext": "다음 레벨까지 {{xp}} XP 남음",
     "xpMaxLevel": "✨ 최고 레벨 달성!",
-    "xpTotal": "누적 후원XP: {{xp}} XP"
+    "xpTotal": "누적 후원XP: {{xp}} XP",
+    "referralCode": "레퍼럴 코드",
+    "referralCopy": "복사",
+    "referralCopied": "복사됨",
+    "referralInvite": "레퍼럴 코드로 초대",
+    "referralShareTitle": "찾아줘 — AI 기반 실종 매칭 플랫폼",
+    "referralShareDesc": "실종된 가족을 찾는 데 도움을 주세요. 함께라면 더 빨리 찾을 수 있어요.",
+    "referralJoin": "지금 가입하기"
   },
   "boost": {
     "title": "신고 부스트",

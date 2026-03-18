@@ -46,6 +46,8 @@
       "promo":     { "msg1": "Connecting to SNS channels...",        "msg2": "Drafting promotion strategy...",   "msg3": "Please follow me. I'm begging.", "msg4": "Going viral... tomorrow.", "msg5": "0 retweets. But the vibe is there." },
       "guide":     { "msg1": "Opening report channel...",            "msg2": "Preparing alert system...",        "msg3": "No reports? That's fine. I'm still here.", "msg4": "Sent 300 alerts. It's called love.", "msg5": "Chat with me. I'm lonely." }
     },
+    "bgmOn": "BGM On",
+    "bgmOff": "BGM Off",
     "adReward": {
       "ariaLabel": "Watch ad to earn sponsor XP",
       "button": "Sponsor Ad",
@@ -388,7 +390,14 @@
     "xpProgress": "{{current}} / {{total}} XP",
     "xpToNext": "{{xp}} XP to next level",
     "xpMaxLevel": "✨ Max level reached!",
-    "xpTotal": "Total Sponsor XP: {{xp}} XP"
+    "xpTotal": "Total Sponsor XP: {{xp}} XP",
+    "referralCode": "Referral Code",
+    "referralCopy": "Copy",
+    "referralCopied": "Copied",
+    "referralInvite": "Invite with Referral Code",
+    "referralShareTitle": "FindThem — AI-based missing person matching",
+    "referralShareDesc": "Help find missing loved ones. Together we can find them faster.",
+    "referralJoin": "Join Now"
   },
   "boost": {
     "title": "Boost Report",

@@ -28,6 +28,7 @@ export interface UserPublic {
   profileImage?: string | null;
   provider?: AuthProvider;
   createdAt?: string;
+  referralCode?: string | null;
 }
 
 export interface ReportPhoto {

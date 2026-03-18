@@ -8,18 +8,6 @@ interface ShareButtonProps {
   url?: string;
 }
 
-declare global {
-  interface Window {
-    Kakao?: {
-      isInitialized: () => boolean;
-      init: (key: string) => void;
-      Share: {
-        sendDefault: (options: unknown) => void;
-      };
-    };
-  }
-}
-
 export default function ShareButton({ title, description, imageUrl, url }: ShareButtonProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
