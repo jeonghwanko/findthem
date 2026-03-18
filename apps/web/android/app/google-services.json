@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809438353801",
+    "project_id": "findthem-e39c0",
+    "storage_bucket": "findthem-e39c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809438353801:android:4f014e32ca2128d13d6958",
+        "android_client_info": {
+          "package_name": "com.findthem.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8evhT_tgshYywNDnw3V2mThvBGJU9ANM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

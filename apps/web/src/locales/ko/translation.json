@@ -471,6 +471,7 @@
       "character": "선택한 캐릭터",
       "saving": "기록 저장 중...",
       "playAgain": "한 판 더",
+      "playAgainWithAd": "광고 보고 1판 더 하기",
       "noPlays": "오늘 플레이 횟수를 모두 사용했어요. 내일 다시 도전하세요!",
       "goHome": "홈으로 돌아가기"
     }

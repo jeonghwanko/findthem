@@ -665,7 +665,9 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             </Link>
           </div>
           <AgentWorldScene />
-          <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+          <div className="hidden md:block">
+            <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+          </div>
         </div>
       </section>
     );
@@ -807,20 +809,40 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         </div>
       )}
 
-      {/* StatsStrip — positioned at billboard top (synced by Pixi effect) */}
-      <div ref={statsRef} className="absolute z-20" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
+      {/* StatsStrip — 데스크탑 전용 (모바일 숨김) */}
+      <div ref={statsRef} className="absolute z-20 hidden md:block" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
         <StatsStrip stats={stats} recoveryRate={recoveryRate} />
       </div>
 
       {/* XP 레벨 배지 — 데스크탑 전용 (모바일은 게임 버튼에 통합) */}
-      {xpStats && phase === 'ready' && !isMobile && (
-        <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 bg-white/85 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-sm border border-indigo-100">
-          <span className="text-xs font-bold text-indigo-700">⭐ Lv.{xpStats.userLevel}</span>
-          <div className="w-14 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-              style={{ width: `${xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 0}%` }}
-            />
+      {phase === 'ready' && !isMobile && (
+        <div
+          className="absolute bottom-3 inset-x-0 z-20 flex justify-center"
+          style={{ pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
+        >
+          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5">
+            {/* Lv */}
+            <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
+              ⭐ Lv.{xpStats?.userLevel ?? 1}
+            </span>
+            <div className="w-px h-3 bg-white/30" />
+            {/* XP + bar */}
+            <span className="text-sm font-bold text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
+              ⚡ XP
+            </span>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-white/60 leading-none mb-0.5">{xpStats?.sponsorXp ?? 0}</span>
+              <div className="h-1.5 bg-white/20 rounded-full overflow-hidden w-24">
+                <div
+                  className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${xpStats && xpStats.xpRequiredForLevel > 0
+                      ? Math.min(100, Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100))
+                      : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

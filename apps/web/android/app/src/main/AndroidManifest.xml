@@ -24,10 +24,10 @@
 
         </activity>
 
-        <!-- AdMob App ID (테스트용: 프로덕션은 실제 App ID로 교체) -->
+        <!-- AdMob App ID (실제 앱 ID) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-3320768302064088~3216379440" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

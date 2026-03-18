@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { useAgentChat } from '../hooks/useAgentChat';
 
 export default function AgentChatWidget() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const chat = useAgentChat();
@@ -42,11 +44,13 @@ export default function AgentChatWidget() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
+  const isGamePage = pathname === '/game';
+
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
+        className={`fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg items-center justify-center text-2xl transition-colors z-50 ${isGamePage ? 'hidden md:flex' : 'flex'}`}
         aria-label={t('agent.openChat')}
       >
         🤖

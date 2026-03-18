@@ -232,30 +232,31 @@ export default function GamePage() {
   // ── 선택 화면 ──
   if (phase === 'select') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4 py-10">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Gamepad2 className="w-5 h-5 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center px-4 pt-6 pb-28">
+        {/* 타이틀 */}
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0">
+            <Gamepad2 className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('game.title')}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('game.title')}</h1>
         </div>
-        <p className="text-gray-500 text-sm mb-1 text-center">{t('game.subtitle')}</p>
+        <p className="text-gray-500 text-sm mb-4 text-center">{t('game.subtitle')}</p>
 
         {/* 오늘 플레이 현황 */}
-        <div className="flex items-center gap-4 my-4 bg-white border border-gray-200 rounded-xl px-6 py-3 shadow-sm">
+        <div className="flex items-center gap-6 mb-4 bg-white border border-gray-200 rounded-xl px-8 py-3 shadow-sm w-full max-w-xs justify-center">
           <div className="text-center">
-            <div className="text-lg font-bold text-indigo-600">{remainingFree}</div>
-            <div className="text-xs text-gray-500">{t('game.remainingFree')}</div>
+            <div className="text-xl font-bold text-indigo-600">{remainingFree}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingFree')}</div>
           </div>
           <div className="w-px h-8 bg-gray-200" />
           <div className="text-center">
-            <div className="text-lg font-bold text-rose-500">{remainingAd}</div>
-            <div className="text-xs text-gray-500">{t('game.remainingAd')}</div>
+            <div className="text-xl font-bold text-rose-500">{remainingAd}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingAd')}</div>
           </div>
         </div>
 
         {/* 캐릭터 선택 */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-lg mb-6">
+        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-5">
           {CHARACTERS.map((ch) => (
             <button
               key={ch.id}
@@ -270,18 +271,18 @@ export default function GamePage() {
               ].join(' ')}
             >
               {/* 전신 캐릭터 영역 */}
-              <div className="w-full flex items-end justify-center" style={{ height: 130 }}>
+              <div className="w-full flex items-end justify-center" style={{ height: 120 }}>
                 <SpinePortrait
                   skins={ch.skins}
                   animate={true}
                   fullBody={true}
                   width={79}
-                  height={130}
+                  height={120}
                 />
               </div>
               {/* 이름 */}
               <div
-                className="w-full py-2 px-1 text-center"
+                className="w-full py-1.5 px-1 text-center"
                 style={{ borderTop: `2px solid ${ch.portraitBorder}` }}
               >
                 <span className="text-xs font-bold text-gray-800 leading-tight block">
@@ -305,19 +306,19 @@ export default function GamePage() {
           <button
             onClick={handleStartGame}
             disabled={!selected}
-            className="w-full max-w-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full max-w-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-5 h-5" />
             {adGranted ? t('game.startWithAd') : t('game.start')}
           </button>
         ) : (
-          <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+          <div className="flex flex-col items-center gap-2.5 w-full max-w-sm">
             <div className="text-sm text-gray-500 text-center">{t('game.limitReached')}</div>
             {remainingAd > 0 && (
               <button
                 onClick={handleWatchAd}
                 disabled={adLoading}
-                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-60"
               >
                 <Tv className="w-5 h-5" />
                 {adLoading ? t('game.adLoading') : t('game.watchAd')}
@@ -328,7 +329,7 @@ export default function GamePage() {
 
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 text-sm text-gray-400 hover:text-gray-600 transition flex items-center gap-1"
+          className="mt-3 text-sm text-gray-400 hover:text-gray-600 transition flex items-center gap-1"
         >
           <X className="w-4 h-4" /> {t('game.back')}
         </button>
@@ -368,8 +369,8 @@ export default function GamePage() {
   const resultChar = CHARACTERS.find((c) => c.id === selected);
   const canPlayAgain = remainingFree > 0 || remainingAd > 0;
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4">
-      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm text-center">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center px-4 pb-28">
+      <div className="bg-white rounded-3xl shadow-xl p-8 pb-4 w-full max-w-sm text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Trophy className="w-8 h-8 text-white" />
         </div>
@@ -409,7 +410,7 @@ export default function GamePage() {
 
         <button
           onClick={() => navigate('/')}
-          className="text-sm text-gray-400 hover:text-gray-600 transition"
+          className="text-sm text-gray-400 hover:text-gray-600 transition py-3 px-8 -mb-2"
         >
           {t('game.result.goHome')}
         </button>

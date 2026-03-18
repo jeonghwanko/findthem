@@ -20,6 +20,11 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: 'body',
     },
+    AdMob: {
+      appId: {
+        android: 'ca-app-pub-3320768302064088~3216379440',
+      },
+    },
   },
 };
 

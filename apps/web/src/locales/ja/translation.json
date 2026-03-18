@@ -461,6 +461,7 @@
       "character": "選択キャラクター",
       "saving": "記録保存中...",
       "playAgain": "もう一回",
+      "playAgainWithAd": "広告を見てもう一回",
       "noPlays": "今日のプレイ回数を使い切りました。明日また挑戦してください！",
       "goHome": "ホームへ戻る"
     }
