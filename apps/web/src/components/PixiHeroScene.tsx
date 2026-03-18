@@ -375,6 +375,11 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
           const hasRun = !!chars[0].view.skeleton.data.findAnimation('run_1');
 
+          // 광고 이벤트 중 재생할 바디 애니 목록 (idle, run 제외 — 댄스/이모션 계열)
+          const adBodyAnims = chars[0].getAnimationNames().filter(
+            (n) => n !== 'idle' && !n.startsWith('run'),
+          );
+
           const charLayer = new Container();
           app.stage.addChild(charLayer);
 
@@ -483,14 +488,20 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
                 continue;
               }
 
-              // 광고 이벤트 발생 시: 해당 캐릭터 이동 정지 + idle 유지
+              // 광고 이벤트 발생 시: 해당 캐릭터 이동 정지 + 댄스/이모션 바디 애니
               const isAdTarget = adEventRef.current && !adEventRef.current.handled && adEventRef.current.charIdx === i;
               if (isAdTarget && !s.isWaiting) {
                 s.isWaiting = true;
                 s.waitTimer = 99;
                 s.bubbleAlpha = 0;
                 s.bubbleShowTimer = 0;
-                if (hasRun) s.char.setBodyAnimation('idle');
+                // 랜덤 바디 애니 시도 (없으면 idle)
+                let played = false;
+                if (adBodyAnims.length > 0) {
+                  const pick = adBodyAnims[Math.floor(Math.random() * adBodyAnims.length)];
+                  played = s.char.playBodyAnimSafe(pick);
+                }
+                if (!played) s.char.setBodyAnimation('idle');
               }
               if (isAdTarget && s.isWaiting) {
                 // 광고 이벤트 동안 waitTimer 소진 방지 (표정 루프는 ad 섹션에서 처리)
@@ -567,7 +578,9 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             if (adEventRef.current && !adEventRef.current.handled) {
               const ev = adEventRef.current;
               if (now - ev.lastExpressionAt > 1800) {
-                charStates[ev.charIdx].char.playExpression('expression_surprise_1');
+                const adState = charStates[ev.charIdx];
+                const expIdx = Math.floor(Math.random() * adState.expressions.length);
+                adState.char.playExpression(adState.expressions[expIdx]);
                 ev.lastExpressionAt = now;
               }
               if (now - ev.startedAt > ev.duration) {

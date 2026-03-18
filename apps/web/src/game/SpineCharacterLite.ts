@@ -180,6 +180,20 @@ export class SpineCharacterLite {
     this.currentBodyAnim = name;
   }
 
+  /** 애니메이션이 존재하는 경우에만 재생. 성공 시 true 반환. */
+  playBodyAnimSafe(name: string, loop = true): boolean {
+    if (this.disposed) return false;
+    if (!this.view.skeleton.data.findAnimation(name)) return false;
+    this.view.state.setAnimation(0, name, loop);
+    this.currentBodyAnim = name;
+    return true;
+  }
+
+  /** skeleton에 정의된 모든 애니메이션 이름 목록 */
+  getAnimationNames(): string[] {
+    return this.view.skeleton.data.animations.map((a: { name: string }) => a.name);
+  }
+
   playExpression(name: string): boolean {
     if (this.disposed) return false;
     const anim = this.view.skeleton.data.findAnimation(name);
