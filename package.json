@@ -35,6 +35,7 @@
     "@capacitor-firebase/analytics": "^8.1.0",
     "@capacitor-firebase/crashlytics": "^8.1.0",
     "@capacitor-firebase/messaging": "^8.1.0",
-    "firebase": "^12.10.0"
+    "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0"
   }
 }

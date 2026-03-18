@@ -2,6 +2,7 @@ import type { Job } from 'bullmq';
 import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { sendMatchNotification } from '../services/notificationService.js';
+import { sendPushNotification } from '../services/fcmService.js';
 import { createWorker, type NotificationJobData } from './queues.js';
 import { createLogger } from '../logger.js';
 
@@ -50,6 +51,16 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
     sightingUrl,
     userId: report.user.id,
   });
+
+  // FCM 푸시 알림 (토큰이 등록된 경우에만)
+  if (report.user.fcmToken) {
+    await sendPushNotification(
+      report.user.fcmToken,
+      '매칭 발견!',
+      `${report.name}에 대한 새로운 목격 제보가 매칭되었습니다.`,
+      { reportId: report.id, matchId },
+    );
+  }
 }
 
 export function startNotificationWorker() {

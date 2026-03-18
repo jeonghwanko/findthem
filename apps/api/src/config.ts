@@ -88,4 +88,6 @@ export const config = {
   naverRedirectUri:  process.env.NAVER_REDIRECT_URI || '',
 
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
+
+  firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '',
 } as const;

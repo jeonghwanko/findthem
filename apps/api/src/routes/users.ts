@@ -1,4 +1,5 @@
 import type { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
@@ -105,5 +106,21 @@ export function registerUserRoutes(router: Router) {
     });
 
     res.json(result);
+  });
+
+  // POST /users/me/fcm-token — FCM 토큰 저장
+  router.post('/users/me/fcm-token', requireAuth, async (req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!;
+
+    const schema = z.object({ token: z.string().min(1) });
+    const { token } = schema.parse(req.body);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { fcmToken: token },
+    });
+
+    res.status(204).send();
   });
 }
