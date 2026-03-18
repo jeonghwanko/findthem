@@ -301,7 +301,7 @@ export class UIScene extends Phaser.Scene {
     // Add to main container
     this.#gameOverContainer.add([
       overlay,
-      gameOverText,
+      this.#gameOverTitleText,
       buttonContainer,
       this.#costumeImage,
       this.#teaserText1,
