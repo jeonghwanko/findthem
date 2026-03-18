@@ -344,7 +344,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           if (!el) return;
           const { bbLeft, bbW } = getBillboardLayout(w);
           el.style.left = `${bbLeft + bbW / 2}px`;
-          el.style.top = `82px`;
+          el.style.top = `74px`;
         };
         syncStats(W);
 
@@ -701,23 +701,40 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
       </button>
 
-      {/* 모바일: 게임해서 후원 — Lv 배지 위 정사각형 버튼 */}
+      {/* 모바일: 게임해서 후원 — 가로형 버튼 */}
       {isMobile && (
         <Link
           to="/game"
-          className="absolute left-2 z-20 w-12 h-12 flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all"
-          style={{ bottom: 42, opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
+          className="absolute left-2 z-20 flex flex-row items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all px-3"
+          style={{ bottom: 48, height: 38, width: 148, opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
           aria-label={t('home.playToSponsor')}
         >
-          <Gamepad2 className="w-5 h-5" aria-hidden="true" />
+          <Gamepad2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+          <span className="text-xs font-semibold leading-tight">{t('home.playToSponsor')}</span>
         </Link>
+      )}
+
+      {/* 모바일: Lv 배지 + XP 게이지 (항상 표시, 비회원=Lv.1) */}
+      {isMobile && phase === 'ready' && (
+        <div
+          className="absolute left-2 z-20 flex items-center gap-2 bg-white/85 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-sm border border-indigo-100"
+          style={{ bottom: 10, width: 148 }}
+        >
+          <span className="text-xs font-bold text-indigo-700 shrink-0">⭐ Lv.{xpStats?.userLevel ?? 1}</span>
+          <div className="flex-1 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+              style={{ width: `${xpStats && xpStats.xpRequiredForLevel > 0 ? Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100) : 0}%` }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Buttons — 데스크탑: 상단 중앙 가로 / 모바일: 우측 세로 2개 */}
       <div
         className={`absolute flex z-20 ${isMobile ? 'flex-col gap-2 items-end' : 'inset-x-0 flex-row justify-center gap-3 px-3'}`}
         style={{
-          ...(isMobile ? { bottom: 10, right: 12 } : { top: 16 }),
+          ...(isMobile ? { bottom: 10, right: 12, justifyContent: 'flex-end' } : { top: 16 }),
           pointerEvents: 'none',
           opacity: phase === 'ready' ? 1 : 0,
           transition: 'opacity 0.6s ease 0.2s',
@@ -753,8 +770,8 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         <StatsStrip stats={stats} recoveryRate={recoveryRate} />
       </div>
 
-      {/* XP 레벨 배지 */}
-      {xpStats && phase === 'ready' && (
+      {/* XP 레벨 배지 — 데스크탑 전용 (모바일은 게임 버튼에 통합) */}
+      {xpStats && phase === 'ready' && !isMobile && (
         <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 bg-white/85 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-sm border border-indigo-100">
           <span className="text-xs font-bold text-indigo-700">⭐ Lv.{xpStats.userLevel}</span>
           <div className="w-14 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
