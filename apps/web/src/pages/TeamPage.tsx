@@ -6,6 +6,7 @@ import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
 import { AgentPortrait } from '../components/AgentPortrait';
+import { AGENT_SKINS } from '../constants/agentSkins';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -49,7 +50,7 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentImageMatching.name',
     roleKey: 'team.agentImageMatching.role',
     descKey: 'team.agentImageMatching.desc',
-    skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const,
+    skins: AGENT_SKINS['image-matching'],
     iconBg: 'bg-blue-50',
     portraitBorder: '#818cf8',
     badgeBg: 'bg-blue-50',
@@ -62,7 +63,7 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentPromotion.name',
     roleKey: 'team.agentPromotion.role',
     descKey: 'team.agentPromotion.desc',
-    skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const,
+    skins: AGENT_SKINS['promotion'],
     iconBg: 'bg-pink-50',
     portraitBorder: '#f472b6',
     badgeBg: 'bg-pink-50',
@@ -75,7 +76,7 @@ const AGENTS: AgentConfig[] = [
     nameKey: 'team.agentChatbotAlert.name',
     roleKey: 'team.agentChatbotAlert.role',
     descKey: 'team.agentChatbotAlert.desc',
-    skins: ['body_043', 'cos_042', 'hair_000', 'hat_042', 'weapon_042'] as const,
+    skins: AGENT_SKINS['chatbot-alert'],
     iconBg: 'bg-green-50',
     portraitBorder: '#4ade80',
     badgeBg: 'bg-green-50',

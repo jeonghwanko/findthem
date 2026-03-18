@@ -42,19 +42,17 @@ console.log('Spine 에셋 로드 대기 중...');
 await page.waitForFunction(() => {
   const canvases = document.querySelectorAll('canvas');
   if (canvases.length < 3) return false;
+  // 모든 캔버스가 렌더링됐는지 확인 (첫 번째만 체크하면 나머지가 미완성일 수 있음)
   for (const canvas of canvases) {
-    const ctx = canvas.getContext('2d');
-    // WebGL canvas는 getContext('2d')가 null — 픽셀 데이터 확인 대신 width 체크
     if (canvas.offsetWidth === 0) return false;
+    const data = canvas.toDataURL('image/webp', 0.92);
+    // 빈 WebP는 ~100자, 실제 픽셀이 있으면 더 큼
+    if (data.length < 500) return false;
   }
-  // canvas.toDataURL()로 실제 픽셀 확인 (preserveDrawingBuffer=true 필요)
-  const canvas = canvases[0];
-  const data = canvas.toDataURL('image/png');
-  // 빈 투명 PNG는 약 70~100자 수준의 base64
-  return data.length > 500;
+  return true;
 }, { timeout: 30000, polling: 500 });
 
-// 포즈 안정화 대기
+// Spine 포즈 안정화 대기 (animate=false 시 200ms 후 ticker 정지 + 400ms 여유)
 await page.waitForTimeout(600);
 console.log('렌더링 완료, 캡처 시작...');
 
@@ -64,7 +62,7 @@ for (let i = 0; i < AGENTS.length; i++) {
   const dataUrl = await page.evaluate((idx) => {
     const canvas = document.querySelectorAll('canvas')[idx];
     if (!canvas) return null;
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/webp', 0.92);
   }, i);
 
   if (!dataUrl || dataUrl.length < 500) {
@@ -72,7 +70,7 @@ for (let i = 0; i < AGENTS.length; i++) {
     continue;
   }
 
-  const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+  const base64 = dataUrl.replace(/^data:image\/webp;base64,/, '');
   const buf = Buffer.from(base64, 'base64');
   const outPath = join(OUT_DIR, `${AGENTS[i]}.webp`);
   writeFileSync(outPath, buf);

@@ -1,32 +1,17 @@
 import { useRef, useState } from 'react';
 import { SpinePortrait } from '../components/SpinePortrait';
+import { AGENT_SKINS } from '../constants/agentSkins';
+import type { AgentId } from '../api/client';
 
 interface AgentCapture {
-  id: string;
+  id: AgentId;
   label: string;
-  filename: string;
-  skins: readonly string[];
 }
 
 const AGENTS: AgentCapture[] = [
-  {
-    id: 'image-matching',
-    label: '탐정 클로드',
-    filename: 'image-matching.webp',
-    skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const,
-  },
-  {
-    id: 'promotion',
-    label: '홍보왕 헤르미',
-    filename: 'promotion.webp',
-    skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const,
-  },
-  {
-    id: 'chatbot-alert',
-    label: '안내봇 알리',
-    filename: 'chatbot-alert.webp',
-    skins: ['body_103', 'cos_103', 'hair_103', 'hat_103', 'weapon_103'] as const,
-  },
+  { id: 'image-matching', label: '탐정 클로드' },
+  { id: 'promotion',      label: '홍보왕 헤르미' },
+  { id: 'chatbot-alert',  label: '안내봇 알리' },
 ];
 
 function AgentCaptureCard({ agent }: { agent: AgentCapture }) {
@@ -43,7 +28,7 @@ function AgentCaptureCard({ agent }: { agent: AgentCapture }) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = agent.filename;
+        a.download = `${agent.id}.webp`;
         a.click();
         URL.revokeObjectURL(url);
         setDownloaded(true);
@@ -57,9 +42,9 @@ function AgentCaptureCard({ agent }: { agent: AgentCapture }) {
     <div className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
       <p className="font-semibold text-gray-800">{agent.label}</p>
       <div ref={wrapperRef} className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-200">
-        <SpinePortrait skins={agent.skins} animate={false} />
+        <SpinePortrait skins={AGENT_SKINS[agent.id]} animate={false} enableCapture />
       </div>
-      <p className="text-xs text-gray-400 font-mono">{agent.filename}</p>
+      <p className="text-xs text-gray-400 font-mono">{agent.id}.webp</p>
       <button
         onClick={handleDownload}
         className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${

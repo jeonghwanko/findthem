@@ -13,17 +13,17 @@ interface Props {
  * - 없으면 SpinePortrait로 fallback (Pixi.js + Spine 렌더링)
  */
 export function AgentPortrait({ agentId, skins }: Props) {
-  const [useStatic, setUseStatic] = useState(true);
+  const [imgFailed, setImgFailed] = useState(false);
 
-  if (useStatic) {
+  if (!imgFailed) {
     return (
       <img
         src={`/agents/${agentId}.webp`}
         alt={agentId}
         width={80}
         height={80}
-        style={{ width: 80, height: 80, display: 'block', objectFit: 'cover' }}
-        onError={() => setUseStatic(false)}
+        style={{ display: 'block', objectFit: 'cover' }}
+        onError={() => setImgFailed(true)}
       />
     );
   }

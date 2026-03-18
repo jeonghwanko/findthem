@@ -12,6 +12,8 @@ interface Props {
   skins: readonly string[];
   /** false = 포즈가 잡히면 애니메이션 정지 (정적 썸네일용). default: true */
   animate?: boolean;
+  /** true = preserveDrawingBuffer 활성화 → canvas.toBlob() 캡처 가능. 성능 비용 있으므로 캡처 도구에서만 사용. */
+  enableCapture?: boolean;
   className?: string;
 }
 
@@ -19,7 +21,7 @@ interface Props {
  * Renders a Spine character portrait (face/bust crop) in a small Pixi canvas.
  * Transparent background — overlay on any card background.
  */
-export function SpinePortrait({ skins, animate = true, className }: Props) {
+export function SpinePortrait({ skins, animate = true, enableCapture = false, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function SpinePortrait({ skins, animate = true, className }: Props) {
           autoStart: false,
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
-          preserveDrawingBuffer: true, // canvas.toBlob() 지원 (WebGL 기본값은 false → 캡처 불가)
+          preserveDrawingBuffer: enableCapture, // true = canvas.toBlob() 캡처 가능 (성능 비용 있음)
         });
 
         if (destroyed) {
