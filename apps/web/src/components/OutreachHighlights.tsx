@@ -17,13 +17,14 @@ interface OutreachHighlightsResponse {
   items: OutreachHighlight[];
 }
 
-const SET_SIZE = 5;
+const DESKTOP_PAGE = 5;
+const MOBILE_PAGE = 2;
 const PAUSE_MS = 8000;     // 8초간 정지
 const SLIDE_MS = 1200;     // 슬라이드 애니메이션 시간
 
-function SkeletonCard() {
+function SkeletonCard({ fill }: { fill?: boolean }) {
   return (
-    <div className="shrink-0 w-48 rounded-xl overflow-hidden border border-gray-100 bg-white">
+    <div className={`shrink-0 rounded-xl overflow-hidden border border-gray-100 bg-white ${fill ? 'flex-1' : 'w-48'}`}>
       <div className="w-full aspect-video bg-gray-200 animate-pulse" />
       <div className="p-2.5 space-y-1.5">
         <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4" />
@@ -39,7 +40,14 @@ export default function OutreachHighlights() {
   const [loading, setLoading] = useState(true);
   const [setIndex, setSetIndex] = useState(0);
   const [sliding, setSliding] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   useEffect(() => {
     api
@@ -54,20 +62,24 @@ export default function OutreachHighlights() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalSets = Math.ceil(items.length / SET_SIZE);
+  const pageSize = isMobile ? MOBILE_PAGE : DESKTOP_PAGE;
+  const totalSets = Math.ceil(items.length / pageSize);
 
   const scheduleNext = useCallback(() => {
     if (totalSets <= 1) return;
     timerRef.current = setTimeout(() => {
-      // 슬라이드 시작
       setSliding(true);
-      // 슬라이드 완료 후 인덱스 변경 + 위치 리셋
       setTimeout(() => {
         setSetIndex((prev) => (prev + 1) % totalSets);
         setSliding(false);
       }, SLIDE_MS);
     }, PAUSE_MS);
   }, [totalSets]);
+
+  // pageSize 변경 시 setIndex 리셋
+  useEffect(() => {
+    setSetIndex(0);
+  }, [pageSize]);
 
   useEffect(() => {
     if (totalSets <= 1) return;
@@ -79,7 +91,7 @@ export default function OutreachHighlights() {
 
   if (!loading && items.length === 0) return null;
 
-  const currentItems = items.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
+  const currentItems = items.slice(setIndex * pageSize, setIndex * pageSize + pageSize);
 
   return (
     <div className="bg-white border-b border-gray-100 py-5 px-4">
@@ -116,7 +128,7 @@ export default function OutreachHighlights() {
             }}
           >
             {loading
-              ? Array.from({ length: SET_SIZE }).map((_, i) => <SkeletonCard key={i} />)
+              ? Array.from({ length: pageSize }).map((_, i) => <SkeletonCard key={i} fill={isMobile} />)
               : currentItems.map((item) => (
                   <a
                     key={item.videoId ?? item.channelId}
@@ -127,7 +139,7 @@ export default function OutreachHighlights() {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 w-48 rounded-xl overflow-hidden border border-gray-100 bg-white hover:border-primary-200 hover:shadow-md transition-all group"
+                    className={`shrink-0 rounded-xl overflow-hidden border border-gray-100 bg-white hover:border-primary-200 hover:shadow-md transition-all group ${isMobile ? 'flex-1' : 'w-48'}`}
                   >
                     <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
                       {item.videoId ? (

@@ -71,7 +71,7 @@ function randBetween(lo: number, hi: number) {
 }
 
 // ── Billboard layout calculation (single source of truth) ──────────────
-const BB_Y = 60;
+const BB_Y = 82;
 const BB_MARGIN = 16;
 
 function getBillboardLayout(W: number) {
@@ -344,7 +344,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           if (!el) return;
           const { bbLeft, bbW } = getBillboardLayout(w);
           el.style.left = `${bbLeft + bbW / 2}px`;
-          el.style.top = `${BB_Y + 19}px`;
+          el.style.top = `52px`;
         };
         syncStats(W);
 
@@ -657,6 +657,20 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         visible={phase !== 'ready'}
       />
 
+      {/* BGM toggle — 좌상단 아이콘 (항상 고정) */}
+      <button
+        onClick={handleBgmToggle}
+        className={`absolute left-2 top-2 z-20 w-8 h-8 flex items-center justify-center rounded-full border transition-all ${
+          bgmOn
+            ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
+            : 'bg-white/80 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
+        }`}
+        style={{ opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
+        aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
+      >
+        {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+      </button>
+
       {/* Buttons — top center (desktop) / bottom center stacked (mobile) */}
       <div
         className={`absolute inset-x-0 flex z-20 px-3 ${isMobile ? 'flex-col items-center gap-2' : 'flex-row justify-center gap-3'}`}
@@ -688,19 +702,6 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         >
           {t('home.submitSighting')}
         </Link>
-        <button
-          onClick={handleBgmToggle}
-          className={`flex items-center justify-center rounded-lg border transition-all ${isMobile ? 'w-52 h-9 gap-2 text-sm font-semibold' : 'w-9 h-9'} ${
-            bgmOn
-              ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
-              : 'bg-white/90 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
-          }`}
-          style={{ pointerEvents: 'auto' }}
-          aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
-        >
-          {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          {isMobile && <span className="text-inherit">{bgmOn ? t('home.bgmOff') : t('home.bgmOn')}</span>}
-        </button>
       </div>
 
       {/* StatsStrip — positioned at billboard top (synced by Pixi effect) */}
