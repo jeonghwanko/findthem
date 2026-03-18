@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { api, type User } from '../api/client';
 import { TOKEN_STORAGE_KEY } from '@findthem/shared';
 
+async function syncFcmToken() {
+  const token = localStorage.getItem('fcm_token');
+  if (!token) return;
+  try {
+    await api.post('/users/me/fcm-token', { token });
+  } catch {
+    // 무시
+  }
+}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
@@ -18,7 +28,10 @@ export function useAuth() {
     }
 
     api.get<User>('/auth/me')
-      .then((user) => setState({ user, loading: false }))
+      .then((user) => {
+        setState({ user, loading: false });
+        void syncFcmToken();
+      })
       .catch(() => {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
         setState({ user: null, loading: false });
@@ -32,6 +45,7 @@ export function useAuth() {
     });
     localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
     setState({ user: res.user, loading: false });
+    void syncFcmToken();
     return res.user;
   }, []);
 
@@ -44,6 +58,7 @@ export function useAuth() {
       });
       localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
       setState({ user: res.user, loading: false });
+      void syncFcmToken();
       return res.user;
     },
     [],
