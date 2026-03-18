@@ -19,3 +19,6 @@ apps/api/tests/**/*.d.ts.map
 .claude/
 CLAUDE.md
 docs/
+
+# IDE
+.vscode/
