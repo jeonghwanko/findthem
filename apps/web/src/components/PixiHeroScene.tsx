@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Gamepad2, Volume2, VolumeX } from 'lucide-react';
+import { Gamepad2, Volume2, VolumeX } from 'lucide-react';
 import { Application, Graphics, Text, TextStyle, Container, extensions } from 'pixi.js';
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import { getBgmEngine } from '../audio/BgmEngine';
 import { HeroLoadingOverlay } from './HeroLoadingOverlay';
+import StatsStrip from './StatsStrip';
 import { XP_PER_AD, TOKEN_STORAGE_KEY } from '@findthem/shared';
 import type { AdRewardResult, SponsorXpStats } from '@findthem/shared';
 import { api } from '../api/client';
@@ -662,12 +663,6 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             <Link to="/game" className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 px-7 py-3.5 rounded-xl font-semibold text-base transition-all hover:-translate-y-0.5">
               <Gamepad2 className="w-4 h-4" aria-hidden="true" /> {t('home.playToSponsor')}
             </Link>
-            <Link to="/reports/new" className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-              {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <Link to="/browse" className="border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-base transition-all hover:-translate-y-0.5">
-              {t('home.submitSighting')}
-            </Link>
           </div>
           <AgentWorldScene />
           <div className="hidden md:block">
@@ -708,10 +703,10 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
       </button>
 
-      {/* 모바일: 2열 하단 버튼 그룹 (게임+Lv / 신고+제보) */}
+      {/* 모바일: 하단 게임 버튼 + Lv/XP */}
       {isMobile && (
         <div
-          className="absolute z-20 flex gap-2 items-stretch"
+          className="absolute z-20 flex justify-center"
           style={{
             bottom: 13,
             left: 8,
@@ -721,66 +716,31 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             transition: 'opacity 0.6s ease 0.2s',
           }}
         >
-          {/* 왼쪽 열: 게임 버튼 (입체적 3D 스타일) */}
-          <div className="flex flex-1" style={{ pointerEvents: 'auto' }}>
-            <Link
-              to="/game"
-              className="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-2"
-              aria-label={t('home.playToSponsor')}
-            >
-              <Gamepad2 className="w-8 h-8 shrink-0 drop-shadow-sm" aria-hidden="true" />
-              <span className="text-xs font-bold leading-tight drop-shadow-sm">{t('home.playToSponsor')}</span>
-            </Link>
-          </div>
-
-          {/* 오른쪽 열: 신고 + 제보 */}
-          <div className="flex flex-col gap-2 flex-1" style={{ pointerEvents: 'auto' }}>
-            <Link
-              to="/reports/new"
-              className="flex items-center justify-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md py-2.5 px-2"
-            >
-              {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/browse"
-              className="flex items-center justify-center gap-1.5 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all py-2.5 px-2"
-            >
-              {t('home.submitSighting')}
-            </Link>
-          </div>
+          <Link
+            to="/game"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-4 py-2.5"
+            style={{ pointerEvents: 'auto' }}
+            aria-label={t('home.playToSponsor')}
+          >
+            <Gamepad2 className="w-5 h-5 shrink-0 drop-shadow-sm" aria-hidden="true" />
+            <span className="text-sm font-bold drop-shadow-sm">{t('home.playToSponsor')}</span>
+          </Link>
         </div>
       )}
 
-      {/* Buttons + Lv/XP — 데스크탑: 상단 중앙 가로 */}
+      {/* 데스크탑: 게임 버튼 + Lv/XP 게이지 */}
       {!isMobile && (
         <div
           className="absolute inset-x-0 flex flex-col items-center gap-2 px-3 z-20"
           style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
         >
-          <div className="flex flex-row justify-center gap-3">
-            <Link
-              to="/game"
-              className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
-            </Link>
-            <Link
-              to="/reports/new"
-              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 px-5 py-2.5"
-              style={{ pointerEvents: 'auto' }}
-            >
-              {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/browse"
-              className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
-              style={{ pointerEvents: 'auto' }}
-            >
-              {t('home.submitSighting')}
-            </Link>
-          </div>
-          {/* Lv/XP 게이지 — 버튼 바로 아래 */}
+          <Link
+            to="/game"
+            className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
+          </Link>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5" style={{ pointerEvents: 'auto' }}>
             <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
               ⭐ Lv.{xpStats?.userLevel ?? 1}
@@ -844,25 +804,5 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         </div>
       )}
     </section>
-  );
-}
-
-function StatsStrip({ stats, recoveryRate }: { stats: Props['stats']; recoveryRate: number | null }) {
-  const { t } = useTranslation();
-  return (
-    <div className="inline-flex items-center bg-indigo-600/85 backdrop-blur-sm border border-indigo-500 rounded-xl px-1 py-0.5 shadow-sm divide-x divide-indigo-400/40 whitespace-nowrap">
-      <div className="px-5 py-1.5 text-center">
-        {stats ? <p className="text-base font-bold text-white tabular-nums">{stats.total.toLocaleString()}</p> : <div className="h-5 w-10 mx-auto bg-indigo-400 rounded animate-pulse" />}
-        <p className="text-[10px] text-indigo-200">{t('home.statTotal')}</p>
-      </div>
-      <div className="px-5 py-1.5 text-center">
-        {stats ? <p className="text-base font-bold text-amber-300 tabular-nums">{stats.found.toLocaleString()}</p> : <div className="h-5 w-8 mx-auto bg-indigo-400 rounded animate-pulse" />}
-        <p className="text-[10px] text-indigo-200">{t('home.statFound')}</p>
-      </div>
-      <div className="px-5 py-1.5 text-center">
-        {recoveryRate !== null ? <p className="text-base font-bold text-emerald-300 tabular-nums">{recoveryRate}%</p> : <div className="h-5 w-8 mx-auto bg-indigo-400 rounded animate-pulse" />}
-        <p className="text-[10px] text-indigo-200">{t('home.statRate')}</p>
-      </div>
-    </div>
   );
 }

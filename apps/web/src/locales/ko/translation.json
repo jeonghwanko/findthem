@@ -68,10 +68,10 @@
     "hasAccount": "이미 계정이 있나요? ",
     "noAccount": "계정이 없나요? ",
     "errorFallback": "오류가 발생했습니다",
-    "kakaoLogin": "카카오톡으로 로그인",
-    "naverLogin": "네이버로 로그인",
-    "telegramLogin": "텔레그램으로 로그인",
-    "appleLogin": "Apple로 로그인",
+    "kakaoLogin": "카카오톡 로그인",
+    "naverLogin": "네이버 로그인",
+    "telegramLogin": "텔레그램 로그인",
+    "appleLogin": "Apple 로그인",
     "orDivider": "또는"
   },
   "browse": {

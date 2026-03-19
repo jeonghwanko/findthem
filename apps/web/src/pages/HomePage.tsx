@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
-import PixiHeroScene from '../components/PixiHeroScene';
+import StatsStrip from '../components/StatsStrip';
 import OutreachHighlights from '../components/OutreachHighlights';
 import type { SubjectType } from '@findthem/shared';
 
@@ -17,7 +17,6 @@ interface Feature {
   activeCls: string;
   iconCls: string;
   iconBg: string;
-  panelGradient: string;
   panelBorder: string;
   titleKey: string;
   descKey: string;
@@ -31,7 +30,6 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-blue-50 text-blue-700 border-blue-200',
     iconCls: 'text-blue-500',
     iconBg: 'bg-blue-50',
-    panelGradient: 'from-blue-50/70 to-white',
     panelBorder: 'border-blue-100',
     titleKey: 'home.featurePromo',
     descKey: 'home.featurePromoDesc',
@@ -43,7 +41,6 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-green-50 text-green-700 border-green-200',
     iconCls: 'text-green-500',
     iconBg: 'bg-green-50',
-    panelGradient: 'from-green-50/70 to-white',
     panelBorder: 'border-green-100',
     titleKey: 'home.featureChatbot',
     descKey: 'home.featureChatbotDesc',
@@ -55,7 +52,6 @@ const FEATURES: Feature[] = [
     activeCls: 'bg-purple-50 text-purple-700 border-purple-200',
     iconCls: 'text-purple-500',
     iconBg: 'bg-purple-50',
-    panelGradient: 'from-purple-50/70 to-white',
     panelBorder: 'border-purple-100',
     titleKey: 'home.featureMatching',
     descKey: 'home.featureMatchingDesc',
@@ -103,8 +99,37 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* Hero — Pixi.js + Spine 씬 (실패 시 Canvas 폴백) */}
-      <PixiHeroScene stats={stats} recoveryRate={recoveryRate} />
+      {/* Hero — 캐치프레이즈 + CTA + StatsStrip */}
+      <section className="bg-gradient-to-b from-indigo-50 to-white border-b border-primary-100 py-16 sm:py-20 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <span className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
+            {t('home.heroBadge')}
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">
+            {t('home.heroTitle')}
+          </h1>
+          <p className="text-gray-500 text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            {t('home.heroDesc')}
+          </p>
+          <div className="flex gap-3 justify-center flex-wrap mb-8">
+            <Link
+              to="/reports/new"
+              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+              {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+            <Link
+              to="/browse"
+              className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
+            >
+              {t('home.submitSighting')}
+            </Link>
+          </div>
+          <div className="flex justify-center">
+            <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+          </div>
+        </div>
+      </section>
 
       {/* 아웃리치 유튜버 하이라이트 */}
       <OutreachHighlights />
