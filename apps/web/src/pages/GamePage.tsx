@@ -232,59 +232,61 @@ export default function GamePage() {
   // ── 선택 화면 ──
   if (phase === 'select') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center px-4 pt-4 pb-24">
-        {/* 타이틀 + 현황 통합 */}
-        <div className="flex items-center gap-2 mb-0.5">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
-            <Gamepad2 className="w-4 h-4 text-white" />
-          </div>
-          <h1 className="text-lg font-bold text-gray-900">{t('game.title')}</h1>
-        </div>
-        <p className="text-gray-500 text-xs mb-3 text-center">{t('game.subtitle')}</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center px-4 pb-24">
+        {/* 상단 여백 — 콘텐츠를 중앙으로 밀어줌 */}
+        <div className="flex-1 min-h-8" />
 
-        {/* 오늘 플레이 현황 — 컴팩트 */}
-        <div className="flex items-center gap-4 mb-3 bg-white border border-gray-200 rounded-lg px-6 py-2 shadow-sm">
-          <div className="text-center">
-            <div className="text-lg font-bold text-indigo-600 leading-tight">{remainingFree}</div>
-            <div className="text-[10px] text-gray-500">{t('game.remainingFree')}</div>
+        {/* 타이틀 */}
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0">
+            <Gamepad2 className="w-4.5 h-4.5 text-white" />
           </div>
-          <div className="w-px h-6 bg-gray-200" />
+          <h1 className="text-xl font-bold text-gray-900">{t('game.title')}</h1>
+        </div>
+        <p className="text-gray-500 text-sm mb-5 text-center">{t('game.subtitle')}</p>
+
+        {/* 오늘 플레이 현황 */}
+        <div className="flex items-center gap-6 mb-6 bg-white border border-gray-200 rounded-xl px-8 py-3 shadow-sm">
           <div className="text-center">
-            <div className="text-lg font-bold text-rose-500 leading-tight">{remainingAd}</div>
-            <div className="text-[10px] text-gray-500">{t('game.remainingAd')}</div>
+            <div className="text-2xl font-bold text-indigo-600 leading-tight">{remainingFree}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingFree')}</div>
+          </div>
+          <div className="w-px h-8 bg-gray-200" />
+          <div className="text-center">
+            <div className="text-2xl font-bold text-rose-500 leading-tight">{remainingAd}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingAd')}</div>
           </div>
         </div>
 
-        {/* 캐릭터 선택 — 컴팩트 */}
-        <div className="grid grid-cols-3 gap-2 w-full max-w-xs mb-4">
+        {/* 캐릭터 선택 */}
+        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
           {CHARACTERS.map((ch) => (
             <button
               key={ch.id}
               onClick={() => setSelected(ch.id)}
               className={[
-                'relative flex flex-col items-center rounded-xl border-2 transition-all overflow-hidden',
+                'relative flex flex-col items-center rounded-2xl border-2 transition-all overflow-hidden',
                 ch.bg,
                 ch.border,
                 selected === ch.id
-                  ? `ring-2 ring-offset-1 ${ch.ring} scale-[1.03] shadow-md`
+                  ? `ring-2 ring-offset-2 ${ch.ring} scale-105 shadow-lg`
                   : 'opacity-75 hover:opacity-100',
               ].join(' ')}
             >
-              {/* 캐릭터 — 선택된 것만 렌더 (성능 최적화) */}
-              <div className="w-full flex items-end justify-center" style={{ height: 100 }}>
+              <div className="w-full flex items-end justify-center" style={{ height: 110 }}>
                 {selected === ch.id ? (
-                  <SpinePortrait skins={ch.skins} animate={true} fullBody={true} width={66} height={100} />
+                  <SpinePortrait skins={ch.skins} animate={true} fullBody={true} width={72} height={110} />
                 ) : (
-                  <SpinePortrait skins={ch.skins} animate={false} fullBody={true} width={66} height={100} />
+                  <SpinePortrait skins={ch.skins} animate={false} fullBody={true} width={72} height={110} />
                 )}
               </div>
-              <div className="w-full py-1 px-1 text-center" style={{ borderTop: `2px solid ${ch.portraitBorder}` }}>
-                <span className="text-[11px] font-bold text-gray-800 leading-tight block">{t(ch.nameKey)}</span>
-                <span className="text-[9px] text-gray-500 leading-tight block">{t(ch.descKey)}</span>
+              <div className="w-full py-1.5 px-1 text-center" style={{ borderTop: `2px solid ${ch.portraitBorder}` }}>
+                <span className="text-xs font-bold text-gray-800 leading-tight block">{t(ch.nameKey)}</span>
+                <span className="text-[10px] text-gray-500 leading-tight block mt-0.5">{t(ch.descKey)}</span>
               </div>
               {selected === ch.id && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-[10px] font-bold">✓</span>
+                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">✓</span>
                 </div>
               )}
             </button>
@@ -296,19 +298,19 @@ export default function GamePage() {
           <button
             onClick={handleStartGame}
             disabled={!selected}
-            className="w-full max-w-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full max-w-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-5 h-5" />
             {adGranted ? t('game.startWithAd') : t('game.start')}
           </button>
         ) : (
-          <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+          <div className="flex flex-col items-center gap-2.5 w-full max-w-sm">
             <div className="text-sm text-gray-500 text-center">{t('game.limitReached')}</div>
             {remainingAd > 0 && (
               <button
                 onClick={handleWatchAd}
                 disabled={adLoading}
-                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-60"
               >
                 <Tv className="w-5 h-5" />
                 {adLoading ? t('game.adLoading') : t('game.watchAd')}
@@ -319,10 +321,13 @@ export default function GamePage() {
 
         <button
           onClick={() => navigate(-1)}
-          className="mt-2 text-sm text-gray-400 hover:text-gray-600 transition flex items-center gap-1"
+          className="mt-4 text-sm text-gray-400 hover:text-gray-600 transition flex items-center gap-1"
         >
           <X className="w-4 h-4" /> {t('game.back')}
         </button>
+
+        {/* 하단 여백 — 상단과 균형 */}
+        <div className="flex-1 min-h-4" />
       </div>
     );
   }
