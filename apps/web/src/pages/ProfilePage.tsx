@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Users } from 'lucide-react';
+import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Users, Bell, BellOff } from 'lucide-react';
+import { usePushNotification } from '../hooks/usePushNotification';
 import { api, type User } from '../api/client';
 import { MAX_FILE_SIZE } from '@findthem/shared';
 import type { SponsorXpStats } from '@findthem/shared';
@@ -12,6 +13,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const { t } = useTranslation();
+  const { subscribed, loading: pushLoading, isSupported, subscribe, unsubscribe } = usePushNotification();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email ?? '');
   const [saving, setSaving] = useState(false);
@@ -326,6 +328,28 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             <Users className="w-4 h-4" />
             {t('profile.referralInvite')}
           </button>
+        )}
+
+        {/* 알림 설정 */}
+        {isSupported && (
+          <div className="flex items-center justify-between py-3 border-t border-gray-100 mt-4">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              {subscribed ? <Bell className="w-4 h-4 text-primary-600" /> : <BellOff className="w-4 h-4 text-gray-400" />}
+              {t('profile.pushNotification')}
+            </div>
+            <button
+              type="button"
+              onClick={() => { void (subscribed ? unsubscribe() : subscribe()); }}
+              disabled={pushLoading}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                subscribed
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-primary-600 text-white hover:bg-primary-700'
+              }`}
+            >
+              {subscribed ? t('profile.pushOff') : t('profile.pushOn')}
+            </button>
+          </div>
         )}
 
         {message && (

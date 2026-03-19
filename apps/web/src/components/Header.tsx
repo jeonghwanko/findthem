@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LogIn, List, Bell, BellOff, Users, MessageSquare, User as UserIcon, FileText, LogOut, ChevronDown } from 'lucide-react';
+import { Search, LogIn, List, Users, MessageSquare, User as UserIcon, FileText, LogOut, ChevronDown } from 'lucide-react';
 import type { User } from '../api/client';
 import LanguageSwitcher from './LanguageSwitcher';
-import { usePushNotification } from '../hooks/usePushNotification';
 
 interface HeaderProps {
   user: User | null;
@@ -100,7 +99,6 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
 
 export default function Header({ user, onLogout }: HeaderProps) {
   const { t } = useTranslation();
-  const { subscribed, loading, isSupported, subscribe, unsubscribe } = usePushNotification();
   const { pathname } = useLocation();
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
@@ -143,26 +141,11 @@ export default function Header({ user, onLogout }: HeaderProps) {
           {user ? (
             <>
               <Link
-                to="/reports/new"
+                to="/sightings/new"
                 className="ml-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                {t('nav.newReport')}
+                {t('nav.newSighting')}
               </Link>
-              {isSupported && (
-                <button
-                  type="button"
-                  onClick={() => { void (subscribed ? unsubscribe() : subscribe()); }}
-                  disabled={loading}
-                  title={subscribed ? t('push.unsubscribe') : t('push.subscribe')}
-                  className="flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {subscribed ? (
-                    <Bell className="w-4 h-4 text-primary-600" aria-hidden="true" />
-                  ) : (
-                    <BellOff className="w-4 h-4" aria-hidden="true" />
-                  )}
-                </button>
-              )}
               <ProfileDropdown user={user} onLogout={onLogout} />
             </>
           ) : (

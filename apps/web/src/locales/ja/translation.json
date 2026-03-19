@@ -10,6 +10,7 @@
     "team": "チーム",
     "myReports": "マイ届出",
     "newReport": "届出登録",
+    "newSighting": "目撃を報告",
     "logout": "ログアウト",
     "login": "ログイン",
     "community": "コミュニティ",
@@ -497,6 +498,9 @@
     "referralCopy": "コピー",
     "referralCopied": "コピーしました",
     "referralInvite": "紹介コードで招待",
+    "pushNotification": "通知設定",
+    "pushOn": "オン",
+    "pushOff": "オフ",
     "referralShareTitle": "FindThem — AI行方不明者マッチングプラットフォーム",
     "referralShareDesc": "行方不明の家族を見つける手助けをしてください。一緒ならもっと早く見つかります。",
     "referralJoin": "今すぐ参加"

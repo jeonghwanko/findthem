@@ -10,6 +10,7 @@
     "team": "團隊",
     "myReports": "我的報案",
     "newReport": "報案登記",
+    "newSighting": "回報目擊",
     "logout": "登出",
     "login": "登入",
     "community": "社群",
@@ -498,6 +499,9 @@
     "referralCopy": "複製",
     "referralCopied": "已複製",
     "referralInvite": "用推薦碼邀請",
+    "pushNotification": "推播通知",
+    "pushOn": "開啟",
+    "pushOff": "關閉",
     "referralShareTitle": "FindThem — AI失蹤人員配對平台",
     "referralShareDesc": "幫助尋找失蹤的家人。一起能更快找到他們。",
     "referralJoin": "立即加入"

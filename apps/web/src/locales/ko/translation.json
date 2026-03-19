@@ -10,6 +10,7 @@
     "team": "어벤져스팀",
     "myReports": "내 신고",
     "newReport": "실종 신고",
+    "newSighting": "제보하기",
     "logout": "로그아웃",
     "login": "로그인",
     "community": "커뮤니티",
@@ -498,6 +499,9 @@
     "referralCopy": "복사",
     "referralCopied": "복사됨",
     "referralInvite": "레퍼럴 코드로 초대",
+    "pushNotification": "알림 받기",
+    "pushOn": "켜기",
+    "pushOff": "끄기",
     "referralShareTitle": "찾아줘 — AI 기반 실종 매칭 플랫폼",
     "referralShareDesc": "실종된 가족을 찾는 데 도움을 주세요. 함께라면 더 빨리 찾을 수 있어요.",
     "referralJoin": "지금 가입하기"

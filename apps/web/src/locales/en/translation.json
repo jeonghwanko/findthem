@@ -10,6 +10,7 @@
     "team": "Team",
     "myReports": "My Reports",
     "newReport": "New Report",
+    "newSighting": "Report Sighting",
     "logout": "Logout",
     "login": "Login",
     "community": "Community",
@@ -498,6 +499,9 @@
     "referralCopy": "Copy",
     "referralCopied": "Copied",
     "referralInvite": "Invite with Referral Code",
+    "pushNotification": "Push Notifications",
+    "pushOn": "Enable",
+    "pushOff": "Disable",
     "referralShareTitle": "FindThem — AI-based missing person matching",
     "referralShareDesc": "Help find missing loved ones. Together we can find them faster.",
     "referralJoin": "Join Now"
