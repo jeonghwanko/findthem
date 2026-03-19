@@ -44,13 +44,20 @@ export default function AgentChatWidget() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  const isGamePage = pathname === '/game';
+  const isMainPage = pathname === '/';
+
+  // 메인 이외 페이지로 이동하면 채팅 자동 닫기
+  useEffect(() => {
+    if (!isMainPage && open) setOpen(false);
+  }, [isMainPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!isMainPage) return null;
 
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className={`fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg items-center justify-center text-2xl transition-colors z-50 ${isGamePage ? 'hidden md:flex' : 'flex'}`}
+        className="fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
         aria-label={t('agent.openChat')}
       >
         🤖

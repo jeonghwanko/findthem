@@ -118,12 +118,12 @@ export default function Header({ user, onLogout }: HeaderProps) {
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center shrink-0">
             <Search className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
-          <span className="text-lg font-bold text-gray-900">{t('brand')}</span>
-          <span className="hidden sm:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full">{t('home.heroBadge')}</span>
+          <span className="text-lg font-bold text-gray-900 whitespace-nowrap">{t('brand')}</span>
+          <span className="hidden sm:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">{t('home.heroBadge')}</span>
         </Link>
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}
