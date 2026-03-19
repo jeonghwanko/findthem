@@ -152,14 +152,10 @@ function startCrawlSourceWorker() {
       const newItems = items.filter((i) => !existingSet.has(i.externalId));
       log.info({ source, new: newItems.length, skipped: items.length - newItems.length }, 'Dedup result');
 
-      let created = 0;
-      let failed = 0;
-
-      for (const item of newItems) {
-        const ok = await saveNewReport(item, source);
-        if (ok) created++;
-        else failed++;
-      }
+      // 병렬 저장 (이미지 다운로드 + DB 트랜잭션 동시 실행)
+      const outcomes = await Promise.all(newItems.map((item) => saveNewReport(item, source)));
+      const created = outcomes.filter(Boolean).length;
+      const failed = outcomes.length - created;
 
       log.info({ source, created, failed, skipped: items.length - newItems.length }, 'Crawl complete');
     },

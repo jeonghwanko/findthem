@@ -79,6 +79,7 @@ async function processReportPhotos(reportId: string) {
 
   // 기존 제보들과 매칭
   await matchingQueue.add('match-report', { type: 'report', reportId }, {
+    jobId: `match-report-${reportId}`,
     attempts: 2,
     backoff: { type: 'fixed', delay: 30_000 },
   });
@@ -128,6 +129,7 @@ async function processSightingPhotos(sightingId: string) {
 
   // 매칭 작업 enqueue
   await matchingQueue.add('match-sighting', { type: 'sighting', sightingId }, {
+    jobId: `match-sighting-${sightingId}`,
     attempts: 2,
     backoff: { type: 'fixed', delay: 30_000 },
   });

@@ -73,16 +73,7 @@ export function registerPromotionRoutes(router: Router) {
         throw new ApiError(400, ERROR_CODES.REPORT_STATUS_INVALID);
       }
 
-      // 현재 버전 파악 (가장 최신 POSTED/DELETED promotion의 version)
-      const latestPromotion = await prisma.promotion.findFirst({
-        where: { reportId, status: { in: ['POSTED', 'DELETED'] } },
-        orderBy: { createdAt: 'desc' },
-        select: { version: true },
-      });
-
-      const nextVersion = (latestPromotion?.version ?? 0) + 1;
-
-      // 요청된 platforms 또는 strategy의 targetPlatforms 사용
+      // 요청된 platforms 또는 strategy의 targetPlatforms 사용 (트랜잭션 밖에서 먼저 확정)
       let targetPlatforms: PromoPlatform[] | undefined = platforms as PromoPlatform[] | undefined;
 
       if (!targetPlatforms || targetPlatforms.length === 0) {
@@ -95,16 +86,29 @@ export function registerPromotionRoutes(router: Router) {
         }
       }
 
-      // 기존 POSTED Promotion → DELETED 처리 (큐 등록 전 — 크래시 시 재게시 gap 최소화)
-      await prisma.promotion.updateMany({
-        where: {
-          reportId,
-          ...(targetPlatforms
-            ? { platform: { in: targetPlatforms } }
-            : {}),
-          status: 'POSTED',
-        },
-        data: { status: 'DELETED' },
+      // 현재 버전 파악 + POSTED → DELETED 처리를 원자적으로 수행
+      const nextVersion = await prisma.$transaction(async (tx) => {
+        const latestPromotion = await tx.promotion.findFirst({
+          where: { reportId, status: { in: ['POSTED', 'DELETED'] } },
+          orderBy: { version: 'desc' },
+          select: { version: true },
+        });
+
+        const computedNextVersion = (latestPromotion?.version ?? 0) + 1;
+
+        // 기존 POSTED Promotion → DELETED 처리 (큐 등록 전 — 크래시 시 재게시 gap 최소화)
+        await tx.promotion.updateMany({
+          where: {
+            reportId,
+            ...(targetPlatforms
+              ? { platform: { in: targetPlatforms } }
+              : {}),
+            status: 'POSTED',
+          },
+          data: { status: 'DELETED' },
+        });
+
+        return computedNextVersion;
       });
 
       // promotionQueue에 재게시 job 등록

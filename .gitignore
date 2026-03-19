@@ -4,6 +4,7 @@ uploads/
 .env
 .env.local
 .env.*.local
+.env.native
 scripts/erc8004/registration-result.json
 *.log
 .DS_Store

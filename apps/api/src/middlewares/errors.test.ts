@@ -50,7 +50,10 @@ describe('errorHandler', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.stringContaining('name') }),
+      expect.objectContaining({
+        error: 'VALIDATION_ERROR',
+        details: expect.stringContaining('name'),
+      }),
     );
   });
 

@@ -8,6 +8,9 @@ vi.mock('../db/client.js', () => ({
       create: vi.fn().mockResolvedValue({ id: 'test-post-id' }),
       count: vi.fn().mockResolvedValue(0),
     },
+    agentDecisionLog: {
+      create: vi.fn().mockResolvedValue({}),
+    },
   },
 }));
 

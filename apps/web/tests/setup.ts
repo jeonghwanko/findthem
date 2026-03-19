@@ -1,5 +1,7 @@
-import '@testing-library/jest-dom/vitest';
-import { vi, afterEach, beforeAll } from 'vitest';
+import { expect, vi, afterEach, beforeAll } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+expect.extend(matchers);
 import { cleanup } from '@testing-library/react';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';

@@ -19,7 +19,7 @@ export type {
   AgentId,
 } from '@findthem/shared';
 
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 function getToken(): string | null {
   return localStorage.getItem(TOKEN_STORAGE_KEY);

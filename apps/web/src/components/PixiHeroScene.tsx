@@ -247,10 +247,7 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
       // 네이티브: AdMob 광고 시청 먼저 (거부/실패 시 XP 미지급)
       if (isNative) {
         const rewarded = await showRewardAd();
-        if (!rewarded) {
-          isHandlingAdRef.current = false;
-          return;
-        }
+        if (!rewarded) return;
       }
 
       const result = await api.post<AdRewardResult>('/users/me/ad-reward');

@@ -1,10 +1,11 @@
 import type { Router } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, VALID_AGENT_IDS } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -27,7 +28,7 @@ import {
 const log = createLogger('sponsors');
 
 const cryptoQuoteSchema = z.object({
-  agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']),
+  agentId: z.enum(VALID_AGENT_IDS),
   amountUsdCents: z.number().int().min(100).max(10_000_000),
   walletAddress: z.string().min(10).max(200),
   tokenSymbol: z.enum(['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL']),
@@ -42,19 +43,19 @@ const cryptoVerifySchema = z.object({
 });
 
 const listQuerySchema = z.object({
-  agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']).optional(),
+  agentId: z.enum(VALID_AGENT_IDS).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(DEFAULT_PAGE_SIZE),
 });
 
 const prepareSchema = z.object({
-  agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']),
+  agentId: z.enum(VALID_AGENT_IDS),
 });
 
 const verifySchema = z.object({
   paymentKey: z.string(),
   orderId: z.string(),
   amount: z.number().int().min(100).max(1_000_000),
-  agentId: z.enum(['image-matching', 'promotion', 'chatbot-alert']),
+  agentId: z.enum(VALID_AGENT_IDS),
   displayName: z.string().max(30).optional(),
   message: z.string().max(100).optional(),
 });
@@ -168,9 +169,22 @@ export function registerSponsorRoutes(router: Router) {
       log.warn({ orderId }, 'TOSS_SECRET_KEY not set — skipping Toss API call (dev mode)');
     }
 
-    await prisma.sponsor.create({
-      data: { agentId, amount, orderId, paymentKey, displayName, message },
-    });
+    try {
+      await prisma.sponsor.create({
+        data: { agentId, amount, orderId, paymentKey, displayName, message },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        // 동시 요청으로 이미 저장된 경우 — 정상 응답 반환
+        log.warn({ orderId }, 'Toss sponsor already saved by concurrent request');
+        res.json({ success: true });
+        return;
+      }
+      throw err;
+    }
 
     log.info({ orderId, agentId, amount }, 'Sponsor payment verified and saved');
 
@@ -401,20 +415,32 @@ export function registerSponsorRoutes(router: Router) {
       throw new ApiError(400, ERROR_CODES.AMOUNT_MISMATCH);
     }
 
-    await prisma.sponsor.create({
-      data: {
-        agentId: quote.agentId,
-        amount: quote.amountUsdCents,
-        currency: 'USD_CENTS',
-        orderId: quoteId,
-        txHash,
-        chainId: quote.chainId,
-        tokenSymbol,
-        walletAddress,
-        displayName: displayName ?? null,
-        message: message ?? null,
-      },
-    });
+    try {
+      await prisma.sponsor.create({
+        data: {
+          agentId: quote.agentId,
+          amount: quote.amountUsdCents,
+          currency: 'USD_CENTS',
+          orderId: quoteId,
+          txHash,
+          chainId: quote.chainId,
+          tokenSymbol,
+          walletAddress,
+          displayName: displayName ?? null,
+          message: message ?? null,
+        },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        // txHash 또는 orderId unique 위반 — 이미 처리된 TX
+        log.warn({ quoteId, txHash }, 'Crypto sponsor already saved (duplicate txHash or quoteId)');
+        throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
+      }
+      throw err;
+    }
 
     log.info({ quoteId, txHash, tokenSymbol, agentId: quote.agentId }, 'Crypto sponsor payment verified and saved');
 

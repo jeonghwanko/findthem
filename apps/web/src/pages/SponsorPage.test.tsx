@@ -379,14 +379,13 @@ describe('SponsorPage', () => {
       });
     });
 
-    it('Aptos 미연결 + Petra 미설치 — Petra 설치 링크 표시', async () => {
+    it('Aptos 미연결 + 지갑 없음 — Aptos Connect 링크 표시', async () => {
       mockUseWallet.mockReturnValue({
         account: null,
         connected: false,
         signAndSubmitTransaction: vi.fn(),
         connect: vi.fn(),
         wallets: [],
-        notDetectedWallets: [{ name: 'Petra', url: 'https://petra.app' }],
       } as unknown as ReturnType<typeof useWallet>);
 
       renderSponsorPage('image-matching');
@@ -394,11 +393,11 @@ describe('SponsorPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
 
       await waitFor(() => {
-        const installLink = screen.getByRole('link', {
-          name: /installPetra|Petra 지갑 설치/i,
+        const connectLink = screen.getByRole('link', {
+          name: /connectWallet|지갑 연결/i,
         });
-        expect(installLink).toBeInTheDocument();
-        expect(installLink).toHaveAttribute('href', 'https://petra.app');
+        expect(connectLink).toBeInTheDocument();
+        expect(connectLink).toHaveAttribute('href', 'https://aptosconnect.app');
       });
     });
   });

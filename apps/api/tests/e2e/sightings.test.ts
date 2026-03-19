@@ -22,6 +22,7 @@ describe('Sightings E2E', () => {
     it('제보 성공 → 201', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       prismaMock.sighting.create.mockResolvedValue(testSighting);
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([]);
 
       const res = await app
         .post('/api/sightings')
@@ -40,14 +41,15 @@ describe('Sightings E2E', () => {
     it('사진 첨부 → 이미지 큐 작업 추가', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.create.mockResolvedValue({
+      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
         id: 'sighting-photo-1',
         sightingId: testSighting.id,
         photoUrl: '/uploads/sightings/photo.jpg',
         thumbnailUrl: '/uploads/thumbs/photo.jpg',
         aiAnalysis: null,
         createdAt: new Date(),
-      });
+      }]);
 
       const tinyPng = Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',

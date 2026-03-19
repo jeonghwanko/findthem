@@ -690,7 +690,7 @@ selectAction(agentId, event)          // 성격 벡터로 행동 선택
 멀티 AI 프로바이더 (Anthropic/Gemini/OpenAI) 런타임 전환 + 토큰 사용량 추적.
 
 **아키텍처**
-- `aiClient.ts` — 프로바이더 추상화 (기존 claudeClient.ts의 drop-in replacement)
+- `aiClient.ts` — 프로바이더 추상화 (Anthropic/Gemini/OpenAI 자동 라우팅)
 - `providers/anthropic.ts`, `providers/gemini.ts`, `providers/openai.ts`
 - `aiSettings.ts` — DB 기반 설정 (60초 캐시)
 - `aiUsageTracker.ts` — 매 AI 호출 토큰 사용량 기록

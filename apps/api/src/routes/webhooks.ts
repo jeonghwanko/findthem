@@ -9,6 +9,10 @@ const log = createLogger('webhooks');
 
 export function registerWebhookRoutes(router: Router) {
   // 카카오톡 채널 웹훅
+  // TODO(SEC-W1): 카카오 웹훅 서명 검증 미구현
+  // 카카오 채널 API가 X-Kakao-Signature 헤더(HMAC-SHA256)를 제공하는 경우
+  // 요청 수신 직후 서명을 검증하여 위변조 요청을 차단해야 합니다.
+  // 참고: https://i.kakao.com/docs/skill-response-format#보안
   router.post('/webhooks/kakao', async (req, res) => {
     // 카카오톡 채널 챗봇 요청 형식
     // https://chatbot.kakao.com/docs/skill-response-format

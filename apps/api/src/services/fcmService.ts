@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { config } from '../config.js';
 import { createLogger } from '../logger.js';
+import { prisma } from '../db/client.js';
 
 const log = createLogger('fcmService');
 
@@ -34,6 +35,7 @@ function getMessaging(): admin.messaging.Messaging | null {
 }
 
 export async function sendPushNotification(
+  userId: string,
   fcmToken: string,
   title: string,
   body: string,
@@ -59,6 +61,13 @@ export async function sendPushNotification(
     });
     log.info({ messageId }, 'FCM push notification sent');
   } catch (err) {
-    log.warn({ err, fcmToken: fcmToken.slice(0, 20) + '...' }, 'Failed to send FCM push notification');
+    const code = (err as { code?: string }).code ?? '';
+    if (
+      code === 'messaging/registration-token-not-registered' ||
+      code === 'messaging/invalid-registration-token'
+    ) {
+      await prisma.user.update({ where: { id: userId }, data: { fcmToken: null } }).catch(() => {});
+    }
+    log.warn({ err, userId }, 'Failed to send FCM push notification');
   }
 }

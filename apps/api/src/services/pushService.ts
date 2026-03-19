@@ -23,6 +23,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
   if (subscriptions.length === 0) return;
 
+  const expiredIds: string[] = [];
+
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
       try {
@@ -31,17 +33,22 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
           JSON.stringify(payload),
         );
       } catch (err: unknown) {
-        // 410 Gone = 구독 만료 → 자동 삭제
+        // 410 Gone = 구독 만료 → 배치 삭제 대상으로 수집
         const statusCode = (err as { statusCode?: number })?.statusCode;
         if (statusCode === 410) {
-          await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => null);
-          log.info({ subscriptionId: sub.id }, 'Expired push subscription removed');
+          expiredIds.push(sub.id);
         } else {
           throw err;
         }
       }
     }),
   );
+
+  // 만료된 구독 일괄 삭제 (N개 delete → deleteMany 1회)
+  if (expiredIds.length > 0) {
+    await prisma.pushSubscription.deleteMany({ where: { id: { in: expiredIds } } }).catch(() => null);
+    log.info({ count: expiredIds.length }, 'Expired push subscriptions removed');
+  }
 
   const failed = results.filter((r) => r.status === 'rejected');
   if (failed.length > 0) {

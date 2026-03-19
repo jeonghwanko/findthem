@@ -6,9 +6,13 @@ import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
+import { rateLimit } from '../middlewares/rateLimit.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
 import { MAX_FILE_SIZE, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+
+// SEC-W3: 제보 접수 rate limit — IP 기준 15분에 10회
+const sightingLimiter = rateLimit({ windowMs: 15 * 60_000, max: 10 });
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -55,14 +59,21 @@ interface RawSightingRow {
 
 export function registerSightingRoutes(router: Router) {
   // 제보 접수
+  // SEC-W3: IP 기준 15분에 10회 rate limit 적용
   router.post(
     '/sightings',
+    sightingLimiter,
     optionalAuth,
     upload.array('photos', 5),
     async (req, res) => {
-      const body = createSightingSchema.parse(
-        typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body,
-      );
+      // SEC-C3: JSON.parse 실패 시 400 반환
+      let rawBody: unknown;
+      try {
+        rawBody = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
+      } catch {
+        throw new ApiError(400, 'INVALID_REQUEST_DATA');
+      }
+      const body = createSightingSchema.parse(rawBody);
 
       // RACE-03: reportId 유효성 확인 + 상태 체크 + 제보 생성을 트랜잭션으로 원자화
       const sighting = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -86,16 +97,18 @@ export function registerSightingRoutes(router: Router) {
         });
       });
 
-      // 사진 처리
+      // 사진 처리 (I/O 병렬 → createMany 단일 INSERT)
       const files = (req.files as Express.Multer.File[]) || [];
-      const photos = await Promise.all(
+      const photoData = await Promise.all(
         files.map(async (file) => {
           const { photoUrl, thumbnailUrl } = await imageService.processAndSave('sightings', file);
-          return prisma.sightingPhoto.create({
-            data: { sightingId: sighting.id, photoUrl, thumbnailUrl },
-          });
+          return { sightingId: sighting.id, photoUrl, thumbnailUrl };
         }),
       );
+      if (photoData.length > 0) {
+        await prisma.sightingPhoto.createMany({ data: photoData });
+      }
+      const photos = await prisma.sightingPhoto.findMany({ where: { sightingId: sighting.id } });
 
       // 이미지 분석 + 매칭 작업 enqueue
       // RACE-08: jobId로 중복 job 방지
@@ -135,7 +148,7 @@ export function registerSightingRoutes(router: Router) {
           SELECT * FROM (${baseQuery}) sub
           WHERE sub.distance_km <= ${radius}
           ORDER BY sub.distance_km ASC
-          LIMIT ${Prisma.raw(String(limit))} OFFSET ${Prisma.raw(String(skip))}
+          LIMIT ${limit} OFFSET ${skip}
         `,
         prisma.$queryRaw<[{ count: bigint }]>`
           SELECT COUNT(*) FROM (${baseQuery}) sub

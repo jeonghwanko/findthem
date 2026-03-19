@@ -1,13 +1,17 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const useRemoteServer = process.env['BUILD_TARGET'] !== 'native';
+
 const config: CapacitorConfig = {
   appId: 'com.findthem.app',
   appName: 'FindThem',
   webDir: 'dist',
-  server: {
-    url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://union.pryzm.gg',
-    cleartext: false,
-  },
+  ...(useRemoteServer && {
+    server: {
+      url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://union.pryzm.gg',
+      cleartext: false,
+    },
+  }),
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
@@ -24,6 +28,10 @@ const config: CapacitorConfig = {
       appId: {
         android: 'ca-app-pub-3320768302064088~3216379440',
       },
+    },
+    CapacitorUpdater: {
+      autoUpdate: true,
+      statsUrl: '',
     },
   },
 };

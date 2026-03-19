@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:native": "tsc && vite build --mode native && cross-env BUILD_TARGET=native npx cap sync android",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -22,6 +23,7 @@
     "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
     "@esotericsoftware/spine-pixi-v8": "^4.2.98",
+    "@findthem/capacitor-native": "*",
     "@findthem/shared": "*",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.90.21",
@@ -32,8 +34,8 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.577.0",
     "pixi.js": "^8.15.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-i18next": "^16.5.8",
     "react-router-dom": "^7.1.0",
     "viem": "^2.47.4",
@@ -46,8 +48,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "jsdom": "^28.1.0",
@@ -56,6 +58,6 @@
     "typescript": "^5.7.3",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^0.21.1",
-    "vitest": "^4.0.18"
+    "vitest": "^3.2.4"
   }
 }

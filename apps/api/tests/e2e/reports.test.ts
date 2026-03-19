@@ -59,15 +59,7 @@ describe('Reports E2E', () => {
 
     it('인증 + 사진 → 201 + 리포트 생성', async () => {
       prismaMock.report.create.mockResolvedValue(testReport);
-      prismaMock.reportPhoto.create.mockResolvedValue({
-        id: 'photo-1',
-        reportId: testReport.id,
-        photoUrl: '/uploads/reports/photo.jpg',
-        thumbnailUrl: '/uploads/thumbs/photo.jpg',
-        isPrimary: true,
-        aiAnalysis: null,
-        createdAt: new Date(),
-      });
+      prismaMock.reportPhoto.createMany.mockResolvedValue({ count: 1 });
 
       // 1px 투명 PNG
       const tinyPng = Buffer.from(

@@ -1,25 +1,21 @@
-import { Capacitor } from '@capacitor/core';
+import { FCM_TOKEN_STORAGE_KEY } from '@findthem/shared';
+import { initNativePlugins } from '@findthem/capacitor-native';
 
+export { notifyOtaReady } from '@findthem/capacitor-native';
+
+/**
+ * Capacitor 플러그인 초기화: 네이티브 플러그인 + Firebase.
+ * Firebase 플러그인은 루트 의존성이므로 여기서 직접 초기화.
+ */
 export async function initCapacitorPlugins(): Promise<void> {
+  // 네이티브 기본 플러그인 (StatusBar, SplashScreen, AdMob)
+  await initNativePlugins({ adMobTesting: import.meta.env.DEV });
+
+  // Firebase는 Capacitor.isNativePlatform() 내부에서만 동작
+  const { Capacitor } = await import('@capacitor/core');
   if (!Capacitor.isNativePlatform()) return;
 
-  const [{ StatusBar }, { SplashScreen }] = await Promise.all([
-    import('@capacitor/status-bar'),
-    import('@capacitor/splash-screen'),
-  ]);
-
-  await StatusBar.setOverlaysWebView({ overlay: true });
-  await SplashScreen.hide();
-
-  // AdMob 초기화 (네이티브 앱에서만)
-  try {
-    const { AdMob } = await import('@capacitor-community/admob');
-    await AdMob.initialize({ initializeForTesting: import.meta.env.DEV });
-  } catch {
-    // AdMob 플러그인 미설치 환경에서는 무시
-  }
-
-  // Firebase Analytics 초기화
+  // Firebase Analytics
   try {
     const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics');
     await FirebaseAnalytics.setEnabled({ enabled: true });
@@ -27,7 +23,7 @@ export async function initCapacitorPlugins(): Promise<void> {
     // 무시
   }
 
-  // Firebase Crashlytics 초기화
+  // Firebase Crashlytics
   try {
     const { FirebaseCrashlytics } = await import('@capacitor-firebase/crashlytics');
     await FirebaseCrashlytics.setEnabled({ enabled: true });
@@ -35,14 +31,13 @@ export async function initCapacitorPlugins(): Promise<void> {
     // 무시
   }
 
-  // FCM 푸시 알림 초기화
+  // FCM 푸시 알림
   try {
     const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
-    await FirebaseMessaging.requestPermissions();
-    const { token } = await FirebaseMessaging.getToken();
-    if (token) {
-      // 토큰을 로컬스토리지에 저장 (로그인 후 서버에 등록)
-      localStorage.setItem('fcm_token', token);
+    const { receive } = await FirebaseMessaging.requestPermissions();
+    if (receive === 'granted') {
+      const { token } = await FirebaseMessaging.getToken();
+      if (token) localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
     }
   } catch {
     // 무시

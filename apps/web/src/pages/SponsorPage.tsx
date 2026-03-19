@@ -151,6 +151,7 @@ function SponsorPageInner() {
 
   // Double-click prevention
   const isPayingRef = useRef(false);
+  const isTossPayingRef = useRef(false);
 
   // Payment status
   const [tossEnabled, setTossEnabled] = useState<boolean | null>(null);
@@ -172,7 +173,6 @@ function SponsorPageInner() {
     signAndSubmitTransaction,
     connect: aptosConnect,
     wallets: aptosWallets,
-    notDetectedWallets,
   } = useAptosWallet();
 
   // Cleanup toast timer on unmount
@@ -233,8 +233,10 @@ function SponsorPageInner() {
   };
 
   const handleTossPay = async () => {
+    if (isTossPayingRef.current) return;
     if (tossEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
     if (!widgetRef.current) { setTossError(t('sponsor.processing')); return; }
+    isTossPayingRef.current = true;
     setTossPaying(true);
     setTossError(null);
     try {
@@ -252,6 +254,8 @@ function SponsorPageInner() {
       });
     } catch (err) {
       setTossError(err instanceof Error ? err.message : t('auth.errorFallback'));
+    } finally {
+      isTossPayingRef.current = false;
       setTossPaying(false);
     }
   };
@@ -446,9 +450,11 @@ function SponsorPageInner() {
   const Icon = agent.icon;
   const availableEvmTokens = EVM_TOKENS_BY_CHAIN[evmChainId] ?? [];
 
-  // Petra wallet detection
-  const petraWallet = aptosWallets?.find((w) => w.name === 'Petra');
-  const petraNotDetected = notDetectedWallets?.find((w) => w.name === 'Petra');
+  // Aptos Connect wallet detection (social login: Google, Apple, Petra Web generic)
+  const aptosConnectWallet =
+    aptosWallets?.find((w) => w.name === 'Continue with Google') ??
+    aptosWallets?.find((w) => w.name === 'Continue with Apple') ??
+    aptosWallets?.find((w) => w.name === 'Petra Web');
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
@@ -644,22 +650,22 @@ function SponsorPageInner() {
                           {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
                         </span>
                       </div>
-                    ) : petraWallet ? (
+                    ) : aptosConnectWallet ? (
                       <button type="button"
-                        onClick={() => aptosConnect(petraWallet.name)}
+                        onClick={() => aptosConnect(aptosConnectWallet.name)}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
                         <Wallet className="w-4 h-4" aria-hidden="true" />
                         {t('sponsor.crypto.connectWallet')}
                       </button>
                     ) : (
                       <a
-                        href={petraNotDetected?.url ?? 'https://petra.app'}
+                        href="https://aptosconnect.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium"
                       >
                         <Wallet className="w-4 h-4" aria-hidden="true" />
-                        {t('sponsor.crypto.installPetra')}
+                        {t('sponsor.crypto.connectWallet')}
                       </a>
                     )}
                   </div>

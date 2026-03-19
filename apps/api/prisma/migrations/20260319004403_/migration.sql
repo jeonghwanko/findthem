@@ -1,0 +1,1 @@
+-- sponsor_txHash_key: 이미 20260316_fix_crypto_sponsor_security에서 partial unique index로 생성됨

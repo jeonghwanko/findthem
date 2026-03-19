@@ -169,6 +169,7 @@ export const ERROR_CODES = {
   GAME_PLAY_LIMIT_REACHED: 'GAME_PLAY_LIMIT_REACHED',
   INVALID_GAME_CHARACTER: 'INVALID_GAME_CHARACTER',
   AD_REWARD_COOLDOWN: 'AD_REWARD_COOLDOWN',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -200,6 +201,7 @@ export const CRAWL_AGENT_MAX_ROUNDS = 20;
 
 export const TOKEN_STORAGE_KEY = 'ft_token';
 export const ADMIN_KEY_STORAGE_KEY = 'ft_admin_key';
+export const FCM_TOKEN_STORAGE_KEY = 'fcm_token';
 
 // ── 에이전트 공통 ──
 
@@ -260,6 +262,15 @@ export const MAX_AD_PLAYS_PER_DAY = 5;
 
 /** 점수 1점당 적립 XP (나중에 XP 지급 시 사용) */
 export const XP_PER_GAME_SCORE = 1;
+
+// ── Zod enum 배열 상수 (SSOT) ──
+
+export const SUBJECT_TYPE_VALUES = ['PERSON', 'DOG', 'CAT'] as const;
+export const GENDER_VALUES = ['MALE', 'FEMALE', 'UNKNOWN'] as const;
+export const REPORT_STATUS_VALUES = ['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED'] as const;
+export const MATCH_STATUS_VALUES = ['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED'] as const;
+export const ADMIN_ACTION_SOURCE_VALUES = ['DASHBOARD', 'AGENT', 'API'] as const;
+export const LOCALE_VALUES = ['ko', 'ja', 'zh-TW', 'en'] as const;
 
 // ── 운영 에이전트 ──
 

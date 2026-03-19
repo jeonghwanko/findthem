@@ -5,7 +5,7 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, LOCALE_VALUES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -18,12 +18,12 @@ const upload = multer({
 
 const createSessionSchema = z.object({
   reportId: z.string().optional(),
-  locale: z.enum(['ko', 'ja', 'zh-TW', 'en']).optional(),
+  locale: z.enum(LOCALE_VALUES).optional(),
 });
 
 const sendMessageSchema = z.object({
   message: z.string().min(1),
-  locale: z.enum(['ko', 'ja', 'zh-TW', 'en']).optional(),
+  locale: z.enum(LOCALE_VALUES).optional(),
 });
 
 /** Accept-Language 헤더 또는 쿼리 파라미터에서 locale 추출 */

@@ -12,6 +12,7 @@
     "build": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
+    "build:native": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build:native -w apps/web",
     "test": "npm run test -w packages/shared && npm run test -w packages/web3-payment && npm run test -w apps/api && npm run test -w apps/web",
     "test:api": "npm run test -w apps/api",
     "test:web": "npm run test -w apps/web",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -35,7 +37,13 @@
     "@capacitor-firebase/analytics": "^8.1.0",
     "@capacitor-firebase/crashlytics": "^8.1.0",
     "@capacitor-firebase/messaging": "^8.1.0",
+    "@csstools/css-parser-algorithms": "^4.0.0",
+    "@wallet-standard/core": "^1.1.1",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

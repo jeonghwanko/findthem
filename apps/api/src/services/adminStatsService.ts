@@ -157,6 +157,7 @@ interface RawTimelineRow {
   count: bigint;
 }
 
+// SEC-C1: 테이블명·trunc 단위는 이 맵에서만 선택 — 문자열 보간 전 명시적 whitelist 검증
 const TABLE_NAME: Record<TimelineMetric, string> = {
   reports: 'report',
   sightings: 'sighting',
@@ -170,6 +171,10 @@ const TRUNC_UNIT: Record<TimelinePeriod, string> = {
   month: 'month',
 };
 
+// 허용된 값 집합 — $queryRawUnsafe 삽입 전 assertion guard
+const ALLOWED_TABLE_NAMES = new Set(Object.values(TABLE_NAME));
+const ALLOWED_TRUNC_UNITS = new Set(Object.values(TRUNC_UNIT));
+
 export async function getTimelineStats(options: TimelineOptions) {
   const from = options.from ? new Date(options.from) : new Date(Date.now() - 30 * 86_400_000);
   const to = options.to ? new Date(options.to) : new Date();
@@ -179,6 +184,14 @@ export async function getTimelineStats(options: TimelineOptions) {
 
   if (!tableName || !truncUnit) {
     throw new Error(`Invalid metric or period: ${options.metric}/${options.period}`);
+  }
+
+  // SEC-C1: 런타임 whitelist 검증 — 맵 외부 값이 절대 SQL에 삽입되지 않도록 보장
+  if (!ALLOWED_TABLE_NAMES.has(tableName)) {
+    throw new Error(`Disallowed table name: ${tableName}`);
+  }
+  if (!ALLOWED_TRUNC_UNITS.has(truncUnit)) {
+    throw new Error(`Disallowed trunc unit: ${truncUnit}`);
   }
 
   const result = await prisma.$queryRawUnsafe<RawTimelineRow[]>(

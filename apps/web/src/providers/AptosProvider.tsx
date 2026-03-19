@@ -12,7 +12,7 @@ export default function AptosProvider({ children }: { children: React.ReactNode 
 
   return (
     <AptosWalletAdapterProvider
-      optInWallets={['Petra']}
+      optInWallets={['Continue with Google', 'Continue with Apple', 'Petra Web']}
       autoConnect={false}
       dappConfig={{ network: Network.MAINNET }}
       onError={handleError}

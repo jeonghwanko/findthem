@@ -14,16 +14,16 @@ export function errorHandler(
   _next: NextFunction,
 ) {
   if (err instanceof ApiError) {
-    res.status(err.statusCode).json({ error: err.message });
+    const body: Record<string, unknown> = { error: err.message };
+    if (err.details) body.details = err.details;
+    res.status(err.statusCode).json(body);
     return;
   }
 
   // 라우트에서 z.parse()로 직접 검증할 때 발생하는 ZodError 처리
   if (err instanceof ZodError) {
-    const message = err.errors
-      .map((e) => `${e.path.join('.')}: ${e.message}`)
-      .join(', ');
-    res.status(400).json({ error: message });
+    const details = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    res.status(400).json({ error: ERROR_CODES.VALIDATION_ERROR, details });
     return;
   }
 

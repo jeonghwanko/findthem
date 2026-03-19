@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api, type User } from '../api/client';
-import { TOKEN_STORAGE_KEY } from '@findthem/shared';
+import { TOKEN_STORAGE_KEY, FCM_TOKEN_STORAGE_KEY } from '@findthem/shared';
 
 async function syncFcmToken() {
-  const token = localStorage.getItem('fcm_token');
+  const token = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
   if (!token) return;
   try {
     await api.post('/users/me/fcm-token', { token });

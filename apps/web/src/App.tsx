@@ -1,16 +1,10 @@
 import './i18n';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import BottomTab from './components/BottomTab';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import BrowsePage from './pages/BrowsePage';
-import RegisterReportPage from './pages/RegisterReportPage';
-import ReportDetailPage from './pages/ReportDetailPage';
-import SightingSubmitPage from './pages/SightingSubmitPage';
 import AgentChatWidget from './components/AgentChatWidget';
 import AdminRoute from './components/AdminRoute';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -26,20 +20,9 @@ import DevlogPage from './pages/admin/DevlogPage';
 import OutreachPage from './pages/admin/OutreachPage';
 import AiSettingsPage from './pages/admin/AiSettingsPage';
 import ExternalAgentsPage from './pages/admin/ExternalAgentsPage';
-import TeamPage from './pages/TeamPage';
-import SponsorPage from './pages/SponsorPage';
-import SponsorSuccessPage from './pages/SponsorSuccessPage';
-import MyReportsPage from './pages/MyReportsPage';
-import AuthCallbackPage from './pages/AuthCallbackPage';
-import CommunityPage from './pages/CommunityPage';
-import CommunityPostPage from './pages/CommunityPostPage';
-import CommunityNewPostPage from './pages/CommunityNewPostPage';
-import CommunityEditPostPage from './pages/CommunityEditPostPage';
-import ProfilePage from './pages/ProfilePage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import GamePage from './pages/GamePage';
 import CapturePortraitsPage from './pages/CapturePortraitsPage';
 import CaptureHeimiPage from './pages/CaptureHeimiPage';
+import { userRoutes } from './routes/userRoutes';
 
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
@@ -86,48 +69,10 @@ export default function App() {
             <Header user={user} onLogout={logout} />
             <main className="flex-1 pb-20 md:pb-0">
               <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route
-                  path="/login"
-                  element={
-                    user ? (
-                      <Navigate to="/" />
-                    ) : (
-                      <LoginPage onLogin={login} onRegister={register} />
-                    )
-                  }
-                />
-                <Route path="/browse" element={<BrowsePage />} />
-                <Route
-                  path="/profile"
-                  element={user ? <ProfilePage user={user} onUserUpdate={updateUser} /> : <Navigate to="/login" />}
-                />
-                <Route
-                  path="/my-reports"
-                  element={user ? <MyReportsPage /> : <Navigate to="/login" />}
-                />
-                <Route
-                  path="/reports/new"
-                  element={user ? <RegisterReportPage /> : <Navigate to="/login" />}
-                />
-                <Route path="/reports/:id" element={<ReportDetailPage />} />
-                <Route path="/sightings/new" element={<SightingSubmitPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/community" element={<CommunityPage />} />
-                <Route
-                  path="/community/new"
-                  element={user ? <CommunityNewPostPage /> : <Navigate to="/login" />}
-                />
-                <Route path="/community/:id" element={<CommunityPostPage />} />
-                <Route
-                  path="/community/:id/edit"
-                  element={user ? <CommunityEditPostPage /> : <Navigate to="/login" />}
-                />
-                <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                <Route path="/game" element={<GamePage />} />
-                <Route path="/team" element={<TeamPage />} />
-                <Route path="/team/sponsor/success" element={<SponsorSuccessPage />} />
-                <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
+                {userRoutes({ user, login, register, updateUser }).map(({ path, element }) => (
+                  <Route key={path} path={path} element={element} />
+                ))}
+                {/* 웹 전용 개발 라우트 */}
                 <Route path="/dev/portraits" element={<CapturePortraitsPage />} />
                 <Route path="/dev/capture-heimi" element={<CaptureHeimiPage />} />
               </Routes>

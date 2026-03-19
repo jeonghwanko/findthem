@@ -36,17 +36,17 @@ interface AgentActivityStats {
 const CACHE_TTL_MS = 60_000;
 let cache: ActivityCache | null = null;
 
+// SEC-W5: setHours(0,0,0,0)는 서버 로컬 타임존 기준 — UTC 자정으로 통일
 function todayStart(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
 function weekStart(): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const now = new Date();
+  const utcToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  utcToday.setUTCDate(utcToday.getUTCDate() - 7);
+  return utcToday;
 }
 
 async function fetchActivityStats(): Promise<AgentActivityStats> {

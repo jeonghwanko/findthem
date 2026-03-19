@@ -8,12 +8,11 @@ import {
   ERROR_CODES,
   MAX_FREE_PLAYS_PER_DAY,
   MAX_AD_PLAYS_PER_DAY,
+  VALID_AGENT_IDS,
 } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('game');
-
-const VALID_CHARACTERS = ['image-matching', 'promotion', 'chatbot-alert'] as const;
 
 function utcDayStart(): Date {
   const now = new Date();
@@ -21,7 +20,7 @@ function utcDayStart(): Date {
 }
 
 const recordPlaySchema = z.object({
-  character: z.enum(VALID_CHARACTERS),
+  character: z.enum(VALID_AGENT_IDS),
   score: z.number().int().min(0).max(999999),
   usedAd: z.boolean().default(false),
 });

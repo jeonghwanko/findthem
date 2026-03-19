@@ -154,21 +154,35 @@ export function registerCommunityRoutes(router: Router) {
     validateBody(updatePostSchema),
     async (req, res) => {
       const id = req.params.id as string;
-      const post = await prisma.communityPost.findUnique({
+      const userId = req.user!.userId;
+      const { title, content } = req.body as z.infer<typeof updatePostSchema>;
+
+      // 존재 여부 먼저 확인 (404 vs 403 구분)
+      const exists = await prisma.communityPost.findUnique({
         where: { id },
+        select: { userId: true },
       });
-      if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
-      if (post.userId !== req.user!.userId) {
+      if (!exists) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+      if (exists.userId !== userId) {
         throw new ApiError(403, ERROR_CODES.COMMUNITY_POST_OWNER_ONLY);
       }
 
-      const { title, content } = req.body as z.infer<typeof updatePostSchema>;
-      const updated = await prisma.communityPost.update({
-        where: { id },
+      // 소유권 확인 + 수정을 원자적으로 처리
+      const result = await prisma.communityPost.updateMany({
+        where: { id, userId },
         data: {
           ...(title !== undefined && { title }),
           ...(content !== undefined && { content }),
         },
+      });
+
+      if (result.count === 0) {
+        // 동시 삭제 또는 소유권 변경으로 업데이트 실패
+        throw new ApiError(403, ERROR_CODES.COMMUNITY_POST_OWNER_ONLY);
+      }
+
+      const updated = await prisma.communityPost.findUnique({
+        where: { id },
         include: postInclude,
       });
       res.json(updated);
@@ -178,16 +192,27 @@ export function registerCommunityRoutes(router: Router) {
   // ── 게시글 삭제 (댓글은 onDelete: Cascade로 자동 삭제) ──
   router.delete('/community/posts/:id', requireAuth, async (req, res) => {
     const id = req.params.id as string;
-    const post = await prisma.communityPost.findUnique({
+    const userId = req.user!.userId;
+
+    // 존재 여부 먼저 확인 (404 vs 403 구분)
+    const exists = await prisma.communityPost.findUnique({
       where: { id },
+      select: { userId: true },
     });
-    if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
-    if (post.userId !== req.user!.userId) {
+    if (!exists) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+    if (exists.userId !== userId) {
       throw new ApiError(403, ERROR_CODES.COMMUNITY_POST_OWNER_ONLY);
     }
 
-    await prisma.communityPost.delete({ where: { id } });
-    log.info({ postId: id, userId: req.user!.userId }, 'Community post deleted');
+    // 소유권 확인 + 삭제를 원자적으로 처리
+    const result = await prisma.communityPost.deleteMany({ where: { id, userId } });
+
+    if (result.count === 0) {
+      // 동시 삭제로 이미 없어진 경우
+      throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+    }
+
+    log.info({ postId: id, userId }, 'Community post deleted');
     res.json({ success: true });
   });
 
@@ -222,17 +247,28 @@ export function registerCommunityRoutes(router: Router) {
     requireAuth,
     async (req, res) => {
       const id = req.params.id as string;
-      const comment = await prisma.communityComment.findUnique({
+      const userId = req.user!.userId;
+
+      // 존재 여부 먼저 확인 (404 vs 403 구분)
+      const exists = await prisma.communityComment.findUnique({
         where: { id },
+        select: { userId: true },
       });
-      if (!comment) {
+      if (!exists) {
         throw new ApiError(404, ERROR_CODES.COMMUNITY_COMMENT_NOT_FOUND);
       }
-      if (comment.userId !== req.user!.userId) {
+      if (exists.userId !== userId) {
         throw new ApiError(403, ERROR_CODES.COMMUNITY_COMMENT_OWNER_ONLY);
       }
 
-      await prisma.communityComment.delete({ where: { id } });
+      // 소유권 확인 + 삭제를 원자적으로 처리
+      const result = await prisma.communityComment.deleteMany({ where: { id, userId } });
+
+      if (result.count === 0) {
+        // 동시 삭제로 이미 없어진 경우
+        throw new ApiError(404, ERROR_CODES.COMMUNITY_COMMENT_NOT_FOUND);
+      }
+
       res.json({ success: true });
     },
   );
@@ -331,15 +367,26 @@ export function registerCommunityRoutes(router: Router) {
     requireAdmin,
     async (req, res) => {
       const id = req.params.id as string;
-      const post = await prisma.communityPost.findUnique({ where: { id } });
-      if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
 
-      const updated = await prisma.communityPost.update({
+      // 존재 여부 확인
+      const exists = await prisma.communityPost.findUnique({
         where: { id },
-        data: { isPinned: !post.isPinned },
+        select: { id: true },
+      });
+      if (!exists) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+
+      // NOT 토글을 원자적으로 처리 (read-modify-write 레이스 컨디션 방지)
+      await prisma.$executeRaw`
+        UPDATE "CommunityPost"
+        SET "isPinned" = NOT "isPinned"
+        WHERE id = ${id}
+      `;
+
+      const updated = await prisma.communityPost.findUnique({
+        where: { id },
         include: postInclude,
       });
-      log.info({ postId: id, isPinned: updated.isPinned }, 'Admin toggled pin');
+      log.info({ postId: id, isPinned: updated?.isPinned }, 'Admin toggled pin');
       res.json(updated);
     },
   );

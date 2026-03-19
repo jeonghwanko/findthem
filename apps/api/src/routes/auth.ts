@@ -494,7 +494,12 @@ export function registerAuthRoutes(router: Router) {
     }
 
     // auth_date 만료 확인 (1시간)
-    const authDate = parseInt(authData['auth_date'] ?? '0', 10);
+    // SEC-W2: parseInt NaN이면 만료 체크가 우회되므로 명시적으로 검증
+    const authDate = parseInt(authData['auth_date'] ?? '', 10);
+    if (isNaN(authDate)) {
+      log.warn('Telegram callback: auth_date is NaN or missing');
+      throw new ApiError(400, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
+    }
     const nowSec = Math.floor(Date.now() / 1000);
     if (nowSec - authDate > 3600) {
       log.warn({ authDate, nowSec }, 'Telegram callback: auth_date expired');

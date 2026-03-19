@@ -41,26 +41,28 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
 
   const sightingUrl = `${config.webOrigin}/reports/${reportId}?matchId=${matchId}`;
 
-  await sendMatchNotification({
-    recipientPhone: report.user.phone,
-    recipientName: report.user.name,
-    reportName: report.name,
-    subjectType: report.subjectType,
-    confidence: claimedMatch.confidence,
-    matchId,
-    sightingUrl,
-    userId: report.user.id,
-  });
-
-  // FCM 푸시 알림 (토큰이 등록된 경우에만)
-  if (report.user.fcmToken) {
-    await sendPushNotification(
-      report.user.fcmToken,
-      '매칭 발견!',
-      `${report.name}에 대한 새로운 목격 제보가 매칭되었습니다.`,
-      { reportId: report.id, matchId },
-    );
-  }
+  await Promise.all([
+    sendMatchNotification({
+      recipientPhone: report.user.phone,
+      recipientName: report.user.name,
+      reportName: report.name,
+      subjectType: report.subjectType,
+      confidence: claimedMatch.confidence,
+      matchId,
+      sightingUrl,
+      userId: report.user.id,
+    }),
+    report.user.fcmToken
+      ? sendPushNotification(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          report.userId!,
+          report.user.fcmToken,
+          'Match Found!',
+          `A new sighting has been matched for ${report.name}.`,
+          { reportId: report.id, matchId },
+        )
+      : Promise.resolve(),
+  ]);
 }
 
 export function startNotificationWorker() {

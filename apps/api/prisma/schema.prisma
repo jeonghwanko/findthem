@@ -207,6 +207,7 @@ model Sighting {
 
   @@index([reportId])
   @@index([status])
+  @@index([status, createdAt])
   @@index([lat, lng])
   @@map("sighting")
 }

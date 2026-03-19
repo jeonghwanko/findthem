@@ -30,13 +30,14 @@ import {
 import { createAuditLog, listAuditLogs } from '../services/auditLogService.js';
 import { adminAgentService } from '../services/adminAgent/index.js';
 import { getRecentDiff } from '../services/gitDiffService.js';
+import { storageService } from '../services/storageService.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
 import { createLogger } from '../logger.js';
@@ -73,8 +74,8 @@ const failedJobsQuerySchema = z.object({
 });
 
 const adminReportQuerySchema = z.object({
-  status: z.enum(['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED']).optional(),
-  subjectType: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
+  status: z.enum(REPORT_STATUS_VALUES).optional(),
+  subjectType: z.enum(SUBJECT_TYPE_VALUES).optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
@@ -86,7 +87,7 @@ const adminReportStatusSchema = z.object({
 });
 
 const adminMatchQuerySchema = z.object({
-  status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED']).optional(),
+  status: z.enum(MATCH_STATUS_VALUES).optional(),
   minConfidence: z.coerce.number().min(0).max(1).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
@@ -116,7 +117,7 @@ const auditLogQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   targetType: z.string().optional(),
-  source: z.enum(['DASHBOARD', 'AGENT', 'API']).optional(),
+  source: z.enum(ADMIN_ACTION_SOURCE_VALUES).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
 });
@@ -156,8 +157,9 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // DELETE /admin/stats/failed-jobs — 특정 큐(또는 전체)의 실패 잡 일괄 제거
-  router.delete('/admin/stats/failed-jobs', requireAdmin, async (req, res) => {
-    const { queueName } = req.query as { queueName?: string };
+  // SEC-W6: validateQuery 미들웨어로 queueName 입력 검증
+  router.delete('/admin/stats/failed-jobs', requireAdmin, validateQuery(failedJobsQuerySchema), async (req, res) => {
+    const { queueName } = req.query as unknown as z.infer<typeof failedJobsQuerySchema>;
 
     const QUEUE_MAP = {
       'image-processing': imageQueue,
@@ -705,6 +707,13 @@ export function registerAdminRoutes(router: Router) {
         const filePath = url.startsWith('/uploads/')
           ? resolve(config.uploadDir, url.replace('/uploads/', ''))
           : resolve(config.uploadDir, url);
+        // SEC-C2: 크롤 데이터의 ../../ 경로 탐색 방지 — uploadDir 밖이면 broken 처리
+        try {
+          storageService.getAbsolutePath(url.startsWith('/uploads/') ? url : `/uploads/${url}`);
+        } catch {
+          brokenIds.push(photo.id);
+          continue;
+        }
         if (!existsSync(filePath)) {
           brokenIds.push(photo.id);
         }

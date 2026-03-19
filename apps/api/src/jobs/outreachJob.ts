@@ -110,60 +110,38 @@ async function createChannelOutreachRequests(
     },
   });
 
-  let created = 0;
+  // Phase 1: AI 초안 생성 (per-contact 에러 격리)
+  type UpsertArgs = Parameters<typeof prisma.outreachRequest.upsert>[0];
+  const upsertOps: UpsertArgs[] = [];
 
   for (const contact of contacts) {
     try {
       if (contact.email) {
         const draft = await generateOutreachEmail(report, contact);
-
-        await prisma.outreachRequest.upsert({
-          where: {
-            reportId_contactId_channel: {
-              reportId: report.id,
-              contactId: contact.id,
-              channel: 'EMAIL',
-            },
-          },
-          create: {
-            reportId: report.id,
-            contactId: contact.id,
-            channel: 'EMAIL',
-            status: 'PENDING_APPROVAL',
-            draftSubject: draft.subject,
-            draftContent: draft.body,
-          },
+        upsertOps.push({
+          where: { reportId_contactId_channel: { reportId: report.id, contactId: contact.id, channel: 'EMAIL' } },
+          create: { reportId: report.id, contactId: contact.id, channel: 'EMAIL', status: 'PENDING_APPROVAL', draftSubject: draft.subject, draftContent: draft.body },
           update: {},
         });
-        created++;
       } else if (contact.youtubeChannelId) {
         // 발송 시점에 getLatestVideo로 영상을 찾으므로 여기서는 채널명으로 초안 생성
         // (searchVideos 호출 제거 — YouTube API quota 100 unit/call 절약)
-        const videoTitle = contact.name;
-        const commentText = await generateYouTubeComment(report, videoTitle);
-
-        await prisma.outreachRequest.upsert({
-          where: {
-            reportId_contactId_channel: {
-              reportId: report.id,
-              contactId: contact.id,
-              channel: 'YOUTUBE_COMMENT',
-            },
-          },
-          create: {
-            reportId: report.id,
-            contactId: contact.id,
-            channel: 'YOUTUBE_COMMENT',
-            status: 'PENDING_APPROVAL',
-            draftContent: commentText,
-          },
+        const commentText = await generateYouTubeComment(report, contact.name);
+        upsertOps.push({
+          where: { reportId_contactId_channel: { reportId: report.id, contactId: contact.id, channel: 'YOUTUBE_COMMENT' } },
+          create: { reportId: report.id, contactId: contact.id, channel: 'YOUTUBE_COMMENT', status: 'PENDING_APPROVAL', draftContent: commentText },
           update: {},
         });
-        created++;
       }
     } catch (err) {
-      log.warn({ err, contactId: contact.id, reportId: report.id }, 'Failed to create outreach request');
+      log.warn({ err, contactId: contact.id, reportId: report.id }, 'Failed to generate outreach draft');
     }
+  }
+
+  // Phase 2: DB upsert 배치화 (N 왕복 → $transaction 1회)
+  const created = upsertOps.length;
+  if (created > 0) {
+    await prisma.$transaction(upsertOps.map((op) => prisma.outreachRequest.upsert(op)));
   }
 
   log.info({ reportId: report.id, created }, 'Channel outreach requests created');
@@ -206,7 +184,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
   const dailyLimit = channel === 'EMAIL' ? OUTREACH_EMAIL_DAILY_LIMIT : OUTREACH_COMMENT_DAILY_LIMIT;
   const sentToday = await getTodaySentCount(channel);
 
-  if (sentToday > dailyLimit) {
+  if (sentToday >= dailyLimit) {
     log.warn({ outreachRequestId, channel, sentToday, dailyLimit }, 'Daily limit reached, rolling back to APPROVED');
     await prisma.outreachRequest.updateMany({
       where: { id: outreachRequestId, status: 'SENDING' },

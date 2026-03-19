@@ -124,15 +124,28 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
   const targetPlatforms: PromoPlatform[] =
     platforms && platforms.length > 0 ? platforms : strategy.targetPlatforms;
 
-  // 재게시 시 기존 POSTED Promotion → DELETED로 변경
+  // 재게시 시 기존 POSTED Promotion → DELETED로 변경 (nextVersion 확정과 함께 원자적 처리)
+  let safeVersion = version;
   if (isRepost) {
-    await prisma.promotion.updateMany({
-      where: {
-        reportId,
-        platform: { in: targetPlatforms },
-        status: 'POSTED',
-      },
-      data: { status: 'DELETED' },
+    safeVersion = await prisma.$transaction(async (tx) => {
+      // 큐 등록 시점과 실행 시점 사이에 다른 재게시가 먼저 처리됐을 수 있으므로 재확인
+      const latestInTx = await tx.promotion.findFirst({
+        where: { reportId, status: { in: ['POSTED', 'DELETED'] } },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
+      const confirmedVersion = Math.max(version, (latestInTx?.version ?? 0) + 1);
+
+      await tx.promotion.updateMany({
+        where: {
+          reportId,
+          platform: { in: targetPlatforms },
+          status: 'POSTED',
+        },
+        data: { status: 'DELETED' },
+      });
+
+      return confirmedVersion;
     });
   }
 
@@ -177,7 +190,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
           status: result.success ? 'POSTED' : 'FAILED',
           errorMessage: result.error ?? null,
           postedAt: result.success ? new Date() : null,
-          version,
+          version: safeVersion,
         },
         select: { id: true },
       });
@@ -237,7 +250,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
       reportId,
       action: isRepost ? 'reposted' : 'posted',
       detail: {
-        version,
+        version: safeVersion,
         platforms: targetPlatforms,
         successCount,
         totalCount: targetPlatforms.length,

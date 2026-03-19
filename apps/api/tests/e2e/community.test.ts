@@ -174,10 +174,11 @@ describe('Community E2E', () => {
 
     it('본인 게시글 수정 → 200', async () => {
       prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
-      prismaMock.communityPost.update.mockResolvedValue({
-        ...testPost,
-        title: '수정된 제목',
-      });
+      prismaMock.communityPost.updateMany.mockResolvedValue({ count: 1 });
+      // updateMany 후 findUnique로 다시 조회
+      prismaMock.communityPost.findUnique
+        .mockResolvedValueOnce(testPost) // 소유권 확인용
+        .mockResolvedValueOnce({ ...testPost, title: '수정된 제목' }); // 수정 후 조회
 
       const res = await app
         .patch('/api/community/posts/post-1')
@@ -185,7 +186,7 @@ describe('Community E2E', () => {
         .send({ title: '수정된 제목' });
 
       expect(res.status).toBe(200);
-      expect(prismaMock.communityPost.update).toHaveBeenCalled();
+      expect(prismaMock.communityPost.updateMany).toHaveBeenCalled();
     });
 
     it('타인 게시글 수정 → 403', async () => {
@@ -233,7 +234,7 @@ describe('Community E2E', () => {
 
     it('본인 게시글 삭제 → 200', async () => {
       prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
-      prismaMock.communityPost.delete.mockResolvedValue(testPost);
+      prismaMock.communityPost.deleteMany.mockResolvedValue({ count: 1 });
 
       const res = await app
         .delete('/api/community/posts/post-1')
@@ -321,7 +322,7 @@ describe('Community E2E', () => {
 
     it('본인 댓글 삭제 → 200', async () => {
       prismaMock.communityComment.findUnique.mockResolvedValue(testComment);
-      prismaMock.communityComment.delete.mockResolvedValue(testComment);
+      prismaMock.communityComment.deleteMany.mockResolvedValue({ count: 1 });
 
       const res = await app
         .delete('/api/community/comments/comment-1')
@@ -469,10 +470,11 @@ describe('Community E2E', () => {
   describe('PATCH /api/community/admin/posts/:id/pin', () => {
     it('관리자 → 고정 토글', async () => {
       prismaMock.communityPost.findUnique.mockResolvedValue(testPost);
-      prismaMock.communityPost.update.mockResolvedValue({
-        ...testPost,
-        isPinned: true,
-      });
+      prismaMock.$executeRaw.mockResolvedValue(1);
+      // $executeRaw 후 findUnique로 다시 조회
+      prismaMock.communityPost.findUnique
+        .mockResolvedValueOnce(testPost) // 존재 확인
+        .mockResolvedValueOnce({ ...testPost, isPinned: true }); // 토글 후 조회
 
       const res = await app
         .patch('/api/community/admin/posts/post-1/pin')

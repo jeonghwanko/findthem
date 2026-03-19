@@ -8,7 +8,7 @@ import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue, cleanupQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type SubjectType } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, SUBJECT_TYPE_VALUES, GENDER_VALUES, REPORT_STATUS_VALUES, type SubjectType } from '@findthem/shared';
 import { postAli } from '../services/communityAgentService.js';
 import { createLogger } from '../logger.js';
 
@@ -24,10 +24,10 @@ const upload = multer({
 });
 
 const createReportSchema = z.object({
-  subjectType: z.enum(['PERSON', 'DOG', 'CAT']),
+  subjectType: z.enum(SUBJECT_TYPE_VALUES),
   name: z.string().min(1),
   species: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'UNKNOWN']).optional(),
+  gender: z.enum(GENDER_VALUES).optional(),
   age: z.string().optional(),
   weight: z.string().optional(),
   height: z.string().optional(),
@@ -46,8 +46,8 @@ const createReportSchema = z.object({
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
-  type: z.enum(['PERSON', 'DOG', 'CAT']).optional(),
-  status: z.enum(['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED']).optional(),
+  type: z.enum(SUBJECT_TYPE_VALUES).optional(),
+  status: z.enum(REPORT_STATUS_VALUES).optional(),
   q: z.string().optional(),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
@@ -79,9 +79,14 @@ export function registerReportRoutes(router: Router) {
     requireAuth,
     upload.array('photos', MAX_REPORT_PHOTOS),
     async (req, res) => {
-      const body = createReportSchema.parse(
-        typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body,
-      );
+      // SEC-C3: JSON.parse 실패 시 400 반환
+      let rawBody: unknown;
+      try {
+        rawBody = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
+      } catch {
+        throw new ApiError(400, 'INVALID_REQUEST_DATA');
+      }
+      const body = createReportSchema.parse(rawBody);
 
       const files = (req.files as Express.Multer.File[]) || [];
       if (files.length === 0) {
@@ -104,18 +109,15 @@ export function registerReportRoutes(router: Router) {
           data: { userId, ...body },
         });
 
-        const photos = await Promise.all(
-          processedPhotos.map((p) =>
-            tx.reportPhoto.create({
-              data: {
-                reportId: report.id,
-                photoUrl: p.photoUrl,
-                thumbnailUrl: p.thumbnailUrl,
-                isPrimary: p.isPrimary,
-              },
-            }),
-          ),
-        );
+        await tx.reportPhoto.createMany({
+          data: processedPhotos.map((p) => ({
+            reportId: report.id,
+            photoUrl: p.photoUrl,
+            thumbnailUrl: p.thumbnailUrl,
+            isPrimary: p.isPrimary,
+          })),
+        });
+        const photos = await tx.reportPhoto.findMany({ where: { reportId: report.id } });
 
         return { report, photos };
       });
@@ -172,7 +174,7 @@ export function registerReportRoutes(router: Router) {
           SELECT * FROM (${baseQuery}) sub
           WHERE sub.distance_km <= ${radius}
           ORDER BY sub.distance_km ASC
-          LIMIT ${Prisma.raw(String(limit))} OFFSET ${Prisma.raw(String(skip))}
+          LIMIT ${limit} OFFSET ${skip}
         `,
         prisma.$queryRaw<[{ count: bigint }]>`
           SELECT COUNT(*) FROM (${baseQuery}) sub

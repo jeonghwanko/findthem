@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
+import { validateBody } from '../middlewares/validate.js';
 import { createLogger } from '../logger.js';
 import {
   ERROR_CODES,
@@ -109,12 +110,12 @@ export function registerUserRoutes(router: Router) {
   });
 
   // POST /users/me/fcm-token — FCM 토큰 저장
-  router.post('/users/me/fcm-token', requireAuth, async (req, res) => {
+  const fcmTokenSchema = z.object({ token: z.string().min(1) });
+
+  router.post('/users/me/fcm-token', requireAuth, validateBody(fcmTokenSchema), async (req, res) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { userId } = req.user!;
-
-    const schema = z.object({ token: z.string().min(1) });
-    const { token } = schema.parse(req.body);
+    const { token } = req.body as z.infer<typeof fcmTokenSchema>;
 
     await prisma.user.update({
       where: { id: userId },

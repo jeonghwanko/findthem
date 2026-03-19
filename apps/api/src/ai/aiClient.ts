@@ -5,7 +5,7 @@
  * DB의 AiSetting 테이블에서 provider/model을 동적으로 읽고,
  * 모든 호출 결과를 AiUsageLog 테이블에 기록한다.
  */
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { getProviderName, getModelName } from './aiSettings.js';
 import { trackUsage, trackFailure } from './aiUsageTracker.js';
 import { anthropicProvider, getAnthropicClient } from './providers/anthropic.js';
