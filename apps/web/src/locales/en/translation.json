@@ -122,8 +122,12 @@
     "next": "Next"
   },
   "myReports": {
-    "title": "My Reports",
+    "title": "My Activity",
+    "tabReports": "My Reports",
+    "tabSightings": "My Sightings",
     "empty": "You haven't filed any reports yet",
+    "emptySightings": "You haven't submitted any sightings yet",
+    "sightingNoDesc": "(No description)",
     "edit": "Edit",
     "delete": "Delete",
     "deleteConfirm": "Delete the report for \"{{name}}\"? This cannot be undone.",

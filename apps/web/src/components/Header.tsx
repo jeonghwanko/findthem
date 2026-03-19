@@ -142,7 +142,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <>
               <Link
                 to="/sightings/new"
-                className="ml-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="ml-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-4 py-2 rounded-lg font-medium shadow-[0_3px_0_0_#c2410c] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#c2410c] active:translate-y-[3px] active:shadow-none transition-all"
               >
                 {t('nav.newSighting')}
               </Link>

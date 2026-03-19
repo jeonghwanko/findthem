@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
-import { optionalAuth } from '../middlewares/auth.js';
+import { optionalAuth, requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { rateLimit } from '../middlewares/rateLimit.js';
 import { imageService } from '../services/imageService.js';
@@ -211,6 +211,31 @@ export function registerSightingRoutes(router: Router) {
 
     await prisma.sighting.delete({ where: { id } });
     res.json({ success: true });
+  });
+
+  // 내 제보 목록 (로그인 필수)
+  router.get('/sightings/mine', requireAuth, validateQuery(sightingListQuerySchema), async (req, res) => {
+    const { page, limit } = req.query as unknown as z.infer<typeof sightingListQuerySchema>;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { userId } = req.user!;
+
+    const where = { userId };
+    const skip = (page - 1) * limit;
+    const sightings = await prisma.sighting.findMany({
+      where,
+      include: {
+        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true }, take: 1 },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    const total = sightings.length < limit
+      ? skip + sightings.length
+      : await prisma.sighting.count({ where });
+
+    res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 전체 제보 목록 (반경 검색 지원)

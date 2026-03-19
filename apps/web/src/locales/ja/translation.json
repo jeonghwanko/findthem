@@ -122,8 +122,12 @@
     "next": "次へ"
   },
   "myReports": {
-    "title": "マイ届出一覧",
+    "title": "マイ活動",
+    "tabReports": "マイ届出",
+    "tabSightings": "マイ目撃情報",
     "empty": "届出がまだありません",
+    "emptySightings": "目撃情報がまだありません",
+    "sightingNoDesc": "(説明なし)",
     "edit": "編集",
     "delete": "削除",
     "deleteConfirm": "「{{name}}」の届出を削除しますか？この操作は元に戻せません。",
