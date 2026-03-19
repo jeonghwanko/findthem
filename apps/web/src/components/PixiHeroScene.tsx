@@ -721,15 +721,15 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             transition: 'opacity 0.6s ease 0.2s',
           }}
         >
-          {/* 왼쪽 열: 게임 버튼 (전체 높이, 아이콘 위 + 텍스트 아래) */}
+          {/* 왼쪽 열: 게임 버튼 (입체적 3D 스타일) */}
           <div className="flex flex-1" style={{ pointerEvents: 'auto' }}>
             <Link
               to="/game"
-              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all px-2"
+              className="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-2"
               aria-label={t('home.playToSponsor')}
             >
-              <Gamepad2 className="w-8 h-8 shrink-0" aria-hidden="true" />
-              <span className="text-xs font-semibold leading-tight">{t('home.playToSponsor')}</span>
+              <Gamepad2 className="w-8 h-8 shrink-0 drop-shadow-sm" aria-hidden="true" />
+              <span className="text-xs font-bold leading-tight drop-shadow-sm">{t('home.playToSponsor')}</span>
             </Link>
           </div>
 
