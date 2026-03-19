@@ -202,19 +202,28 @@ export default function SightingSubmitPage() {
     }
   }
 
-  // 제출 완료 화면
+  // 제출 완료 → 3초 후 자동 이동
+  useEffect(() => {
+    if (!submitted) return;
+    const timer = setTimeout(() => {
+      navigate(reportId ? `/reports/${reportId}` : '/browse');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [submitted, reportId, navigate]);
+
   if (submitted) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
         <h1 className="text-2xl font-bold text-gray-900 mb-3">{t('sighting.successTitle')}</h1>
         <p className="text-gray-500 mb-6 leading-relaxed">{t('sighting.successDesc')}</p>
+        <p className="text-xs text-gray-400 mb-4">{t('sighting.autoRedirect')}</p>
         <button
           type="button"
-          onClick={() => navigate(reportId ? `/reports/${reportId}` : '/')}
+          onClick={() => navigate(reportId ? `/reports/${reportId}` : '/browse')}
           className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
         >
-          {t('sighting.goBack')}
+          {reportId ? t('sighting.goToReport') : t('sighting.goToList')}
         </button>
       </div>
     );

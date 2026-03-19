@@ -229,7 +229,10 @@
     "submitError": "제보에 실패했습니다.",
     "successTitle": "제보가 접수되었습니다!",
     "successDesc": "AI가 사진을 분석하고 유사한 실종 신고와 매칭합니다. 분석과 홍보는 5~10분 후 자동으로 진행됩니다.",
-    "goBack": "돌아가기"
+    "goBack": "돌아가기",
+    "goToReport": "신고 상세 보기",
+    "goToList": "목록으로 돌아가기",
+    "autoRedirect": "잠시 후 자동으로 이동합니다..."
   },
   "chat": {
     "title": "목격 제보 챗봇",

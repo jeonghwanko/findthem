@@ -229,7 +229,10 @@
     "submitError": "提交失敗。",
     "successTitle": "已成功提交！",
     "successDesc": "AI 將分析照片並與失蹤報告進行比對。分析和宣傳將在 5-10 分鐘後自動開始。",
-    "goBack": "返回"
+    "goBack": "返回",
+    "goToReport": "查看報案詳情",
+    "goToList": "返回列表",
+    "autoRedirect": "即將自動跳轉..."
   },
   "chat": {
     "title": "目擊線索聊天機器人",

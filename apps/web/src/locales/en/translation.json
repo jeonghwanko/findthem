@@ -229,7 +229,10 @@
     "submitError": "Failed to submit sighting.",
     "successTitle": "Sighting submitted!",
     "successDesc": "AI will analyze the photo and match it against missing reports. Analysis and outreach will begin automatically in 5-10 minutes.",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "goToReport": "View report",
+    "goToList": "Back to list",
+    "autoRedirect": "Redirecting shortly..."
   },
   "chat": {
     "title": "Sighting Report Chatbot",

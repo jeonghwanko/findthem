@@ -229,7 +229,10 @@
     "submitError": "送信に失敗しました。",
     "successTitle": "受付完了！",
     "successDesc": "AIが写真を分析し、行方不明の届出と照合します。分析と拡散は5〜10分後に自動で開始されます。",
-    "goBack": "戻る"
+    "goBack": "戻る",
+    "goToReport": "届出の詳細を見る",
+    "goToList": "一覧に戻る",
+    "autoRedirect": "まもなく自動的に移動します..."
   },
   "chat": {
     "title": "目撃情報チャットボット",
