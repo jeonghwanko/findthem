@@ -36,6 +36,7 @@ export default function AdminLoginPage() {
             value={key}
             onChange={(e) => setKey(e.target.value)}
             placeholder="Admin API Key"
+            autoComplete="off"
             className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             autoFocus
           />

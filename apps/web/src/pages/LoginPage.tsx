@@ -133,6 +133,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="01012345678"
+              autoComplete="tel"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               required
             />
@@ -146,6 +147,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               minLength={6}
               required

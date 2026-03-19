@@ -37,6 +37,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder="API Key"
+              autoComplete="off"
               className="w-full border rounded px-3 py-2 mb-3"
               autoFocus
             />
