@@ -668,8 +668,8 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">{t('home.heroTitle')}</h1>
           <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto leading-relaxed">{t('home.heroDesc')}</p>
           <div className="flex gap-3 justify-center flex-wrap mb-8">
-            <Link to="/game" className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 px-7 py-3.5 rounded-xl font-semibold text-base transition-all hover:-translate-y-0.5">
-              <Gamepad2 className="w-4 h-4" aria-hidden="true" /> {t('home.playToSponsor')}
+            <Link to="/game" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold text-base shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-7 py-3.5">
+              <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" /> {t('home.playToSponsor')}
             </Link>
           </div>
           <AgentWorldScene />
@@ -746,10 +746,10 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
         >
           <Link
             to="/game"
-            className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold text-sm shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-6 py-2.5"
             style={{ pointerEvents: 'auto' }}
           >
-            <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
+            <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" /> {t('home.playToSponsor')}
           </Link>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5" style={{ pointerEvents: 'auto' }}>
             <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
