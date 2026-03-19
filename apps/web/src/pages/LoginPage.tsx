@@ -30,7 +30,8 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
       }
       void navigate('/');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('auth.errorFallback'));
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('auth.errorFallback') }));
     } finally {
       setLoading(false);
     }

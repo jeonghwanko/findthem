@@ -232,7 +232,7 @@
     "goBack": "돌아가기",
     "goToReport": "신고 상세 보기",
     "goToList": "목록으로 돌아가기",
-    "autoRedirect": "잠시 후 자동으로 이동합니다..."
+    "autoRedirectCountdown": "{{seconds}}초 후 자동으로 이동합니다"
   },
   "chat": {
     "title": "목격 제보 챗봇",
@@ -367,7 +367,9 @@
     "GAME_PLAY_LIMIT_REACHED": "오늘 게임 플레이 횟수를 모두 사용했습니다.",
     "INVALID_GAME_CHARACTER": "유효하지 않은 게임 캐릭터입니다.",
     "AD_REWARD_COOLDOWN": "광고 보상은 잠시 후 다시 받을 수 있습니다.",
-    "VALIDATION_ERROR": "입력값이 올바르지 않습니다."
+    "VALIDATION_ERROR": "입력값이 올바르지 않습니다.",
+    "INQUIRY_NOT_FOUND": "문의를 찾을 수 없습니다.",
+    "QUOTE_EXPIRED": "결제 견적이 만료되었습니다. 다시 시도해주세요."
   },
   "agent": {
     "title": "AI 제보 도우미",

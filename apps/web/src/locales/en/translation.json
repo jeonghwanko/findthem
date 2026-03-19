@@ -232,7 +232,7 @@
     "goBack": "Go back",
     "goToReport": "View report",
     "goToList": "Back to list",
-    "autoRedirect": "Redirecting shortly..."
+    "autoRedirectCountdown": "Redirecting in {{seconds}}s"
   },
   "chat": {
     "title": "Sighting Report Chatbot",
@@ -367,7 +367,9 @@
     "GAME_PLAY_LIMIT_REACHED": "You have used all game plays for today.",
     "INVALID_GAME_CHARACTER": "Invalid game character.",
     "AD_REWARD_COOLDOWN": "Please wait before claiming another ad reward.",
-    "VALIDATION_ERROR": "Invalid input."
+    "VALIDATION_ERROR": "Invalid input.",
+    "INQUIRY_NOT_FOUND": "Inquiry not found.",
+    "QUOTE_EXPIRED": "Payment quote has expired. Please try again."
   },
   "agent": {
     "title": "AI Sighting Assistant",

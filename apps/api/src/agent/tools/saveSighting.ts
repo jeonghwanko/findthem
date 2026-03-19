@@ -1,6 +1,6 @@
 import type { SubjectType } from '@findthem/shared';
 import { prisma } from '../../db/client.js';
-import { imageQueue, matchingQueue } from '../../jobs/queues.js';
+import { imageQueue } from '../../jobs/queues.js';
 
 export interface SaveSightingInput {
   subjectType: SubjectType;
@@ -47,21 +47,14 @@ export async function saveSighting(input: SaveSightingInput): Promise<SaveSighti
     },
   });
 
-  // 사진이 있으면 이미지 처리 큐 등록
+  // 사진이 있으면 이미지 처리 큐 등록 (완료 후 imageProcessingJob이 matchingQueue 등록)
   if (input.photoUrls && input.photoUrls.length > 0) {
     await imageQueue.add(
       'process-sighting-photos',
       { type: 'sighting', sightingId: sighting.id },
-      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-sighting-${sighting.id}` },
     );
   }
-
-  // 매칭 큐 등록
-  await matchingQueue.add(
-    'match-sighting',
-    { type: 'sighting', sightingId: sighting.id },
-    { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
-  );
 
   return { sightingId: sighting.id, message: '제보가 저장되었습니다' };
 }

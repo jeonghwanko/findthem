@@ -155,6 +155,7 @@ export const ERROR_CODES = {
   ALREADY_VERIFIED: 'ALREADY_VERIFIED',
   AMOUNT_MISMATCH: 'AMOUNT_MISMATCH',
   PAYMENT_FAILED: 'PAYMENT_FAILED',
+  QUOTE_EXPIRED: 'QUOTE_EXPIRED',
   QUOTE_NOT_FOUND: 'QUOTE_NOT_FOUND',
   PAYMENT_PENDING: 'PAYMENT_PENDING',
   OAUTH_FAILED: 'OAUTH_FAILED',
@@ -285,6 +286,8 @@ export const ADMIN_ACTION_SOURCE_VALUES = ['DASHBOARD', 'AGENT', 'API'] as const
 export const LOCALE_VALUES = ['ko', 'ja', 'zh-TW', 'en'] as const;
 export const INQUIRY_CATEGORY_VALUES = ['PAYMENT', 'REPORT', 'GENERAL', 'PARTNERSHIP'] as const;
 export const INQUIRY_STATUS_VALUES = ['OPEN', 'REPLIED', 'CLOSED'] as const;
+export const SUPPORTED_PAY_TOKENS = ['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL'] as const;
+export type SupportedPayToken = (typeof SUPPORTED_PAY_TOKENS)[number];
 
 // ── 운영 에이전트 ──
 

@@ -383,7 +383,7 @@ export function registerReportRoutes(router: Router) {
       await cleanupQueue.add(
         'cleanup-sns-posts',
         { reportId: id },
-        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `cleanup-${id}` },
       );
     }
 
@@ -411,25 +411,28 @@ export function registerReportRoutes(router: Router) {
     const id = req.params.id as string;
     const body = req.body as z.infer<typeof editReportSchema>;
 
-    const report = await prisma.report.findUnique({ where: { id } });
-    if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
-
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { userId: editUserId } = req.user!;
-    if (report.userId !== editUserId) {
-      throw new ApiError(403, ERROR_CODES.REPORT_EDIT_FORBIDDEN);
-    }
 
-    if (report.externalSource !== null) {
-      throw new ApiError(403, ERROR_CODES.EXTERNAL_REPORT_IMMUTABLE);
-    }
-
-    const updated = await prisma.report.update({
-      where: { id },
+    // 소유권 + 외부 수집 데이터 확인을 원자적으로 처리
+    const { count } = await prisma.report.updateMany({
+      where: { id, userId: editUserId, externalSource: null },
       data: {
         ...body,
         lastSeenAt: body.lastSeenAt !== undefined ? new Date(body.lastSeenAt) : undefined,
       },
+    });
+
+    if (count === 0) {
+      // 원인 구분: 존재하지 않음 / 권한 없음 / 외부 데이터
+      const report = await prisma.report.findUnique({ where: { id }, select: { userId: true, externalSource: true } });
+      if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+      if (report.externalSource !== null) throw new ApiError(403, ERROR_CODES.EXTERNAL_REPORT_IMMUTABLE);
+      throw new ApiError(403, ERROR_CODES.REPORT_EDIT_FORBIDDEN);
+    }
+
+    const updated = await prisma.report.findUnique({
+      where: { id },
       include: {
         photos: { select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true, createdAt: true } },
         user: { select: { id: true, name: true } },
@@ -465,7 +468,7 @@ export function registerReportRoutes(router: Router) {
       await cleanupQueue.add(
         'cleanup-sns-posts',
         { reportId: id },
-        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+        { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `cleanup-${id}` },
       );
     }
 

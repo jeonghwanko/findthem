@@ -60,6 +60,20 @@ export default function SightingSubmitPage() {
   const [error, setError] = useState('');
   const [locating, setLocating] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [addressEditing, setAddressEditing] = useState(false);
+  const [dateEditing, setDateEditing] = useState(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // 편집 모드 전환 시 자동 focus
+  useEffect(() => { if (addressEditing) addressInputRef.current?.focus(); }, [addressEditing]);
+  useEffect(() => {
+    if (!dateEditing) return;
+    const el = dateInputRef.current;
+    if (!el) return;
+    el.focus();
+    if ('showPicker' in el) { try { el.showPicker(); } catch { /* unsupported */ } }
+  }, [dateEditing]);
 
   const handleExifExtracted = useCallback((exif: PhotoExifData) => {
     if (exifAppliedRef.current) return;
@@ -202,14 +216,24 @@ export default function SightingSubmitPage() {
     }
   }
 
-  // 제출 완료 → 3초 후 자동 이동
+  const redirectTo = reportId ? `/reports/${reportId}` : '/browse';
+
+  // 제출 완료 → 5초 카운트다운 후 자동 이동
+  const [countdown, setCountdown] = useState(5);
   useEffect(() => {
     if (!submitted) return;
-    const timer = setTimeout(() => {
-      navigate(reportId ? `/reports/${reportId}` : '/browse');
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [submitted, reportId, navigate]);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          navigate(redirectTo);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [submitted, redirectTo, navigate]);
 
   if (submitted) {
     return (
@@ -217,10 +241,12 @@ export default function SightingSubmitPage() {
         <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
         <h1 className="text-2xl font-bold text-gray-900 mb-3">{t('sighting.successTitle')}</h1>
         <p className="text-gray-500 mb-6 leading-relaxed">{t('sighting.successDesc')}</p>
-        <p className="text-xs text-gray-400 mb-4">{t('sighting.autoRedirect')}</p>
+        <p className="text-xs text-gray-400 mb-4">
+          {t('sighting.autoRedirectCountdown', { seconds: countdown })}
+        </p>
         <button
           type="button"
-          onClick={() => navigate(reportId ? `/reports/${reportId}` : '/browse')}
+          onClick={() => navigate(redirectTo)}
           className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
         >
           {reportId ? t('sighting.goToReport') : t('sighting.goToList')}
@@ -284,14 +310,27 @@ export default function SightingSubmitPage() {
           )}
           {(!hasMultiAddr || !isAddrFromOptions) && (
             <div className="flex gap-2">
-              <input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                placeholder={t('sighting.sightedPlacePlaceholder')}
-              />
+              {addressEditing ? (
+                <input
+                  ref={addressInputRef}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  onBlur={() => setAddressEditing(false)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                  placeholder={t('sighting.sightedPlacePlaceholder')}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddressEditing(true)}
+                  className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${address ? 'text-gray-900' : 'text-gray-400'}`}
+                >
+                  {address || t('sighting.sightedPlacePlaceholder')}
+                </button>
+              )}
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleLocate}
                 disabled={locating}
                 className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0"
@@ -313,12 +352,24 @@ export default function SightingSubmitPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t('sighting.sightedAt')}
           </label>
-          <input
-            type="datetime-local"
-            value={sightedAt}
-            onChange={(e) => setSightedAt(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-          />
+          {dateEditing ? (
+            <input
+              ref={dateInputRef}
+              type="datetime-local"
+              value={sightedAt}
+              onChange={(e) => setSightedAt(e.target.value)}
+              onBlur={() => setDateEditing(false)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDateEditing(true)}
+              className="w-full text-left px-3 py-2 text-sm text-gray-900 transition-colors"
+            >
+              {new Date(sightedAt).toLocaleString()}
+            </button>
+          )}
         </div>
 
         {/* 4. 설명 (선택) */}

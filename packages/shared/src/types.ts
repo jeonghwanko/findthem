@@ -466,7 +466,8 @@ export interface SponsorPublic {
   createdAt: string;
 }
 
-export type SupportedPayToken = 'APT' | 'USDC' | 'USDt' | 'ETH' | 'BNB' | 'SOL';
+import type { SupportedPayToken } from './constants.js';
+export type { SupportedPayToken };
 
 export interface CryptoQuoteResult {
   quoteId: string;

@@ -232,7 +232,7 @@
     "goBack": "返回",
     "goToReport": "查看報案詳情",
     "goToList": "返回列表",
-    "autoRedirect": "即將自動跳轉..."
+    "autoRedirectCountdown": "{{seconds}}秒後自動跳轉"
   },
   "chat": {
     "title": "目擊線索聊天機器人",
@@ -367,7 +367,9 @@
     "GAME_PLAY_LIMIT_REACHED": "今日遊戲次數已全部使用。",
     "INVALID_GAME_CHARACTER": "無效的遊戲角色。",
     "AD_REWARD_COOLDOWN": "請稍後再領取廣告獎勵。",
-    "VALIDATION_ERROR": "輸入值不正確。"
+    "VALIDATION_ERROR": "輸入值不正確。",
+    "INQUIRY_NOT_FOUND": "找不到該詢問。",
+    "QUOTE_EXPIRED": "付款報價已過期，請重試。"
   },
   "agent": {
     "title": "AI目擊通報助手",

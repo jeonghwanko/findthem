@@ -15,7 +15,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new ApiError(400, 'IMAGE_ONLY') as unknown as null, false);
+    else cb(new ApiError(400, ERROR_CODES.IMAGE_ONLY) as unknown as null, false);
   },
 });
 

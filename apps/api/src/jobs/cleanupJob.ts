@@ -28,16 +28,26 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
   }
 
   // RACE-07: POSTED → DELETED 원자적 선점 — 중복 cleanup job 실행 시 SNS API 이중 호출 방지
-  // 먼저 updateMany로 POSTED → DELETED를 선점한 후, 선점 성공한 것만 SNS 삭제
-  const { count: claimedCount } = await prisma.promotion.updateMany({
+  // 먼저 POSTED 상태인 id를 조회한 뒤, updateMany로 POSTED → DELETED 선점
+  const postedIds = (await prisma.promotion.findMany({
     where: { reportId, status: 'POSTED' },
+    select: { id: true },
+  })).map((p) => p.id);
+
+  if (postedIds.length === 0) {
+    log.info({ reportId }, 'No SNS posts to delete');
+    return;
+  }
+
+  const { count: claimedCount } = await prisma.promotion.updateMany({
+    where: { id: { in: postedIds }, status: 'POSTED' },
     data: { status: 'DELETED' },
   });
 
-  // 선점한 게시물 조회 (이미 DELETED로 변경됨)
+  // 선점 성공한 것만 조회 (id 기준 — 이전 실행에서 DELETED된 것 제외)
   const promotions = claimedCount > 0
     ? await prisma.promotion.findMany({
-        where: { reportId, status: 'DELETED' },
+        where: { id: { in: postedIds }, status: 'DELETED' },
         select: { id: true, platform: true, postId: true },
       })
     : [];
@@ -68,8 +78,6 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
       { reportId, reportName: report.name, deletedCount: promotions.length },
       'SNS posts deleted',
     );
-  } else {
-    log.info({ reportId }, 'No SNS posts to delete');
   }
 
   // 감사 메시지 게시 (실패해도 전체 작업은 계속 진행)

@@ -135,7 +135,8 @@ export default function RegisterReportPage() {
       clearDraft();
       void navigate(`/reports/${result.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('report.submitError'));
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('report.submitError') }));
     } finally {
       setLoading(false);
     }

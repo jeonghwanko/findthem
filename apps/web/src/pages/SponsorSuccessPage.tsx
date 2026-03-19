@@ -37,7 +37,8 @@ export default function SponsorSuccessPage() {
       })
       .then(() => setState('success'))
       .catch((err: unknown) => {
-        setErrorMsg(err instanceof Error ? err.message : t('auth.errorFallback'));
+        const code = err instanceof Error ? err.message : '';
+        setErrorMsg(t(`errors.${code}`, { defaultValue: t('auth.errorFallback') }));
         setState('error');
       });
   }, [paymentKey, orderId, amount, agentId, displayName, message, t]);

@@ -232,7 +232,7 @@
     "goBack": "戻る",
     "goToReport": "届出の詳細を見る",
     "goToList": "一覧に戻る",
-    "autoRedirect": "まもなく自動的に移動します..."
+    "autoRedirectCountdown": "{{seconds}}秒後に自動で移動します"
   },
   "chat": {
     "title": "目撃情報チャットボット",
@@ -367,7 +367,9 @@
     "GAME_PLAY_LIMIT_REACHED": "本日のゲームプレイ回数をすべて使用しました。",
     "INVALID_GAME_CHARACTER": "無効なゲームキャラクターです。",
     "AD_REWARD_COOLDOWN": "しばらくしてから広告報酬を受け取ってください。",
-    "VALIDATION_ERROR": "入力値が正しくありません。"
+    "VALIDATION_ERROR": "入力値が正しくありません。",
+    "INQUIRY_NOT_FOUND": "お問い合わせが見つかりません。",
+    "QUOTE_EXPIRED": "決済見積もりの有効期限が切れました。もう一度お試しください。"
   },
   "agent": {
     "title": "AI目撃情報アシスタント",

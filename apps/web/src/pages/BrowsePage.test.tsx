@@ -131,6 +131,80 @@ describe('BrowsePage', () => {
         expect(lastCall).toContain('region=%EC%84%9C%EC%9A%B8');
       });
     });
+
+    it('상태 필터 — 제보 접수 클릭 시 phase=sighting_received로 요청', async () => {
+      mockApiResponse([]);
+      renderBrowsePage();
+      await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
+
+      fireEvent.click(screen.getByText('제보 접수'));
+
+      await waitFor(() => {
+        const lastCall = mockApiGet.mock.calls[mockApiGet.mock.calls.length - 1][0] as string;
+        expect(lastCall).toContain('phase=sighting_received');
+      });
+    });
+
+    it('상태 필터 — 분석 완료 클릭 시 phase=analysis_done으로 요청', async () => {
+      mockApiResponse([]);
+      renderBrowsePage();
+      await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
+
+      fireEvent.click(screen.getByText('분석 완료'));
+
+      await waitFor(() => {
+        const lastCall = mockApiGet.mock.calls[mockApiGet.mock.calls.length - 1][0] as string;
+        expect(lastCall).toContain('phase=analysis_done');
+      });
+    });
+
+    it('검색 입력 시 300ms debounce 후 API 요청', async () => {
+      vi.useFakeTimers();
+      mockApiResponse([]);
+      renderBrowsePage();
+
+      await vi.waitFor(() => expect(mockApiGet).toHaveBeenCalled());
+      const callCountBefore = mockApiGet.mock.calls.length;
+
+      const input = screen.getByPlaceholderText(/검색/);
+      fireEvent.change(input, { target: { value: '푸들' } });
+
+      // 200ms — 아직 요청 안 됨
+      vi.advanceTimersByTime(200);
+      expect(mockApiGet.mock.calls.length).toBe(callCountBefore);
+
+      // 300ms — debounce 완료, 요청 발생
+      vi.advanceTimersByTime(100);
+      await vi.waitFor(() => {
+        const lastCall = mockApiGet.mock.calls[mockApiGet.mock.calls.length - 1][0] as string;
+        expect(lastCall).toContain('q=%ED%91%B8%EB%93%A4');
+      });
+
+      vi.useRealTimers();
+    });
+
+    it('필터 변경 시 page가 1로 초기화된다', async () => {
+      mockApiResponse(Array.from({ length: 12 }, (_, i) => createMockReport({ id: `r-${i}` })));
+      // totalPages > 1이 되도록 설정
+      mockApiGet.mockResolvedValue({
+        items: Array.from({ length: 12 }, (_, i) => createMockReport({ id: `r-${i}` })),
+        total: 24,
+        page: 1,
+        totalPages: 2,
+      });
+      renderBrowsePage();
+
+      await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
+
+      // 고양이 필터 클릭
+      fireEvent.click(screen.getByText('고양이'));
+
+      await waitFor(() => {
+        const lastCall = mockApiGet.mock.calls[mockApiGet.mock.calls.length - 1][0] as string;
+        expect(lastCall).toContain('page=1');
+        expect(lastCall).toContain('type=CAT');
+      });
+    });
   });
 
   describe('data 호환성', () => {

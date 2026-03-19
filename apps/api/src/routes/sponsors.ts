@@ -5,7 +5,7 @@ import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, VALID_AGENT_IDS } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, VALID_AGENT_IDS, SUPPORTED_PAY_TOKENS } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -31,7 +31,7 @@ const cryptoQuoteSchema = z.object({
   agentId: z.enum(VALID_AGENT_IDS),
   amountUsdCents: z.number().int().min(100).max(10_000_000),
   walletAddress: z.string().min(10).max(200),
-  tokenSymbol: z.enum(['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL']),
+  tokenSymbol: z.enum(SUPPORTED_PAY_TOKENS),
   chainId: z.number().int().optional(),
 });
 
@@ -283,7 +283,7 @@ export function registerSponsorRoutes(router: Router) {
 
     // 1. 견적 만료 확인
     if (new Date() > quote.expiresAt) {
-      throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+      throw new ApiError(410, ERROR_CODES.QUOTE_EXPIRED);
     }
 
     // 2. 원자적 선점: verifiedAt이 null인 경우에만 verifiedAt을 설정
@@ -429,6 +429,8 @@ export function registerSponsorRoutes(router: Router) {
         err.code === 'P2002'
       ) {
         // txHash 또는 orderId unique 위반 — 이미 처리된 TX
+        // 선점한 verifiedAt 롤백 → quote 재사용 가능하게 복원
+        await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
         log.warn({ quoteId, txHash }, 'Crypto sponsor already saved (duplicate txHash or quoteId)');
         throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
       }

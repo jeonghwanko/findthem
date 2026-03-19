@@ -33,8 +33,7 @@ export const SOL_TOKENS: Record<string, { mint: string; decimals: number }> = {
 export const APT_NATIVE_COIN_TYPE = '0x1::aptos_coin::AptosCoin'
 export const APT_DECIMALS = 8
 
-export const SUPPORTED_PAY_TOKENS = ['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL'] as const
-export type SupportedPayToken = (typeof SUPPORTED_PAY_TOKENS)[number]
+export { SUPPORTED_PAY_TOKENS, type SupportedPayToken } from '@findthem/shared'
 
 export const QUOTE_TTL_SECS = 300
 
