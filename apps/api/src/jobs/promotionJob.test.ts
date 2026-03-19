@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { PromoPlatform } from '@findthem/shared';
 
 // DB mock
-vi.mock('../db/client.js', () => ({
-  prisma: {
+vi.mock('../db/client.js', () => {
+  const obj: Record<string, unknown> = {
     report: { findUnique: vi.fn(), update: vi.fn() },
     promotion: { findFirst: vi.fn(), upsert: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
     promotionStrategy: { upsert: vi.fn() },
     promotionLog: { create: vi.fn() },
-    $transaction: vi.fn(),
-  },
-}));
+  };
+  obj.$transaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(obj));
+  return { prisma: obj };
+});
 
 // Queue mock
 vi.mock('./queues.js', () => ({
@@ -83,7 +85,7 @@ async function runPromotion(data: {
   reportId: string;
   isRepost?: boolean;
   version?: number;
-  platforms?: string[];
+  platforms?: PromoPlatform[];
 }) {
   const { reportId, isRepost = false, version = 1, platforms } = data;
 
@@ -134,11 +136,12 @@ async function runPromotion(data: {
     data: { aiPromoText: promoTexts.general },
   });
 
-  const targetPlatforms = platforms && platforms.length > 0 ? platforms : strategy.targetPlatforms;
+  const targetPlatforms: PromoPlatform[] = platforms && platforms.length > 0 ? platforms : strategy.targetPlatforms;
 
   let safeVersion = version;
   if (isRepost) {
-    safeVersion = await prisma.$transaction(async (tx: typeof prisma) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    safeVersion = await (prisma.$transaction as any)(async (tx: typeof prisma) => {
       const latest = await tx.promotion.findFirst({
         where: { reportId, status: { in: ['POSTED', 'DELETED'] } },
         orderBy: { version: 'desc' },
@@ -162,7 +165,7 @@ async function runPromotion(data: {
     INSTAGRAM: 'instagram',
   };
 
-  for (const tPlatform of targetPlatforms as string[]) {
+  for (const tPlatform of targetPlatforms) {
     const adapterName = platformNameMap[tPlatform];
     const result = (results as Array<{ platform: string; success: boolean; postId?: string; postUrl?: string; error?: string }>)
       .find((r) => r.platform === adapterName);
