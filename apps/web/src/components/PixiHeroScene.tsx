@@ -382,11 +382,19 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
 
           let cachedWalkRight = getBillboardLayout(W).bbLeft - 20;
 
-          const zones: [number, number][] = [
-            [CHAR_MARGIN, W * 0.28],
-            [W * 0.28, W * 0.56],
-            [W * 0.56, cachedWalkRight],
-          ];
+          // 모바일: 전체 범위 자유 이동 / 데스크탑: zone 분리로 겹침 방지
+          const isMobileCanvas = W < 600;
+          const zones: [number, number][] = isMobileCanvas
+            ? [
+                [CHAR_MARGIN, cachedWalkRight],
+                [CHAR_MARGIN, cachedWalkRight],
+                [CHAR_MARGIN, cachedWalkRight],
+              ]
+            : [
+                [CHAR_MARGIN, W * 0.28],
+                [W * 0.28, W * 0.56],
+                [W * 0.56, cachedWalkRight],
+              ];
 
           const charStates: CharState[] = chars.map((char, i) => {
             const cfg = AGENT_CONFIGS[i];
