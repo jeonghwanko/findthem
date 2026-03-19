@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ScanFace, Megaphone, MessageSquare, CheckCircle, Wallet, Loader2 } from 'lucide-react';
+import { ScanFace, Megaphone, MessageSquare, CheckCircle, Wallet, Loader2, ChevronDown } from 'lucide-react';
 import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useSendTransaction, useWriteContract, useSwitchChain } from 'wagmi';
@@ -9,6 +9,7 @@ import { parseAbi } from 'viem';
 import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
 import { api, type AgentId } from '../api/client';
 import Web3Provider from '../providers/Web3Provider';
+import InquiryModal from '../components/InquiryModal';
 
 // ── Constants ──
 
@@ -53,10 +54,15 @@ const EVM_CHAINS: ChainOption[] = [
   { id: 8453, label: 'Base', icon: '/icon/base.svg' },
 ];
 
+const ALL_CHAINS: { value: string; label: string; icon: string }[] = [
+  ...EVM_CHAINS.map((c) => ({ value: `evm-${c.id}`, label: c.label, icon: c.icon })),
+  { value: 'aptos', label: 'Aptos', icon: '/icon/apt.svg' },
+];
+
 const EVM_TOKENS_BY_CHAIN: Record<number, EvmTokenSymbol[]> = {
-  1: ['ETH', 'USDC', 'USDt'],
-  56: ['BNB', 'USDC', 'USDt'],
-  8453: ['ETH', 'USDC'],
+  1: ['USDC', 'USDt', 'ETH'],
+  56: ['USDC', 'USDt', 'BNB'],
+  8453: ['USDC', 'ETH'],
 };
 
 const EVM_TOKEN_CONTRACTS: Record<number, Record<string, `0x${string}` | null>> = {
@@ -112,6 +118,54 @@ async function verifyWithRetry(
   }
 }
 
+// ── Chain Select (custom dropdown with icons) ──
+
+function ChainSelect({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = ALL_CHAINS.find((c) => c.value === value) ?? ALL_CHAINS[0];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') setOpen(false);
+  };
+
+  return (
+    <div className="flex-1" ref={ref} onKeyDown={handleKeyDown}>
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <div className="relative">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="listbox"
+          className="w-full flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <img src={selected.icon} alt="" className="w-5 h-5 rounded-full" />
+          <span className="flex-1 text-left font-medium text-gray-900">{selected.label}</span>
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open && (
+          <ul role="listbox" className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+            {ALL_CHAINS.map((c) => (
+              <li key={c.value} role="option" aria-selected={c.value === value}>
+                <button type="button"
+                  onClick={() => { onChange(c.value); setOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${c.value === value ? 'bg-gray-50 font-medium text-gray-900' : 'text-gray-700'}`}>
+                  <img src={c.icon} alt="" className="w-5 h-5 rounded-full" />
+                  {c.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──
 
 export default function SponsorPage() {
@@ -148,6 +202,9 @@ function SponsorPageInner() {
   const [cryptoError, setCryptoError] = useState<string | null>(null);
   const [cryptoSuccess, setCryptoSuccess] = useState(false);
   const [payStep, setPayStep] = useState<'idle' | 'quoting' | 'signing' | 'verifying'>('idle');
+
+  // Inquiry modal
+  const [inquiryOpen, setInquiryOpen] = useState(false);
 
   // Double-click prevention
   const isPayingRef = useRef(false);
@@ -493,7 +550,7 @@ function SponsorPageInner() {
             <div className="grid grid-cols-4 gap-2 mb-3">
               {TOSS_PRESET_AMOUNTS.map((preset) => (
                 <button key={preset} type="button" onClick={() => handleTossPreset(preset)}
-                  className={`py-2 rounded-lg text-sm font-medium border transition-colors ${tossAmount === preset && !tossCustomAmount ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-400'}`}>
+                  className={`py-2 rounded-xl text-sm font-semibold border transition-all ${tossAmount === preset && !tossCustomAmount ? 'bg-primary-50/60 text-primary-700 border-primary-400 ring-1 ring-primary-400' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
                   {preset.toLocaleString()}
                 </button>
               ))}
@@ -536,22 +593,68 @@ function SponsorPageInner() {
             </div>
           ) : (
             <>
-              {/* Chain select (unified) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.chainLabel')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {EVM_CHAINS.map((chain) => (
-                    <button key={chain.id} type="button" onClick={() => { setCryptoMode('evm'); setEvmChainId(chain.id); }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${cryptoMode === 'evm' && evmChainId === chain.id ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
-                      <img src={chain.icon} alt="" className="w-5 h-5 rounded-full" />
-                      {chain.label}
+              {/* Chain select + Wallet connect (single row) */}
+              <div className="flex items-end gap-2">
+                <ChainSelect
+                  value={cryptoMode === 'aptos' ? 'aptos' : `evm-${evmChainId}`}
+                  onChange={(v) => {
+                    if (v === 'aptos') {
+                      setCryptoMode('aptos');
+                    } else {
+                      setCryptoMode('evm');
+                      setEvmChainId(Number(v.replace('evm-', '')));
+                    }
+                  }}
+                  label={t('sponsor.crypto.chainLabel')}
+                />
+                <div className="shrink-0">
+                  {cryptoMode === 'evm' ? (
+                    <ConnectButton.Custom>
+                      {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
+                        if (!mounted) return null;
+                        if (rkAccount) {
+                          return (
+                            <button type="button" onClick={openAccountModal}
+                              className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
+                              <div className="w-2 h-2 rounded-full bg-green-400" />
+                              <span className="font-mono text-gray-700 truncate max-w-[140px]">{rkAccount.displayName}</span>
+                            </button>
+                          );
+                        }
+                        return (
+                          <button type="button" onClick={openConnectModal}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium whitespace-nowrap">
+                            <Wallet className="w-4 h-4" aria-hidden="true" />
+                            {t('sponsor.crypto.connectWallet')}
+                          </button>
+                        );
+                      }}
+                    </ConnectButton.Custom>
+                  ) : aptosConnected ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm">
+                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                      <span className="font-mono text-gray-700 truncate max-w-[140px]">
+                        {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
+                      </span>
+                    </div>
+                  ) : aptosConnectWallet ? (
+                    <button type="button"
+                      onClick={() => aptosConnect(aptosConnectWallet.name)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium whitespace-nowrap">
+                      <Wallet className="w-4 h-4" aria-hidden="true" />
+                      {t('sponsor.crypto.connectWallet')}
                     </button>
-                  ))}
-                  <button type="button" onClick={() => setCryptoMode('aptos')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${cryptoMode === 'aptos' ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
-                    <img src="/icon/apt.svg" alt="" className="w-5 h-5 rounded-full" />
-                    Aptos
-                  </button>
+                  ) : (
+                    <a
+                      href="https://aptosconnect.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium whitespace-nowrap"
+                    >
+                      <Wallet className="w-4 h-4" aria-hidden="true" />
+                      {t('sponsor.crypto.connectWallet')}
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -562,9 +665,10 @@ function SponsorPageInner() {
                   <div className="flex flex-wrap gap-2">
                     {availableEvmTokens.map((tk) => (
                       <button key={tk} type="button" onClick={() => setEvmToken(tk)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${evmToken === tk ? 'bg-primary-50 text-primary-700 border-primary-500 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-300'}`}>
+                        className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${evmToken === tk ? 'bg-primary-50/60 text-primary-700 border-primary-400 ring-1 ring-primary-400' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
                         <img src={TOKEN_ICONS[tk]} alt="" className="w-5 h-5 rounded-full" />
                         {tk}
+                        {evmToken === tk && <CheckCircle className="w-3.5 h-3.5 text-primary-500" aria-hidden="true" />}
                       </button>
                     ))}
                   </div>
@@ -577,63 +681,11 @@ function SponsorPageInner() {
                 <div className="grid grid-cols-4 gap-2">
                   {CRYPTO_PRESETS_CENTS.map((cents) => (
                     <button key={cents} type="button" onClick={() => setCryptoUsdCents(cents)}
-                      className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${cryptoUsdCents === cents ? 'bg-primary-50 text-primary-700 border-primary-500 shadow-sm scale-[1.02]' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-300'}`}>
+                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${cryptoUsdCents === cents ? 'bg-primary-50/60 text-primary-700 border-primary-400 ring-1 ring-primary-400' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
                       ${(cents / 100).toFixed(0)}
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Wallet connect */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.walletLabel')}</label>
-                {cryptoMode === 'evm' ? (
-                  <ConnectButton.Custom>
-                    {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
-                      if (!mounted) return null;
-                      if (rkAccount) {
-                        return (
-                          <button type="button" onClick={openAccountModal}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
-                            <div className="w-2 h-2 rounded-full bg-green-400" />
-                            <span className="font-mono text-gray-700 truncate max-w-[240px]">{rkAccount.displayName}</span>
-                          </button>
-                        );
-                      }
-                      return (
-                        <button type="button" onClick={openConnectModal}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
-                          <Wallet className="w-4 h-4" aria-hidden="true" />
-                          {t('sponsor.crypto.connectWallet')}
-                        </button>
-                      );
-                    }}
-                  </ConnectButton.Custom>
-                ) : aptosConnected ? (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm w-fit">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="font-mono text-gray-700 truncate max-w-[240px]">
-                      {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
-                    </span>
-                  </div>
-                ) : aptosConnectWallet ? (
-                  <button type="button"
-                    onClick={() => aptosConnect(aptosConnectWallet.name)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
-                    <Wallet className="w-4 h-4" aria-hidden="true" />
-                    {t('sponsor.crypto.connectWallet')}
-                  </button>
-                ) : (
-                  <a
-                    href="https://aptosconnect.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium"
-                  >
-                    <Wallet className="w-4 h-4" aria-hidden="true" />
-                    {t('sponsor.crypto.connectWallet')}
-                  </a>
-                )}
               </div>
 
               {/* Nickname / Message */}
@@ -672,6 +724,22 @@ function SponsorPageInner() {
           )}
         </div>
       )}
+
+      {/* Footer links */}
+      <div className="flex items-center justify-between mt-6 text-xs text-gray-400">
+        <button type="button" onClick={() => window.history.back()} className="hover:text-gray-600 transition-colors">
+          &larr; {t('common.back')}
+        </button>
+        <button type="button" onClick={() => setInquiryOpen(true)} className="hover:text-gray-600 transition-colors">
+          {t('inquiry.contactAdmin')}
+        </button>
+      </div>
+
+      <InquiryModal
+        open={inquiryOpen}
+        onClose={() => setInquiryOpen(false)}
+        onSuccess={() => showToast(t('inquiry.success'))}
+      />
     </main>
   );
 }

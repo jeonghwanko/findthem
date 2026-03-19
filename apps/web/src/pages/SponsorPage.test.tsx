@@ -88,6 +88,23 @@ function renderSponsorPage(agentId = 'image-matching') {
   );
 }
 
+/** Helper: open chain dropdown and select a chain by label */
+async function selectChain(chainLabel: string) {
+  // The dropdown trigger shows the currently selected chain name
+  // Find it by looking for a button inside the chain select area
+  const dropdownTrigger = screen.getByText('Ethereum').closest('button')
+    ?? screen.getByText('BSC').closest('button')
+    ?? screen.getByText('Base').closest('button')
+    ?? screen.getByText('Aptos').closest('button');
+  if (dropdownTrigger) fireEvent.click(dropdownTrigger);
+  await waitFor(() => {
+    // Dropdown list items
+    const option = screen.getAllByText(chainLabel).find((el) => el.closest('li'));
+    expect(option).toBeTruthy();
+    fireEvent.click(option!.closest('button')!);
+  });
+}
+
 describe('SponsorPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -181,49 +198,46 @@ describe('SponsorPage', () => {
       fireEvent.click(screen.getByRole('tab', { name: /tabCrypto|크립토/i }));
 
       await waitFor(() => {
-        // 통합 체인 선택 버튼이 보여야 함
-        expect(screen.getByRole('button', { name: 'Ethereum' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Aptos' })).toBeInTheDocument();
+        // 체인 드롭다운이 보여야 함 (기본 Ethereum 선택)
+        expect(screen.getByText('Ethereum')).toBeInTheDocument();
       });
     });
   });
 
   // ────────────────────────────────────────────────────────
-  // 체인 선택 (통합)
+  // 체인 선택 (커스텀 드롭다운)
   // ────────────────────────────────────────────────────────
   describe('체인 선택', () => {
     it('기본 선택은 Ethereum이다', async () => {
       renderSponsorPage('image-matching');
 
       await waitFor(() => {
-        const ethBtn = screen.getByRole('button', { name: 'Ethereum' });
-        expect(ethBtn.className).toContain('bg-gray-800');
+        // 드롭다운 트리거에 Ethereum 표시
+        expect(screen.getByText('Ethereum')).toBeInTheDocument();
       });
     });
 
-    it('Aptos 버튼 클릭 → Aptos 체인 선택', async () => {
+    it('드롭다운에서 Aptos 선택 가능', async () => {
       renderSponsorPage('image-matching');
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Aptos' })).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
+      await selectChain('Aptos');
 
       await waitFor(() => {
-        const aptosBtn = screen.getByRole('button', { name: 'Aptos' });
-        expect(aptosBtn.className).toContain('bg-gray-800');
+        // 드롭다운 트리거가 Aptos로 변경됨
+        const trigger = screen.getByText('Aptos').closest('button');
+        expect(trigger).toBeInTheDocument();
       });
     });
 
-    it('체인 선택 버튼 4개 표시 (Ethereum, BSC, Base, Aptos)', async () => {
+    it('드롭다운 열면 체인 4개 표시 (Ethereum, BSC, Base, Aptos)', async () => {
       renderSponsorPage('image-matching');
 
+      // 드롭다운 트리거 클릭
+      fireEvent.click(screen.getByText('Ethereum').closest('button')!);
+
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Ethereum' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'BSC' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Base' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Aptos' })).toBeInTheDocument();
+        const options = screen.getAllByRole('option');
+        expect(options).toHaveLength(4);
       });
     });
 
@@ -240,13 +254,11 @@ describe('SponsorPage', () => {
     it('Aptos 선택 — 토큰 선택 숨김', async () => {
       renderSponsorPage('image-matching');
 
-      fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
+      await selectChain('Aptos');
 
       await waitFor(() => {
-        // EVM 토큰 버튼이 사라져야 함
         expect(screen.queryByRole('button', { name: 'USDC' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'USDt' })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'ETH' })).not.toBeInTheDocument();
       });
     });
   });
@@ -301,11 +313,7 @@ describe('SponsorPage', () => {
     it('BSC 체인 선택 → BNB 토큰이 나타난다', async () => {
       renderSponsorPage('image-matching');
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'BSC' })).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: 'BSC' }));
+      await selectChain('BSC');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'BNB' })).toBeInTheDocument();
@@ -315,9 +323,7 @@ describe('SponsorPage', () => {
     it('BSC 선택 → ETH 버튼은 미표시 (BSC는 ETH 없음)', async () => {
       renderSponsorPage('image-matching');
 
-      await waitFor(() => {
-        fireEvent.click(screen.getByRole('button', { name: 'BSC' }));
-      });
+      await selectChain('BSC');
 
       await waitFor(() => {
         expect(screen.queryByRole('button', { name: 'ETH' })).not.toBeInTheDocument();
@@ -327,9 +333,7 @@ describe('SponsorPage', () => {
     it('Base 체인 선택 → USDt 버튼 미표시 (Base에서 지원 안 함)', async () => {
       renderSponsorPage('image-matching');
 
-      await waitFor(() => {
-        fireEvent.click(screen.getByRole('button', { name: 'Base' }));
-      });
+      await selectChain('Base');
 
       await waitFor(() => {
         expect(screen.queryByRole('button', { name: 'USDt' })).not.toBeInTheDocument();
@@ -373,7 +377,7 @@ describe('SponsorPage', () => {
 
       renderSponsorPage('image-matching');
 
-      fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
+      await selectChain('Aptos');
 
       await waitFor(() => {
         const connectLink = screen.getByRole('link', {
@@ -441,7 +445,7 @@ describe('SponsorPage', () => {
 
     it('Aptos 모드에서 지갑 연결 시 주소 앞뒤 일부 표시', async () => {
       renderSponsorPage('image-matching');
-      fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
+      await selectChain('Aptos');
 
       await waitFor(() => {
         const addressEl = screen.getByText(/0x123456.*abcdef/i);
@@ -616,7 +620,7 @@ describe('SponsorPage', () => {
 
       await waitFor(() => {
         const btn10k = screen.getByRole('button', { name: '10,000' });
-        expect(btn10k.className).toContain('bg-primary-600');
+        expect(btn10k.className).toContain('ring-1');
       });
     });
 

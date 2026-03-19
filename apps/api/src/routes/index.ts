@@ -16,6 +16,7 @@ import { registerCommunityRoutes } from './community.js';
 import { registerOutreachRoutes } from './outreach.js';
 import { registerUserRoutes } from './users.js';
 import { registerGameRoutes } from './game.js';
+import { registerInquiryRoutes } from './inquiries.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -37,6 +38,7 @@ export function createRouter(): Router {
   registerOutreachRoutes(router);
   registerUserRoutes(router);
   registerGameRoutes(router);
+  registerInquiryRoutes(router);
 
   return router;
 }

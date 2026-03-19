@@ -1,5 +1,5 @@
 import type { Router } from 'express';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { randomBytes, createHash } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
@@ -38,7 +38,7 @@ import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
 import { createLogger } from '../logger.js';
@@ -1447,4 +1447,100 @@ export function registerAdminRoutes(router: Router) {
     );
     res.json({ success: true, message: 'Q&A crawl job queued' });
   });
+
+  // ── 문의 관리 API ──
+
+  const adminInquiryQuerySchema = z.object({
+    status: z.enum(INQUIRY_STATUS_VALUES).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+  });
+
+  const adminInquiryReplySchema = z.object({
+    replyContent: z.string().min(1).max(5000),
+  });
+
+  // GET /admin/inquiries — 문의 목록
+  router.get(
+    '/admin/inquiries',
+    requireAdmin,
+    validateQuery(adminInquiryQuerySchema),
+    async (req, res) => {
+      const { status, page, limit } = req.query as unknown as z.infer<
+        typeof adminInquiryQuerySchema
+      >;
+
+      const where: Prisma.InquiryWhereInput = {};
+      if (status) where.status = status;
+
+      const [items, total] = await Promise.all([
+        prisma.inquiry.findMany({
+          where,
+          include: {
+            user: {
+              select: { id: true, name: true },
+            },
+          },
+          orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.inquiry.count({ where }),
+      ]);
+
+      res.json({
+        items: items.map((item) => ({
+          ...item,
+          repliedAt: item.repliedAt?.toISOString() ?? null,
+          createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
+        })),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      });
+    },
+  );
+
+  // PATCH /admin/inquiries/:id/reply — 문의 답변
+  router.patch(
+    '/admin/inquiries/:id/reply',
+    requireAdmin,
+    validateBody(adminInquiryReplySchema),
+    async (req, res) => {
+      const id = req.params.id as string;
+      const { replyContent } = req.body as z.infer<typeof adminInquiryReplySchema>;
+
+      let updated;
+      try {
+        updated = await prisma.inquiry.update({
+          where: { id },
+          data: {
+            replyContent,
+            repliedAt: new Date(),
+            status: 'REPLIED',
+          },
+          include: {
+            user: {
+              select: { id: true, name: true },
+            },
+          },
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+          throw new ApiError(404, ERROR_CODES.INQUIRY_NOT_FOUND);
+        }
+        throw err;
+      }
+
+      log.info({ inquiryId: id }, 'Inquiry replied');
+
+      res.json({
+        ...updated,
+        repliedAt: updated.repliedAt?.toISOString() ?? null,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+    },
+  );
 }

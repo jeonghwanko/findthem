@@ -17,6 +17,8 @@ export type PromoStatus = 'PENDING' | 'POSTED' | 'FAILED' | 'DELETED';
 export type ChatPlatform = 'WEB' | 'KAKAO';
 export type ChatStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
 export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE';
+export type InquiryCategory = 'PAYMENT' | 'REPORT' | 'GENERAL';
+export type InquiryStatus = 'OPEN' | 'REPLIED' | 'CLOSED';
 
 // ── API 응답 타입 ──
 
@@ -540,6 +542,25 @@ export interface AgentDomainEvent {
   channel?: string;         // outreach_sent 전용
   reportId?: string;
   aiAnalysis?: string;      // sighting_analyzed 전용 — 품종/색상/특징 요약
+}
+
+// ── Inquiry ──
+
+export interface InquiryPublic {
+  id: string;
+  category: InquiryCategory;
+  title: string;
+  content: string;
+  status: InquiryStatus;
+  replyContent: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+}
+
+export interface InquiryAdmin extends InquiryPublic {
+  userId: string | null;
+  user: { id: string; name: string; phone: string } | null;
+  updatedAt: string;
 }
 
 // ── Ghost CMS ──

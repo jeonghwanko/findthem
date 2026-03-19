@@ -46,6 +46,7 @@ model User {
   communityComments  CommunityComment[]
   userRewards        UserReward[]
   gamePlays          GamePlay[]
+  inquiries          Inquiry[]
 
   @@unique([provider, providerId], name: "provider_providerId")
   @@map("user")
@@ -685,6 +686,43 @@ model GamePlay {
 
   @@index([userId, playedAt])
   @@map("game_play")
+}
+
+// ── Inquiry (문의) ──
+
+enum InquiryCategory {
+  PAYMENT
+  REPORT
+  GENERAL
+
+  @@map("inquiry_category")
+}
+
+enum InquiryStatus {
+  OPEN
+  REPLIED
+  CLOSED
+
+  @@map("inquiry_status")
+}
+
+model Inquiry {
+  id           String          @id @default(cuid())
+  userId       String?
+  category     InquiryCategory
+  title        String
+  content      String
+  status       InquiryStatus   @default(OPEN)
+  replyContent String?
+  repliedAt    DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("inquiry")
 }
 
 // 크립토 결제 견적 (5분 TTL)

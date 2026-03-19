@@ -20,6 +20,7 @@ import DevlogPage from './pages/admin/DevlogPage';
 import OutreachPage from './pages/admin/OutreachPage';
 import AiSettingsPage from './pages/admin/AiSettingsPage';
 import ExternalAgentsPage from './pages/admin/ExternalAgentsPage';
+import InquiriesPage from './pages/admin/InquiriesPage';
 import CapturePortraitsPage from './pages/CapturePortraitsPage';
 import CaptureHeimiPage from './pages/CaptureHeimiPage';
 import { userRoutes } from './routes/userRoutes';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="outreach" element={<OutreachPage />} />
         <Route path="ai-settings" element={<AiSettingsPage />} />
         <Route path="external-agents" element={<ExternalAgentsPage />} />
+        <Route path="inquiries" element={<InquiriesPage />} />
       </Route>
 
       {/* 일반 사용자 라우트 — 공통 Header/Footer */}

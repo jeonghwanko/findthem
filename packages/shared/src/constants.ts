@@ -175,6 +175,7 @@ export const ERROR_CODES = {
   INVALID_GAME_CHARACTER: 'INVALID_GAME_CHARACTER',
   AD_REWARD_COOLDOWN: 'AD_REWARD_COOLDOWN',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INQUIRY_NOT_FOUND: 'INQUIRY_NOT_FOUND',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -281,6 +282,8 @@ export const REPORT_STATUS_VALUES = ['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED'] 
 export const MATCH_STATUS_VALUES = ['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED'] as const;
 export const ADMIN_ACTION_SOURCE_VALUES = ['DASHBOARD', 'AGENT', 'API'] as const;
 export const LOCALE_VALUES = ['ko', 'ja', 'zh-TW', 'en'] as const;
+export const INQUIRY_CATEGORY_VALUES = ['PAYMENT', 'REPORT', 'GENERAL'] as const;
+export const INQUIRY_STATUS_VALUES = ['OPEN', 'REPLIED', 'CLOSED'] as const;
 
 // ── 운영 에이전트 ──
 

@@ -37,14 +37,44 @@
     "outreachTitle": "YouTubers Promo Hermi Is Reaching Out To",
     "outreachTitleSuffix": " Is Reaching Out To YouTubers",
     "heroAgent": {
-      "detective": { "name": "Detective Claude", "bubble1": "87% match!", "bubble2": "Match alert!" },
-      "promo":     { "name": "Promo Hermi", "bubble1": "Channel found!", "bubble2": "SNS done!" },
-      "guide":     { "name": "Guide Bot Ali", "bubble1": "Report in!", "bubble2": "Alert sent!" }
+      "detective": {
+        "name": "Detective Claude",
+        "bubble1": "87% match!",
+        "bubble2": "Match alert!"
+      },
+      "promo": {
+        "name": "Promo Hermi",
+        "bubble1": "Channel found!",
+        "bubble2": "SNS done!"
+      },
+      "guide": {
+        "name": "Guide Bot Ali",
+        "bubble1": "Report in!",
+        "bubble2": "Alert sent!"
+      }
     },
     "heroLoading": {
-      "detective": { "msg1": "Initializing image analysis engine...", "msg2": "Preparing matching algorithm...", "msg3": "This face... I've seen it somewhere.", "msg4": "87%? That last 13% is everything.", "msg5": "Analysis complete. Wait — is this me?" },
-      "promo":     { "msg1": "Connecting to SNS channels...",        "msg2": "Drafting promotion strategy...",   "msg3": "Please follow me. I'm begging.", "msg4": "Going viral... tomorrow.", "msg5": "0 retweets. But the vibe is there." },
-      "guide":     { "msg1": "Opening report channel...",            "msg2": "Preparing alert system...",        "msg3": "No reports? That's fine. I'm still here.", "msg4": "Sent 300 alerts. It's called love.", "msg5": "Chat with me. I'm lonely." }
+      "detective": {
+        "msg1": "Initializing image analysis engine...",
+        "msg2": "Preparing matching algorithm...",
+        "msg3": "This face... I've seen it somewhere.",
+        "msg4": "87%? That last 13% is everything.",
+        "msg5": "Analysis complete. Wait — is this me?"
+      },
+      "promo": {
+        "msg1": "Connecting to SNS channels...",
+        "msg2": "Drafting promotion strategy...",
+        "msg3": "Please follow me. I'm begging.",
+        "msg4": "Going viral... tomorrow.",
+        "msg5": "0 retweets. But the vibe is there."
+      },
+      "guide": {
+        "msg1": "Opening report channel...",
+        "msg2": "Preparing alert system...",
+        "msg3": "No reports? That's fine. I'm still here.",
+        "msg4": "Sent 300 alerts. It's called love.",
+        "msg5": "Chat with me. I'm lonely."
+      }
     },
     "bgmOn": "BGM On",
     "bgmOff": "BGM Off",
@@ -407,8 +437,8 @@
     "amount": "₩{{amount}}",
     "totalReceived": "Total Received",
     "currencyKrw": "KRW",
-    "tabCard": "Card Payment",
-    "tabCrypto": "Crypto Payment",
+    "tabCard": "Credit Card",
+    "tabCrypto": "Crypto",
     "crypto": {
       "amountLabel": "Amount (USD)",
       "tokenLabel": "Select Token",
@@ -532,5 +562,23 @@
       "noPlays": "No more plays left today. Come back tomorrow!",
       "goHome": "Back to Home"
     }
+  },
+  "inquiry": {
+    "contactAdmin": "Contact Admin",
+    "title": "Contact Us",
+    "categoryLabel": "Category",
+    "categoryPayment": "Payment Inquiry",
+    "categoryReport": "Report Inquiry",
+    "categoryGeneral": "General",
+    "titleLabel": "Subject",
+    "titlePlaceholder": "Enter the subject of your inquiry",
+    "contentLabel": "Message",
+    "contentPlaceholder": "Please describe your inquiry in detail",
+    "submit": "Submit Inquiry",
+    "success": "Your inquiry has been submitted",
+    "error": "Failed to submit inquiry"
+  },
+  "common": {
+    "back": "Back"
   }
 }

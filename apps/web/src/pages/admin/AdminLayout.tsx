@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/admin/reports', label: '신고 관리', icon: '📋' },
   { to: '/admin/matches', label: '매칭 관리', icon: '🔗' },
   { to: '/admin/users', label: '사용자 관리', icon: '👤' },
+  { to: '/admin/inquiries', label: '문의 관리', icon: '💬' },
   { to: '/admin/queues', label: '큐 모니터링', icon: '⚙️' },
   { to: '/admin/audit-logs', label: '감사 로그', icon: '📜' },
   { to: '/admin/agent', label: 'AI 에이전트', icon: '🤖' },

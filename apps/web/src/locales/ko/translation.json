@@ -37,14 +37,44 @@
     "outreachTitle": "홍보왕 헤르미가 연락하려는 유튜버들",
     "outreachTitleSuffix": "가 연락하려는 유튜버들",
     "heroAgent": {
-      "detective": { "name": "탐정 클로드", "bubble1": "87% 일치!", "bubble2": "매칭 알림!" },
-      "promo":     { "name": "홍보왕 헤르미", "bubble1": "채널 발견!", "bubble2": "SNS 완료!" },
-      "guide":     { "name": "안내봇 알리", "bubble1": "제보 접수!", "bubble2": "알림 발송!" }
+      "detective": {
+        "name": "탐정 클로드",
+        "bubble1": "87% 일치!",
+        "bubble2": "매칭 알림!"
+      },
+      "promo": {
+        "name": "홍보왕 헤르미",
+        "bubble1": "채널 발견!",
+        "bubble2": "SNS 완료!"
+      },
+      "guide": {
+        "name": "안내봇 알리",
+        "bubble1": "제보 접수!",
+        "bubble2": "알림 발송!"
+      }
     },
     "heroLoading": {
-      "detective": { "msg1": "사진 분석 엔진 초기화 중...", "msg2": "매칭 알고리즘 준비 중...", "msg3": "이 얼굴... 어디서 봤는데.", "msg4": "87%? 나머지 13%가 제일 중요한데.", "msg5": "분석 완료. 근데 이 사람 저 아닌가요?" },
-      "promo":     { "msg1": "SNS 채널 연결 중...",         "msg2": "홍보 전략 수립 중...",   "msg3": "저도 팔로우해주세요. 제발요.", "msg4": "바이럴은... 내일부터.", "msg5": "리트윗 0건. 근데 기세는 있어요." },
-      "guide":     { "msg1": "제보 채널 열리는 중...",       "msg2": "알림 시스템 준비 중...", "msg3": "제보 없어도 괜찮아요. 저 여기 있어요.", "msg4": "알림 300개 보냈어요. 사랑이에요.", "msg5": "채팅해주세요. 외로워요." }
+      "detective": {
+        "msg1": "사진 분석 엔진 초기화 중...",
+        "msg2": "매칭 알고리즘 준비 중...",
+        "msg3": "이 얼굴... 어디서 봤는데.",
+        "msg4": "87%? 나머지 13%가 제일 중요한데.",
+        "msg5": "분석 완료. 근데 이 사람 저 아닌가요?"
+      },
+      "promo": {
+        "msg1": "SNS 채널 연결 중...",
+        "msg2": "홍보 전략 수립 중...",
+        "msg3": "저도 팔로우해주세요. 제발요.",
+        "msg4": "바이럴은... 내일부터.",
+        "msg5": "리트윗 0건. 근데 기세는 있어요."
+      },
+      "guide": {
+        "msg1": "제보 채널 열리는 중...",
+        "msg2": "알림 시스템 준비 중...",
+        "msg3": "제보 없어도 괜찮아요. 저 여기 있어요.",
+        "msg4": "알림 300개 보냈어요. 사랑이에요.",
+        "msg5": "채팅해주세요. 외로워요."
+      }
     },
     "bgmOn": "BGM 켜기",
     "bgmOff": "BGM 끄기",
@@ -407,8 +437,8 @@
     "amount": "{{amount}}원",
     "totalReceived": "누적 후원금",
     "currencyKrw": "원",
-    "tabCard": "카드 결제",
-    "tabCrypto": "크립토 결제",
+    "tabCard": "신용카드 후원",
+    "tabCrypto": "크립토 후원",
     "crypto": {
       "amountLabel": "후원 금액 (USD)",
       "tokenLabel": "토큰 선택",
@@ -532,5 +562,23 @@
       "noPlays": "오늘 플레이 횟수를 모두 사용했어요. 내일 다시 도전하세요!",
       "goHome": "홈으로 돌아가기"
     }
+  },
+  "inquiry": {
+    "contactAdmin": "관리자에게 문의하기",
+    "title": "문의하기",
+    "categoryLabel": "문의 유형",
+    "categoryPayment": "결제 문의",
+    "categoryReport": "신고 문의",
+    "categoryGeneral": "기타",
+    "titleLabel": "제목",
+    "titlePlaceholder": "문의 제목을 입력하세요",
+    "contentLabel": "내용",
+    "contentPlaceholder": "문의 내용을 자세히 작성해주세요",
+    "submit": "문의 접수",
+    "success": "문의가 접수되었습니다",
+    "error": "문의 접수에 실패했습니다"
+  },
+  "common": {
+    "back": "이전 페이지"
   }
 }
