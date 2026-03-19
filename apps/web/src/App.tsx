@@ -1,4 +1,5 @@
 import './i18n';
+import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
@@ -6,6 +7,7 @@ import Header from './components/Header';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import BottomTab from './components/BottomTab';
 import AgentChatWidget from './components/AgentChatWidget';
+import InquiryModal from './components/InquiryModal';
 import AdminRoute from './components/AdminRoute';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -28,6 +30,8 @@ import { userRoutes } from './routes/userRoutes';
 export default function App() {
   const { user, loading, login, register, logout, updateUser } = useAuth();
   const { t } = useTranslation();
+  const [partnershipOpen, setPartnershipOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -110,12 +114,36 @@ export default function App() {
                     <LanguageSwitcher variant="light" />
                   </div>
                 </div>
-                <div className="text-xs text-gray-400 space-y-0.5">
-                  <p>운영: 주식회사 슈퍼빌랩스 (Supervlabs Inc.) | 사업자등록번호: 856-87-02886 | <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">Privacy Policy</a></p>
-                  <p>대표: 이성준, 고정환 | 이메일: contact@supervlabs.io</p>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <div className="space-y-0.5">
+                    <p>운영: 주식회사 슈퍼빌랩스 (Supervlabs Inc.) | 사업자등록번호: 856-87-02886 | <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">Privacy Policy</a></p>
+                    <p>대표: 이성준, 고정환 | 이메일: contact@supervlabs.io</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPartnershipOpen(true)}
+                    className="shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap"
+                  >
+                    {t('inquiry.partnership')}
+                  </button>
                 </div>
               </div>
             </footer>
+            {toast && (
+              <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg animate-fade-in whitespace-nowrap">
+                {toast}
+              </div>
+            )}
+            <InquiryModal
+              open={partnershipOpen}
+              onClose={() => setPartnershipOpen(false)}
+              fixedCategory="PARTNERSHIP"
+              titleKey="inquiry.partnershipTitle"
+              onSuccess={() => {
+                setToast(t('inquiry.success'));
+                setTimeout(() => setToast(null), 3500);
+              }}
+            />
             <BottomTab user={user} />
             <AgentChatWidget />
           </div>

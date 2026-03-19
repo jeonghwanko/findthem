@@ -17,7 +17,7 @@ export type PromoStatus = 'PENDING' | 'POSTED' | 'FAILED' | 'DELETED';
 export type ChatPlatform = 'WEB' | 'KAKAO';
 export type ChatStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
 export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE';
-export type InquiryCategory = 'PAYMENT' | 'REPORT' | 'GENERAL';
+export type InquiryCategory = 'PAYMENT' | 'REPORT' | 'GENERAL' | 'PARTNERSHIP';
 export type InquiryStatus = 'OPEN' | 'REPLIED' | 'CLOSED';
 
 // ── API 응답 타입 ──

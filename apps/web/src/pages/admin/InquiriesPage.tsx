@@ -43,6 +43,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   PAYMENT: '결제 문의',
   REPORT: '신고 문의',
   GENERAL: '기타',
+  PARTNERSHIP: '제휴 문의',
 };
 
 function formatDate(iso: string) {

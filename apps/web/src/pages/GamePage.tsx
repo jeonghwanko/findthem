@@ -237,55 +237,62 @@ export default function GamePage() {
         <div className="flex-1 min-h-8" />
 
         {/* 타이틀 */}
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0">
-            <Gamepad2 className="w-4.5 h-4.5 text-white" />
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0 shadow-md">
+            <Gamepad2 className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">{t('game.title')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('game.title')}</h1>
         </div>
-        <p className="text-gray-500 text-sm mb-5 text-center">{t('game.subtitle')}</p>
+        <p className="text-gray-500 text-sm mb-6 text-center">{t('game.subtitle')}</p>
 
         {/* 오늘 플레이 현황 */}
-        <div className="flex items-center gap-6 mb-6 bg-white border border-gray-200 rounded-xl px-8 py-3 shadow-sm">
+        <div className="flex items-center gap-8 mb-10 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-10 py-4 shadow-sm">
           <div className="text-center">
             <div className="text-2xl font-bold text-indigo-600 leading-tight">{remainingFree}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingFree')}</div>
+            <div className="text-xs text-gray-500 mt-1">{t('game.remainingFree')}</div>
           </div>
-          <div className="w-px h-8 bg-gray-200" />
+          <div className="w-px h-10 bg-gray-200" />
           <div className="text-center">
             <div className="text-2xl font-bold text-rose-500 leading-tight">{remainingAd}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{t('game.remainingAd')}</div>
+            <div className="text-xs text-gray-500 mt-1">{t('game.remainingAd')}</div>
           </div>
         </div>
 
         {/* 캐릭터 선택 */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
+        <div className="grid grid-cols-3 gap-8 w-full max-w-lg mb-10">
           {CHARACTERS.map((ch) => (
             <button
               key={ch.id}
               onClick={() => setSelected(ch.id)}
               className={[
-                'relative flex flex-col items-center rounded-2xl border-2 transition-all overflow-hidden',
-                ch.bg,
-                ch.border,
+                'group relative flex flex-col items-center rounded-2xl border-2 transition-all duration-200 overflow-hidden',
                 selected === ch.id
-                  ? `ring-2 ring-offset-2 ${ch.ring} scale-105 shadow-lg`
-                  : 'opacity-75 hover:opacity-100',
+                  ? `${ch.border} ring-2 ring-offset-2 ${ch.ring} scale-[1.03] shadow-xl bg-white`
+                  : 'border-gray-200 bg-white/60 hover:bg-white hover:shadow-md hover:border-gray-300',
               ].join(' ')}
             >
-              <div className="w-full flex items-end justify-center" style={{ height: 110 }}>
-                {selected === ch.id ? (
-                  <SpinePortrait skins={ch.skins} animate={true} fullBody={true} width={72} height={110} />
-                ) : (
-                  <SpinePortrait skins={ch.skins} animate={false} fullBody={true} width={72} height={110} />
-                )}
+              {/* 캐릭터 배경 그라디언트 */}
+              <div
+                className="absolute inset-0 opacity-30 rounded-2xl"
+                style={{
+                  background: `radial-gradient(ellipse at 50% 80%, ${ch.portraitBorder}33 0%, transparent 70%)`,
+                }}
+              />
+              <div className="relative w-full flex items-end justify-center pt-3" style={{ height: 130 }}>
+                <SpinePortrait
+                  skins={ch.skins}
+                  animate={selected === ch.id}
+                  fullBody={true}
+                  width={80}
+                  height={120}
+                />
               </div>
-              <div className="w-full py-1.5 px-1 text-center" style={{ borderTop: `2px solid ${ch.portraitBorder}` }}>
-                <span className="text-xs font-bold text-gray-800 leading-tight block">{t(ch.nameKey)}</span>
-                <span className="text-[10px] text-gray-500 leading-tight block mt-0.5">{t(ch.descKey)}</span>
+              <div className="relative w-full py-2.5 px-2 text-center bg-gradient-to-t from-white/90 to-transparent">
+                <span className="text-sm font-bold text-gray-800 leading-tight block">{t(ch.nameKey)}</span>
+                <span className="text-[11px] text-gray-500 leading-tight block mt-0.5">{t(ch.descKey)}</span>
               </div>
               {selected === ch.id && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                <div className="absolute top-2.5 right-2.5 w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
                   <span className="text-white text-xs font-bold">✓</span>
                 </div>
               )}

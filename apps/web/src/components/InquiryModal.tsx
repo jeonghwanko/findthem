@@ -7,6 +7,10 @@ interface InquiryModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Pre-select category & hide selector (e.g. PARTNERSHIP from footer) */
+  fixedCategory?: InquiryCategory;
+  /** Override modal title */
+  titleKey?: string;
 }
 
 const CATEGORIES: InquiryCategory[] = ['PAYMENT', 'REPORT', 'GENERAL'];
@@ -15,16 +19,22 @@ const CATEGORY_KEYS: Record<InquiryCategory, string> = {
   PAYMENT: 'inquiry.categoryPayment',
   REPORT: 'inquiry.categoryReport',
   GENERAL: 'inquiry.categoryGeneral',
+  PARTNERSHIP: 'inquiry.categoryPartnership',
 };
 
-export default function InquiryModal({ open, onClose, onSuccess }: InquiryModalProps) {
+export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, titleKey }: InquiryModalProps) {
   const { t } = useTranslation();
-  const [category, setCategory] = useState<InquiryCategory>('PAYMENT');
+  const [category, setCategory] = useState<InquiryCategory>(fixedCategory ?? 'PAYMENT');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
+
+  // Close on Escape key
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  };
 
   if (!open) return null;
 
@@ -35,10 +45,10 @@ export default function InquiryModal({ open, onClose, onSuccess }: InquiryModalP
     setError(null);
     setSubmitting(true);
     try {
-      await api.post('/inquiries', { category, title, content });
+      await api.post('/inquiries', { category: fixedCategory ?? category, title, content });
       setTitle('');
       setContent('');
-      setCategory('PAYMENT');
+      if (!fixedCategory) setCategory('PAYMENT');
       onSuccess?.();
       onClose();
     } catch {
@@ -53,10 +63,11 @@ export default function InquiryModal({ open, onClose, onSuccess }: InquiryModalP
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={handleKeyDown}
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">{t('inquiry.title')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t(titleKey ?? 'inquiry.title')}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -70,22 +81,24 @@ export default function InquiryModal({ open, onClose, onSuccess }: InquiryModalP
         </div>
 
         <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('inquiry.categoryLabel')}
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as InquiryCategory)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {t(CATEGORY_KEYS[cat])}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!fixedCategory && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('inquiry.categoryLabel')}
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as InquiryCategory)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {t(CATEGORY_KEYS[cat])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

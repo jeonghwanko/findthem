@@ -694,6 +694,7 @@ enum InquiryCategory {
   PAYMENT
   REPORT
   GENERAL
+  PARTNERSHIP
 
   @@map("inquiry_category")
 }
