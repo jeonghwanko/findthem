@@ -16,9 +16,9 @@
     "profile": "내 정보"
   },
   "home": {
-    "heroBadge": "AI 기반 실종 매칭 플랫폼",
-    "heroTitle": "잃어버린 소중한 가족을 찾아드립니다",
-    "heroDesc": "AI가 자동으로 SNS에 홍보하고, 목격 제보를 분석하여 매칭합니다",
+    "heroBadge": "AI 실종 동물 추적 서비스",
+    "heroTitle": "사진 한 장이면,\nAI가 찾아드립니다",
+    "heroDesc": "실종 동물 사진을 올리면 AI가 목격 제보를 분석하고, SNS에 자동 홍보하여 가족을 찾아드립니다",
     "newReport": "실종 신고하기",
     "playToSponsor": "게임해서 후원",
     "submitSighting": "목격 제보하기",

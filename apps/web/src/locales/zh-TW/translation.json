@@ -16,9 +16,9 @@
     "profile": "我的資料"
   },
   "home": {
-    "heroBadge": "AI 驅動失蹤配對平台",
-    "heroTitle": "幫您找回摯愛的家人",
-    "heroDesc": "AI 自動在社群媒體宣傳，分析目擊報告並進行比對",
+    "heroBadge": "AI 走失寵物追蹤服務",
+    "heroTitle": "一張照片，\nAI 幫您找回牠",
+    "heroDesc": "上傳走失寵物的照片，AI 會分析目擊線索、自動在社群媒體宣傳，幫助您與家人團聚",
     "newReport": "報案登記",
     "playToSponsor": "玩遊戲贊助",
     "submitSighting": "提供目擊線索",

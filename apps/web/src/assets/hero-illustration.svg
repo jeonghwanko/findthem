@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" fill="none">
+  <!-- Background circle — warm glow -->
+  <circle cx="240" cy="200" r="180" fill="#EEF2FF" opacity="0.7"/>
+  <circle cx="240" cy="200" r="140" fill="#E0E7FF" opacity="0.5"/>
+
+  <!-- Ground / grass -->
+  <ellipse cx="240" cy="340" rx="200" ry="20" fill="#D1FAE5" opacity="0.6"/>
+  <ellipse cx="240" cy="340" rx="160" ry="14" fill="#A7F3D0" opacity="0.4"/>
+
+  <!-- Person (owner) — left side -->
+  <g transform="translate(150, 150)">
+    <!-- Body -->
+    <path d="M40 80 C40 60, 60 50, 60 50 L80 50 C80 50, 100 60, 100 80 L95 150 L45 150 Z" fill="#818CF8" opacity="0.9"/>
+    <!-- Head -->
+    <circle cx="70" cy="35" r="22" fill="#FBBF24" opacity="0.15"/>
+    <circle cx="70" cy="35" r="20" fill="#FDE68A"/>
+    <!-- Hair -->
+    <path d="M50 30 Q55 10, 70 15 Q85 10, 90 30 Q88 22, 70 20 Q52 22, 50 30Z" fill="#92400E"/>
+    <!-- Face -->
+    <circle cx="63" cy="33" r="2" fill="#1E1B4B"/>
+    <circle cx="77" cy="33" r="2" fill="#1E1B4B"/>
+    <path d="M65 40 Q70 45, 75 40" stroke="#F59E0B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Arms reaching out -->
+    <path d="M45 80 Q20 100, 25 130" stroke="#818CF8" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M95 80 Q120 95, 130 110" stroke="#818CF8" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- Hands -->
+    <circle cx="25" cy="132" r="6" fill="#FDE68A"/>
+    <circle cx="132" cy="112" r="6" fill="#FDE68A"/>
+    <!-- Legs -->
+    <rect x="55" y="148" width="12" height="40" rx="6" fill="#4338CA" opacity="0.7"/>
+    <rect x="73" y="148" width="12" height="40" rx="6" fill="#4338CA" opacity="0.7"/>
+    <!-- Shoes -->
+    <ellipse cx="61" cy="190" rx="10" ry="5" fill="#1E1B4B"/>
+    <ellipse cx="79" cy="190" rx="10" ry="5" fill="#1E1B4B"/>
+  </g>
+
+  <!-- Dog — right side, running toward owner -->
+  <g transform="translate(280, 230)">
+    <!-- Body -->
+    <ellipse cx="40" cy="40" rx="35" ry="22" fill="#F59E0B"/>
+    <!-- Head -->
+    <circle cx="8" cy="28" r="18" fill="#FBBF24"/>
+    <!-- Ear -->
+    <path d="M-5 15 Q-12 0, -2 8" fill="#D97706" stroke="#D97706" stroke-width="2"/>
+    <path d="M15 12 Q22 -2, 18 10" fill="#D97706" stroke="#D97706" stroke-width="2"/>
+    <!-- Eye -->
+    <circle cx="3" cy="25" r="3" fill="#1E1B4B"/>
+    <circle cx="2" cy="24" r="1" fill="white"/>
+    <!-- Nose -->
+    <ellipse cx="-5" cy="32" rx="4" ry="3" fill="#1E1B4B"/>
+    <!-- Mouth — happy smile -->
+    <path d="M-5 35 Q0 42, 8 36" stroke="#92400E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Tongue -->
+    <path d="M0 38 Q2 44, 5 38" fill="#F87171"/>
+    <!-- Tail — wagging up -->
+    <path d="M75 30 Q90 10, 95 25 Q92 15, 85 20" fill="#D97706"/>
+    <!-- Front legs (running) -->
+    <path d="M15 55 L5 80" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+    <path d="M25 57 L30 82" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+    <!-- Back legs -->
+    <path d="M55 55 L48 82" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+    <path d="M65 53 L72 78" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+    <!-- Paws -->
+    <circle cx="5" cy="82" r="4" fill="#92400E"/>
+    <circle cx="30" cy="84" r="4" fill="#92400E"/>
+    <circle cx="48" cy="84" r="4" fill="#92400E"/>
+    <circle cx="72" cy="80" r="4" fill="#92400E"/>
+  </g>
+
+  <!-- Heart particles — reunion emotion -->
+  <g opacity="0.8">
+    <path d="M255 175 C255 170, 260 168, 262 172 C264 168, 269 170, 269 175 C269 180, 262 185, 262 185 C262 185, 255 180, 255 175Z" fill="#F472B6"/>
+    <path d="M275 155 C275 151, 279 149, 281 152 C283 149, 287 151, 287 155 C287 159, 281 163, 281 163 C281 163, 275 159, 275 155Z" fill="#FB923C" opacity="0.7"/>
+    <path d="M240 160 C240 157, 243 156, 244 158 C245 156, 248 157, 248 160 C248 163, 244 165, 244 165 C244 165, 240 163, 240 160Z" fill="#A78BFA" opacity="0.6"/>
+  </g>
+
+  <!-- AI search element — magnifying glass with sparkle -->
+  <g transform="translate(340, 100)" opacity="0.7">
+    <circle cx="25" cy="25" r="18" stroke="#6366F1" stroke-width="3" fill="#EEF2FF" opacity="0.8"/>
+    <line x1="38" y1="38" x2="52" y2="52" stroke="#6366F1" stroke-width="3" stroke-linecap="round"/>
+    <!-- AI sparkle inside lens -->
+    <path d="M25 18 L25 14 M25 32 L25 36 M18 25 L14 25 M32 25 L36 25" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="25" cy="25" r="3" fill="#6366F1" opacity="0.5"/>
+  </g>
+
+  <!-- Connection dots — AI tracking visualization -->
+  <g opacity="0.4">
+    <circle cx="310" cy="160" r="3" fill="#6366F1"/>
+    <circle cx="330" cy="145" r="2" fill="#6366F1"/>
+    <circle cx="345" cy="130" r="2.5" fill="#6366F1"/>
+    <path d="M310 160 L330 145 L345 130" stroke="#6366F1" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
+  </g>
+
+  <!-- Sparkles around scene -->
+  <g opacity="0.5">
+    <path d="M120 120 L123 115 L126 120 L123 125Z" fill="#FBBF24"/>
+    <path d="M380 200 L383 195 L386 200 L383 205Z" fill="#818CF8"/>
+    <path d="M160 280 L162 276 L164 280 L162 284Z" fill="#34D399"/>
+    <path d="M400 270 L402 267 L404 270 L402 273Z" fill="#F472B6"/>
+  </g>
+
+  <!-- Photo frame element — representing uploaded photo -->
+  <g transform="translate(80, 90)" opacity="0.6">
+    <rect x="0" y="0" width="45" height="38" rx="4" fill="white" stroke="#C7D2FE" stroke-width="2"/>
+    <rect x="4" y="4" width="37" height="24" rx="2" fill="#E0E7FF"/>
+    <!-- Mini dog silhouette in photo -->
+    <ellipse cx="22" cy="18" rx="8" ry="5" fill="#A5B4FC"/>
+    <circle cx="16" cy="14" r="4" fill="#A5B4FC"/>
+    <!-- Upload arrow -->
+    <path d="M22 30 L22 35 M18 32 L22 28 L26 32" stroke="#6366F1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Camera, Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import StatsStrip from '../components/StatsStrip';
 import OutreachHighlights from '../components/OutreachHighlights';
+import heroIllustration from '../assets/hero-illustration.svg';
 import type { SubjectType } from '@findthem/shared';
 
 const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
@@ -99,34 +100,47 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* Hero — 캐치프레이즈 + CTA + StatsStrip */}
-      <section className="bg-gradient-to-b from-indigo-50 to-white border-b border-primary-100 py-16 sm:py-20 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-5">
-            {t('home.heroBadge')}
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-5 leading-tight">
-            {t('home.heroTitle')}
-          </h1>
-          <p className="text-gray-500 text-lg mb-8 max-w-xl mx-auto leading-relaxed">
-            {t('home.heroDesc')}
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap mb-8">
-            <Link
-              to="/reports/new"
-              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-            >
-              {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/browse"
-              className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
-            >
-              {t('home.submitSighting')}
-            </Link>
+      {/* Hero — 캐치프레이즈 + 일러스트 + CTA + StatsStrip */}
+      <section className="bg-gradient-to-b from-indigo-50 to-white border-b border-primary-100 py-12 sm:py-16 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          {/* 텍스트 영역 */}
+          <div className="flex-1 text-center md:text-left">
+            <span className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-4">
+              {t('home.heroBadge')}
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight whitespace-pre-line">
+              {t('home.heroTitle')}
+            </h1>
+            <p className="text-gray-500 text-base sm:text-lg mb-7 max-w-lg leading-relaxed">
+              {t('home.heroDesc')}
+            </p>
+            <div className="flex gap-3 justify-center md:justify-start flex-wrap mb-6">
+              <Link
+                to="/browse"
+                className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <Camera className="w-4 h-4" aria-hidden="true" />
+                {t('home.submitSighting')}
+              </Link>
+              <Link
+                to="/reports/new"
+                className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
+              >
+                {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="flex justify-center md:justify-start">
+              <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+            </div>
           </div>
-          <div className="flex justify-center">
-            <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+          {/* 일러스트 영역 */}
+          <div className="flex-shrink-0 w-64 sm:w-80 md:w-96">
+            <img
+              src={heroIllustration}
+              alt=""
+              className="w-full h-auto drop-shadow-lg"
+              aria-hidden="true"
+            />
           </div>
         </div>
       </section>

@@ -16,9 +16,9 @@
     "profile": "マイページ"
   },
   "home": {
-    "heroBadge": "AI搭載 行方不明者・ペット検索",
-    "heroTitle": "大切な家族を見つけるお手伝いをします",
-    "heroDesc": "AIが自動でSNSに宣伝し、目撃情報を分析してマッチングします",
+    "heroBadge": "AI迷子ペット追跡サービス",
+    "heroTitle": "写真1枚で、\nAIが見つけます",
+    "heroDesc": "迷子のペットの写真をアップロードすると、AIが目撃情報を分析し、SNSで自動拡散して家族の元へ届けます",
     "newReport": "届出を登録",
     "playToSponsor": "ゲームで後援",
     "submitSighting": "目撃情報を提供",
