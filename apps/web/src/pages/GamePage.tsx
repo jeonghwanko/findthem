@@ -232,9 +232,7 @@ export default function GamePage() {
   // ── 선택 화면 ──
   if (phase === 'select') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center px-4 pb-24">
-        {/* 상단 여백 — 콘텐츠를 중앙으로 밀어줌 */}
-        <div className="flex-1 min-h-8" />
+      <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center px-4 py-10">
 
         {/* 타이틀 */}
         <div className="flex items-center gap-2.5 mb-4">
@@ -333,8 +331,6 @@ export default function GamePage() {
           <X className="w-4 h-4" /> {t('game.back')}
         </button>
 
-        {/* 하단 여백 — 상단과 균형 */}
-        <div className="flex-1 min-h-4" />
       </div>
     );
   }
