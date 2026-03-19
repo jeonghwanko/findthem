@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ScanFace, Megaphone, MessageSquare, ArrowLeft, CheckCircle, Wallet, Loader2 } from 'lucide-react';
+import { ScanFace, Megaphone, MessageSquare, CheckCircle, Wallet, Loader2 } from 'lucide-react';
 import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useSendTransaction, useWriteContract, useSwitchChain } from 'wagmi';
@@ -457,19 +457,13 @@ function SponsorPageInner() {
     aptosWallets?.find((w) => w.name === 'Petra Web');
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
+    <main className="max-w-lg mx-auto px-4 py-10">
       {/* Toast */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg animate-fade-in whitespace-nowrap">
           {toast}
         </div>
       )}
-
-      {/* Back */}
-      <Link to="/team" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        {t('sponsor.backToTeam')}
-      </Link>
 
       {/* Agent info */}
       <div className="flex items-center gap-3 mb-6">
@@ -480,12 +474,12 @@ function SponsorPageInner() {
       </div>
 
       {/* Payment tabs */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-        <button type="button" onClick={() => setTab('crypto')}
+      <div className="flex bg-gray-100 rounded-xl p-1 mb-6" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'crypto'} onClick={() => setTab('crypto')}
           className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${tab === 'crypto' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           {t('sponsor.tabCrypto')}
         </button>
-        <button type="button" onClick={() => setTab('toss')}
+        <button type="button" role="tab" aria-selected={tab === 'toss'} onClick={() => setTab('toss')}
           className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${tab === 'toss' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           {t('sponsor.tabCard')}
         </button>
@@ -493,7 +487,7 @@ function SponsorPageInner() {
 
       {/* ── Toss ── */}
       {tab === 'toss' && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">{t('sponsor.amountLabel')}</label>
             <div className="grid grid-cols-4 gap-2 mb-3">
@@ -542,38 +536,27 @@ function SponsorPageInner() {
             </div>
           ) : (
             <>
-              {/* Crypto mode: EVM / Aptos */}
-              <div className="flex bg-gray-50 rounded-lg p-0.5 gap-0.5">
-                <button type="button" onClick={() => setCryptoMode('evm')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'evm' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <img src="/icon/eth.svg" alt="" className="w-4 h-4" />
-                  EVM
-                </button>
-                <button type="button" onClick={() => setCryptoMode('aptos')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-colors ${cryptoMode === 'aptos' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <img src="/icon/apt.svg" alt="" className="w-4 h-4" />
-                  Aptos
-                </button>
+              {/* Chain select (unified) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.chainLabel')}</label>
+                <div className="flex flex-wrap gap-2">
+                  {EVM_CHAINS.map((chain) => (
+                    <button key={chain.id} type="button" onClick={() => { setCryptoMode('evm'); setEvmChainId(chain.id); }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${cryptoMode === 'evm' && evmChainId === chain.id ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
+                      <img src={chain.icon} alt="" className="w-5 h-5 rounded-full" />
+                      {chain.label}
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setCryptoMode('aptos')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${cryptoMode === 'aptos' ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
+                    <img src="/icon/apt.svg" alt="" className="w-5 h-5 rounded-full" />
+                    Aptos
+                  </button>
+                </div>
               </div>
 
-              {/* EVM: Chain select */}
-              {cryptoMode === 'evm' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.chainLabel')}</label>
-                  <div className="flex flex-wrap gap-2">
-                    {EVM_CHAINS.map((chain) => (
-                      <button key={chain.id} type="button" onClick={() => setEvmChainId(chain.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${evmChainId === chain.id ? 'bg-gray-800 text-white border-gray-800 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
-                        <img src={chain.icon} alt="" className="w-5 h-5 rounded-full" />
-                        {chain.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* EVM: Token select */}
-              {cryptoMode === 'evm' && (
+              {/* Token select (EVM only — Aptos is APT-only so hidden) */}
+              {cryptoMode === 'evm' && availableEvmTokens.length > 1 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.tokenLabel')}</label>
                   <div className="flex flex-wrap gap-2">
@@ -584,19 +567,6 @@ function SponsorPageInner() {
                         {tk}
                       </button>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Aptos: Token label */}
-              {cryptoMode === 'aptos' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.tokenLabel')}</label>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 bg-primary-50 text-primary-700 border-primary-500 shadow-sm">
-                      <img src={TOKEN_ICONS.APT} alt="" className="w-5 h-5 rounded-full" />
-                      APT
-                    </span>
                   </div>
                 </div>
               )}
@@ -618,57 +588,51 @@ function SponsorPageInner() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.walletLabel')}</label>
                 {cryptoMode === 'evm' ? (
-                  <div className="flex items-center gap-3">
-                    <ConnectButton.Custom>
-                      {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
-                        if (!mounted) return null;
-                        if (rkAccount) {
-                          return (
-                            <button type="button" onClick={openAccountModal}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
-                              <div className="w-2 h-2 rounded-full bg-green-400" />
-                              <span className="font-mono text-gray-700 truncate max-w-[240px]">{rkAccount.displayName}</span>
-                            </button>
-                          );
-                        }
+                  <ConnectButton.Custom>
+                    {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
+                      if (!mounted) return null;
+                      if (rkAccount) {
                         return (
-                          <button type="button" onClick={openConnectModal}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
-                            <Wallet className="w-4 h-4" aria-hidden="true" />
-                            {t('sponsor.crypto.connectWallet')}
+                          <button type="button" onClick={openAccountModal}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
+                            <div className="w-2 h-2 rounded-full bg-green-400" />
+                            <span className="font-mono text-gray-700 truncate max-w-[240px]">{rkAccount.displayName}</span>
                           </button>
                         );
-                      }}
-                    </ConnectButton.Custom>
+                      }
+                      return (
+                        <button type="button" onClick={openConnectModal}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
+                          <Wallet className="w-4 h-4" aria-hidden="true" />
+                          {t('sponsor.crypto.connectWallet')}
+                        </button>
+                      );
+                    }}
+                  </ConnectButton.Custom>
+                ) : aptosConnected ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm w-fit">
+                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                    <span className="font-mono text-gray-700 truncate max-w-[240px]">
+                      {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
+                    </span>
                   </div>
+                ) : aptosConnectWallet ? (
+                  <button type="button"
+                    onClick={() => aptosConnect(aptosConnectWallet.name)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
+                    <Wallet className="w-4 h-4" aria-hidden="true" />
+                    {t('sponsor.crypto.connectWallet')}
+                  </button>
                 ) : (
-                  <div className="flex items-center gap-3">
-                    {aptosConnected ? (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm">
-                        <div className="w-2 h-2 rounded-full bg-green-400" />
-                        <span className="font-mono text-gray-700 truncate max-w-[240px]">
-                          {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
-                        </span>
-                      </div>
-                    ) : aptosConnectWallet ? (
-                      <button type="button"
-                        onClick={() => aptosConnect(aptosConnectWallet.name)}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium">
-                        <Wallet className="w-4 h-4" aria-hidden="true" />
-                        {t('sponsor.crypto.connectWallet')}
-                      </button>
-                    ) : (
-                      <a
-                        href="https://aptosconnect.app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium"
-                      >
-                        <Wallet className="w-4 h-4" aria-hidden="true" />
-                        {t('sponsor.crypto.connectWallet')}
-                      </a>
-                    )}
-                  </div>
+                  <a
+                    href="https://aptosconnect.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium"
+                  >
+                    <Wallet className="w-4 h-4" aria-hidden="true" />
+                    {t('sponsor.crypto.connectWallet')}
+                  </a>
                 )}
               </div>
 
@@ -708,6 +672,6 @@ function SponsorPageInner() {
           )}
         </div>
       )}
-    </div>
+    </main>
   );
 }

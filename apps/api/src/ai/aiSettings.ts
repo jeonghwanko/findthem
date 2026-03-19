@@ -35,7 +35,7 @@ export function invalidateSettingsCache(): void {
   cache = null;
 }
 
-/** agentId에 대한 provider 이름 반환. 없으면 default_provider → 'anthropic' */
+/** agentId에 대한 provider 이름 반환. 없으면 default_provider → 'gemini' */
 export async function getProviderName(agentId?: string): Promise<string> {
   const settings = await getCachedSettings();
 
@@ -44,10 +44,10 @@ export async function getProviderName(agentId?: string): Promise<string> {
     if (agentProvider) return agentProvider;
   }
 
-  return settings.get('default_provider') ?? 'anthropic';
+  return settings.get('default_provider') ?? 'gemini';
 }
 
-/** agentId에 대한 model 이름 반환. 없으면 default_model → config.claudeModel */
+/** agentId에 대한 model 이름 반환. 없으면 default_model → 'gemini-2.5-flash' */
 export async function getModelName(agentId?: string): Promise<string | undefined> {
   const settings = await getCachedSettings();
 
@@ -56,7 +56,17 @@ export async function getModelName(agentId?: string): Promise<string | undefined
     if (agentModel) return agentModel;
   }
 
-  return settings.get('default_model') ?? config.claudeModel;
+  return settings.get('default_model') ?? 'gemini-2.5-flash';
+}
+
+/** Anthropic SDK 직접 호출용 모델명 (tool_use 에이전트 전용). Gemini/OpenAI 모델명이 섞이지 않도록 분리 */
+export async function getAnthropicModelName(agentId?: string): Promise<string> {
+  const settings = await getCachedSettings();
+  if (agentId) {
+    const agentModel = settings.get(`agent:${agentId}:model`);
+    if (agentModel) return agentModel;
+  }
+  return settings.get('anthropic_model') ?? config.claudeModel;
 }
 
 /** 전체 설정 Map 반환 */

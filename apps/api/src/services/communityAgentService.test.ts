@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { postHeimi, postClaude, postAli } from './communityAgentService.js';
+import { postHeimi, postClaude, postAli, postAliSighting } from './communityAgentService.js';
 
 // prisma mock
 vi.mock('../db/client.js', () => ({
@@ -212,6 +212,44 @@ describe('communityAgentService', () => {
       prismaMock.communityPost.create.mockRejectedValue(new Error('DB error'));
 
       await expect(postAli('초코', 'DOG', '서울')).resolves.toBeUndefined();
+    });
+  });
+
+  // ── postAliSighting ────────────────────────────────────────────────────────
+
+  describe('postAliSighting', () => {
+    it('정상: 제보 분석 결과로 커뮤니티 게시', async () => {
+      await postAliSighting('서울시 강남구', 'DOG', '품종: 골든 리트리버, 색상: 금색', 'sighting-1');
+
+      expect(prismaMock.communityPost.create).toHaveBeenCalledOnce();
+      const callArg = prismaMock.communityPost.create.mock.calls[0][0];
+      expect(callArg.data.agentId).toBe('chatbot-alert');
+      expect(callArg.data.title).toContain('서울시 강남구');
+      expect(callArg.data.title).toContain('강아지');
+    });
+
+    it('subjectType이 CAT이면 고양이로 표시', async () => {
+      await postAliSighting('부산시 해운대구', 'CAT', '품종: 코리안 숏헤어', 'sighting-2');
+
+      const callArg = prismaMock.communityPost.create.mock.calls[0][0];
+      expect(callArg.data.title).toContain('고양이');
+    });
+
+    it('prisma 실패 시 에러 throw 없이 처리됨', async () => {
+      prismaMock.communityPost.create.mockRejectedValue(new Error('DB error'));
+
+      await expect(
+        postAliSighting('서울', 'DOG', '분석 요약', 'sighting-3'),
+      ).resolves.toBeUndefined();
+    });
+
+    it('동일 sightingId로 중복 게시 방지 (P2002)', async () => {
+      const p2002Error = Object.assign(new Error('Unique constraint'), { code: 'P2002' });
+      prismaMock.communityPost.create.mockRejectedValue(p2002Error);
+
+      await expect(
+        postAliSighting('서울', 'DOG', '분석 요약', 'sighting-dup'),
+      ).resolves.toBeUndefined();
     });
   });
 });

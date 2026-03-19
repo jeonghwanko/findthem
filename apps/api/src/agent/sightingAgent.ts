@@ -1,8 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { AGENT_MAX_TOOL_ROUNDS, ERROR_CODES, ApiError, type AgentResponse, type AgentToolCall, type ChatPlatform } from '@findthem/shared';
 import { getClaudeClient } from '../ai/aiClient.js';
-import { getModelName } from '../ai/aiSettings.js';
-import { config } from '../config.js';
+import { getAnthropicModelName } from '../ai/aiSettings.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
 import { loadAsClaudeMessages, saveRound } from './conversationManager.js';
@@ -33,7 +32,7 @@ export class SightingAgent {
     }
 
     const claude = await getClaudeClient();
-    const model = await getModelName('image-matching') ?? config.claudeModel;
+    const model = await getAnthropicModelName('sighting');
 
     // 1. 기존 대화 히스토리 로드
     const history = await loadAsClaudeMessages(ctx.sessionId);

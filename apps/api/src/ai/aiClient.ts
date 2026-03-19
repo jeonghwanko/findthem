@@ -26,8 +26,8 @@ async function resolveProvider(agentId?: string): Promise<AiProvider> {
   const name = await getProviderName(agentId);
   const provider = PROVIDERS[name];
   if (!provider) {
-    log.warn({ name, agentId }, '알 수 없는 provider, anthropic으로 fallback');
-    return anthropicProvider;
+    log.warn({ name, agentId }, '알 수 없는 provider, gemini로 fallback');
+    return geminiProvider;
   }
   return provider;
 }

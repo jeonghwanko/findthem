@@ -39,14 +39,17 @@ async function processReportPhotos(reportId: string) {
     return;
   }
 
-  // 각 사진에 대해 AI 분석 — 병렬 처리
+  // 각 사진에 대해 AI 분석 — 병렬 처리 (Sharp 메타데이터 보강)
   const updatedPhotos = await Promise.all(
     report.photos.map(async (photo) => {
       if (photo.aiAnalysis) return photo; // 이미 분석됨
 
       try {
-        const base64 = await imageService.toBase64(photo.photoUrl);
-        const analysis = await analyzeImage(base64, report.subjectType);
+        const [base64, meta] = await Promise.all([
+          imageService.toBase64(photo.photoUrl),
+          imageService.extractMetadata(photo.photoUrl).catch(() => undefined),
+        ]);
+        const analysis = await analyzeImage(base64, report.subjectType, undefined, meta);
 
         return await prisma.reportPhoto.update({
           where: { id: photo.id },
@@ -105,14 +108,17 @@ async function processSightingPhotos(sightingId: string) {
   // 제보와 연결된 report의 subjectType 확인 (없으면 동물 기본) — 별도 조회 제거
   const subjectType = sighting.report?.subjectType ?? 'DOG';
 
-  // 각 사진에 대해 AI 분석 — 병렬 처리
+  // 각 사진에 대해 AI 분석 — 병렬 처리 (Sharp 메타데이터 보강)
   await Promise.all(
     sighting.photos.map(async (photo) => {
       if (photo.aiAnalysis) return;
 
       try {
-        const base64 = await imageService.toBase64(photo.photoUrl);
-        const analysis = await analyzeImage(base64, subjectType);
+        const [base64, meta] = await Promise.all([
+          imageService.toBase64(photo.photoUrl),
+          imageService.extractMetadata(photo.photoUrl).catch(() => undefined),
+        ]);
+        const analysis = await analyzeImage(base64, subjectType, undefined, meta);
 
         await prisma.sightingPhoto.update({
           where: { id: photo.id },

@@ -15,13 +15,16 @@ const ANALYZE_IMAGE_PROMPTS: Record<Locale, {
 
 JSON 형식:
 {
-  "species": "품종 (동물인 경우)",
-  "color": "주요 색상/털색",
+  "species": "품종 (예: 골든 리트리버, 코리안 숏헤어)",
+  "color": "주요 색상/털색 패턴",
   "size": "크기 추정 (소/중/대)",
-  "distinctiveFeatures": ["특징1", "특징2"],
-  "clothing": "의상 설명 (사람인 경우)",
-  "accessories": "목줄, 안경 등 액세서리",
-  "estimatedAge": "추정 나이",
+  "distinctiveFeatures": ["반점 위치", "흉터", "귀 모양 등"],
+  "collarDetected": true/false,
+  "collarDescription": "목줄 색상/종류, 인식표 유무",
+  "healthCondition": "건강 상태 (정상/마름/부상/털 엉킴 등)",
+  "furCondition": "털 상태 (깨끗/지저분/엉킴/젖음)",
+  "estimatedAge": "추정 나이 (새끼/성체/노령)",
+  "accessories": "기타 액세서리 (옷, 하네스 등)",
   "description": "종합 설명 (2~3문장)"
 }`,
     userMessage: '를 식별하기 위한 특징을 분석해주세요.',
@@ -33,13 +36,16 @@ Analyze the photo and extract identifying features in structured JSON format.
 
 JSON format:
 {
-  "species": "breed (for animals)",
-  "color": "main color/coat color",
+  "species": "breed (e.g., Golden Retriever, Korean Shorthair)",
+  "color": "main color/coat pattern",
   "size": "estimated size (small/medium/large)",
-  "distinctiveFeatures": ["feature1", "feature2"],
-  "clothing": "clothing description (for people)",
-  "accessories": "collar, glasses, etc.",
-  "estimatedAge": "estimated age",
+  "distinctiveFeatures": ["spot location", "scars", "ear shape", etc.],
+  "collarDetected": true/false,
+  "collarDescription": "collar color/type, tag presence",
+  "healthCondition": "health status (normal/thin/injured/matted fur)",
+  "furCondition": "fur condition (clean/dirty/matted/wet)",
+  "estimatedAge": "estimated age (puppy/adult/senior)",
+  "accessories": "other accessories (clothing, harness, etc.)",
   "description": "overall description (2-3 sentences)"
 }`,
     userMessage: 'Please analyze identifying features from this photo.',
@@ -51,13 +57,16 @@ JSON format:
 
 JSON形式：
 {
-  "species": "品種（動物の場合）",
-  "color": "主な色／毛色",
+  "species": "品種（例：ゴールデンレトリバー、日本猫）",
+  "color": "主な色／毛色パターン",
   "size": "大きさの推定（小／中／大）",
-  "distinctiveFeatures": ["特徴1", "特徴2"],
-  "clothing": "服装の説明（人間の場合）",
-  "accessories": "首輪、眼鏡などのアクセサリー",
-  "estimatedAge": "推定年齢",
+  "distinctiveFeatures": ["斑点の位置", "傷跡", "耳の形など"],
+  "collarDetected": true/false,
+  "collarDescription": "首輪の色・種類、名札の有無",
+  "healthCondition": "健康状態（正常/痩せ/怪我/毛の絡まりなど）",
+  "furCondition": "毛の状態（きれい/汚い/絡まり/濡れ）",
+  "estimatedAge": "推定年齢（子犬・子猫/成体/老齢）",
+  "accessories": "その他のアクセサリー（服、ハーネスなど）",
   "description": "総合説明（2〜3文）"
 }`,
     userMessage: 'の識別のための特徴を分析してください。',
@@ -69,13 +78,16 @@ JSON形式：
 
 JSON格式：
 {
-  "species": "品種（動物情況下）",
-  "color": "主要顏色/毛色",
+  "species": "品種（例：黃金獵犬、米克斯）",
+  "color": "主要顏色/毛色圖案",
   "size": "大小估計（小/中/大）",
-  "distinctiveFeatures": ["特徵1", "特徵2"],
-  "clothing": "服裝描述（人物情況下）",
-  "accessories": "項圈、眼鏡等配件",
-  "estimatedAge": "估計年齡",
+  "distinctiveFeatures": ["斑點位置", "疤痕", "耳朵形狀等"],
+  "collarDetected": true/false,
+  "collarDescription": "項圈顏色/類型、名牌有無",
+  "healthCondition": "健康狀況（正常/消瘦/受傷/毛髮糾結等）",
+  "furCondition": "毛髮狀況（乾淨/髒亂/糾結/潮濕）",
+  "estimatedAge": "估計年齡（幼年/成年/老年）",
+  "accessories": "其他配件（衣服、胸背帶等）",
   "description": "綜合說明（2至3句）"
 }`,
     userMessage: '的識別特徵，請分析此照片。',
@@ -186,19 +198,46 @@ const MATCH_IMAGES_PROMPTS: Record<Locale, {
   },
 };
 
-/** 사진에서 식별 특징 추출 */
+/** Sharp에서 추출된 이미지 메타데이터 (LLM 프롬프트 보강용) */
+interface ImageMeta {
+  dominantColors?: string[];
+  blurScore?: number;
+  width?: number;
+  height?: number;
+}
+
+/** 사진에서 식별 특징 추출 (Sharp 메타데이터 보강) */
 export async function analyzeImage(
   photoBase64: string,
   subjectType: string,
   locale: Locale = DEFAULT_LOCALE,
+  meta?: ImageMeta,
 ): Promise<Record<string, unknown>> {
   const type = getSubjectTypeLabel(subjectType, locale);
   const prompt = ANALYZE_IMAGE_PROMPTS[locale];
 
   const systemPrompt = `${prompt.systemPrefix} ${type} ${prompt.systemBody}`;
+
+  // Sharp 메타데이터를 user message에 포함 (영어로 통일 — AI가 언어 무관하게 처리)
+  const metaLines: string[] = [];
+  if (meta?.dominantColors?.length) {
+    metaLines.push(`Dominant colors: ${meta.dominantColors.join(', ')}`);
+  }
+  if (meta?.blurScore !== undefined) {
+    const quality = meta.blurScore >= 0.7 ? 'sharp' : meta.blurScore >= 0.4 ? 'moderate' : 'blurry';
+    metaLines.push(`Image quality: ${quality} (${Math.round(meta.blurScore * 100)}/100)`);
+  }
+  if (meta?.width && meta?.height) {
+    metaLines.push(`Resolution: ${meta.width}x${meta.height}`);
+  }
+
+  const metaContext = metaLines.length > 0
+    ? `\n[Pre-extracted metadata]\n${metaLines.join('\n')}\n`
+    : '';
+
   const userMessage = locale === 'ko' || locale === 'ja'
-    ? `이 사진의 ${type}${prompt.userMessage}`
-    : `${type} — ${prompt.userMessage}`;
+    ? `${metaContext}이 사진의 ${type}${prompt.userMessage}`
+    : `${metaContext}${type} — ${prompt.userMessage}`;
 
   const result = await askClaudeWithImage(
     systemPrompt,

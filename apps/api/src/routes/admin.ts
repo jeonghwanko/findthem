@@ -996,8 +996,8 @@ export function registerAdminRoutes(router: Router) {
   router.get('/admin/ai/settings', requireAdmin, async (_req, res) => {
     const settings = await getAllSettings();
 
-    const defaultProvider = settings.get('default_provider') ?? 'anthropic';
-    const defaultModel = settings.get('default_model') ?? config.claudeModel;
+    const defaultProvider = settings.get('default_provider') ?? 'gemini';
+    const defaultModel = settings.get('default_model') ?? 'gemini-2.5-flash';
 
     const agents: Record<string, { provider: string | null; model: string | null }> = {};
     for (const agentId of AGENT_IDS) {
