@@ -109,9 +109,9 @@ async function processSightingPhotos(sightingId: string) {
   const subjectType = sighting.report?.subjectType ?? 'DOG';
 
   // 각 사진에 대해 AI 분석 — 병렬 처리 (Sharp 메타데이터 보강)
-  await Promise.all(
+  const analysisResults = await Promise.all(
     sighting.photos.map(async (photo) => {
-      if (photo.aiAnalysis) return;
+      if (photo.aiAnalysis) return photo.aiAnalysis as Record<string, unknown>;
 
       try {
         const [base64, meta] = await Promise.all([
@@ -124,8 +124,10 @@ async function processSightingPhotos(sightingId: string) {
           where: { id: photo.id },
           data: { aiAnalysis: analysis as object },
         });
+        return analysis as Record<string, unknown>;
       } catch (err) {
         log.error({ err, photoId: photo.id }, 'Sighting photo analysis failed');
+        return null;
       }
     }),
   );
@@ -136,14 +138,10 @@ async function processSightingPhotos(sightingId: string) {
     data: { status: 'ANALYZED' },
   });
 
-  // AI 분석 결과 요약 → 커뮤니티 게시 (안내봇 알리)
-  const analyzedPhotos = await prisma.sightingPhoto.findMany({
-    where: { sightingId, aiAnalysis: { not: Prisma.DbNull } },
-    select: { aiAnalysis: true },
-    take: 1,
-  });
-  if (analyzedPhotos.length > 0) {
-    const analysis = analyzedPhotos[0].aiAnalysis as Record<string, unknown>;
+  // AI 분석 결과 요약 → 커뮤니티 게시 (안내봇 알리) — DB 재조회 없이 결과 직접 사용
+  const firstAnalysis = analysisResults.find((a) => a !== null);
+  if (firstAnalysis) {
+    const analysis = firstAnalysis;
     const parts: string[] = [];
     if (analysis.species) parts.push(`품종: ${analysis.species}`);
     if (analysis.color) parts.push(`색상: ${analysis.color}`);

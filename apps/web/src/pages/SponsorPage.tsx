@@ -310,7 +310,8 @@ function SponsorPageInner() {
         failUrl: `${window.location.origin}/team/sponsor/${agentId ?? ''}`,
       });
     } catch (err) {
-      setTossError(err instanceof Error ? err.message : t('auth.errorFallback'));
+      const code = err instanceof Error ? err.message : '';
+      setTossError(t(`errors.${code}`, { defaultValue: t('auth.errorFallback') }));
     } finally {
       isTossPayingRef.current = false;
       setTossPaying(false);

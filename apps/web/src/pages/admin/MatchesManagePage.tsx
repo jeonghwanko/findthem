@@ -1,23 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi } from '../../api/admin.js';
-import type { MatchStatus } from '@findthem/shared';
-
-interface AdminMatch {
-  id: string;
-  confidence: number;
-  status: MatchStatus;
-  aiReasoning: string;
-  createdAt: string;
-  report: { id: string; name: string };
-  sighting: { id: string; description: string };
-}
-
-interface AdminMatchListResponse {
-  matches: AdminMatch[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import type { MatchStatus, AdminMatchItem, AdminMatchListResponse } from '@findthem/shared';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '전체 상태' },

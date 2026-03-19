@@ -564,6 +564,70 @@ export interface InquiryAdmin extends InquiryPublic {
   updatedAt: string;
 }
 
+// ── Admin list response types ──
+
+export interface AdminMatchItem {
+  id: string;
+  confidence: number;
+  status: MatchStatus;
+  aiReasoning: string;
+  createdAt: string;
+  report: { id: string; name: string };
+  sighting: { id: string; description: string };
+}
+
+export interface AdminMatchListResponse {
+  matches: AdminMatchItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface AdminUserItem extends UserPublic {
+  createdAt: string;
+  blockedAt?: string | null;
+  blockReason?: string | null;
+  _count?: { reports: number };
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface InquiryListResponse {
+  items: InquiryAdmin[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+// ── Agent Activity (Community Scene) ──
+
+export interface AgentActivityEvent {
+  id: string;
+  eventType: AgentDomainEventType;
+  selectedAction: string;
+  stayedSilent: boolean;
+  createdAt: string;
+  reportId: string | null;
+}
+
+export interface AgentActivityAgent {
+  agentId: string;
+  todayPosts: number;
+  todayDecisions: number;
+  latestPost: { id: string; title: string; createdAt: string } | null;
+  recentEvents: AgentActivityEvent[];
+}
+
+export interface AgentActivityResponse {
+  agents: AgentActivityAgent[];
+  serverTime: string;
+}
+
 // ── Ghost CMS ──
 
 export interface GhostPostListItem {

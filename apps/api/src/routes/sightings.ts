@@ -287,19 +287,22 @@ export function registerSightingRoutes(router: Router) {
       return res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
     }
 
-    const [sightings, total] = await Promise.all([
-      prisma.sighting.findMany({
-        include: {
-          photos: {
-            select: { id: true, photoUrl: true, thumbnailUrl: true },
-          },
+    const skip = (page - 1) * limit;
+    const sightings = await prisma.sighting.findMany({
+      include: {
+        photos: {
+          select: { id: true, photoUrl: true, thumbnailUrl: true },
+          take: 1,
         },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.sighting.count(),
-    ]);
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    const total = sightings.length < limit
+      ? skip + sightings.length
+      : await prisma.sighting.count();
 
     res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
   });

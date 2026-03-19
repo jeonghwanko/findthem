@@ -125,7 +125,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   to="/reports/new"
-                  className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 bg-white text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-[0_4px_0_0_#d1d5db,0_6px_12px_rgba(0,0,0,0.08)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#d1d5db,0_4px_8px_rgba(0,0,0,0.06)] active:translate-y-[4px] active:shadow-none"
                 >
                   {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </Link>

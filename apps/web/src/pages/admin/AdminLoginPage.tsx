@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAdminAuth } from '../../hooks/useAdminApi.js';
 
 export default function AdminLoginPage() {
+  const { t } = useTranslation();
   const [key, setKey] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,8 @@ export default function AdminLoginPage() {
       await login(key.trim());
       void navigate('/admin');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '로그인 실패');
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.authFailed') }));
     } finally {
       setLoading(false);
     }

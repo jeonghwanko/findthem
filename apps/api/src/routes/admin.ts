@@ -16,6 +16,7 @@ import {
   cleanupQueue,
   outreachQueue,
   qaCrawlQueue,
+  QUEUE_MAP,
 } from '../jobs/queues.js';
 import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
 import { requireAdmin } from '../middlewares/auth.js';
@@ -38,7 +39,7 @@ import { generateDevlogArticle } from '../services/devlogService.js';
 import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES, ADMIN_AGENT_IDS, OUTREACH_REQUEST_STATUS_VALUES, OUTREACH_CONTACT_TYPE_VALUES, AI_PROVIDER_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
 import { createLogger } from '../logger.js';
@@ -162,30 +163,21 @@ export function registerAdminRoutes(router: Router) {
   router.delete('/admin/stats/failed-jobs', requireAdmin, validateQuery(failedJobsQuerySchema), async (req, res) => {
     const { queueName } = req.query as unknown as z.infer<typeof failedJobsQuerySchema>;
 
-    const QUEUE_MAP = {
-      'image-processing': imageQueue,
-      matching: matchingQueue,
-      notification: notificationQueue,
-      promotion: promotionQueue,
-      'promotion-monitor': promotionMonitorQueue,
-      'promotion-repost': promotionRepostQueue,
-      cleanup: cleanupQueue,
-      crawl: crawlQueue,
-    } as const;
+    const validNames = Object.keys(QUEUE_MAP);
 
-    type QueueName = keyof typeof QUEUE_MAP;
-    const validNames = Object.keys(QUEUE_MAP) as QueueName[];
-
-    if (queueName && !validNames.includes(queueName as QueueName)) {
+    if (queueName && !validNames.includes(queueName)) {
       throw new ApiError(400, ERROR_CODES.INVALID_QUEUE_NAME);
     }
 
-    const targets: QueueName[] = queueName ? [queueName as QueueName] : validNames;
+    const targets: string[] = queueName ? [queueName] : validNames;
     const results: Record<string, number> = {};
 
     for (const name of targets) {
-      const removed = await QUEUE_MAP[name].clean(5_000, 10_000, 'failed');
-      results[name] = removed.length;
+      const queue = QUEUE_MAP[name];
+      if (queue) {
+        const removed = await queue.clean(5_000, 10_000, 'failed');
+        results[name] = removed.length;
+      }
     }
 
     await createAuditLog({
@@ -737,7 +729,7 @@ export function registerAdminRoutes(router: Router) {
   // ── 아웃리치 관리 API ──
 
   const outreachQuerySchema = z.object({
-    status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'SENT', 'REJECTED', 'FAILED']).optional(),
+    status: z.enum(OUTREACH_REQUEST_STATUS_VALUES).optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
@@ -748,13 +740,13 @@ export function registerAdminRoutes(router: Router) {
   });
 
   const outreachContactQuerySchema = z.object({
-    type: z.enum(['JOURNALIST', 'YOUTUBER']).optional(),
+    type: z.enum(OUTREACH_CONTACT_TYPE_VALUES).optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   });
 
   const outreachContactCreateSchema = z.object({
-    type: z.enum(['JOURNALIST', 'YOUTUBER']),
+    type: z.enum(OUTREACH_CONTACT_TYPE_VALUES),
     name: z.string().min(1).max(200),
     email: z.string().email().optional(),
     youtubeChannelId: z.string().optional(),
@@ -985,7 +977,6 @@ export function registerAdminRoutes(router: Router) {
     limit: z.coerce.number().int().min(1).max(200).default(50),
   });
 
-  const AGENT_IDS = ['image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog', 'social-parsing'];
   const PROVIDER_MODELS: Record<string, string[]> = {
     anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
     gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3-pro-preview'],
@@ -1000,7 +991,7 @@ export function registerAdminRoutes(router: Router) {
     const defaultModel = settings.get('default_model') ?? 'gemini-2.5-flash';
 
     const agents: Record<string, { provider: string | null; model: string | null }> = {};
-    for (const agentId of AGENT_IDS) {
+    for (const agentId of ADMIN_AGENT_IDS) {
       agents[agentId] = {
         provider: settings.get(`agent:${agentId}:provider`) ?? null,
         model: settings.get(`agent:${agentId}:model`) ?? null,
@@ -1186,7 +1177,7 @@ export function registerAdminRoutes(router: Router) {
 
   // ── API 키 관리 ──
 
-  const API_KEY_PROVIDERS = ['anthropic', 'gemini', 'openai'] as const;
+  const API_KEY_PROVIDERS = AI_PROVIDER_VALUES;
 
   // GET /admin/ai/keys — API 키 상태 (마스킹)
   router.get('/admin/ai/keys', requireAdmin, async (_req, res) => {
@@ -1209,7 +1200,7 @@ export function registerAdminRoutes(router: Router) {
 
   // PUT /admin/ai/keys — API 키 저장 (DB에 저장, 런타임 반영)
   const aiKeyUpdateSchema = z.object({
-    provider: z.enum(['anthropic', 'gemini', 'openai']),
+    provider: z.enum(AI_PROVIDER_VALUES),
     apiKey: z.string().min(1).max(500),
   });
 
@@ -1378,7 +1369,7 @@ export function registerAdminRoutes(router: Router) {
 
   // POST /admin/ai/keys/test — API 키 테스트
   const aiKeyTestSchema = z.object({
-    provider: z.enum(['anthropic', 'gemini', 'openai']),
+    provider: z.enum(AI_PROVIDER_VALUES),
     apiKey: z.string().optional(), // 생략 시 저장된 키 사용
   });
 

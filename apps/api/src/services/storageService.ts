@@ -13,7 +13,7 @@ async function ensureDir(dir: string) {
 
 function assertSafePath(resolvedPath: string): void {
   if (!resolvedPath.startsWith(UPLOAD_ROOT + path.sep) && resolvedPath !== UPLOAD_ROOT) {
-    throw new Error(`경로 접근 오류: 허용된 디렉토리 밖의 경로입니다.`);
+    throw new Error('PATH_TRAVERSAL_DENIED');
   }
 }
 

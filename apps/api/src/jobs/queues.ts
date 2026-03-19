@@ -54,6 +54,23 @@ export const crawlAgentQueue = new Queue<CrawlAgentJobData>(QUEUE_NAMES.CRAWL_AG
 export const outreachQueue = new Queue<OutreachJobData>(QUEUE_NAMES.OUTREACH, { connection });
 export const qaCrawlQueue = new Queue<QaCrawlJobData>(QUEUE_NAMES.QA_CRAWL, { connection });
 
+// ── 큐 이름 → 큐 인스턴스 맵 (SSOT) ──
+
+export const QUEUE_MAP: Record<string, Queue> = {
+  [QUEUE_NAMES.IMAGE_PROCESSING]: imageQueue,
+  [QUEUE_NAMES.PROMOTION]: promotionQueue,
+  [QUEUE_NAMES.MATCHING]: matchingQueue,
+  [QUEUE_NAMES.NOTIFICATION]: notificationQueue,
+  [QUEUE_NAMES.CLEANUP]: cleanupQueue,
+  [QUEUE_NAMES.PROMOTION_MONITOR]: promotionMonitorQueue,
+  [QUEUE_NAMES.PROMOTION_REPOST]: promotionRepostQueue,
+  [QUEUE_NAMES.CRAWL_SCHEDULER]: crawlSchedulerQueue,
+  [QUEUE_NAMES.CRAWL]: crawlQueue,
+  [QUEUE_NAMES.CRAWL_AGENT]: crawlAgentQueue,
+  [QUEUE_NAMES.OUTREACH]: outreachQueue,
+  [QUEUE_NAMES.QA_CRAWL]: qaCrawlQueue,
+};
+
 // ── Worker 생성 헬퍼 ──
 
 export function createWorker<T>(

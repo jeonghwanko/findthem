@@ -108,6 +108,10 @@
   "browse": {
     "title": "Missing Reports",
     "all": "All",
+    "viewAll": "All",
+    "viewReports": "Reports",
+    "viewSightings": "Sightings",
+    "labelSighting": "Sighting",
     "filterType": "Type",
     "filterStatus": "Status",
     "filterRegion": "Region",
@@ -123,11 +127,15 @@
   },
   "myReports": {
     "title": "My Activity",
-    "tabReports": "My Reports",
-    "tabSightings": "My Sightings",
-    "empty": "You haven't filed any reports yet",
+"empty": "You haven't filed any reports yet",
     "emptySightings": "You haven't submitted any sightings yet",
+    "emptyAll": "No reports or sightings yet",
     "sightingNoDesc": "(No description)",
+    "filterAll": "All",
+    "filterReports": "Reports",
+    "filterSightings": "Sightings",
+    "labelReport": "Report",
+    "labelSighting": "Sighting",
     "edit": "Edit",
     "delete": "Delete",
     "deleteConfirm": "Delete the report for \"{{name}}\"? This cannot be undone.",
@@ -266,6 +274,7 @@
     "CAT": "Cat"
   },
   "admin": {
+    "authFailed": "Authentication failed",
     "dashboard": {
       "title": "Dashboard",
       "refresh": "Refresh",
@@ -374,6 +383,7 @@
     "AD_REWARD_COOLDOWN": "Please wait before claiming another ad reward.",
     "VALIDATION_ERROR": "Invalid input.",
     "INQUIRY_NOT_FOUND": "Inquiry not found.",
+    "ADMIN_AUTH_FAILED": "Invalid API Key.",
     "QUOTE_EXPIRED": "Payment quote has expired. Please try again."
   },
   "agent": {
@@ -607,5 +617,23 @@
   },
   "common": {
     "back": "Back"
+  },
+  "agentScene": {
+    "loading": "Loading agent office...",
+    "claude": { "name": "Detective Claude" },
+    "heimi": { "name": "PR Queen Heimi" },
+    "ali": { "name": "Guide Ali" },
+    "bubble": {
+      "matchDetected": "Match found!",
+      "outreachSent": "Promo done!",
+      "reportCreated": "Report filed!",
+      "sightingAnalyzed": "Sighting analyzed!",
+      "caseResolved": "Case solved!",
+      "working": "Working..."
+    },
+    "stats": {
+      "posts": " posts",
+      "decisions": " acts"
+    }
   }
 }

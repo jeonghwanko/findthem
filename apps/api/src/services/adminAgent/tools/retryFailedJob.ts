@@ -1,13 +1,4 @@
-import type { Queue } from 'bullmq';
-import {
-  imageQueue,
-  promotionQueue,
-  matchingQueue,
-  notificationQueue,
-  cleanupQueue,
-  promotionMonitorQueue,
-  promotionRepostQueue,
-} from '../../../jobs/queues.js';
+import { QUEUE_MAP } from '../../../jobs/queues.js';
 import { ApiError, ERROR_CODES, QUEUE_NAMES } from '@findthem/shared';
 
 type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
@@ -16,16 +7,6 @@ export interface RetryFailedJobInput {
   queueName: QueueName;
   jobId: string;
 }
-
-const QUEUE_MAP: Record<string, Queue> = {
-  'image-processing': imageQueue,
-  promotion: promotionQueue,
-  matching: matchingQueue,
-  notification: notificationQueue,
-  cleanup: cleanupQueue,
-  'promotion-monitor': promotionMonitorQueue,
-  'promotion-repost': promotionRepostQueue,
-};
 
 export async function retryFailedJob(input: RetryFailedJobInput): Promise<unknown> {
   const queue = QUEUE_MAP[input.queueName];

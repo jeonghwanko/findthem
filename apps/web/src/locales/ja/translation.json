@@ -108,6 +108,10 @@
   "browse": {
     "title": "行方不明届一覧",
     "all": "すべて",
+    "viewAll": "すべて",
+    "viewReports": "届出",
+    "viewSightings": "目撃情報",
+    "labelSighting": "目撃",
     "filterType": "種類",
     "filterStatus": "状態",
     "filterRegion": "地域",
@@ -123,11 +127,15 @@
   },
   "myReports": {
     "title": "マイ活動",
-    "tabReports": "マイ届出",
-    "tabSightings": "マイ目撃情報",
-    "empty": "届出がまだありません",
+"empty": "届出がまだありません",
     "emptySightings": "目撃情報がまだありません",
+    "emptyAll": "届出・目撃情報がまだありません",
     "sightingNoDesc": "(説明なし)",
+    "filterAll": "すべて",
+    "filterReports": "届出",
+    "filterSightings": "目撃情報",
+    "labelReport": "届出",
+    "labelSighting": "目撃",
     "edit": "編集",
     "delete": "削除",
     "deleteConfirm": "「{{name}}」の届出を削除しますか？この操作は元に戻せません。",
@@ -266,6 +274,7 @@
     "CAT": "猫"
   },
   "admin": {
+    "authFailed": "認証に失敗しました",
     "dashboard": {
       "title": "ダッシュボード",
       "refresh": "更新",
@@ -374,6 +383,7 @@
     "AD_REWARD_COOLDOWN": "しばらくしてから広告報酬を受け取ってください。",
     "VALIDATION_ERROR": "入力値が正しくありません。",
     "INQUIRY_NOT_FOUND": "お問い合わせが見つかりません。",
+    "ADMIN_AUTH_FAILED": "無効なAPIキーです。",
     "QUOTE_EXPIRED": "決済見積もりの有効期限が切れました。もう一度お試しください。"
   },
   "agent": {
@@ -606,5 +616,23 @@
   },
   "common": {
     "back": "前のページ"
+  },
+  "agentScene": {
+    "loading": "エージェントオフィスを読み込み中...",
+    "claude": { "name": "探偵クロード" },
+    "heimi": { "name": "PR女王ヘイミ" },
+    "ali": { "name": "案内ボットアリ" },
+    "bubble": {
+      "matchDetected": "マッチ発見！",
+      "outreachSent": "PR完了！",
+      "reportCreated": "届出受理！",
+      "sightingAnalyzed": "目撃分析完了！",
+      "caseResolved": "事件解決！",
+      "working": "作業中..."
+    },
+    "stats": {
+      "posts": "件",
+      "decisions": "件"
+    }
   }
 }

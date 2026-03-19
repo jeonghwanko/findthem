@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Eye, Pin, Plus, Bot, Search } from 'lucide-react';
 import { formatTimeAgo, type Locale, type ExternalAgentPublic } from '@findthem/shared';
-import { api, type ReportListResponse } from '../api/client';
+import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { getAuthorName } from '../utils/community';
-import PixiHeroScene from '../components/PixiHeroScene';
+import AgentActivityScene from '../components/AgentActivityScene';
 
 interface PostSummary {
   id: string;
@@ -40,20 +40,6 @@ export default function CommunityPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [stats, setStats] = useState<{ total: number; found: number } | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      api.get<ReportListResponse>('/reports?limit=1'),
-      api.get<ReportListResponse>('/reports?status=FOUND&limit=1'),
-    ]).then(([all, found]) => {
-      setStats({ total: all.total ?? 0, found: found.total ?? 0 });
-    }).catch(() => {});
-  }, []);
-
-  const recoveryRate = stats && stats.total > 0
-    ? Math.round((stats.found / stats.total) * 100)
-    : null;
 
   useEffect(() => {
     setLoading(true);
@@ -78,8 +64,8 @@ export default function CommunityPage() {
 
   return (
     <div className="bg-white">
-      {/* PixiHeroScene — Spine 애니메이션 + XP/레벨 + 광고 리워드 */}
-      <PixiHeroScene stats={stats} recoveryRate={recoveryRate} hideStatsAndBillboard />
+      {/* Agent Activity Scene — 에이전트 작업 모습 시각화 */}
+      <AgentActivityScene />
 
       {/* 커뮤니티 콘텐츠 */}
       <div className="max-w-3xl mx-auto px-4 py-8">

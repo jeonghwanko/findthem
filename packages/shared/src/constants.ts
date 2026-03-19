@@ -299,6 +299,20 @@ export const AGENT_API_KEY_HEADER = 'x-agent-key';
 export const AGENT_ID_HEADER = 'x-agent-id';
 export const VALID_AGENT_IDS = ['image-matching', 'promotion', 'chatbot-alert'] as const;
 
+/** 관리자 대시보드에서 사용하는 확장 에이전트 ID 목록 (AI 설정, 사용량 등) */
+export const ADMIN_AGENT_IDS = [
+  'image-matching', 'promotion', 'chatbot-alert', 'outreach', 'crawl', 'admin', 'devlog', 'social-parsing',
+] as const;
+
+// ── Zod enum 배열 상수 (추가) ──
+
+export const CHAT_PLATFORM_VALUES = ['WEB', 'KAKAO'] as const;
+export const SIGHTING_SOURCE_VALUES = ['WEB', 'KAKAO_CHATBOT', 'ADMIN'] as const;
+export const PROMO_PLATFORM_VALUES = ['KAKAO_CHANNEL', 'TWITTER', 'INSTAGRAM'] as const;
+export const OUTREACH_REQUEST_STATUS_VALUES = ['PENDING_APPROVAL', 'APPROVED', 'SENDING', 'SENT', 'REJECTED', 'FAILED'] as const;
+export const OUTREACH_CONTACT_TYPE_VALUES = ['JOURNALIST', 'YOUTUBER', 'VIDEO'] as const;
+export const AI_PROVIDER_VALUES = ['anthropic', 'gemini', 'openai'] as const;
+
 // ── YouTube ──
 
 export const YT_VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;

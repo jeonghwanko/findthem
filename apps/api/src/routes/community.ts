@@ -55,6 +55,98 @@ const commentInclude = {
 
 export function registerCommunityRoutes(router: Router) {
   // ══════════════════════════════════════
+  // 에이전트 활동 (Community Scene)
+  // ══════════════════════════════════════
+
+  const agentActivityQuerySchema = z.object({
+    since: z.string().datetime().optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  });
+
+  router.get(
+    '/community/agent-activity',
+    optionalAuth,
+    validateQuery(agentActivityQuerySchema),
+    async (req, res) => {
+      const { since, limit: eventLimit } = req.query as unknown as z.infer<typeof agentActivityQuerySchema>;
+      const sinceDate = since ? new Date(since) : (() => {
+        const d = new Date();
+        d.setUTCHours(0, 0, 0, 0);
+        return d;
+      })();
+
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+
+      const [decisions, postCounts, latestPosts, todayPostCountsRaw] = await Promise.all([
+        prisma.agentDecisionLog.findMany({
+          where: { createdAt: { gte: sinceDate } },
+          orderBy: { createdAt: 'desc' },
+          take: eventLimit,
+          select: {
+            id: true,
+            agentId: true,
+            eventType: true,
+            selectedAction: true,
+            stayedSilent: true,
+            createdAt: true,
+            reportId: true,
+          },
+        }),
+        prisma.agentDecisionLog.groupBy({
+          by: ['agentId'],
+          where: { createdAt: { gte: todayStart } },
+          _count: true,
+        }),
+        prisma.communityPost.findMany({
+          where: { agentId: { not: null }, createdAt: { gte: todayStart } },
+          orderBy: { createdAt: 'desc' },
+          distinct: ['agentId'],
+          select: { id: true, agentId: true, title: true, createdAt: true },
+        }),
+        prisma.communityPost.groupBy({
+          by: ['agentId'],
+          where: { agentId: { not: null }, createdAt: { gte: todayStart } },
+          _count: true,
+        }),
+      ]);
+
+      const todayPostCounts = todayPostCountsRaw;
+
+      const AGENT_IDS = ['image-matching', 'promotion', 'chatbot-alert'] as const;
+
+      const agents = AGENT_IDS.map((agentId) => {
+        const decisionCount = postCounts.find((c) => c.agentId === agentId)?._count ?? 0;
+        const postCount = todayPostCounts.find((c) => c.agentId === agentId)?._count ?? 0;
+        const latest = latestPosts.find((p) => p.agentId === agentId);
+        const events = decisions
+          .filter((d) => d.agentId === agentId)
+          .map((d) => ({
+            id: d.id,
+            eventType: d.eventType,
+            selectedAction: d.selectedAction,
+            stayedSilent: d.stayedSilent,
+            createdAt: d.createdAt.toISOString(),
+            reportId: d.reportId,
+          }));
+
+        return {
+          agentId,
+          todayPosts: postCount,
+          todayDecisions: decisionCount,
+          latestPost: latest
+            ? { id: latest.id, title: latest.title, createdAt: latest.createdAt.toISOString() }
+            : null,
+          recentEvents: events,
+        };
+      });
+
+      res.set('Cache-Control', 'public, max-age=10');
+      res.json({ agents, serverTime: new Date().toISOString() });
+    },
+  );
+
+  // ══════════════════════════════════════
   // 사용자 엔드포인트
   // ══════════════════════════════════════
 

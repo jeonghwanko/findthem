@@ -1,24 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { adminApi } from '../../api/admin.js';
-
-interface InquiryItem {
-  id: string;
-  category: string;
-  title: string;
-  content: string;
-  status: string;
-  replyContent: string | null;
-  repliedAt: string | null;
-  createdAt: string;
-  user: { id: string; name: string } | null;
-}
-
-interface InquiryListResponse {
-  items: InquiryItem[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import type { InquiryAdmin, InquiryListResponse } from '@findthem/shared';
 
 const TABS: { value: string; label: string }[] = [
   { value: 'OPEN', label: '미답변' },
@@ -57,7 +39,7 @@ function formatDate(iso: string) {
 }
 
 interface InquiryRowProps {
-  item: InquiryItem;
+  item: InquiryAdmin;
   onReply: (id: string, replyContent: string) => Promise<void>;
   actionLoading: string | null;
 }

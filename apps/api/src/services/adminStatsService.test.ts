@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QUEUE_NAMES } from '@findthem/shared';
 import { prisma } from '../db/client.js';
 
 // setup.ts에서 전역 prisma mock이 등록되어 있으므로 여기서 참조
@@ -12,7 +13,7 @@ const userMock = (prisma as any).user;
 // 파일 내 vi.mock은 hoisting되어 setup.ts보다 이 파일의 것이 우선 적용됨.
 
 const imageQueueMock = {
-  name: 'image-processing',
+  name: QUEUE_NAMES.IMAGE_PROCESSING,
   add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }),
   getWaitingCount: vi.fn().mockResolvedValue(0),
   getActiveCount: vi.fn().mockResolvedValue(0),
@@ -41,14 +42,25 @@ function makeQueueMock(name: string) {
 
 vi.mock('../jobs/queues.js', () => ({
   imageQueue: imageQueueMock,
-  promotionQueue: makeQueueMock('promotion'),
-  matchingQueue: makeQueueMock('matching'),
-  notificationQueue: makeQueueMock('notification'),
-  cleanupQueue: makeQueueMock('cleanup'),
-  promotionMonitorQueue: makeQueueMock('promotion-monitor'),
-  promotionRepostQueue: makeQueueMock('promotion-repost'),
-  crawlSchedulerQueue: makeQueueMock('crawl-scheduler'),
-  crawlQueue: makeQueueMock('crawl'),
+  promotionQueue: makeQueueMock(QUEUE_NAMES.PROMOTION),
+  matchingQueue: makeQueueMock(QUEUE_NAMES.MATCHING),
+  notificationQueue: makeQueueMock(QUEUE_NAMES.NOTIFICATION),
+  cleanupQueue: makeQueueMock(QUEUE_NAMES.CLEANUP),
+  promotionMonitorQueue: makeQueueMock(QUEUE_NAMES.PROMOTION_MONITOR),
+  promotionRepostQueue: makeQueueMock(QUEUE_NAMES.PROMOTION_REPOST),
+  crawlSchedulerQueue: makeQueueMock(QUEUE_NAMES.CRAWL_SCHEDULER),
+  crawlQueue: makeQueueMock(QUEUE_NAMES.CRAWL),
+  QUEUE_MAP: {
+    [QUEUE_NAMES.IMAGE_PROCESSING]: imageQueueMock,
+    [QUEUE_NAMES.PROMOTION]: makeQueueMock(QUEUE_NAMES.PROMOTION),
+    [QUEUE_NAMES.MATCHING]: makeQueueMock(QUEUE_NAMES.MATCHING),
+    [QUEUE_NAMES.NOTIFICATION]: makeQueueMock(QUEUE_NAMES.NOTIFICATION),
+    [QUEUE_NAMES.CLEANUP]: makeQueueMock(QUEUE_NAMES.CLEANUP),
+    [QUEUE_NAMES.PROMOTION_MONITOR]: makeQueueMock(QUEUE_NAMES.PROMOTION_MONITOR),
+    [QUEUE_NAMES.PROMOTION_REPOST]: makeQueueMock(QUEUE_NAMES.PROMOTION_REPOST),
+    [QUEUE_NAMES.CRAWL_SCHEDULER]: makeQueueMock(QUEUE_NAMES.CRAWL_SCHEDULER),
+    [QUEUE_NAMES.CRAWL]: makeQueueMock(QUEUE_NAMES.CRAWL),
+  },
   createWorker: vi.fn(),
 }));
 
@@ -223,7 +235,7 @@ describe('getQueueStatuses', () => {
     imageQueueMock.getFailedCount.mockResolvedValue(2);
 
     const result = await getQueueStatuses();
-    const imageStatus = result.find((q) => q.name === 'image-processing');
+    const imageStatus = result.find((q) => q.name === QUEUE_NAMES.IMAGE_PROCESSING);
 
     expect(imageStatus).toBeDefined();
     expect(imageStatus!.waiting).toBe(5);

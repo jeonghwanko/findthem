@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi } from '../../api/admin.js';
-import type { ReportSummary, ReportStatus, SubjectType } from '@findthem/shared';
-
-interface AdminReportListResponse {
-  reports: ReportSummary[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import { SUBJECT_TYPE_LABELS } from '@findthem/shared';
+import type { ReportSummary, ReportStatus, SubjectType, ReportListResponse } from '@findthem/shared';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '전체 상태' },
@@ -19,9 +13,9 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '전체 유형' },
-  { value: 'PERSON', label: '사람' },
-  { value: 'DOG', label: '강아지' },
-  { value: 'CAT', label: '고양이' },
+  { value: 'PERSON', label: SUBJECT_TYPE_LABELS.ko.PERSON },
+  { value: 'DOG', label: SUBJECT_TYPE_LABELS.ko.DOG },
+  { value: 'CAT', label: SUBJECT_TYPE_LABELS.ko.CAT },
 ];
 
 const STATUS_BADGE: Record<ReportStatus, string> = {
@@ -31,11 +25,7 @@ const STATUS_BADGE: Record<ReportStatus, string> = {
   EXPIRED: 'bg-gray-100 text-gray-500',
 };
 
-const TYPE_LABEL: Record<SubjectType, string> = {
-  PERSON: '사람',
-  DOG: '강아지',
-  CAT: '고양이',
-};
+const TYPE_LABEL: Record<SubjectType, string> = SUBJECT_TYPE_LABELS.ko;
 
 function shortId(id: string) {
   return id.slice(0, 8);
@@ -51,7 +41,7 @@ export default function ReportsManagePage() {
   const [q, setQ] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<AdminReportListResponse | null>(null);
+  const [data, setData] = useState<ReportListResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -66,7 +56,7 @@ export default function ReportsManagePage() {
       if (q) params.set('q', q);
       params.set('page', String(page));
       params.set('limit', '20');
-      const result = await adminApi.get<AdminReportListResponse>(
+      const result = await adminApi.get<ReportListResponse>(
         `/admin/reports?${params.toString()}`,
       );
       setData(result);

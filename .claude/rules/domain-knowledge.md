@@ -53,7 +53,7 @@ externalSource: string | null  // 소스 식별자 ('animal-api' | 'safe182' | .
 **라우트**
 ```
 POST   /api/reports              신고 등록 (requireAuth, 사진 필수)
-GET    /api/reports              목록 (optionalAuth, ?page&limit&type&status&q)
+GET    /api/reports              목록 (optionalAuth, ?page&limit&type&status&phase&region&q)
 GET    /api/reports/mine         내 신고 목록 (requireAuth)
 GET    /api/reports/:id          상세
 PATCH  /api/reports/:id/status   상태 변경 (requireAuth, 본인만)
@@ -83,6 +83,7 @@ POST   /api/sightings              제보 접수 (optionalAuth, 사진 필수, r
 PATCH  /api/sightings/:id          수정 (회원: userId, 비회원: editPassword)
 DELETE /api/sightings/:id          삭제 (회원: userId, 비회원: editPassword)
 GET    /api/sightings              목록 (반경 검색 지원: ?lat&lng&radiusKm)
+GET    /api/sightings/mine         내 제보 목록 (requireAuth)
 GET    /api/reports/:id/sightings  특정 신고의 제보 목록
 ```
 
@@ -427,8 +428,10 @@ getSubjectTypeLabel('DOG')          // → "강아지"
 ### API 페이지네이션
 
 ```ts
-GET /api/reports?page=1&limit=20&type=DOG&status=ACTIVE&q=검색어
-// 응답: { reports, total, page, totalPages }  (reports는 deprecated, items로 마이그레이션 예정)
+GET /api/reports?page=1&limit=20&type=DOG&phase=sighting_received&region=서울&q=검색어
+// phase: searching | sighting_received | analysis_done | found (REPORT_PHASE_VALUES)
+// region: 시/도 이름 (lastSeenAddress ILIKE 검색)
+// 응답: { items, reports(deprecated), total, page, totalPages }
 
 GET /api/reports/mine?page=1&limit=20
 // 응답: { reports, total, page, totalPages }
@@ -549,9 +552,10 @@ POST   /api/sponsors/crypto/verify      크립토 온체인 검증
 
 ### 비즈니스 규칙
 
-- Quote TTL: 5분 (`QUOTE_TTL_SECS = 300`)
+- Quote TTL: 5분 (`QUOTE_TTL_SECS = 300`) — 만료 시 `QUOTE_EXPIRED` (410) 반환
+- 토큰 목록: `SUPPORTED_PAY_TOKENS` (`@findthem/shared`) — APT, USDC, USDt, ETH, BNB, SOL
 - 최소 후원: $1 (100 cents), 최대: $100,000 (10,000,000 cents)
-- TX 해시 중복 방지: `Sponsor.txHash` unique
+- TX 해시 중복 방지: `Sponsor.txHash` unique — P2002 catch 시 `verifiedAt` 롤백 필수
 - 원자적 선점: `verifiedAt`이 null인 경우에만 검증 진행 (동시 요청 방지)
 - Toss 중복 검증 방지: `create` + P2002 캐치 패턴 (RACE-05) — `findUnique` 없이 직접 create 시도
 - 프론트엔드에서 signing 전 quote 만료 확인 필수
@@ -896,6 +900,56 @@ QUEUE_NAMES.QA_CRAWL    // 'qa-crawl'    Q&A 크롤 (4시간마다 cron)
 ### 환경 변수
 
 기존 네이버 검색 API 자격증명 공유: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+
+---
+
+## 17. 에이전트 활동 씬 (Agent Activity Scene)
+
+커뮤니티 페이지에서 3종 AI 에이전트가 일하는 모습을 게임처럼 보여주는 Pixi.js + Spine 씬.
+HumanoidAgents 스타일의 탑다운 픽셀아트 사무실 + 기존 Spine 캐릭터 결합.
+
+### 씬 구성
+
+```
+┌──────────┐  ┌──────┐  ┌──────────┐  ┌─────────┐
+│ 분석실    │  │ 복도 │  │ 홍보실    │  │안내데스크│
+│ Claude   │──│      │──│ Heimi    │──│  Ali    │
+└──────────┘  └──────┘  └──────────┘  └─────────┘
+```
+
+- 탑다운 뷰, 픽셀아트 타일맵 배경 (Pixi Graphics)
+- Spine 캐릭터 축소(0.15), 방 안 미니 패트롤
+- 실시간 에이전트 활동 폴링 (15초 간격)
+
+### 데이터 흐름
+
+```
+useAgentActivity (15초 폴링)
+  → GET /api/community/agent-activity?since=<ISO>
+  → 새 이벤트 → pendingEventsRef (Pixi ticker에서 소비)
+  → 에이전트 expression + 작업 아이콘 + 말풍선 표시
+```
+
+### 라우트
+
+```
+GET    /api/community/agent-activity   에이전트 활동 (공개, optionalAuth)
+  ?since=<ISO>                         이후 이벤트만 (기본: UTC 오늘 시작)
+  ?limit=20                            최대 50건
+```
+
+응답: `AgentActivityResponse` (agents[], serverTime)
+
+### 핵심 파일
+
+| 파일 | 역할 |
+|------|------|
+| `apps/web/src/components/AgentActivityScene.tsx` | 메인 Pixi+Spine 씬 |
+| `apps/web/src/components/AgentActivityOverlay.tsx` | HTML 통계 오버레이 |
+| `apps/web/src/hooks/useAgentActivity.ts` | 15초 폴링 훅 |
+| `apps/web/src/game/AgentRoom.ts` | 픽셀아트 방 렌더러 |
+| `apps/api/src/routes/community.ts` | agent-activity 엔드포인트 |
+| `packages/shared/src/types.ts` | AgentActivityResponse 타입 |
 
 ---
 

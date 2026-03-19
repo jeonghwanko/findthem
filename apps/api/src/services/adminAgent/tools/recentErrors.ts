@@ -1,13 +1,5 @@
 import type { Queue } from 'bullmq';
-import {
-  imageQueue,
-  promotionQueue,
-  matchingQueue,
-  notificationQueue,
-  cleanupQueue,
-  promotionMonitorQueue,
-  promotionRepostQueue,
-} from '../../../jobs/queues.js';
+import { QUEUE_MAP } from '../../../jobs/queues.js';
 import { QUEUE_NAMES } from '@findthem/shared';
 
 type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
@@ -16,16 +8,6 @@ export interface RecentErrorsInput {
   queueName?: QueueName;
   limit?: number;
 }
-
-const QUEUE_MAP: Record<string, Queue> = {
-  'image-processing': imageQueue,
-  promotion: promotionQueue,
-  matching: matchingQueue,
-  notification: notificationQueue,
-  cleanup: cleanupQueue,
-  'promotion-monitor': promotionMonitorQueue,
-  'promotion-repost': promotionRepostQueue,
-};
 
 export async function getRecentErrors(input: RecentErrorsInput): Promise<unknown> {
   const limit = Math.min(input.limit ?? 20, 100);

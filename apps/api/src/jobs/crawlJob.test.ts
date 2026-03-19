@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QUEUE_NAMES } from '@findthem/shared';
 
 // DB mock
 vi.mock('../db/client.js', () => ({
@@ -25,8 +26,8 @@ vi.mock('./queues.js', () => ({
   },
   createWorker: vi.fn(),
   QUEUE_NAMES: {
-    CRAWL_SCHEDULER: 'crawl-scheduler',
-    CRAWL: 'crawl',
+    CRAWL_SCHEDULER: QUEUE_NAMES.CRAWL_SCHEDULER,
+    CRAWL: QUEUE_NAMES.CRAWL,
   },
 }));
 

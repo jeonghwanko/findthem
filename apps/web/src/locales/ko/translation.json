@@ -108,6 +108,10 @@
   "browse": {
     "title": "실종 신고 목록",
     "all": "전체",
+    "viewAll": "전체",
+    "viewReports": "신고",
+    "viewSightings": "제보",
+    "labelSighting": "제보",
     "filterType": "종류",
     "filterStatus": "상태",
     "filterRegion": "지역",
@@ -123,11 +127,15 @@
   },
   "myReports": {
     "title": "내 활동",
-    "tabReports": "내 신고",
-    "tabSightings": "내 제보",
-    "empty": "등록한 신고가 없습니다",
+"empty": "등록한 신고가 없습니다",
     "emptySightings": "등록한 제보가 없습니다",
+    "emptyAll": "등록한 신고/제보가 없습니다",
     "sightingNoDesc": "(설명 없음)",
+    "filterAll": "전체",
+    "filterReports": "신고",
+    "filterSightings": "제보",
+    "labelReport": "신고",
+    "labelSighting": "제보",
     "edit": "수정",
     "delete": "삭제",
     "deleteConfirm": "\"{{name}}\" 신고를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
@@ -266,6 +274,7 @@
     "CAT": "고양이"
   },
   "admin": {
+    "authFailed": "인증에 실패했습니다",
     "dashboard": {
       "title": "대시보드",
       "refresh": "새로고침",
@@ -374,6 +383,7 @@
     "AD_REWARD_COOLDOWN": "광고 보상은 잠시 후 다시 받을 수 있습니다.",
     "VALIDATION_ERROR": "입력값이 올바르지 않습니다.",
     "INQUIRY_NOT_FOUND": "문의를 찾을 수 없습니다.",
+    "ADMIN_AUTH_FAILED": "유효하지 않은 API Key입니다.",
     "QUOTE_EXPIRED": "결제 견적이 만료되었습니다. 다시 시도해주세요."
   },
   "agent": {
@@ -607,5 +617,23 @@
   },
   "common": {
     "back": "이전 페이지"
+  },
+  "agentScene": {
+    "loading": "에이전트 사무실 로딩 중...",
+    "claude": { "name": "탐정 클로드" },
+    "heimi": { "name": "홍보왕 헤르미" },
+    "ali": { "name": "안내봇 알리" },
+    "bubble": {
+      "matchDetected": "매칭 발견!",
+      "outreachSent": "홍보 완료!",
+      "reportCreated": "신고 접수!",
+      "sightingAnalyzed": "제보 분석 완료!",
+      "caseResolved": "사건 해결!",
+      "working": "작업 중..."
+    },
+    "stats": {
+      "posts": "건",
+      "decisions": "건"
+    }
   }
 }

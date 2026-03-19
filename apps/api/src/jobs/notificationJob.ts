@@ -18,8 +18,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
     where: { id: matchId, status: { not: 'NOTIFIED' } },
     data: { status: 'NOTIFIED' },
     include: {
-      sighting: { include: { photos: true } },
-      report: { include: { user: true } },
+      report: { include: { user: { select: { id: true, name: true, phone: true, fcmToken: true } } } },
     },
   }).catch(() => null);
 

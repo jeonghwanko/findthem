@@ -1,13 +1,5 @@
 import type { Queue } from 'bullmq';
-import {
-  imageQueue,
-  promotionQueue,
-  matchingQueue,
-  notificationQueue,
-  cleanupQueue,
-  promotionMonitorQueue,
-  promotionRepostQueue,
-} from '../../../jobs/queues.js';
+import { QUEUE_MAP } from '../../../jobs/queues.js';
 import { QUEUE_NAMES, type QueueStatusSummary } from '@findthem/shared';
 
 type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
@@ -15,16 +7,6 @@ type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
 export interface QueueStatusInput {
   queueName: QueueName | 'all';
 }
-
-const QUEUE_MAP: Record<string, Queue> = {
-  'image-processing': imageQueue,
-  promotion: promotionQueue,
-  matching: matchingQueue,
-  notification: notificationQueue,
-  cleanup: cleanupQueue,
-  'promotion-monitor': promotionMonitorQueue,
-  'promotion-repost': promotionRepostQueue,
-};
 
 async function getSingleQueueStatus(queue: Queue): Promise<QueueStatusSummary> {
   const [waiting, active, completed, failed, delayed, paused] = await Promise.all([

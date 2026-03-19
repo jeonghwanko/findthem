@@ -1,23 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi } from '../../api/admin.js';
-
-interface AdminUser {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string | null;
-  createdAt: string;
-  _count?: { reports: number };
-  blockedAt?: string | null;
-  blockReason?: string | null;
-}
-
-interface AdminUserListResponse {
-  users: AdminUser[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import type { AdminUserItem, AdminUserListResponse } from '@findthem/shared';
 
 const BLOCKED_OPTIONS = [
   { value: '', label: '전체' },
@@ -76,7 +59,7 @@ export default function UsersManagePage() {
     if (e.key === 'Enter') handleSearch();
   }
 
-  async function handleToggleBlock(user: AdminUser) {
+  async function handleToggleBlock(user: AdminUserItem) {
     const isBlocked = !!user.blockedAt;
 
     if (isBlocked) {

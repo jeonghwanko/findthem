@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QUEUE_NAMES } from '@findthem/shared';
 
 // prisma mock
 vi.mock('../db/client.js', () => ({
@@ -17,7 +18,7 @@ vi.mock('./queues.js', () => ({
     upsertJobScheduler: vi.fn().mockResolvedValue(undefined),
   },
   QUEUE_NAMES: {
-    QA_CRAWL: 'qa-crawl',
+    QA_CRAWL: QUEUE_NAMES.QA_CRAWL,
   },
 }));
 

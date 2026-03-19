@@ -1,16 +1,6 @@
 import type { Queue } from 'bullmq';
 import { prisma } from '../db/client.js';
-import {
-  imageQueue,
-  promotionQueue,
-  matchingQueue,
-  notificationQueue,
-  cleanupQueue,
-  promotionMonitorQueue,
-  promotionRepostQueue,
-  crawlSchedulerQueue,
-  crawlQueue,
-} from '../jobs/queues.js';
+import { imageQueue, QUEUE_MAP } from '../jobs/queues.js';
 import { NOTIFY_THRESHOLD, type QueueStatusSummary, type AdminOverviewStats } from '@findthem/shared';
 
 // ── 날짜 헬퍼 ──
@@ -42,18 +32,7 @@ async function getQueueStatusSingle(queue: Queue): Promise<QueueStatusSummary> {
 }
 
 export async function getQueueStatuses(): Promise<QueueStatusSummary[]> {
-  const queues: Queue[] = [
-    crawlSchedulerQueue,
-    crawlQueue,
-    imageQueue,
-    promotionQueue,
-    matchingQueue,
-    notificationQueue,
-    cleanupQueue,
-    promotionMonitorQueue,
-    promotionRepostQueue,
-  ];
-  return Promise.all(queues.map(getQueueStatusSingle));
+  return Promise.all(Object.values(QUEUE_MAP).map(getQueueStatusSingle));
 }
 
 // ── 개요 통계 ──
@@ -215,16 +194,6 @@ export async function getTimelineStats(options: TimelineOptions) {
 }
 
 // ── 실패 잡 조회 ──
-
-const QUEUE_MAP: Record<string, Queue> = {
-  'image-processing': imageQueue,
-  promotion: promotionQueue,
-  matching: matchingQueue,
-  notification: notificationQueue,
-  cleanup: cleanupQueue,
-  'promotion-monitor': promotionMonitorQueue,
-  'promotion-repost': promotionRepostQueue,
-};
 
 export async function getFailedJobs(queueName?: string, limit = 20) {
   const queuesToCheck: Queue[] = queueName

@@ -28,7 +28,7 @@ export function useAdminAuth() {
       setAuthenticated(true);
     } catch {
       clearAdminKey();
-      throw new Error('유효하지 않은 API Key입니다.');
+      throw new Error('ADMIN_AUTH_FAILED');
     }
   }, []);
 

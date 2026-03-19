@@ -7,7 +7,7 @@ import { agentLimiter } from '../middlewares/rateLimit.js';
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
-import { MAX_FILE_SIZE, ERROR_CODES, STEP_MESSAGES, type Locale } from '@findthem/shared';
+import { MAX_FILE_SIZE, ERROR_CODES, STEP_MESSAGES, CHAT_PLATFORM_VALUES, type Locale } from '@findthem/shared';
 import type { ChatMessage } from '@prisma/client';
 
 const upload = multer({
@@ -21,7 +21,7 @@ const upload = multer({
 
 const createSessionSchema = z.object({
   reportId: z.string().optional(),
-  platform: z.enum(['WEB', 'KAKAO']).optional().default('WEB'),
+  platform: z.enum(CHAT_PLATFORM_VALUES).optional().default('WEB'),
 });
 
 const sendMessageSchema = z.object({

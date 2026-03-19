@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Trash2, CheckCircle, MapPin, Camera } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, MapPin, Camera, Eye } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type ReportStatus, type Sighting, type SightingListResponse } from '../api/client';
 import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
 
@@ -40,60 +40,83 @@ function SubjectBadge({ type }: { type: Report['subjectType'] }) {
   );
 }
 
-type Tab = 'reports' | 'sightings';
+type ActivityItem =
+  | { kind: 'report'; data: Report; createdAt: string }
+  | { kind: 'sighting'; data: Sighting; createdAt: string };
+
+type Filter = 'all' | 'report' | 'sighting';
+
+const PAGE_SIZE = 12;
 
 export default function MyReportsPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l}-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
 
-  const [tab, setTab] = useState<Tab>('reports');
-
-  // Reports state
-  const [reports, setReports] = useState<Report[]>([]);
-  const [reportsLoading, setReportsLoading] = useState(true);
-  const [reportsPage, setReportsPage] = useState(1);
-  const [reportsTotalPages, setReportsTotalPages] = useState(1);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [loading, setLoading] = useState(true);
+  const [allItems, setAllItems] = useState<ActivityItem[]>([]);
+  const [page, setPage] = useState(1);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Sightings state
-  const [sightings, setSightings] = useState<Sighting[]>([]);
-  const [sightingsLoading, setSightingsLoading] = useState(true);
-  const [sightingsPage, setSightingsPage] = useState(1);
-  const [sightingsTotalPages, setSightingsTotalPages] = useState(1);
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [reportsRes, sightingsRes] = await Promise.all([
+        api.get<ReportListResponse>('/reports/mine?page=1&limit=100'),
+        api.get<SightingListResponse>('/sightings/mine?page=1&limit=100'),
+      ]);
+      const reports: ActivityItem[] = (reportsRes.items ?? reportsRes.reports ?? []).map((r) => ({
+        kind: 'report' as const,
+        data: r,
+        createdAt: r.createdAt,
+      }));
+      const sightings: ActivityItem[] = (sightingsRes.sightings ?? []).map((s) => ({
+        kind: 'sighting' as const,
+        data: s,
+        createdAt: s.createdAt,
+      }));
+      const merged = [...reports, ...sightings].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setAllItems(merged);
+    } catch {
+      setAllItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Fetch reports
-  useEffect(() => {
-    if (tab !== 'reports') return;
-    setReportsLoading(true);
-    api.get<ReportListResponse>(`/reports/mine?page=${reportsPage}&limit=12`)
-      .then((data) => {
-        setReports(data.items ?? data.reports ?? []);
-        setReportsTotalPages(data.totalPages);
-      })
-      .catch(() => setReports([]))
-      .finally(() => setReportsLoading(false));
-  }, [tab, reportsPage]);
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
 
-  // Fetch sightings
-  useEffect(() => {
-    if (tab !== 'sightings') return;
-    setSightingsLoading(true);
-    api.get<SightingListResponse>(`/sightings/mine?page=${sightingsPage}&limit=12`)
-      .then((data) => {
-        setSightings(data.sightings ?? []);
-        setSightingsTotalPages(data.totalPages);
-      })
-      .catch(() => setSightings([]))
-      .finally(() => setSightingsLoading(false));
-  }, [tab, sightingsPage]);
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
+
+  const counts = useMemo(() => {
+    let report = 0;
+    let sighting = 0;
+    for (const item of allItems) {
+      if (item.kind === 'report') report++;
+      else sighting++;
+    }
+    return { all: report + sighting, report, sighting };
+  }, [allItems]);
+
+  const filtered = useMemo(
+    () => filter === 'all' ? allItems : allItems.filter((item) => item.kind === filter),
+    [allItems, filter],
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages);
+  if (clampedPage !== page) setPage(clampedPage);
+  const paged = filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE);
 
   const handleDelete = async (report: Report) => {
     if (!confirm(t('myReports.deleteConfirm', { name: report.name }))) return;
     setActionLoading(report.id);
     try {
       await api.delete(`/reports/${report.id}`);
-      setReportsPage(1);
+      setAllItems((prev) => prev.filter((item) => !(item.kind === 'report' && item.data.id === report.id)));
     } catch {
       alert(t('myReports.deleteError'));
     } finally {
@@ -106,8 +129,12 @@ export default function MyReportsPage() {
     setActionLoading(report.id + '-status');
     try {
       await api.patch(`/reports/${report.id}/status`, { status: nextStatus });
-      setReports((prev) =>
-        prev.map((r) => (r.id === report.id ? { ...r, status: nextStatus } : r))
+      setAllItems((prev) =>
+        prev.map((item) =>
+          item.kind === 'report' && item.data.id === report.id
+            ? { ...item, data: { ...item.data, status: nextStatus } }
+            : item
+        )
       );
     } catch {
       alert(t('myReports.statusError'));
@@ -119,10 +146,12 @@ export default function MyReportsPage() {
   const primaryPhoto = (report: Report) =>
     report.photos.find((p) => p.isPrimary) ?? report.photos[0] ?? null;
 
-  const loading = tab === 'reports' ? reportsLoading : sightingsLoading;
-  const page = tab === 'reports' ? reportsPage : sightingsPage;
-  const totalPages = tab === 'reports' ? reportsTotalPages : sightingsTotalPages;
-  const setPage = tab === 'reports' ? setReportsPage : setSightingsPage;
+  const filterButtons: { key: Filter; label: string }[] = [
+    { key: 'all', label: t('myReports.filterAll') },
+    { key: 'report', label: t('myReports.filterReports') },
+    { key: 'sighting', label: t('myReports.filterSightings') },
+  ];
+
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -136,24 +165,24 @@ export default function MyReportsPage() {
         </Link>
       </div>
 
-      {/* 탭 */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6">
-        <button
-          onClick={() => setTab('reports')}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'reports' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'
-          }`}
-        >
-          {t('myReports.tabReports')}
-        </button>
-        <button
-          onClick={() => setTab('sightings')}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'sightings' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'
-          }`}
-        >
-          {t('myReports.tabSightings')}
-        </button>
+      {/* 필터 */}
+      <div className="flex gap-2 mb-6">
+        {filterButtons.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === key
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {label}
+            <span className={`ml-1.5 text-xs ${filter === key ? 'text-gray-300' : 'text-gray-400'}`}>
+              {counts[key]}
+            </span>
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -162,32 +191,24 @@ export default function MyReportsPage() {
             <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : tab === 'reports' && reports.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-gray-400 mb-4">{t('myReports.empty')}</p>
+          <p className="text-gray-400 mb-4">
+            {filter === 'sighting' ? t('myReports.emptySightings') : filter === 'report' ? t('myReports.empty') : t('myReports.emptyAll')}
+          </p>
           <Link
-            to="/reports/new"
-            className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
-          >
-            {t('nav.newReport')}
-          </Link>
-        </div>
-      ) : tab === 'sightings' && sightings.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-400 mb-4">{t('myReports.emptySightings')}</p>
-          <Link
-            to="/sightings/new"
+            to={filter === 'sighting' ? '/sightings/new' : '/reports/new'}
             className="inline-block bg-gradient-to-r from-orange-500 to-rose-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
-            {t('nav.newSighting')}
+            {filter === 'sighting' ? t('nav.newSighting') : t('nav.newReport')}
           </Link>
         </div>
       ) : (
         <>
-          {/* 신고 목록 */}
-          {tab === 'reports' && (
-            <ul className="space-y-3">
-              {reports.map((report) => {
+          <ul className="space-y-3">
+            {paged.map((item) => {
+              if (item.kind === 'report') {
+                const report = item.data;
                 const photo = primaryPhoto(report);
                 const isDeleting = actionLoading === report.id;
                 const isTogglingStatus = actionLoading === report.id + '-status';
@@ -195,8 +216,9 @@ export default function MyReportsPage() {
 
                 return (
                   <li
-                    key={report.id}
-                    className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm"
+                    key={`r-${report.id}`}
+                    onClick={() => navigate(`/reports/${report.id}`)}
+                    className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm cursor-pointer hover:border-primary-300"
                   >
                     <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
                       {photo ? (
@@ -207,16 +229,19 @@ export default function MyReportsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-600">
+                          {t('myReports.labelReport')}
+                        </span>
                         <span className="font-semibold text-gray-900 truncate">{report.name}</span>
                         <SubjectBadge type={report.subjectType} />
                         <StatusBadge status={report.status} />
                       </div>
                       <p className="text-xs text-gray-400 truncate">
                         {report.lastSeenAddress}
-                        <span className="ml-2">{new Date(report.createdAt).toLocaleDateString()}</span>
+                        <span className="ml-2">{formatTimeAgo(report.createdAt, locale)}</span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       {(report.status === 'ACTIVE' || report.status === 'FOUND') && (
                         <button type="button" onClick={() => { void handleToggleStatus(report); }} disabled={isBusy}
                           title={report.status === 'ACTIVE' ? t('myReports.markFound') : t('myReports.markActive')}
@@ -235,52 +260,55 @@ export default function MyReportsPage() {
                     </div>
                   </li>
                 );
-              })}
-            </ul>
-          )}
+              }
 
-          {/* 제보 목록 */}
-          {tab === 'sightings' && (
-            <ul className="space-y-3">
-              {sightings.map((sighting) => {
-                const photo = sighting.photos?.[0];
-                return (
-                  <li
-                    key={sighting.id}
-                    onClick={() => sighting.reportId && navigate(`/reports/${sighting.reportId}`)}
-                    className={`flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm ${sighting.reportId ? 'cursor-pointer hover:border-primary-300' : ''}`}
-                  >
-                    <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
-                      {photo ? (
-                        <img src={photo.thumbnailUrl ?? photo.photoUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera className="w-5 h-5" /></div>
-                      )}
+              // sighting
+              const sighting = item.data;
+              const photo = sighting.photos?.[0];
+              return (
+                <li
+                  key={`s-${sighting.id}`}
+                  onClick={() => sighting.reportId && navigate(`/reports/${sighting.reportId}`)}
+                  className={`flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm ${sighting.reportId ? 'cursor-pointer hover:border-primary-300' : ''}`}
+                >
+                  <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
+                    {photo ? (
+                      <img src={photo.thumbnailUrl ?? photo.photoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera className="w-5 h-5" /></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-600">
+                        {t('myReports.labelSighting')}
+                      </span>
+                      <span className="font-semibold text-gray-900 truncate">
+                        {sighting.description || t('myReports.sightingNoDesc')}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-semibold text-gray-900 truncate">
-                          {sighting.description || t('myReports.sightingNoDesc')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-400 truncate flex items-center gap-1">
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        {sighting.address}
-                        <span className="ml-2">{formatTimeAgo(sighting.createdAt, locale)}</span>
-                      </p>
+                    <p className="text-xs text-gray-400 truncate flex items-center gap-1">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      {sighting.address}
+                      <span className="ml-2">{formatTimeAgo(sighting.createdAt, locale)}</span>
+                    </p>
+                  </div>
+                  {sighting.reportId && (
+                    <div className="flex-shrink-0 text-gray-300">
+                      <Eye className="w-4 h-4" />
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                  )}
+                </li>
+              );
+            })}
+          </ul>
 
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8">
-              <button onClick={() => setPage((p: number) => Math.max(1, p - 1))} disabled={page === 1}
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">{t('browse.prev')}</button>
               <span className="text-sm text-gray-600">{page} / {totalPages}</span>
-              <button onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">{t('browse.next')}</button>
             </div>
           )}
