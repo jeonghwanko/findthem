@@ -303,7 +303,7 @@ export default function GamePage() {
           <button
             onClick={handleStartGame}
             disabled={!selected}
-            className="w-full max-w-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full max-w-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_0_0_#4338ca,0_6px_12px_rgba(67,56,202,0.3)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#4338ca,0_4px_8px_rgba(67,56,202,0.3)] active:translate-y-[4px] active:shadow-none transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <Play className="w-5 h-5" />
             {adGranted ? t('game.startWithAd') : t('game.start')}
