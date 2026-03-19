@@ -179,7 +179,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
         {/* 모바일 우측 (md 미만에서만 표시) */}
         <div className="flex md:hidden items-center gap-2">
-          <Link to="/team" className="text-sm text-gray-600 hover:text-gray-900 px-1.5 py-1 rounded transition-colors">
+          <Link to="/team" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 px-1.5 py-1 rounded transition-colors">
+            <Users className="w-4 h-4" aria-hidden="true" />
             {t('nav.team')}
           </Link>
           <LanguageSwitcher />

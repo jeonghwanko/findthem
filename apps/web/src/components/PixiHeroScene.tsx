@@ -713,49 +713,16 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             transition: 'opacity 0.6s ease 0.2s',
           }}
         >
-          {/* 왼쪽 열: 게임 버튼 + Lv 게이지 */}
-          <div className="flex flex-col gap-2 flex-1" style={{ pointerEvents: 'auto' }}>
+          {/* 왼쪽 열: 게임 버튼 (전체 높이, 아이콘 위 + 텍스트 아래) */}
+          <div className="flex flex-1" style={{ pointerEvents: 'auto' }}>
             <Link
               to="/game"
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all py-2.5 px-2"
+              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-700 shadow-sm transition-all px-2"
               aria-label={t('home.playToSponsor')}
             >
-              <Gamepad2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <Gamepad2 className="w-8 h-8 shrink-0" aria-hidden="true" />
               <span className="text-xs font-semibold leading-tight">{t('home.playToSponsor')}</span>
             </Link>
-            <div className="flex flex-col gap-0.5 px-1">
-              {/* Lv 행 */}
-              <span
-                className="text-sm font-bold text-white leading-none"
-                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}
-              >
-                ⭐ Lv.{xpStats?.userLevel ?? 1}
-              </span>
-              {/* XP 행 */}
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="text-sm font-bold text-amber-300 leading-none shrink-0"
-                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}
-                >
-                  ⚡ XP
-                </span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] text-white/70 leading-none mb-0.5">
-                    {xpStats?.sponsorXp ?? 0}
-                  </span>
-                  <div className="h-1.5 bg-white/20 rounded-full overflow-hidden w-16">
-                    <div
-                      className="h-full bg-amber-400 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${xpStats && xpStats.xpRequiredForLevel > 0
-                          ? Math.min(100, Math.round((xpStats.currentXP / xpStats.xpRequiredForLevel) * 100))
-                          : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* 오른쪽 열: 신고 + 제보 */}
