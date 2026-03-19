@@ -73,8 +73,36 @@ declare namespace kakao {
 
       type AddressCallback = (result: AddressResult[], status: Status) => void;
 
+      interface RoadAddress {
+        address_name: string;
+        building_name: string;
+        region_1depth_name: string;
+        region_2depth_name: string;
+        region_3depth_name: string;
+        road_name: string;
+        main_building_no: string;
+        sub_building_no: string;
+      }
+
+      interface JibunAddress {
+        address_name: string;
+        region_1depth_name: string;
+        region_2depth_name: string;
+        region_3depth_name: string;
+        main_address_no: string;
+        sub_address_no: string;
+      }
+
+      interface Coord2AddressResult {
+        road_address: RoadAddress | null;
+        address: JibunAddress;
+      }
+
+      type Coord2AddressCallback = (result: Coord2AddressResult[], status: Status) => void;
+
       class Geocoder {
         addressSearch(address: string, callback: AddressCallback): void;
+        coord2Address(lng: number, lat: number, callback: Coord2AddressCallback): void;
       }
     }
 

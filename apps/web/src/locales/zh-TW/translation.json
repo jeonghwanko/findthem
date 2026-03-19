@@ -215,6 +215,12 @@
     "passwordLabel": "密碼（用於編輯/刪除）",
     "passwordPlaceholder": "至少 4 個字元",
     "passwordHint": "設定密碼後可以編輯或刪除此線索",
+    "exifGps": "GPS 位置",
+    "exifTime": "拍攝時間",
+    "exifAddress": "地址",
+    "exifApplied": "已從照片自動填入{{fields}}",
+    "photoN": "照片 {{n}}",
+    "manualInput": "手動輸入",
     "submitting": "提交中...",
     "submit": "提交線索",
     "submitError": "提交失敗。",
@@ -239,6 +245,8 @@
   },
   "upload": {
     "addPhoto": "新增照片",
+    "takePhoto": "拍攝照片",
+    "fromGallery": "從相簿選擇",
     "limit": "最多{{max}}張，每張10MB以下"
   },
   "subjectType": {

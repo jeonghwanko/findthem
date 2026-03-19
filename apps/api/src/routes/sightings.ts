@@ -26,12 +26,12 @@ const upload = multer({
 
 const createSightingSchema = z.object({
   reportId: z.string().optional(),
-  description: z.string().min(1),
+  description: z.string().default(''),
   sightedAt: z
     .string()
     .transform((s) => new Date(s))
     .refine((d) => d <= new Date()),
-  address: z.string().min(1),
+  address: z.string().default(''),
   lat: z.number().optional(),
   lng: z.number().optional(),
   tipsterPhone: z.string().optional(),

@@ -215,6 +215,12 @@
     "passwordLabel": "パスワード（編集/削除用）",
     "passwordPlaceholder": "4文字以上",
     "passwordHint": "パスワードを設定すると後で編集・削除できます",
+    "exifGps": "GPS位置",
+    "exifTime": "撮影時刻",
+    "exifAddress": "住所",
+    "exifApplied": "写真から{{fields}}を自動取得しました",
+    "photoN": "写真 {{n}}",
+    "manualInput": "手動入力",
     "submitting": "送信中...",
     "submit": "目撃情報を送信",
     "submitError": "送信に失敗しました。",
@@ -239,6 +245,8 @@
   },
   "upload": {
     "addPhoto": "写真追加",
+    "takePhoto": "写真を撮る",
+    "fromGallery": "ギャラリーから選択",
     "limit": "最大{{max}}枚、1枚10MBまで"
   },
   "subjectType": {

@@ -62,6 +62,36 @@ export function useKakaoMap(
   return map;
 }
 
+/**
+ * GPS 좌표 → 주소 변환 (Kakao Geocoder coord2Address)
+ * Kakao Maps SDK가 로드되지 않았으면 자동 로드 후 변환.
+ */
+export function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  if (!KAKAO_JS_KEY) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(null), 10_000);
+
+    loadKakaoMapSdk(() => {
+      if (!window.kakao?.maps?.services) {
+        clearTimeout(timeout);
+        resolve(null);
+        return;
+      }
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.coord2Address(lng, lat, (result, status) => {
+        clearTimeout(timeout);
+        if (status !== window.kakao.maps.services.Status.OK || result.length === 0) {
+          resolve(null);
+          return;
+        }
+        const item = result[0];
+        resolve(item.road_address?.address_name ?? item.address.address_name);
+      });
+    });
+  });
+}
+
 // ── 테스트 전용 헬퍼 (프로덕션 빌드에서 tree-shaking 됨) ──
 export function _testReset() {
   sdkLoaded = false;

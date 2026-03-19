@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useKakaoMap, _testReset } from './useKakaoMap';
+import { useKakaoMap, reverseGeocode, _testReset, _testLoadSdk } from './useKakaoMap';
 
 // script 삽입을 가로채기 위한 헬퍼
 let capturedScripts: Array<{
@@ -176,5 +176,120 @@ describe('loadKakaoMapSdk (내부 함수 — _testLoadSdk 경유)', () => {
     capturedScripts[0].onload!();
     expect(window.kakao.maps.load).toHaveBeenCalled();
     expect(onLoadCb).not.toHaveBeenCalled(); // 콜백 미호출 → map은 null
+  });
+});
+
+// ── reverseGeocode ──
+describe('reverseGeocode', () => {
+  beforeEach(() => {
+    _testReset();
+    capturedScripts = [];
+
+    vi.spyOn(document.head, 'appendChild').mockImplementation((node: Node) => {
+      const el = node as HTMLScriptElement;
+      capturedScripts.push({
+        src: el.src,
+        onload: el.onload as (() => void) | null,
+        onerror: el.onerror as (() => void) | null,
+      });
+      return node;
+    });
+
+    delete (window as any).kakao;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (window as any).kakao;
+  });
+
+  function setupKakaoWithGeocoder(coord2AddressMock: (...args: unknown[]) => void) {
+    (window as any).kakao = {
+      maps: {
+        load: vi.fn((cb: () => void) => cb()),
+        services: {
+          Status: { OK: 'OK', ZERO_RESULTS: 'ZERO_RESULTS', ERROR: 'ERROR' },
+          Geocoder: vi.fn().mockImplementation(() => ({
+            coord2Address: coord2AddressMock,
+          })),
+        },
+      },
+    };
+  }
+
+  it('도로명 주소가 있으면 도로명 주소를 반환한다', async () => {
+    const coord2Address = vi.fn((_lng: number, _lat: number, cb: (result: unknown[], status: string) => void) => {
+      cb([{
+        road_address: { address_name: '서울특별시 송파구 송이로34길 62' },
+        address: { address_name: '서울특별시 송파구 가락동 123' },
+      }], 'OK');
+    });
+    setupKakaoWithGeocoder(coord2Address);
+
+    const promise = reverseGeocode(37.48514, 127.12665);
+
+    // SDK onload 트리거
+    capturedScripts[0].onload!();
+
+    const result = await promise;
+    expect(result).toBe('서울특별시 송파구 송이로34길 62');
+    expect(coord2Address).toHaveBeenCalledWith(127.12665, 37.48514, expect.any(Function));
+  });
+
+  it('도로명 주소가 없으면 지번 주소를 반환한다', async () => {
+    const coord2Address = vi.fn((_lng: number, _lat: number, cb: (result: unknown[], status: string) => void) => {
+      cb([{
+        road_address: null,
+        address: { address_name: '서울특별시 송파구 가락동 123' },
+      }], 'OK');
+    });
+    setupKakaoWithGeocoder(coord2Address);
+
+    const promise = reverseGeocode(37.48514, 127.12665);
+    capturedScripts[0].onload!();
+
+    const result = await promise;
+    expect(result).toBe('서울특별시 송파구 가락동 123');
+  });
+
+  it('Geocoder 결과가 비어있으면 null을 반환한다', async () => {
+    const coord2Address = vi.fn((_lng: number, _lat: number, cb: (result: unknown[], status: string) => void) => {
+      cb([], 'ZERO_RESULTS');
+    });
+    setupKakaoWithGeocoder(coord2Address);
+
+    const promise = reverseGeocode(0, 0);
+    capturedScripts[0].onload!();
+
+    expect(await promise).toBeNull();
+  });
+
+  it('services 객체가 없으면 null을 반환한다', async () => {
+    (window as any).kakao = {
+      maps: {
+        load: vi.fn((cb: () => void) => cb()),
+        // services 없음
+      },
+    };
+
+    const promise = reverseGeocode(37.5, 127.0);
+    capturedScripts[0].onload!();
+
+    expect(await promise).toBeNull();
+  });
+
+  it('SDK 로드 실패 시 10초 타임아웃으로 null을 반환한다', async () => {
+    vi.useFakeTimers();
+
+    const promise = reverseGeocode(37.5, 127.0);
+
+    // SDK 로드 실패
+    capturedScripts[0].onerror!();
+
+    // 10초 경과
+    vi.advanceTimersByTime(10_000);
+
+    expect(await promise).toBeNull();
+    vi.useRealTimers();
   });
 });

@@ -215,6 +215,12 @@
     "passwordLabel": "Password (for edit/delete)",
     "passwordPlaceholder": "4+ characters",
     "passwordHint": "Set a password to edit or delete this sighting later",
+    "exifGps": "GPS location",
+    "exifTime": "capture time",
+    "exifAddress": "address",
+    "exifApplied": "Auto-filled {{fields}} from photo",
+    "photoN": "Photo {{n}}",
+    "manualInput": "Enter manually",
     "submitting": "Submitting...",
     "submit": "Submit Sighting",
     "submitError": "Failed to submit sighting.",
@@ -239,6 +245,8 @@
   },
   "upload": {
     "addPhoto": "Add Photo",
+    "takePhoto": "Take Photo",
+    "fromGallery": "From Gallery",
     "limit": "Max {{max}} photos, 10MB each"
   },
   "subjectType": {

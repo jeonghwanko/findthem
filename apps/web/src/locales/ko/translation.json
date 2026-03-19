@@ -215,6 +215,12 @@
     "passwordLabel": "비밀번호 (수정/삭제용)",
     "passwordPlaceholder": "4자 이상",
     "passwordHint": "비회원 제보 시 비밀번호를 입력하면 나중에 수정/삭제할 수 있습니다",
+    "exifGps": "GPS 위치",
+    "exifTime": "촬영 시간",
+    "exifAddress": "주소",
+    "exifApplied": "사진에서 {{fields}}을(를) 자동으로 가져왔어요",
+    "photoN": "사진 {{n}}",
+    "manualInput": "직접 입력",
     "submitting": "제출 중...",
     "submit": "제보 제출",
     "submitError": "제보에 실패했습니다.",
@@ -239,6 +245,8 @@
   },
   "upload": {
     "addPhoto": "사진 추가",
+    "takePhoto": "직접 촬영",
+    "fromGallery": "갤러리에서 선택",
     "limit": "최대 {{max}}장, 장당 10MB 이하"
   },
   "subjectType": {
