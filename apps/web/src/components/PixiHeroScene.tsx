@@ -776,54 +776,41 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         </div>
       )}
 
-      {/* Buttons — 데스크탑: 상단 중앙 가로 */}
+      {/* Buttons + Lv/XP — 데스크탑: 상단 중앙 가로 */}
       {!isMobile && (
         <div
-          className="absolute inset-x-0 flex flex-row justify-center gap-3 px-3 z-20"
+          className="absolute inset-x-0 flex flex-col items-center gap-2 px-3 z-20"
           style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
         >
-          <Link
-            to="/game"
-            className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
-          </Link>
-          <Link
-            to="/reports/new"
-            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 px-5 py-2.5"
-            style={{ pointerEvents: 'auto' }}
-          >
-            {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </Link>
-          <Link
-            to="/browse"
-            className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
-            style={{ pointerEvents: 'auto' }}
-          >
-            {t('home.submitSighting')}
-          </Link>
-        </div>
-      )}
-
-      {/* StatsStrip — 데스크탑 전용 (모바일 숨김) */}
-      <div ref={statsRef} className="absolute z-20 hidden md:block" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
-        <StatsStrip stats={stats} recoveryRate={recoveryRate} />
-      </div>
-
-      {/* XP 레벨 배지 — 데스크탑 전용 (모바일은 게임 버튼에 통합) */}
-      {phase === 'ready' && !isMobile && (
-        <div
-          className="absolute bottom-3 inset-x-0 z-20 flex justify-center"
-          style={{ pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
-        >
-          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5">
-            {/* Lv */}
+          <div className="flex flex-row justify-center gap-3">
+            <Link
+              to="/game"
+              className="inline-flex items-center gap-2 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+              style={{ pointerEvents: 'auto' }}
+            >
+              <Gamepad2 className="w-3.5 h-3.5" aria-hidden="true" /> {t('home.playToSponsor')}
+            </Link>
+            <Link
+              to="/reports/new"
+              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 px-5 py-2.5"
+              style={{ pointerEvents: 'auto' }}
+            >
+              {t('home.newReport')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </Link>
+            <Link
+              to="/browse"
+              className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white text-gray-700 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 px-5 py-2.5"
+              style={{ pointerEvents: 'auto' }}
+            >
+              {t('home.submitSighting')}
+            </Link>
+          </div>
+          {/* Lv/XP 게이지 — 버튼 바로 아래 */}
+          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5" style={{ pointerEvents: 'auto' }}>
             <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
               ⭐ Lv.{xpStats?.userLevel ?? 1}
             </span>
             <div className="w-px h-3 bg-white/30" />
-            {/* XP + bar */}
             <span className="text-sm font-bold text-amber-300" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
               ⚡ XP
             </span>
@@ -843,6 +830,13 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
           </div>
         </div>
       )}
+
+      {/* StatsStrip — 데스크탑 전용 (모바일 숨김) */}
+      <div ref={statsRef} className="absolute z-20 hidden md:block" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
+        <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+      </div>
+
+      {/* XP 레벨 배지 — 데스크탑: 버튼 그룹에 통합됨, 모바일: 게임 버튼에 통합됨 */}
 
       {/* 광고 이벤트 클릭 버튼 (캐릭터 머리 위) */}
       {adEventDisplay && phase === 'ready' && (

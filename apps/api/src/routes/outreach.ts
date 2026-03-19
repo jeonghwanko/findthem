@@ -4,11 +4,11 @@ import { YT_VIDEO_ID_RE } from '@findthem/shared';
 
 export function registerOutreachRoutes(router: Router) {
   // 공개 엔드포인트 — 인증 불필요
-  // SEC-W7: SENT 상태만 공개 — PENDING_APPROVAL/APPROVED는 미승인 정보이므로 노출 금지
+  // 후보군(PENDING_APPROVAL 이상)이 있으면 모두 표시
   router.get('/outreach/highlights', async (_req, res) => {
     const requests = await prisma.outreachRequest.findMany({
       where: {
-        status: 'SENT',
+        status: { in: ['PENDING_APPROVAL', 'APPROVED', 'SENDING', 'SENT'] },
         contact: {
           type: { in: ['YOUTUBER', 'VIDEO'] },
           OR: [{ videoId: { not: null } }, { youtubeChannelId: { not: null } }],
