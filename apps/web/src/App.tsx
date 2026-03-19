@@ -122,8 +122,9 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setPartnershipOpen(true)}
-                    className="shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-gray-400 hover:text-gray-700 hover:shadow-sm transition-all duration-150 whitespace-nowrap"
                   >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     {t('inquiry.partnership')}
                   </button>
                 </div>

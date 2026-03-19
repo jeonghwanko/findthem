@@ -699,20 +699,6 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
         visible={phase !== 'ready'}
       />
 
-      {/* BGM toggle — 좌상단 아이콘 (항상 고정) */}
-      <button
-        onClick={handleBgmToggle}
-        className={`absolute left-2 top-2 z-20 w-8 h-8 flex items-center justify-center rounded-full border transition-all ${
-          bgmOn
-            ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
-            : 'bg-white/80 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
-        }`}
-        style={{ opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
-        aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
-      >
-        {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-      </button>
-
       {/* 모바일: 하단 게임 버튼 + Lv/XP */}
       {isMobile && (
         <div
@@ -726,15 +712,27 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
             transition: 'opacity 0.6s ease 0.2s',
           }}
         >
-          <Link
-            to="/game"
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-4 py-2.5"
-            style={{ pointerEvents: 'auto' }}
-            aria-label={t('home.playToSponsor')}
-          >
-            <Gamepad2 className="w-5 h-5 shrink-0 drop-shadow-sm" aria-hidden="true" />
-            <span className="text-sm font-bold drop-shadow-sm">{t('home.playToSponsor')}</span>
-          </Link>
+          <div className="flex items-center gap-2" style={{ pointerEvents: 'auto' }}>
+            <button
+              onClick={handleBgmToggle}
+              className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all ${
+                bgmOn
+                  ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
+                  : 'bg-white/80 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
+              }`}
+              aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
+            >
+              {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+            <Link
+              to="/game"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-4 py-2.5"
+              aria-label={t('home.playToSponsor')}
+            >
+              <Gamepad2 className="w-5 h-5 shrink-0 drop-shadow-sm" aria-hidden="true" />
+              <span className="text-sm font-bold drop-shadow-sm">{t('home.playToSponsor')}</span>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -744,13 +742,25 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
           className="absolute inset-x-0 flex flex-col items-center gap-2 px-3 z-20"
           style={{ top: 16, pointerEvents: 'none', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}
         >
-          <Link
-            to="/game"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold text-sm shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-6 py-2.5"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" /> {t('home.playToSponsor')}
-          </Link>
+          <div className="flex items-center gap-2" style={{ pointerEvents: 'auto' }}>
+            <button
+              onClick={handleBgmToggle}
+              className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all ${
+                bgmOn
+                  ? 'bg-primary-600 border-primary-500 text-white shadow-md hover:bg-primary-700'
+                  : 'bg-white/80 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'
+              }`}
+              aria-label={bgmOn ? t('home.bgmOff') : t('home.bgmOn')}
+            >
+              {bgmOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+            <Link
+              to="/game"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold text-sm shadow-[0_4px_0_0_#b45309,0_6px_12px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_3px_8px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[4px] transition-all duration-100 px-6 py-2.5"
+            >
+              <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" /> {t('home.playToSponsor')}
+            </Link>
+          </div>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5" style={{ pointerEvents: 'auto' }}>
             <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
               ⭐ Lv.{xpStats?.userLevel ?? 1}

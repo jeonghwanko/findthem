@@ -32,18 +32,22 @@ export function SpinePortrait({ skins, size = 80, width, height, animate = true,
   const canvasW = width ?? size;
   const canvasH = height ?? size;
 
+  const appRef = useRef<Application | null>(null);
+  const animateRef = useRef(animate);
+  animateRef.current = animate;
+
+  // Setup Pixi app + Spine character (mount only)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let app: Application | null = null;
     let char: SpineCharacterLite | null = null;
     let destroyed = false;
     let stopTimerId: number | undefined;
 
     void (async () => {
       try {
-        app = new Application();
+        const app = new Application();
         await app.init({
           canvas,
           width: canvasW,
@@ -52,28 +56,23 @@ export function SpinePortrait({ skins, size = 80, width, height, animate = true,
           autoStart: false,
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
-          preserveDrawingBuffer: enableCapture, // true = canvas.toBlob() 캡처 가능 (성능 비용 있음)
+          preserveDrawingBuffer: enableCapture,
         });
 
-        if (destroyed) {
-          app.destroy();
-          return;
-        }
+        if (destroyed) { app.destroy(); return; }
+        appRef.current = app;
 
         char = await SpineCharacterLite.create(skins);
         if (destroyed) {
           char.dispose();
-          // app may already be destroyed by cleanup; only destroy if still alive
-          if (app) app.destroy();
+          app.destroy();
           return;
         }
 
         if (fullBody) {
-          // 전신 표시: 발을 캔버스 하단에, 스케일 축소
           char.setPosition(canvasW / 2, canvasH * 0.92);
           char.setScale(0.20 * (canvasH / 80));
         } else {
-          // 흉상 클로즈업 (기존 동작)
           char.setPosition(canvasW / 2, canvasH * 1.375);
           char.setScale(0.38 * (canvasH / 80));
         }
@@ -84,9 +83,9 @@ export function SpinePortrait({ skins, size = 80, width, height, animate = true,
         });
         app.ticker.start();
 
-        // 정적 모드: 포즈가 안정될 때까지 몇 프레임 돌린 뒤 정지
-        if (!animate) {
-          stopTimerId = window.setTimeout(() => { if (!destroyed) app?.ticker.stop(); }, 200);
+        // 초기 animate=false면 포즈 안정 후 정지
+        if (!animateRef.current) {
+          stopTimerId = window.setTimeout(() => { if (!destroyed) app.ticker.stop(); }, 200);
         }
       } catch {
         // Portrait fails silently — caller shows fallback icon
@@ -96,15 +95,29 @@ export function SpinePortrait({ skins, size = 80, width, height, animate = true,
     return () => {
       destroyed = true;
       clearTimeout(stopTimerId);
+      const app = appRef.current;
       app?.ticker?.stop();
       char?.dispose();
       try { app?.destroy(); } catch { /* init 미완료 상태에서 destroy 무시 */ }
-      app = null;
+      appRef.current = null;
       char = null;
     };
-    // skins array reference is stable (defined as const in AGENTS)
+    // skins array reference is stable (caller must ensure stable reference)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // animate prop 변경 시 ticker 시작/정지
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app) return; // 아직 초기화 중이면 무시 (setup effect가 초기 animate 처리)
+    let timeoutId: number | undefined;
+    if (animate) {
+      app.ticker.start();
+    } else {
+      timeoutId = window.setTimeout(() => appRef.current?.ticker.stop(), 200);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [animate]);
 
   return (
     <canvas

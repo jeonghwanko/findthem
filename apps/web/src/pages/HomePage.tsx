@@ -117,7 +117,7 @@ export default function HomePage() {
             <div className="inline-flex flex-col gap-4 items-stretch">
               <div className="flex gap-3 flex-wrap">
                 <Link
-                  to="/browse"
+                  to="/sightings/new"
                   className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   <Camera className="w-4 h-4" aria-hidden="true" />
