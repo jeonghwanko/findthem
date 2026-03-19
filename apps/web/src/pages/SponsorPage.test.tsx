@@ -153,19 +153,17 @@ describe('SponsorPage', () => {
     it('기본 탭은 크립토 탭이다', async () => {
       renderSponsorPage('image-matching');
       await waitFor(() => {
-        // 크립토 탭 버튼이 활성 스타일
-        const cryptoTab = screen.getByRole('button', { name: /tabCrypto|크립토/i });
-        expect(cryptoTab.className).toContain('bg-white');
+        const cryptoTab = screen.getByRole('tab', { name: /tabCrypto|크립토/i });
+        expect(cryptoTab).toHaveAttribute('aria-selected', 'true');
       });
     });
 
     it('카드 탭 클릭 시 카드 결제 패널이 표시된다', async () => {
       renderSponsorPage('image-matching');
 
-      const cardTab = screen.getByRole('button', { name: /tabCard|카드/i });
+      const cardTab = screen.getByRole('tab', { name: /tabCard|카드/i });
       fireEvent.click(cardTab);
 
-      // 카드 탭 패널 — 금액 레이블이 KRW 포함
       await waitFor(() => {
         expect(
           screen.getByText(/amountLabel|후원 금액/i),
@@ -177,35 +175,33 @@ describe('SponsorPage', () => {
       renderSponsorPage('image-matching');
 
       // 먼저 카드로 전환
-      const cardTab = screen.getByRole('button', { name: /tabCard|카드/i });
-      fireEvent.click(cardTab);
+      fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
       // 다시 크립토로
-      const cryptoTab = screen.getByRole('button', { name: /tabCrypto|크립토/i });
-      fireEvent.click(cryptoTab);
+      fireEvent.click(screen.getByRole('tab', { name: /tabCrypto|크립토/i }));
 
       await waitFor(() => {
-        // EVM / Aptos 모드 버튼이 보여야 함
-        expect(screen.getByRole('button', { name: 'EVM' })).toBeInTheDocument();
+        // 통합 체인 선택 버튼이 보여야 함
+        expect(screen.getByRole('button', { name: 'Ethereum' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Aptos' })).toBeInTheDocument();
       });
     });
   });
 
   // ────────────────────────────────────────────────────────
-  // 크립토 모드 전환 (EVM / Aptos)
+  // 체인 선택 (통합)
   // ────────────────────────────────────────────────────────
-  describe('크립토 모드 전환', () => {
-    it('기본 크립토 모드는 EVM이다', async () => {
+  describe('체인 선택', () => {
+    it('기본 선택은 Ethereum이다', async () => {
       renderSponsorPage('image-matching');
 
       await waitFor(() => {
-        const evmBtn = screen.getByRole('button', { name: 'EVM' });
-        expect(evmBtn.className).toContain('bg-white');
+        const ethBtn = screen.getByRole('button', { name: 'Ethereum' });
+        expect(ethBtn.className).toContain('bg-gray-800');
       });
     });
 
-    it('Aptos 버튼 클릭 → Aptos 모드로 전환', async () => {
+    it('Aptos 버튼 클릭 → Aptos 체인 선택', async () => {
       renderSponsorPage('image-matching');
 
       await waitFor(() => {
@@ -216,21 +212,22 @@ describe('SponsorPage', () => {
 
       await waitFor(() => {
         const aptosBtn = screen.getByRole('button', { name: 'Aptos' });
-        expect(aptosBtn.className).toContain('bg-white');
+        expect(aptosBtn.className).toContain('bg-gray-800');
       });
     });
 
-    it('EVM 모드 — 체인 선택 버튼 표시 (Ethereum, BSC, Base)', async () => {
+    it('체인 선택 버튼 4개 표시 (Ethereum, BSC, Base, Aptos)', async () => {
       renderSponsorPage('image-matching');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Ethereum' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'BSC' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Base' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Aptos' })).toBeInTheDocument();
       });
     });
 
-    it('EVM 모드 — 토큰 선택 버튼 표시 (Ethereum 기본: USDC, USDt, ETH)', async () => {
+    it('EVM 체인 — 토큰 선택 버튼 표시 (Ethereum 기본: USDC, USDt, ETH)', async () => {
       renderSponsorPage('image-matching');
 
       await waitFor(() => {
@@ -240,30 +237,16 @@ describe('SponsorPage', () => {
       });
     });
 
-    it('Aptos 모드 — APT 토큰 레이블만 표시', async () => {
+    it('Aptos 선택 — 토큰 선택 숨김', async () => {
       renderSponsorPage('image-matching');
 
-      await waitFor(() => {
-        fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
 
       await waitFor(() => {
-        // APT span이 표시 (버튼이 아닌 span)
-        const aptSpan = screen.getAllByText('APT');
-        expect(aptSpan.length).toBeGreaterThan(0);
-      });
-    });
-
-    it('Aptos 모드 — EVM 체인 선택 버튼 미표시', async () => {
-      renderSponsorPage('image-matching');
-
-      await waitFor(() => {
-        fireEvent.click(screen.getByRole('button', { name: 'Aptos' }));
-      });
-
-      await waitFor(() => {
-        expect(screen.queryByRole('button', { name: 'Ethereum' })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'BSC' })).not.toBeInTheDocument();
+        // EVM 토큰 버튼이 사라져야 함
+        expect(screen.queryByRole('button', { name: 'USDC' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'USDt' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'ETH' })).not.toBeInTheDocument();
       });
     });
   });
@@ -609,8 +592,7 @@ describe('SponsorPage', () => {
     it('Toss 프리셋 금액 버튼 4개 표시', async () => {
       renderSponsorPage('image-matching');
 
-      const cardTab = screen.getByRole('button', { name: /tabCard|카드/i });
-      fireEvent.click(cardTab);
+      fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
       await waitFor(() => {
         // 1000, 3000, 5000, 10000
@@ -624,7 +606,7 @@ describe('SponsorPage', () => {
     it('프리셋 버튼 클릭 시 해당 금액이 선택된다', async () => {
       renderSponsorPage('image-matching');
 
-      fireEvent.click(screen.getByRole('button', { name: /tabCard|카드/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '10,000' })).toBeInTheDocument();
@@ -640,7 +622,7 @@ describe('SponsorPage', () => {
 
     it('직접 입력 시 숫자만 허용된다', async () => {
       renderSponsorPage('image-matching');
-      fireEvent.click(screen.getByRole('button', { name: /tabCard|카드/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
       await waitFor(() => {
         expect(
@@ -677,17 +659,13 @@ describe('SponsorPage', () => {
   });
 
   // ────────────────────────────────────────────────────────
-  // 팀 페이지 뒤로가기 링크
+  // 네비게이션
   // ────────────────────────────────────────────────────────
   describe('네비게이션', () => {
-    it('팀 페이지로 돌아가기 링크가 있다', async () => {
-      renderSponsorPage('image-matching');
-
-      await waitFor(() => {
-        const link = screen.getByRole('link', { name: /backToTeam|팀 페이지로/i });
-        expect(link).toBeInTheDocument();
-        expect(link).toHaveAttribute('href', '/team');
-      });
+    it('잘못된 agentId 시 팀 페이지 링크가 표시된다', () => {
+      renderSponsorPage('unknown-agent-xyz');
+      const link = screen.getByRole('link', { name: /backToTeam|팀 페이지|team/i });
+      expect(link).toHaveAttribute('href', '/team');
     });
   });
 });
