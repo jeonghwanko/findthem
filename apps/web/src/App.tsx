@@ -109,18 +109,8 @@ export default function App() {
                   </div>
                 </div>
                 <div className="text-xs text-gray-400 space-y-0.5">
-                  <p>운영: 주식회사 슈퍼빌랩스 (Supervlabs Inc.) | 사업자등록번호: 856-87-02886</p>
+                  <p>운영: 주식회사 슈퍼빌랩스 (Supervlabs Inc.) | 사업자등록번호: 856-87-02886 | <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600 transition-colors">Privacy Policy</a></p>
                   <p>대표: 이성준, 고정환 | 이메일: contact@supervlabs.io</p>
-                  <p>
-                    <a
-                      href="/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-gray-600 transition-colors"
-                    >
-                      Privacy Policy
-                    </a>
-                  </p>
                 </div>
               </div>
             </footer>

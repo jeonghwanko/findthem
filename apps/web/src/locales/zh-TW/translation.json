@@ -170,17 +170,27 @@
   },
   "sighting": {
     "title": "提供目擊線索",
-    "photoOptional": "照片（選填）",
-    "description": "目擊內容 *",
-    "descriptionPlaceholder": "您在哪裡看到了什麼？請盡可能詳細描述。",
-    "sightedAt": "目擊時間 *",
-    "sightedPlace": "目擊地點 *",
+    "subtitle": "發現流浪動物了嗎？請上傳照片。",
+    "photoLabel": "照片",
+    "photoHint": "最多 5 張",
+    "photoRequired": "請至少上傳 1 張照片",
+    "description": "情況描述",
+    "descriptionPlaceholder": "請描述發現的情況",
+    "sightedAt": "發現時間",
+    "sightedPlace": "發現地點",
     "sightedPlacePlaceholder": "台北市信義區星巴克前",
-    "tipsterName": "提供者姓名（選填）",
+    "useMyLocation": "我的位置",
+    "tipsterName": "姓名（選填）",
     "tipsterPhone": "聯絡電話（選填）",
+    "passwordLabel": "密碼（用於編輯/刪除）",
+    "passwordPlaceholder": "至少 4 個字元",
+    "passwordHint": "設定密碼後可以編輯或刪除此線索",
     "submitting": "提交中...",
-    "submit": "提交目擊線索",
-    "submitError": "提交失敗。"
+    "submit": "提交線索",
+    "submitError": "提交失敗。",
+    "successTitle": "已成功提交！",
+    "successDesc": "AI 將分析照片並與失蹤報告進行比對。分析和宣傳將在 5-10 分鐘後自動開始。",
+    "goBack": "返回"
   },
   "chat": {
     "title": "目擊線索聊天機器人",
@@ -244,7 +254,9 @@
       "statsLastAt": "最後收集: {{time}} ({{source}})",
       "statsNoData": "尚無收集的資料。",
       "statsLoading": "載入現況中...",
-      "statsError": "載入現況失敗"
+      "statsError": "載入現況失敗",
+      "enablePerson": "收集失蹤人口資料",
+      "enablePersonDesc": "從 Safe182 等來源收集失蹤人口資料"
     }
   },
   "errors": {
@@ -288,6 +300,11 @@
     "REPORT_STATUS_CONFLICT": "狀態已相同。",
     "TWITTER_POST_FAILED": "發布至社群媒體失敗。",
     "OUTREACH_NOT_FOUND": "找不到外聯記錄。",
+    "SIGHTING_NOT_FOUND": "找不到目擊線索。",
+    "SIGHTING_OWNER_ONLY": "只能編輯/刪除自己的目擊線索。",
+    "SIGHTING_PASSWORD_REQUIRED": "需要密碼。",
+    "SIGHTING_PASSWORD_MISMATCH": "密碼不正確。",
+    "SIGHTING_PHOTO_REQUIRED": "請至少上傳 1 張照片。",
     "OUTREACH_ALREADY_PROCESSED": "此外聯已處理。",
     "DEVLOG_CONTEXT_REQUIRED": "需要開發日誌內容。",
     "ALREADY_VERIFIED": "此付款已處理。",

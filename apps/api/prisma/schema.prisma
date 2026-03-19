@@ -196,6 +196,7 @@ model Sighting {
   lng          Float?
   tipsterPhone String?
   tipsterName  String?
+  editPassword String?   // bcrypt — 비회원 제보 수정/삭제용
 
   aiAnalysis Json?
   status     SightingStatus @default(PENDING)

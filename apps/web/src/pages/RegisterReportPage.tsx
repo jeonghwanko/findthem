@@ -86,7 +86,6 @@ export default function RegisterReportPage() {
   }, []);
 
   const SUBJECT_TYPES = [
-    { value: 'PERSON', label: t('subjectType.PERSON'), icon: '👤' },
     { value: 'DOG', label: t('subjectType.DOG'), icon: '🐕' },
     { value: 'CAT', label: t('subjectType.CAT'), icon: '🐈' },
   ];

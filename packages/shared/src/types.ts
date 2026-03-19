@@ -527,7 +527,8 @@ export type AgentDomainEventType =
   | 'match_detected'
   | 'outreach_sent'
   | 'report_created'
-  | 'case_resolved';
+  | 'case_resolved'
+  | 'sighting_analyzed';
 
 export interface AgentDomainEvent {
   type: AgentDomainEventType;
@@ -538,6 +539,7 @@ export interface AgentDomainEvent {
   contactName?: string;     // outreach_sent 전용
   channel?: string;         // outreach_sent 전용
   reportId?: string;
+  aiAnalysis?: string;      // sighting_analyzed 전용 — 품종/색상/특징 요약
 }
 
 // ── Ghost CMS ──

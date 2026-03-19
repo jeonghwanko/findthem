@@ -143,6 +143,12 @@ function buildUserMessage(event: AgentDomainEvent, requiredElements: string[]): 
       lines.push('사건 해결 보고:');
       lines.push(`- 실종 대상: ${event.subjectType} '${event.reportName}'`);
       break;
+
+    case 'sighting_analyzed':
+      lines.push('새 제보 접수 — AI 분석 완료:');
+      lines.push(`- 발견 장소: ${event.lastSeenAddress ?? '미상'}`);
+      if (event.aiAnalysis) lines.push(`- AI 분석: ${event.aiAnalysis}`);
+      break;
   }
 
   if (requiredElements.length > 0) {

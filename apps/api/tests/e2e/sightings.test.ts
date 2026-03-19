@@ -19,10 +19,19 @@ describe('Sightings E2E', () => {
 
   // ── POST /api/sightings ──
   describe('POST /api/sightings', () => {
+    const tinyPng = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64',
+    );
+
     it('제보 성공 → 201', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([]);
+      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+        id: 'sp-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
+        thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
+      }]);
 
       const res = await app
         .post('/api/sightings')
@@ -31,7 +40,8 @@ describe('Sightings E2E', () => {
           description: '비슷한 강아지를 봤습니다',
           sightedAt: '2025-01-16T10:00:00Z',
           address: '서울시 강남구 삼성동',
-        }));
+        }))
+        .attach('photos', tinyPng, 'sighting.png');
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
@@ -50,11 +60,6 @@ describe('Sightings E2E', () => {
         aiAnalysis: null,
         createdAt: new Date(),
       }]);
-
-      const tinyPng = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-        'base64',
-      );
 
       const res = await app
         .post('/api/sightings')
@@ -79,9 +84,22 @@ describe('Sightings E2E', () => {
           description: '봤어요',
           sightedAt: '2025-01-16T10:00:00Z',
           address: '서울시',
-        }));
+        }))
+        .attach('photos', tinyPng, 'sighting.png');
 
       expect(res.status).toBe(404);
+    });
+
+    it('사진 없이 제보 → 400', async () => {
+      const res = await app
+        .post('/api/sightings')
+        .field('data', JSON.stringify({
+          description: '봤어요',
+          sightedAt: '2025-01-16T10:00:00Z',
+          address: '서울시',
+        }));
+
+      expect(res.status).toBe(400);
     });
 
     it('필수 필드 누락 → 400', async () => {

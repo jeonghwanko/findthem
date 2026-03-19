@@ -173,3 +173,28 @@ export async function postAli(
 
   await runAgentPost('chatbot-alert', event, title, deduplicationKey, fallback);
 }
+
+/** 제보 AI 분석 완료 시 안내봇 알리가 커뮤니티에 게시 (위치 + AI 분석 결과 요약) */
+export async function postAliSighting(
+  address: string,
+  subjectType: SubjectType,
+  aiAnalysisSummary: string,
+  sightingId: string,
+): Promise<void> {
+  const safeAddress = safeTrim(address);
+
+  const event: AgentDomainEvent = {
+    type: 'sighting_analyzed',
+    reportName: safeAddress,
+    subjectType,
+    lastSeenAddress: safeAddress,
+    aiAnalysis: aiAnalysisSummary,
+  };
+
+  const subjectLabel = getSubjectTypeLabel(subjectType, 'ko');
+  const title = `알리 제보 📸 — ${safeAddress} 근처 ${subjectLabel} 제보 접수`;
+  const deduplicationKey = `${utcDateString(new Date())}_ali_sighting_${sightingId}`;
+  const fallback = `📸 새 제보가 접수됐어요. ${safeAddress} 근처에서 동물이 목격되었습니다. ${aiAnalysisSummary} — 혹시 이 동물의 보호자이시거나 주변에서 보신 분은 제보 부탁드립니다 🙏`;
+
+  await runAgentPost('chatbot-alert', event, title, deduplicationKey, fallback);
+}

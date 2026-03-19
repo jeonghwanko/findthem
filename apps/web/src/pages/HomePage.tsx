@@ -9,7 +9,7 @@ import OutreachHighlights from '../components/OutreachHighlights';
 import heroIllustration from '../assets/hero-illustration.svg';
 import type { SubjectType } from '@findthem/shared';
 
-const FILTERS: SubjectType[] = ['DOG', 'CAT', 'PERSON'];
+const FILTERS: SubjectType[] = ['DOG', 'CAT'];
 
 interface Feature {
   key: string;
@@ -114,22 +114,22 @@ export default function HomePage() {
             <p className="text-gray-500 text-base sm:text-lg mb-7 max-w-lg leading-relaxed">
               {t('home.heroDesc')}
             </p>
-            <div className="flex gap-3 justify-center md:justify-start flex-wrap mb-6">
-              <Link
-                to="/browse"
-                className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <Camera className="w-4 h-4" aria-hidden="true" />
-                {t('home.submitSighting')}
-              </Link>
-              <Link
-                to="/reports/new"
-                className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
-              >
-                {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="flex justify-center md:justify-start">
+            <div className="inline-flex flex-col gap-4 items-stretch">
+              <div className="flex gap-3 flex-wrap">
+                <Link
+                  to="/browse"
+                  className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  <Camera className="w-4 h-4" aria-hidden="true" />
+                  {t('home.submitSighting')}
+                </Link>
+                <Link
+                  to="/reports/new"
+                  className="inline-flex items-center gap-2 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5"
+                >
+                  {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              </div>
               <StatsStrip stats={stats} recoveryRate={recoveryRate} />
             </div>
           </div>

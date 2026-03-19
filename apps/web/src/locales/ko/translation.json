@@ -169,18 +169,28 @@
     "locationMap": "위치 지도"
   },
   "sighting": {
-    "title": "목격 제보",
-    "photoOptional": "사진 (선택)",
-    "description": "목격 내용 *",
-    "descriptionPlaceholder": "어디서 무엇을 목격하셨나요? 가능한 상세히 적어주세요.",
-    "sightedAt": "목격 일시 *",
-    "sightedPlace": "목격 장소 *",
+    "title": "제보하기",
+    "subtitle": "돌아다니는 동물을 발견하셨나요? 사진을 올려주세요.",
+    "photoLabel": "사진",
+    "photoHint": "최대 5장까지 올릴 수 있어요",
+    "photoRequired": "사진을 1장 이상 올려주세요",
+    "description": "상황 설명",
+    "descriptionPlaceholder": "어디서 어떤 상황이었는지 알려주세요",
+    "sightedAt": "발견 일시",
+    "sightedPlace": "발견 장소",
     "sightedPlacePlaceholder": "서울시 강남구 역삼동 스타벅스 앞",
-    "tipsterName": "제보자 이름 (선택)",
+    "useMyLocation": "내 위치",
+    "tipsterName": "이름 (선택)",
     "tipsterPhone": "연락처 (선택)",
+    "passwordLabel": "비밀번호 (수정/삭제용)",
+    "passwordPlaceholder": "4자 이상",
+    "passwordHint": "비회원 제보 시 비밀번호를 입력하면 나중에 수정/삭제할 수 있습니다",
     "submitting": "제출 중...",
     "submit": "제보 제출",
-    "submitError": "제보에 실패했습니다."
+    "submitError": "제보에 실패했습니다.",
+    "successTitle": "제보가 접수되었습니다!",
+    "successDesc": "AI가 사진을 분석하고 유사한 실종 신고와 매칭합니다. 분석과 홍보는 5~10분 후 자동으로 진행됩니다.",
+    "goBack": "돌아가기"
   },
   "chat": {
     "title": "목격 제보 챗봇",
@@ -244,7 +254,9 @@
       "statsLastAt": "마지막 수집: {{time}} ({{source}})",
       "statsNoData": "아직 수집된 데이터가 없습니다.",
       "statsLoading": "현황 불러오는 중...",
-      "statsError": "현황 로드 실패"
+      "statsError": "현황 로드 실패",
+      "enablePerson": "사람 실종 정보 수집",
+      "enablePersonDesc": "Safe182 등에서 사람 실종 정보를 수집합니다"
     }
   },
   "errors": {
@@ -288,6 +300,11 @@
     "REPORT_STATUS_CONFLICT": "이미 동일한 상태입니다.",
     "TWITTER_POST_FAILED": "SNS 게시에 실패했습니다.",
     "OUTREACH_NOT_FOUND": "아웃리치를 찾을 수 없습니다.",
+    "SIGHTING_NOT_FOUND": "제보를 찾을 수 없습니다.",
+    "SIGHTING_OWNER_ONLY": "본인의 제보만 수정/삭제할 수 있습니다.",
+    "SIGHTING_PASSWORD_REQUIRED": "비밀번호가 필요합니다.",
+    "SIGHTING_PASSWORD_MISMATCH": "비밀번호가 일치하지 않습니다.",
+    "SIGHTING_PHOTO_REQUIRED": "사진을 1장 이상 올려주세요.",
     "OUTREACH_ALREADY_PROCESSED": "이미 처리된 아웃리치입니다.",
     "DEVLOG_CONTEXT_REQUIRED": "데브로그 컨텍스트가 필요합니다.",
     "ALREADY_VERIFIED": "이미 처리된 결제입니다.",

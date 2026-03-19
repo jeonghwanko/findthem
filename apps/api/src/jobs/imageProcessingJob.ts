@@ -1,4 +1,5 @@
 import { type Job, UnrecoverableError } from 'bullmq';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { imageService } from '../services/imageService.js';
 import { analyzeImage } from '../ai/matchingAgent.js';
@@ -9,7 +10,9 @@ import {
   type ImageJobData,
 } from './queues.js';
 import { QUEUE_NAMES } from '@findthem/shared';
+import type { SubjectType } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { postAliSighting } from '../services/communityAgentService.js';
 
 const log = createLogger('imageProcessingJob');
 
@@ -99,8 +102,8 @@ async function processSightingPhotos(sightingId: string) {
     return;
   }
 
-  // 제보와 연결된 report의 subjectType 확인 (없으면 일반 동물/사람 분석) — 별도 조회 제거
-  const subjectType = sighting.report?.subjectType ?? 'PERSON';
+  // 제보와 연결된 report의 subjectType 확인 (없으면 동물 기본) — 별도 조회 제거
+  const subjectType = sighting.report?.subjectType ?? 'DOG';
 
   // 각 사진에 대해 AI 분석 — 병렬 처리
   await Promise.all(
@@ -126,6 +129,29 @@ async function processSightingPhotos(sightingId: string) {
     where: { id: sightingId },
     data: { status: 'ANALYZED' },
   });
+
+  // AI 분석 결과 요약 → 커뮤니티 게시 (안내봇 알리)
+  const analyzedPhotos = await prisma.sightingPhoto.findMany({
+    where: { sightingId, aiAnalysis: { not: Prisma.DbNull } },
+    select: { aiAnalysis: true },
+    take: 1,
+  });
+  if (analyzedPhotos.length > 0) {
+    const analysis = analyzedPhotos[0].aiAnalysis as Record<string, unknown>;
+    const parts: string[] = [];
+    if (analysis.species) parts.push(`품종: ${analysis.species}`);
+    if (analysis.color) parts.push(`색상: ${analysis.color}`);
+    if (analysis.size) parts.push(`크기: ${analysis.size}`);
+    if (analysis.description) parts.push(String(analysis.description));
+    const summary = parts.join(', ') || '분석 완료';
+
+    void postAliSighting(
+      sighting.address,
+      (sighting.subjectType ?? sighting.report?.subjectType ?? 'DOG') as SubjectType,
+      summary,
+      sightingId,
+    ).catch((err) => log.warn({ err, sightingId }, 'Ali sighting post failed'));
+  }
 
   // 매칭 작업 enqueue
   await matchingQueue.add('match-sighting', { type: 'sighting', sightingId }, {

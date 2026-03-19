@@ -43,7 +43,6 @@ export default function BrowsePage() {
   const TYPES = [
     { value: 'DOG', label: t('subjectType.DOG') },
     { value: 'CAT', label: t('subjectType.CAT') },
-    { value: 'PERSON', label: t('subjectType.PERSON') },
   ];
 
   useEffect(() => {

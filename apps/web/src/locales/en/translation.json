@@ -170,17 +170,27 @@
   },
   "sighting": {
     "title": "Report a Sighting",
-    "photoOptional": "Photos (Optional)",
-    "description": "Sighting Details *",
-    "descriptionPlaceholder": "What did you see and where? Please describe in detail.",
-    "sightedAt": "Sighting Date/Time *",
-    "sightedPlace": "Sighting Location *",
+    "subtitle": "Found a stray animal? Upload a photo to help.",
+    "photoLabel": "Photos",
+    "photoHint": "Up to 5 photos",
+    "photoRequired": "Please upload at least 1 photo",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the situation and what you saw",
+    "sightedAt": "Date & Time",
+    "sightedPlace": "Location",
     "sightedPlacePlaceholder": "Near 123 Main St, in front of Starbucks",
-    "tipsterName": "Your Name (Optional)",
-    "tipsterPhone": "Your Phone (Optional)",
+    "useMyLocation": "My location",
+    "tipsterName": "Name (Optional)",
+    "tipsterPhone": "Phone (Optional)",
+    "passwordLabel": "Password (for edit/delete)",
+    "passwordPlaceholder": "4+ characters",
+    "passwordHint": "Set a password to edit or delete this sighting later",
     "submitting": "Submitting...",
     "submit": "Submit Sighting",
-    "submitError": "Failed to submit sighting."
+    "submitError": "Failed to submit sighting.",
+    "successTitle": "Sighting submitted!",
+    "successDesc": "AI will analyze the photo and match it against missing reports. Analysis and outreach will begin automatically in 5-10 minutes.",
+    "goBack": "Go back"
   },
   "chat": {
     "title": "Sighting Report Chatbot",
@@ -244,7 +254,9 @@
       "statsLastAt": "Last collected: {{time}} ({{source}})",
       "statsNoData": "No data collected yet.",
       "statsLoading": "Loading stats...",
-      "statsError": "Failed to load stats"
+      "statsError": "Failed to load stats",
+      "enablePerson": "Collect missing person data",
+      "enablePersonDesc": "Collect missing person data from Safe182 etc."
     }
   },
   "errors": {
@@ -288,6 +300,11 @@
     "REPORT_STATUS_CONFLICT": "The status is already set to this value.",
     "TWITTER_POST_FAILED": "Failed to post to social media.",
     "OUTREACH_NOT_FOUND": "Outreach not found.",
+    "SIGHTING_NOT_FOUND": "Sighting not found.",
+    "SIGHTING_OWNER_ONLY": "You can only edit/delete your own sightings.",
+    "SIGHTING_PASSWORD_REQUIRED": "Password is required.",
+    "SIGHTING_PASSWORD_MISMATCH": "Incorrect password.",
+    "SIGHTING_PHOTO_REQUIRED": "Please upload at least 1 photo.",
     "OUTREACH_ALREADY_PROCESSED": "This outreach has already been processed.",
     "DEVLOG_CONTEXT_REQUIRED": "Devlog context is required.",
     "ALREADY_VERIFIED": "This payment has already been processed.",

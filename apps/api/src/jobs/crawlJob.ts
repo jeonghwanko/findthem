@@ -6,6 +6,7 @@ import type { ExternalReport } from './crawl/types.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
+import { isPersonCrawlEnabled } from '../ai/aiSettings.js';
 
 const log = createLogger('crawl');
 
@@ -149,7 +150,17 @@ function startCrawlSourceWorker() {
       });
       const existingSet = new Set(existingIds.map((r) => r.externalId));
 
-      const newItems = items.filter((i) => !existingSet.has(i.externalId));
+      let newItems = items.filter((i) => !existingSet.has(i.externalId));
+
+      // PERSON 카테고리 크롤 토글 (관리자 설정)
+      const personEnabled = await isPersonCrawlEnabled();
+      if (!personEnabled) {
+        const beforeCount = newItems.length;
+        newItems = newItems.filter((i) => i.subjectType !== 'PERSON');
+        const personSkipped = beforeCount - newItems.length;
+        if (personSkipped > 0) log.info({ source, personSkipped }, 'Skipped PERSON items (disabled)');
+      }
+
       log.info({ source, new: newItems.length, skipped: items.length - newItems.length }, 'Dedup result');
 
       // 병렬 저장 (이미지 다운로드 + DB 트랜잭션 동시 실행)

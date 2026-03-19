@@ -85,6 +85,8 @@ function CrawlSection() {
   const [stats, setStats] = useState<CrawlStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [personCrawlEnabled, setPersonCrawlEnabled] = useState(false);
+  const [personToggling, setPersonToggling] = useState(false);
 
   async function loadStats() {
     setStatsLoading(true);
@@ -101,8 +103,24 @@ function CrawlSection() {
 
   useEffect(() => {
     void loadStats();
+    adminApi.get<{ settings: { key: string; value: string }[] }>('/admin/ai/settings')
+      .then((res) => {
+        const val = res.settings.find((s) => s.key === 'crawl:enable-person');
+        setPersonCrawlEnabled(val?.value === 'true');
+      })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handlePersonToggle() {
+    const newVal = !personCrawlEnabled;
+    setPersonToggling(true);
+    try {
+      await adminApi.put('/admin/ai/settings', { key: 'crawl:enable-person', value: String(newVal) });
+      setPersonCrawlEnabled(newVal);
+    } catch { /* ignore */ }
+    setPersonToggling(false);
+  }
 
   useEffect(() => {
     if (!statusMsg) return;
@@ -171,6 +189,21 @@ function CrawlSection() {
           ) : (
             <span className="text-gray-400">{t('admin.crawl.statsNoData')}</span>
           )}
+        </div>
+
+        {/* 사람 실종 정보 수집 토글 */}
+        <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-md">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={personCrawlEnabled}
+              onChange={() => { void handlePersonToggle(); }}
+              disabled={personToggling}
+              className="w-4 h-4 accent-indigo-600"
+            />
+            <span className="text-sm font-medium text-gray-700">{t('admin.crawl.enablePerson')}</span>
+          </label>
+          <span className="text-xs text-gray-400">{t('admin.crawl.enablePersonDesc')}</span>
         </div>
 
         <div className="flex flex-wrap gap-4 mb-4">

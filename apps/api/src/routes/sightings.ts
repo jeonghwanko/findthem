@@ -1,6 +1,7 @@
 import type { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
+import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
@@ -35,6 +36,22 @@ const createSightingSchema = z.object({
   lng: z.number().optional(),
   tipsterPhone: z.string().optional(),
   tipsterName: z.string().optional(),
+  editPassword: z.string().min(4).optional(),
+});
+
+const updateSightingSchema = z.object({
+  description: z.string().min(1).optional(),
+  address: z.string().min(1).optional(),
+  sightedAt: z
+    .string()
+    .transform((s) => new Date(s))
+    .refine((d) => d <= new Date())
+    .optional(),
+  editPassword: z.string().min(1).optional(),
+});
+
+const deleteSightingSchema = z.object({
+  editPassword: z.string().min(1).optional(),
 });
 
 const sightingListQuerySchema = z.object({
@@ -57,6 +74,29 @@ interface RawSightingRow {
   distance_km: number;
 }
 
+/** 제보 수정/삭제 권한 확인 (회원: userId 비교, 비회원: editPassword bcrypt 비교) */
+async function verifySightingOwnership(
+  sighting: { userId: string | null; editPassword: string | null },
+  reqUserId: string | undefined,
+  password: string | undefined,
+): Promise<void> {
+  // 회원 제보 — userId 일치 확인
+  if (sighting.userId) {
+    if (reqUserId !== sighting.userId) {
+      throw new ApiError(403, ERROR_CODES.SIGHTING_OWNER_ONLY);
+    }
+    return;
+  }
+  // 비회원 제보 — editPassword 비교
+  if (!sighting.editPassword || !password) {
+    throw new ApiError(403, ERROR_CODES.SIGHTING_PASSWORD_REQUIRED);
+  }
+  const match = await bcrypt.compare(password, sighting.editPassword);
+  if (!match) {
+    throw new ApiError(403, ERROR_CODES.SIGHTING_PASSWORD_MISMATCH);
+  }
+}
+
 export function registerSightingRoutes(router: Router) {
   // 제보 접수
   // SEC-W3: IP 기준 15분에 10회 rate limit 적용
@@ -75,11 +115,24 @@ export function registerSightingRoutes(router: Router) {
       }
       const body = createSightingSchema.parse(rawBody);
 
+      // 사진 필수 (최소 1장)
+      const files = (req.files as Express.Multer.File[]) || [];
+      if (files.length === 0) {
+        throw new ApiError(400, ERROR_CODES.SIGHTING_PHOTO_REQUIRED);
+      }
+
+      // 비회원일 때 editPassword 해싱
+      let hashedPassword: string | undefined;
+      if (!req.user && body.editPassword) {
+        hashedPassword = await bcrypt.hash(body.editPassword, 10);
+      }
+
       // RACE-03: reportId 유효성 확인 + 상태 체크 + 제보 생성을 트랜잭션으로 원자화
+      const { editPassword: _pw, ...bodyWithoutPw } = body;
       const sighting = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        if (body.reportId) {
+        if (bodyWithoutPw.reportId) {
           const report = await tx.report.findUnique({
-            where: { id: body.reportId },
+            where: { id: bodyWithoutPw.reportId },
             select: { status: true },
           });
           if (!report) throw new ApiError(404, ERROR_CODES.SIGHTING_REPORT_NOT_FOUND);
@@ -90,15 +143,15 @@ export function registerSightingRoutes(router: Router) {
 
         return tx.sighting.create({
           data: {
-            ...body,
+            ...bodyWithoutPw,
             userId: req.user?.userId,
+            editPassword: hashedPassword,
             source: 'WEB',
           },
         });
       });
 
       // 사진 처리 (I/O 병렬 → createMany 단일 INSERT)
-      const files = (req.files as Express.Multer.File[]) || [];
       const photoData = await Promise.all(
         files.map(async (file) => {
           const { photoUrl, thumbnailUrl } = await imageService.processAndSave('sightings', file);
@@ -120,9 +173,45 @@ export function registerSightingRoutes(router: Router) {
         );
       }
 
-      res.status(201).json({ ...sighting, photos });
+      res.status(201).json({ ...sighting, photos, editPassword: undefined });
     },
   );
+
+  // 제보 수정 (회원: userId 확인, 비회원: editPassword 확인)
+  router.patch('/sightings/:id', sightingLimiter, optionalAuth, async (req, res) => {
+    const id = req.params.id as string;
+    const body = updateSightingSchema.parse(req.body);
+    const sighting = await prisma.sighting.findUnique({
+      where: { id },
+      select: { userId: true, editPassword: true },
+    });
+    if (!sighting) throw new ApiError(404, ERROR_CODES.SIGHTING_NOT_FOUND);
+
+    await verifySightingOwnership(sighting, req.user?.userId, body.editPassword);
+
+    const { editPassword: _pw, ...updateData } = body;
+    const updated = await prisma.sighting.update({
+      where: { id },
+      data: updateData,
+    });
+    res.json({ ...updated, editPassword: undefined });
+  });
+
+  // 제보 삭제 (회원: userId 확인, 비회원: editPassword 확인)
+  router.delete('/sightings/:id', sightingLimiter, optionalAuth, async (req, res) => {
+    const id = req.params.id as string;
+    const body = deleteSightingSchema.parse(req.body);
+    const sighting = await prisma.sighting.findUnique({
+      where: { id },
+      select: { userId: true, editPassword: true },
+    });
+    if (!sighting) throw new ApiError(404, ERROR_CODES.SIGHTING_NOT_FOUND);
+
+    await verifySightingOwnership(sighting, req.user?.userId, body.editPassword);
+
+    await prisma.sighting.delete({ where: { id } });
+    res.json({ success: true });
+  });
 
   // 전체 제보 목록 (반경 검색 지원)
   router.get('/sightings', optionalAuth, validateQuery(sightingListQuerySchema), async (req, res) => {

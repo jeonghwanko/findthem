@@ -71,8 +71,20 @@ SightingStatus: 'PENDING' | 'ANALYZED' | 'CONFIRMED' | 'REJECTED'
 
 - `reportId` 선택 (특정 신고 연결 또는 일반 제보)
 - `userId` 선택 (비회원 가능)
-- 사진 업로드 후 `imageQueue` → AI 분석 → 매칭 자동 실행
+- 비회원 제보: `editPassword` (bcrypt 해싱) — 수정/삭제 시 비밀번호 확인
+- 사진 필수 (최소 1장, 최대 5장)
+- 사진 업로드 후 `imageQueue` → AI 분석(품종/색상/특징) → 매칭 자동 실행
+- AI 분석 완료 시 안내봇 알리가 커뮤니티에 자동 게시 (위치 + AI 분석 요약)
 - 챗봇 제보: `source = 'KAKAO_CHATBOT'` 또는 `'WEB'`
+
+**라우트**
+```
+POST   /api/sightings              제보 접수 (optionalAuth, 사진 필수, rate limit)
+PATCH  /api/sightings/:id          수정 (회원: userId, 비회원: editPassword)
+DELETE /api/sightings/:id          삭제 (회원: userId, 비회원: editPassword)
+GET    /api/sightings              목록 (반경 검색 지원: ?lat&lng&radiusKm)
+GET    /api/reports/:id/sightings  특정 신고의 제보 목록
+```
 
 ---
 
@@ -177,6 +189,9 @@ GREETING → SUBJECT_TYPE → PHOTO → DESCRIPTION → LOCATION → TIME → CO
 ## 6. 데이터 수집 (Crawl)
 
 공공 API 및 웹에서 실종/유기동물 데이터를 자동 수집하여 Report를 생성한다.
+
+**PERSON 크롤 토글**: 관리자 대시보드에서 `crawl:enable-person` 설정으로 사람 실종 정보 수집 on/off (기본 OFF).
+`AiSetting` 테이블 활용 (60초 캐시). `isPersonCrawlEnabled()` 함수로 체크.
 
 **아키텍처: Fan-out 패턴**
 ```

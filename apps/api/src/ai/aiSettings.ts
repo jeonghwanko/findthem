@@ -64,6 +64,12 @@ export async function getAllSettings(): Promise<Map<string, string>> {
   return getCachedSettings();
 }
 
+/** 사람 실종 정보 크롤 활성화 여부 (기본 false) */
+export async function isPersonCrawlEnabled(): Promise<boolean> {
+  const settings = await getCachedSettings();
+  return settings.get('crawl:enable-person') === 'true';
+}
+
 /** provider에 대한 API 키 반환. DB에 저장된 키가 있으면 우선, 없으면 환경 변수 fallback */
 export async function getApiKey(provider: string): Promise<string> {
   const settings = await getCachedSettings();
