@@ -1,201 +1,194 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Crosshair } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import { ReportCardSkeleton } from '../components/Skeleton';
-import KakaoMap, { type MapMarker } from '../components/KakaoMap';
 
-const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
-// 판교역 (기본 위치)
-const DEFAULT_CENTER = { lat: 37.3947, lng: 127.1112 };
+const BROWSE_PAGE_SIZE = 12;
 
-function esc(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+const REGIONS = [
+  '', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종',
+  '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+];
 
 export default function BrowsePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [type, setType] = useState('DOG');
-  const [search, setSearch] = useState('');
+  const [type, setType] = useState('');
+  const [phase, setPhase] = useState('');
+  const [region, setRegion] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-  const [userCenter, setUserCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const geoFetched = useRef(false);
+  const [error, setError] = useState('');
+  const abortRef = useRef<AbortController>();
 
-  // 지도 탭 첫 진입 시 현재 위치 요청
-  useEffect(() => {
-    if (viewMode !== 'map' || geoFetched.current) return;
-    geoFetched.current = true;
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => { /* 거부 시 기본값 유지 */ },
-      { timeout: 5000 },
-    );
-  }, [viewMode]);
-
-  const TYPES = [
+  const TYPE_FILTERS = useMemo(() => [
+    { value: '', label: t('browse.all') },
     { value: 'DOG', label: t('subjectType.DOG') },
     { value: 'CAT', label: t('subjectType.CAT') },
-  ];
+  ], [t]);
 
+  const PHASE_FILTERS = useMemo(() => [
+    { value: '', label: t('browse.all') },
+    { value: 'searching', label: t('browse.phaseSearching') },
+    { value: 'sighting_received', label: t('browse.phaseSightingReceived') },
+    { value: 'analysis_done', label: t('browse.phaseAnalysisDone') },
+    { value: 'found', label: t('browse.phaseFound') },
+  ], [t]);
+
+  // 검색 debounce (300ms)
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // API 호출
+  useEffect(() => {
+    // 이전 요청 취소
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     const params = new URLSearchParams();
-    // 지도 뷰는 한 번에 많이 로드 (페이지네이션 없음)
-    params.set('page', viewMode === 'map' ? '1' : String(page));
-    params.set('limit', viewMode === 'map' ? '50' : '12');
-    params.set('type', type);
-    if (search) params.set('q', search);
+    params.set('page', String(page));
+    params.set('limit', String(BROWSE_PAGE_SIZE));
+    if (type) params.set('type', type);
+    if (phase) params.set('phase', phase);
+    if (region) params.set('region', region);
+    if (debouncedSearch) params.set('q', debouncedSearch);
 
-    api.get<ReportListResponse>(`/reports?${params}`)
+    setError('');
+    api.get<ReportListResponse>(`/reports?${params}`, { signal: controller.signal })
       .then((data) => {
         setReports(data.items ?? data.reports ?? []);
         setTotalPages(data.totalPages);
       })
-      .catch(() => setReports([]))
-      .finally(() => setLoading(false));
-  }, [type, page, search, viewMode]);
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setReports([]);
+        setError(t('browse.loadError'));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
 
-  const mapMarkers: MapMarker[] = reports
-    .filter((r) => r.lastSeenLat !== null && r.lastSeenLat !== undefined && r.lastSeenLng !== null && r.lastSeenLng !== undefined)
-    .map((r) => ({
-      lat: r.lastSeenLat!,
-      lng: r.lastSeenLng!,
-      title: r.name,
-      infoContent: `<div style="padding:4px 8px;font-size:13px"><strong>${esc(r.name)}</strong><br/>${esc(r.lastSeenAddress)}</div>`,
-      onClick: () => navigate(`/reports/${r.id}`),
-    }));
+    return () => controller.abort();
+  }, [type, phase, region, page, debouncedSearch]);
 
-  const [locating, setLocating] = useState(false);
-
-  const handleLocateMe = useCallback(() => {
-    if (!navigator.geolocation || locating) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-      },
-      () => setLocating(false),
-      { timeout: 5000 },
-    );
-  }, [locating]);
+  const setFilter = useCallback((setter: (v: string) => void, value: string) => {
+    setter(value);
+    setPage(1);
+  }, []);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    setPage(1);
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
 
-      {/* 뷰 전환 탭 */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4 w-fit">
-        <button
-          onClick={() => setViewMode('list')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          {t('browse.viewList')}
-        </button>
-        <button
-          onClick={() => setViewMode('map')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            viewMode === 'map' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          {t('browse.viewMap')}
-        </button>
-      </div>
+      {/* 필터 영역 */}
+      <div className="space-y-3 mb-6">
+        {/* 종류 + 상태 필터 */}
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
+          {/* 종류 필터 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterType')}</span>
+            <div className="flex gap-1">
+              {TYPE_FILTERS.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setFilter(setType, item.value)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    type === item.value
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* 필터 */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {TYPES.map((item) => (
-            <button
-              key={item.value}
-              onClick={() => { setType(item.value); setPage(1); }}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                type === item.value
-                  ? 'bg-white text-primary-700 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+          {/* 상태 필터 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterStatus')}</span>
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+              {PHASE_FILTERS.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setFilter(setPhase, item.value)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    phase === item.value
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSearch} className="flex-1 min-w-[200px]">
+        {/* 지역 필터 */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterRegion')}</span>
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            {REGIONS.map((r) => (
+              <button
+                key={r}
+                onClick={() => setFilter(setRegion, r)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  region === r
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {r || t('browse.all')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 검색 */}
+        <form onSubmit={handleSearch} className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t('browse.searchPlaceholder')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
           />
         </form>
       </div>
 
-      {/* 지도 뷰 */}
-      {viewMode === 'map' && (
-        <div className="mb-6">
-          {!KAKAO_JS_KEY ? (
-            <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-              {t('browse.mapKeyMissing')}
-            </div>
-          ) : loading ? (
-            <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-              {t('loading')}
-            </div>
-          ) : (
-            <>
-              <div className="relative">
-                <KakaoMap
-                  markers={mapMarkers}
-                  center={userCenter ?? (mapMarkers.length > 0 ? undefined : DEFAULT_CENTER)}
-                  level={mapMarkers.length > 0 ? undefined : 7}
-                  className="w-full h-[500px] rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={handleLocateMe}
-                  disabled={locating}
-                  title={t('browse.myLocation')}
-                  className="absolute top-3 right-3 z-10 bg-white hover:bg-gray-50 shadow-md border border-gray-200 rounded-lg p-2.5 transition-colors disabled:opacity-50"
-                >
-                  <Crosshair className={`w-5 h-5 ${locating ? 'text-primary-500 animate-pulse' : 'text-gray-600'}`} />
-                </button>
-              </div>
-              {mapMarkers.length < reports.length && (
-                <p className="text-xs text-gray-400 mt-2 text-center">
-                  {t('browse.mapNoCoords')}
-                </p>
-              )}
-            </>
-          )}
-        </div>
+      {error && (
+        <p className="text-red-500 text-sm mb-4">{error}</p>
       )}
 
-      {viewMode === 'list' && loading ? (
+      {/* 목록 */}
+      {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {Array.from({ length: BROWSE_PAGE_SIZE }).map((_, i) => (
             <ReportCardSkeleton key={i} />
           ))}
         </div>
-      ) : viewMode === 'list' && reports.length === 0 ? (
+      ) : reports.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           {t('browse.noResults')}
         </div>
-      ) : viewMode === 'list' ? (
+      ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {reports.map((report) => (
@@ -203,7 +196,6 @@ export default function BrowsePage() {
             ))}
           </div>
 
-          {/* 페이지네이션 */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8">
               <button
@@ -226,7 +218,7 @@ export default function BrowsePage() {
             </div>
           )}
         </>
-      ) : null}
+      )}
     </div>
   );
 }

@@ -107,15 +107,18 @@
   "browse": {
     "title": "Missing Reports",
     "all": "All",
+    "filterType": "Type",
+    "filterStatus": "Status",
+    "filterRegion": "Region",
+    "phaseSearching": "Searching",
+    "phaseSightingReceived": "Sighting Received",
+    "phaseAnalysisDone": "Analysis Done",
+    "phaseFound": "Found",
     "searchPlaceholder": "Search by name, features, location...",
     "noResults": "No results found",
+    "loadError": "Failed to load reports",
     "prev": "Previous",
-    "next": "Next",
-    "viewList": "List",
-    "viewMap": "Map",
-    "mapNoCoords": "Reports without location data are not shown on the map",
-    "mapKeyMissing": "Map API key is not configured",
-    "myLocation": "My Location"
+    "next": "Next"
   },
   "myReports": {
     "title": "My Reports",

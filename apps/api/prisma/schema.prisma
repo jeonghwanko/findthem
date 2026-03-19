@@ -263,6 +263,7 @@ model Match {
   sighting Sighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, sightingId])
+  @@index([reportId])
   @@index([reportId, confidence])
   @@index([status])
   @@map("match")

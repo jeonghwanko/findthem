@@ -10,7 +10,7 @@ import { ApiError } from '../middlewares/errors.js';
 import { rateLimit } from '../middlewares/rateLimit.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 
 // SEC-W3: 제보 접수 rate limit — IP 기준 15분에 10회
 const sightingLimiter = rateLimit({ windowMs: 15 * 60_000, max: 10 });
@@ -104,7 +104,7 @@ export function registerSightingRoutes(router: Router) {
     '/sightings',
     sightingLimiter,
     optionalAuth,
-    upload.array('photos', 5),
+    upload.array('photos', MAX_REPORT_PHOTOS),
     async (req, res) => {
       // SEC-C3: JSON.parse 실패 시 400 반환
       let rawBody: unknown;

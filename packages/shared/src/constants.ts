@@ -280,6 +280,7 @@ export const SUBJECT_TYPE_VALUES = ['PERSON', 'DOG', 'CAT'] as const;
 export const GENDER_VALUES = ['MALE', 'FEMALE', 'UNKNOWN'] as const;
 export const REPORT_STATUS_VALUES = ['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED'] as const;
 export const MATCH_STATUS_VALUES = ['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED'] as const;
+export const REPORT_PHASE_VALUES = ['searching', 'sighting_received', 'analysis_done', 'found'] as const;
 export const ADMIN_ACTION_SOURCE_VALUES = ['DASHBOARD', 'AGENT', 'API'] as const;
 export const LOCALE_VALUES = ['ko', 'ja', 'zh-TW', 'en'] as const;
 export const INQUIRY_CATEGORY_VALUES = ['PAYMENT', 'REPORT', 'GENERAL', 'PARTNERSHIP'] as const;

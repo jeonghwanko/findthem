@@ -8,7 +8,7 @@ import { requireAuth, optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue, cleanupQueue } from '../jobs/queues.js';
-import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, SUBJECT_TYPE_VALUES, GENDER_VALUES, REPORT_STATUS_VALUES, type SubjectType } from '@findthem/shared';
+import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, MAX_ADDITIONAL_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, SUBJECT_TYPE_VALUES, GENDER_VALUES, REPORT_STATUS_VALUES, REPORT_PHASE_VALUES, type SubjectType } from '@findthem/shared';
 import { postAli } from '../services/communityAgentService.js';
 import { createLogger } from '../logger.js';
 
@@ -48,7 +48,9 @@ const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   type: z.enum(SUBJECT_TYPE_VALUES).optional(),
   status: z.enum(REPORT_STATUS_VALUES).optional(),
+  phase: z.enum(REPORT_PHASE_VALUES).optional(),
   q: z.string().optional(),
+  region: z.string().optional(),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
   radiusKm: z.coerce.number().min(1).max(200).default(50).optional(),
@@ -139,7 +141,7 @@ export function registerReportRoutes(router: Router) {
 
   // 실종 신고 목록
   router.get('/reports', optionalAuth, validateQuery(listQuerySchema), async (req, res) => {
-    const { page, limit, type, status, q, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof listQuerySchema>;
+    const { page, limit, type, status, phase, q, region, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof listQuerySchema>;
 
     // 반경 검색: lat + lng 모두 있을 때 Haversine raw query 사용
     if (lat !== undefined && lng !== undefined) {
@@ -150,6 +152,9 @@ export function registerReportRoutes(router: Router) {
       const typeCondition = type ? Prisma.sql`AND r.subject_type::text = ${type}` : Prisma.empty;
       const qCondition = q
         ? Prisma.sql`AND (r.name ILIKE ${`%${  q  }%`} OR r.features ILIKE ${`%${  q  }%`} OR r.last_seen_address ILIKE ${`%${  q  }%`})`
+        : Prisma.empty;
+      const regionCondition = region
+        ? Prisma.sql`AND r.last_seen_address ILIKE ${`%${  region  }%`}`
         : Prisma.empty;
 
       const baseQuery = Prisma.sql`
@@ -167,6 +172,7 @@ export function registerReportRoutes(router: Router) {
           AND r.status::text = ${statusVal}
           ${typeCondition}
           ${qCondition}
+          ${regionCondition}
       `;
 
       const [rawRows, countRows] = await Promise.all([
@@ -207,7 +213,31 @@ export function registerReportRoutes(router: Router) {
 
     const where: Prisma.ReportWhereInput = {};
     if (type) where.subjectType = type;
-    where.status = status ?? 'ACTIVE';
+
+    // phase가 있으면 status/sighting/match 조건을 자동 설정
+    if (phase) {
+      switch (phase) {
+        case 'searching':
+          where.status = 'ACTIVE';
+          where.sightings = { none: {} };
+          break;
+        case 'sighting_received':
+          where.status = 'ACTIVE';
+          where.sightings = { some: {} };
+          where.matches = { none: {} };
+          break;
+        case 'analysis_done':
+          where.status = 'ACTIVE';
+          where.matches = { some: {} };
+          break;
+        case 'found':
+          where.status = 'FOUND';
+          break;
+      }
+    } else {
+      where.status = status ?? 'ACTIVE';
+    }
+
     if (q) {
       where.OR = [
         { name: { contains: q, mode: 'insensitive' } },
@@ -215,38 +245,41 @@ export function registerReportRoutes(router: Router) {
         { lastSeenAddress: { contains: q, mode: 'insensitive' } },
       ];
     }
+    if (region) {
+      where.lastSeenAddress = { contains: region, mode: 'insensitive' };
+    }
 
-    const [reports, total] = await Promise.all([
-      prisma.report.findMany({
-        where,
-        select: {
-          id: true,
-          subjectType: true,
-          status: true,
-          name: true,
-          species: true,
-          gender: true,
-          age: true,
-          color: true,
-          features: true,
-          lastSeenAt: true,
-          lastSeenAddress: true,
-          lastSeenLat: true,
-          lastSeenLng: true,
-          contactPhone: true,
-          contactName: true,
-          reward: true,
-          createdAt: true,
-          updatedAt: true,
-          photos: { where: { isPrimary: true }, take: 1, select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true } },
-          _count: { select: { sightings: true, matches: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.report.count({ where }),
-    ]);
+    const skip = (page - 1) * limit;
+    const reports = await prisma.report.findMany({
+      where,
+      select: {
+        id: true,
+        subjectType: true,
+        status: true,
+        name: true,
+        species: true,
+        features: true,
+        lastSeenAt: true,
+        lastSeenAddress: true,
+        lastSeenLat: true,
+        lastSeenLng: true,
+        contactPhone: true,
+        contactName: true,
+        reward: true,
+        createdAt: true,
+        updatedAt: true,
+        photos: { where: { isPrimary: true }, take: 1, select: { id: true, photoUrl: true, thumbnailUrl: true, isPrimary: true } },
+        _count: { select: { sightings: true, matches: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    // 결과가 limit 미만이면 count 쿼리 생략 (phase의 EXISTS 서브쿼리 이중 실행 방지)
+    const total = reports.length < limit
+      ? skip + reports.length
+      : await prisma.report.count({ where });
 
     res.json({ items: reports, reports, total, page, totalPages: Math.ceil(total / limit) });
   });
@@ -318,7 +351,7 @@ export function registerReportRoutes(router: Router) {
   router.patch('/reports/:id/status', requireAuth, async (req, res) => {
     const id = req.params.id as string;
     const { status } = z
-      .object({ status: z.enum(['ACTIVE', 'FOUND']) })
+      .object({ status: z.enum(REPORT_STATUS_VALUES) })
       .parse(req.body);
 
     const report = await prisma.report.findUnique({ where: { id } });
@@ -361,7 +394,7 @@ export function registerReportRoutes(router: Router) {
   const editReportSchema = z.object({
     name: z.string().min(1).max(100).optional(),
     species: z.string().max(100).optional(),
-    gender: z.enum(['MALE', 'FEMALE', 'UNKNOWN']).optional(),
+    gender: z.enum(GENDER_VALUES).optional(),
     age: z.string().max(50).optional(),
     color: z.string().max(50).optional(),
     features: z.string().max(500).optional(),

@@ -39,6 +39,7 @@ export default function SightingSubmitPage() {
 
   // EXIF auto-fill tracking
   const exifAppliedRef = useRef(false);
+  const exifSessionRef = useRef(0); // 사진 전체 삭제 시 증가 → stale 응답 차단
   const [exifMessage, setExifMessage] = useState('');
   const exifTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -86,8 +87,9 @@ export default function SightingSubmitPage() {
     if (exif.lat == null || exif.lng == null) return;
     const exifLat = exif.lat;
     const exifLng = exif.lng;
+    const session = exifSessionRef.current;
     void reverseGeocode(exifLat, exifLng).then((addr) => {
-      if (!addr) return;
+      if (!addr || session !== exifSessionRef.current) return; // stale 응답 무시
       const option: AddressOption = { address: addr, lat: exifLat, lng: exifLng, photoIndex: fileIndex };
       setAddressOptions((prev) => {
         if (prev.some((o) => o.address === addr)) return prev;
@@ -129,6 +131,7 @@ export default function SightingSubmitPage() {
     if (files.length === 0) {
       setAddressOptions([]);
       exifAppliedRef.current = false;
+      exifSessionRef.current += 1; // stale reverseGeocode 응답 차단
     }
   }, []);
 
@@ -152,8 +155,11 @@ export default function SightingSubmitPage() {
     );
   }, []);
 
+  const isSubmittingRef = useRef(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
     if (photos.length === 0) {
       setError(t('sighting.photoRequired'));
       return;
@@ -166,6 +172,7 @@ export default function SightingSubmitPage() {
       setError(t('sighting.submitError'));
       return;
     }
+    isSubmittingRef.current = true;
     setLoading(true);
     setError('');
 
@@ -187,9 +194,11 @@ export default function SightingSubmitPage() {
       await api.post('/sightings', formData);
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('sighting.submitError'));
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('sighting.submitError') }));
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   }
 
