@@ -58,6 +58,13 @@ export default function ReportCard({ report }: ReportCardProps) {
           {t(`subjectType.${report.subjectType}`)}
         </span>
 
+        {/* 제보 수 뱃지 */}
+        {report._count && report._count.sightings > 0 && (
+          <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-primary-600 text-white shadow-sm">
+            {t('card.sightingCount', { count: report._count.sightings })}
+          </span>
+        )}
+
         {/* FOUND 오버레이 */}
         {report.status === 'FOUND' && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
@@ -78,13 +85,8 @@ export default function ReportCard({ report }: ReportCardProps) {
         {report.features?.trim() && (
           <p className="text-xs text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">{report.features}</p>
         )}
-        <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-100 text-xs text-gray-400">
+        <div className="mt-2.5 pt-2.5 border-t border-gray-100 text-xs text-gray-400">
           <span>{timeAgo}</span>
-          {report._count && report._count.sightings > 0 && (
-            <span className="text-primary-500 font-medium">
-              {t('card.sightingCount', { count: report._count.sightings })}
-            </span>
-          )}
         </div>
       </div>
     </Link>
