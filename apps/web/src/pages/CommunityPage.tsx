@@ -79,7 +79,7 @@ export default function CommunityPage() {
   return (
     <div className="bg-white">
       {/* PixiHeroScene — Spine 애니메이션 + XP/레벨 + 광고 리워드 */}
-      <PixiHeroScene stats={stats} recoveryRate={recoveryRate} />
+      <PixiHeroScene stats={stats} recoveryRate={recoveryRate} hideStatsAndBillboard />
 
       {/* 커뮤니티 콘텐츠 */}
       <div className="max-w-3xl mx-auto px-4 py-8">

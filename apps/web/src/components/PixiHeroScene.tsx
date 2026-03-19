@@ -19,6 +19,8 @@ import AgentWorldScene from './AgentWorldScene';
 interface Props {
   stats: { total: number; found: number } | null;
   recoveryRate: number | null;
+  /** Hide StatsStrip and billboard speech bubble (used on community page) */
+  hideStatsAndBillboard?: boolean;
 }
 
 const SCENE_H = 360;
@@ -152,7 +154,7 @@ function buildBillboard(W: number, subtitleText: string, dpr: number): { contain
   return { container, lbl };
 }
 
-export default function PixiHeroScene({ stats, recoveryRate }: Props) {
+export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboard }: Props) {
   const { t } = useTranslation();
   const tRef = useRef(t);
   tRef.current = t;
@@ -332,12 +334,16 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         app.stage.addChild(sceneGfx);
         drawSceneGraphics(sceneGfx, W);
 
-        let bb = buildBillboard(W, subtitleText, dpr);
-        billboardRef.current = bb;
-        app.stage.addChild(bb.container);
+        let bb: { container: Container; lbl: Text } | null = null;
+        if (!hideStatsAndBillboard) {
+          bb = buildBillboard(W, subtitleText, dpr);
+          billboardRef.current = bb;
+          app.stage.addChild(bb.container);
+        }
 
         // Sync StatsStrip HTML position to billboard top
         const syncStats = (w: number) => {
+          if (hideStatsAndBillboard) return;
           const el = statsRef.current;
           if (!el) return;
           const { bbLeft, bbW } = getBillboardLayout(w);
@@ -465,11 +471,13 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             app.renderer.resize(newW, SCENE_H);
             drawSceneGraphics(sceneGfx, W);
 
-            app.stage.removeChild(bb.container);
-            bb.container.destroy({ children: true });
-            bb = buildBillboard(W, tRef.current('home.heroDesc'), dpr);
-            billboardRef.current = bb;
-            app.stage.addChildAt(bb.container, 1);
+            if (bb) {
+              app.stage.removeChild(bb.container);
+              bb.container.destroy({ children: true });
+              bb = buildBillboard(W, tRef.current('home.heroDesc'), dpr);
+              billboardRef.current = bb;
+              app.stage.addChildAt(bb.container, 1);
+            }
             syncStats(W);
 
             for (const s of charStates) {
@@ -665,9 +673,11 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
             </Link>
           </div>
           <AgentWorldScene />
-          <div className="hidden md:block">
-            <StatsStrip stats={stats} recoveryRate={recoveryRate} />
-          </div>
+          {!hideStatsAndBillboard && (
+            <div className="hidden md:block">
+              <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+            </div>
+          )}
         </div>
       </section>
     );
@@ -766,10 +776,12 @@ export default function PixiHeroScene({ stats, recoveryRate }: Props) {
         </div>
       )}
 
-      {/* StatsStrip — 데스크탑 전용 (모바일 숨김) */}
-      <div ref={statsRef} className="absolute z-20 hidden md:block" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
-        <StatsStrip stats={stats} recoveryRate={recoveryRate} />
-      </div>
+      {/* StatsStrip — 데스크탑 전용 (모바일 숨김), hideStatsAndBillboard 시 숨김 */}
+      {!hideStatsAndBillboard && (
+        <div ref={statsRef} className="absolute z-20 hidden md:block" style={{ transform: 'translate(-50%, -100%)', pointerEvents: 'auto', opacity: phase === 'ready' ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>
+          <StatsStrip stats={stats} recoveryRate={recoveryRate} />
+        </div>
+      )}
 
       {/* XP 레벨 배지 — 데스크탑: 버튼 그룹에 통합됨, 모바일: 게임 버튼에 통합됨 */}
 
