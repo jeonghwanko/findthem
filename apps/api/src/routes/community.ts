@@ -6,6 +6,8 @@ import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { dispatchWebhookToAll, dispatchWebhookToAgent } from '../services/webhookDispatcher.js';
+import type { WebhookPayload } from '../services/webhookDispatcher.js';
 
 const log = createLogger('communityRoute');
 
@@ -225,6 +227,7 @@ export function registerCommunityRoutes(router: Router) {
       const id = req.params.id as string;
       const post = await prisma.communityPost.findUnique({
         where: { id },
+        select: { id: true, title: true, content: true, sourceUrl: true, externalAgentId: true },
       });
       if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
 
@@ -237,6 +240,34 @@ export function registerCommunityRoutes(router: Router) {
         },
         include: commentInclude,
       });
+
+      // 외부 에이전트 게시글에 댓글이 달리면 webhook 알림 (fire-and-forget)
+      if (post.externalAgentId || post.sourceUrl) {
+        const payload: WebhookPayload = {
+          event: 'new_comment',
+          postId: post.id,
+          postTitle: post.title,
+          postContent: post.content.slice(0, 500),
+          sourceUrl: post.sourceUrl,
+          comments: [{
+            id: comment.id,
+            authorName: comment.user?.name ?? 'Anonymous',
+            authorType: 'user',
+            content: comment.content,
+            createdAt: comment.createdAt.toISOString(),
+          }],
+          timestamp: new Date().toISOString(),
+        };
+        // 외부 에이전트 게시글 → 해당 에이전트에만, Q&A 크롤 게시글 → 전체
+        if (post.externalAgentId) {
+          void dispatchWebhookToAgent(post.externalAgentId, payload)
+            .catch((err) => log.warn({ err, postId: id }, 'Webhook dispatch on comment failed'));
+        } else {
+          void dispatchWebhookToAll(payload)
+            .catch((err) => log.warn({ err, postId: id }, 'Webhook dispatch on comment failed'));
+        }
+      }
+
       res.status(201).json(comment);
     },
   );
@@ -315,6 +346,86 @@ export function registerCommunityRoutes(router: Router) {
     },
   );
 
+  // ── 외부 에이전트 게시글 목록 조회 (Q&A 질문 포함) ──
+  router.get(
+    '/community/external/posts',
+    requireExternalAgentAuth,
+    validateQuery(listQuerySchema),
+    async (req, res) => {
+      const { page, limit, q } = req.query as unknown as z.infer<typeof listQuerySchema>;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        // Q&A 크롤 게시글만 외부 에이전트에 노출 (일반 회원 게시글 보호)
+        sourceUrl: { not: null },
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: 'insensitive' as const } },
+                { content: { contains: q, mode: 'insensitive' as const } },
+              ],
+            }
+          : {}),
+      };
+
+      const [posts, total] = await Promise.all([
+        prisma.communityPost.findMany({
+          where,
+          include: {
+            ...postInclude,
+            comments: {
+              include: commentInclude,
+              orderBy: { createdAt: 'asc' as const },
+              take: 5,
+            },
+          },
+          orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+          skip,
+          take: limit,
+        }),
+        prisma.communityPost.count({ where }),
+      ]);
+
+      res.json({ items: posts, total, page, totalPages: Math.ceil(total / limit) });
+    },
+  );
+
+  // ── 외부 에이전트 게시글 상세 + 전체 댓글 (스레드 컨텍스트) ──
+  router.get(
+    '/community/external/posts/:id',
+    requireExternalAgentAuth,
+    validateQuery(commentListQuerySchema),
+    async (req, res) => {
+      const id = req.params.id as string;
+      const { page, limit } = req.query as unknown as z.infer<typeof commentListQuerySchema>;
+      const commentSkip = (page - 1) * limit;
+
+      const post = await prisma.communityPost.findUnique({
+        where: { id },
+        include: {
+          ...postInclude,
+          comments: {
+            include: commentInclude,
+            orderBy: { createdAt: 'asc' },
+            skip: commentSkip,
+            take: limit,
+          },
+        },
+      });
+
+      if (!post) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+
+      const totalComments = await prisma.communityComment.count({ where: { postId: id } });
+
+      res.json({
+        ...post,
+        totalComments,
+        commentPage: page,
+        commentTotalPages: Math.ceil(totalComments / limit),
+      });
+    },
+  );
+
   // ══════════════════════════════════════
   // AI Agent 엔드포인트 (X-Agent-Key + X-Agent-Id)
   // ══════════════════════════════════════
@@ -377,7 +488,7 @@ export function registerCommunityRoutes(router: Router) {
 
       // NOT 토글을 원자적으로 처리 (read-modify-write 레이스 컨디션 방지)
       await prisma.$executeRaw`
-        UPDATE "CommunityPost"
+        UPDATE "community_post"
         SET "isPinned" = NOT "isPinned"
         WHERE id = ${id}
       `;

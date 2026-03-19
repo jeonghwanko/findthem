@@ -33,6 +33,7 @@ const SYSTEM_PROMPTS: Record<Locale, string> = {
 {
   "kakao": "카카오톡용 (500자 이내, 이모지 적절히 사용, 구조화된 형태)",
   "twitter": "X/트위터용 (250자 이내, 해시태그 포함: #실종 #찾아주세요)",
+  "instagram": "인스타그램용 (2200자 이내, 감성적 스토리텔링, 해시태그 최대 30개, 이모지 적극 활용)",
   "general": "일반 홍보용 (300자 이내, 공유에 적합한 형태)"
 }`,
 
@@ -49,6 +50,7 @@ Respond strictly in the following JSON format:
 {
   "kakao": "For messaging app (within 500 chars, use emojis appropriately, structured format)",
   "twitter": "For X/Twitter (within 250 chars, include hashtags: #missing #helpfind)",
+  "instagram": "For Instagram (within 2200 chars, emotional storytelling, up to 30 hashtags, use emojis freely)",
   "general": "General promo (within 300 chars, suitable for sharing)"
 }`,
 
@@ -65,6 +67,7 @@ Respond strictly in the following JSON format:
 {
   "kakao": "メッセージアプリ用（500文字以内、絵文字適切に使用、構造化形式）",
   "twitter": "X/Twitter用（250文字以内、ハッシュタグ含む: #行方不明 #見つけてください）",
+  "instagram": "Instagram用（2200文字以内、感情的なストーリーテリング、ハッシュタグ最大30個、絵文字積極活用）",
   "general": "一般広報用（300文字以内、シェアに適した形式）"
 }`,
 
@@ -81,6 +84,7 @@ Respond strictly in the following JSON format:
 {
   "kakao": "訊息應用程式用（500字以內，適當使用表情符號，結構化格式）",
   "twitter": "X/Twitter用（250字以內，含標籤：#失蹤 #請幫忙找）",
+  "instagram": "Instagram用（2200字以內，情感化故事敘述，最多30個標籤，積極使用表情符號）",
   "general": "一般宣傳用（300字以內，適合分享的格式）"
 }`,
 };
@@ -215,6 +219,7 @@ export async function generatePromoTexts(
     return {
       kakao: result,
       twitter: result.slice(0, 250),
+      instagram: result.slice(0, 2200),
       general: result,
     };
   }

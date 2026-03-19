@@ -204,7 +204,7 @@ function SettingsTab({ settings, onSaved }: SettingsTabProps) {
 
             return (
               <div key={agent.id} className="py-3 flex flex-wrap items-center gap-3">
-                <div className="w-56 flex items-center gap-2 flex-shrink-0">
+                <div className="w-full sm:w-56 flex items-center gap-2 sm:flex-shrink-0">
                   <span className="text-lg leading-none">{agent.icon}</span>
                   <div>
                     <div className="text-sm font-medium text-gray-800">{agent.name}</div>
@@ -361,7 +361,8 @@ function UsageTab() {
             <div className="px-5 py-4 border-b">
               <h2 className="text-base font-semibold text-gray-700">에이전트별 통계</h2>
             </div>
-            <table className="w-full text-sm border-collapse">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse min-w-[500px]">
               <thead>
                 <tr className="bg-gray-50 text-left">
                   <th className="px-5 py-3 font-medium text-gray-600 border-b">에이전트</th>
@@ -422,6 +423,7 @@ function UsageTab() {
                 )}
               </tbody>
             </table>
+            </div>
           </section>
 
           {/* 프로바이더별 테이블 */}
@@ -430,7 +432,8 @@ function UsageTab() {
               <div className="px-5 py-4 border-b">
                 <h2 className="text-base font-semibold text-gray-700">프로바이더별 통계</h2>
               </div>
-              <table className="w-full text-sm border-collapse">
+              <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse min-w-[400px]">
                 <thead>
                   <tr className="bg-gray-50 text-left">
                     <th className="px-5 py-3 font-medium text-gray-600 border-b">프로바이더</th>
@@ -456,6 +459,7 @@ function UsageTab() {
                     ))}
                 </tbody>
               </table>
+              </div>
             </section>
           )}
         </>
@@ -545,7 +549,7 @@ function ApiKeysTab() {
                 onChange={(e) => setInputs((prev) => ({ ...prev, [id]: e.target.value }))}
                 placeholder={placeholder}
                 autoComplete="off"
-                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <button
                 onClick={() => { void handleSave(id); }}
@@ -610,10 +614,10 @@ export default function AiSettingsPage() {
   ];
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-4 lg:p-6 max-w-4xl">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-900">AI 설정</h1>
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-6">
+        <h1 className="text-lg lg:text-xl font-bold text-gray-900">AI 설정</h1>
         {savedAt && (
           <span className="text-xs text-green-600 bg-green-50 rounded px-2.5 py-1">
             저장됨 {savedAt}
@@ -622,7 +626,7 @@ export default function AiSettingsPage() {
       </div>
 
       {/* 탭 */}
-      <div className="flex border-b border-gray-200 mb-6">
+      <div className="flex border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.id}

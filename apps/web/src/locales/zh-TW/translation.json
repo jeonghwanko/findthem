@@ -71,6 +71,7 @@
     "kakaoLogin": "使用Kakao登入",
     "naverLogin": "使用Naver登入",
     "telegramLogin": "使用Telegram登入",
+    "appleLogin": "使用Apple登入",
     "orDivider": "或"
   },
   "browse": {
@@ -327,6 +328,7 @@
     "button": "分享",
     "twitter": "分享到 X（Twitter）",
     "kakao": "分享到 KakaoTalk",
+    "instagram": "分享到 Instagram",
     "copyLink": "複製連結",
     "copied": "已複製！",
     "copyPrompt": "請複製此連結：",

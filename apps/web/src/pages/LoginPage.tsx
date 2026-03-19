@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     }
   }
 
-  function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram') {
+  function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram' | 'apple') {
     window.location.href = `/api/auth/${provider}`;
   }
 
@@ -96,6 +96,22 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                   />
                 </svg>
                 {t('auth.telegramLogin')}
+              </button>
+
+              {/* Apple — Apple Human Interface Guidelines 준수: 검정 배경 + 흰색 로고 */}
+              <button
+                type="button"
+                onClick={() => handleSocialLogin('apple')}
+                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M13.18 2C13.3 3.25 12.8 4.44 12.09 5.3c-.72.88-1.87 1.56-3.03 1.47-.15-1.23.43-2.5 1.1-3.3C10.87 2.6 12.1 1.9 13.18 2zm3.34 11.24c-.5 1.1-1.09 1.97-1.97 2.84-.77.76-1.57 1.03-2.24.98-.67-.05-1.47-.44-2.31-.44-.85 0-1.67.41-2.33.44-.66.03-1.48-.22-2.27-1.01C2.57 14.06 1 11.23 1 8.5c0-3.14 2.06-4.8 4.07-4.83 1.06-.02 2 .62 2.64.62.64 0 1.73-.7 2.97-.67.51.02 1.94.21 2.86 1.57-.07.05-1.71 1-1.69 2.97.02 2.36 2.08 3.14 2.1 3.15-.02.07-.33 1.12-1.03 2.13z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {t('auth.appleLogin')}
               </button>
             </div>
 

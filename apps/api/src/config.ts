@@ -46,6 +46,9 @@ export const config = {
   twitterAccessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
   twitterBearerToken: process.env.TWITTER_BEARER_TOKEN || '',
 
+  instagramAccessToken: process.env.INSTAGRAM_ACCESS_TOKEN || '',
+  instagramUserId: process.env.INSTAGRAM_USER_ID || '',
+
   kakaoMapRestKey: process.env.KAKAO_MAP_REST_KEY || '',
   kakaoSenderKey: process.env.KAKAO_SENDER_KEY || '',
 
@@ -88,6 +91,12 @@ export const config = {
   naverRedirectUri:  process.env.NAVER_REDIRECT_URI || '',
 
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
+
+  appleClientId:   process.env.APPLE_CLIENT_ID   || '',
+  appleKeyId:      process.env.APPLE_KEY_ID       || '',
+  appleTeamId:     process.env.APPLE_TEAM_ID      || '',
+  applePrivateKey: (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  appleRedirectUri: process.env.APPLE_REDIRECT_URI || '',
 
   firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '',
 } as const;

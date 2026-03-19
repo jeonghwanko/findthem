@@ -8,18 +8,12 @@ import {
   promotionMonitorQueue,
   promotionRepostQueue,
 } from '../../../jobs/queues.js';
-import type { QueueStatusSummary } from '@findthem/shared';
+import { QUEUE_NAMES, type QueueStatusSummary } from '@findthem/shared';
+
+type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
 
 export interface QueueStatusInput {
-  queueName:
-    | 'image-processing'
-    | 'promotion'
-    | 'matching'
-    | 'notification'
-    | 'cleanup'
-    | 'promotion-monitor'
-    | 'promotion-repost'
-    | 'all';
+  queueName: QueueName | 'all';
 }
 
 const QUEUE_MAP: Record<string, Queue> = {

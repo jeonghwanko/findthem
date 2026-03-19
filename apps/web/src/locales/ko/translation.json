@@ -71,6 +71,7 @@
     "kakaoLogin": "카카오톡으로 로그인",
     "naverLogin": "네이버로 로그인",
     "telegramLogin": "텔레그램으로 로그인",
+    "appleLogin": "Apple로 로그인",
     "orDivider": "또는"
   },
   "browse": {
@@ -327,6 +328,7 @@
     "button": "공유하기",
     "twitter": "X (트위터)에 공유",
     "kakao": "카카오톡에 공유",
+    "instagram": "인스타그램에 공유",
     "copyLink": "링크 복사",
     "copied": "복사됨!",
     "copyPrompt": "링크를 복사하세요:",

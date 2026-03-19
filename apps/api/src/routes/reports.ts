@@ -84,7 +84,7 @@ export function registerReportRoutes(router: Router) {
       try {
         rawBody = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body;
       } catch {
-        throw new ApiError(400, 'INVALID_REQUEST_DATA');
+        throw new ApiError(400, ERROR_CODES.VALIDATION_ERROR);
       }
       const body = createReportSchema.parse(rawBody);
 

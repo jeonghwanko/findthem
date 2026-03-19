@@ -1,4 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import { QUEUE_NAMES } from '@findthem/shared';
+
+const QUEUE_NAME_VALUES = Object.values(QUEUE_NAMES);
 
 export const ADMIN_TOOL_DEFINITIONS: Anthropic.Messages.Tool[] = [
   {
@@ -35,16 +38,7 @@ export const ADMIN_TOOL_DEFINITIONS: Anthropic.Messages.Tool[] = [
       properties: {
         queueName: {
           type: 'string',
-          enum: [
-            'image-processing',
-            'promotion',
-            'matching',
-            'notification',
-            'cleanup',
-            'promotion-monitor',
-            'promotion-repost',
-            'all',
-          ],
+          enum: [...QUEUE_NAME_VALUES, 'all'],
           description: '조회할 큐 이름. all이면 모든 큐를 조회한다.',
         },
       },
@@ -118,15 +112,7 @@ export const ADMIN_TOOL_DEFINITIONS: Anthropic.Messages.Tool[] = [
       properties: {
         queueName: {
           type: 'string',
-          enum: [
-            'image-processing',
-            'promotion',
-            'matching',
-            'notification',
-            'cleanup',
-            'promotion-monitor',
-            'promotion-repost',
-          ],
+          enum: QUEUE_NAME_VALUES,
           description: '조회할 큐 이름. 생략하면 모든 큐를 조회한다.',
         },
         limit: {
@@ -214,15 +200,7 @@ export const ADMIN_TOOL_DEFINITIONS: Anthropic.Messages.Tool[] = [
       properties: {
         queueName: {
           type: 'string',
-          enum: [
-            'image-processing',
-            'promotion',
-            'matching',
-            'notification',
-            'cleanup',
-            'promotion-monitor',
-            'promotion-repost',
-          ],
+          enum: QUEUE_NAME_VALUES,
           description: 'job이 속한 큐 이름',
         },
         jobId: {

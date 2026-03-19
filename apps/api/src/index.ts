@@ -11,6 +11,7 @@ import { startCrawlAgentWorker } from './jobs/crawlAgentJob.js';
 import { startPromotionMonitorWorker } from './jobs/promotionMonitorJob.js';
 import { startPromotionRepostWorker, schedulePromotionRepostJob } from './jobs/promotionRepostJob.js';
 import { startOutreachWorker, scheduleOutreachJob } from './jobs/outreachJob.js';
+import { initQaCrawlJob } from './jobs/qaCrawlJob.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('server');
@@ -35,6 +36,7 @@ async function main() {
     await scheduleCrawlJob();
     await schedulePromotionRepostJob();
     await scheduleOutreachJob();
+    initQaCrawlJob();
     log.info('Workers started');
   } else {
     log.info('Workers disabled (ENABLE_WORKERS=false) — API only mode');

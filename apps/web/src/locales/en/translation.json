@@ -71,6 +71,7 @@
     "kakaoLogin": "Login with Kakao",
     "naverLogin": "Login with Naver",
     "telegramLogin": "Login with Telegram",
+    "appleLogin": "Sign in with Apple",
     "orDivider": "or"
   },
   "browse": {
@@ -327,6 +328,7 @@
     "button": "Share",
     "twitter": "Share on X (Twitter)",
     "kakao": "Share on KakaoTalk",
+    "instagram": "Share on Instagram",
     "copyLink": "Copy link",
     "copied": "Copied!",
     "copyPrompt": "Copy this link:",

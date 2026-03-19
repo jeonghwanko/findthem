@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import multer from 'multer';
+import express from 'express';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody } from '../middlewares/validate.js';
@@ -15,6 +17,9 @@ import { ERROR_CODES, MAX_FILE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
 import { storageService } from '../services/storageService.js';
+
+// Apple JWKS — 모듈 로드 시 1회 생성 (내부적으로 캐시)
+const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 const log = createLogger('auth');
 
@@ -87,7 +92,7 @@ function signToken(userId: string): string {
  * upsert 패턴으로 동시 요청 레이스 컨디션 방지.
  */
 async function findOrCreateSocialUser(params: {
-  provider: 'KAKAO' | 'NAVER' | 'TELEGRAM';
+  provider: 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE';
   providerId: string;
   name: string;
   profileImage?: string | null;
@@ -460,6 +465,105 @@ export function registerAuthRoutes(router: Router) {
     });
     res.redirect(`https://oauth.telegram.org/auth?${params.toString()}`);
   });
+
+  // ── Apple Sign in with Apple ──────────────────────────────────────────────
+
+  // Apple 로그인 진입 (CSRF state를 쿠키에 저장)
+  router.get('/auth/apple', (_req, res) => {
+    const state = crypto.randomBytes(16).toString('hex');
+    res.cookie('apple_oauth_state', state, {
+      httpOnly: true,
+      maxAge: 5 * 60 * 1000, // 5분
+      sameSite: 'none',       // Apple 콜백은 POST cross-origin이므로 none 필수
+      secure: true,
+    });
+
+    const params = new URLSearchParams({
+      client_id: config.appleClientId,
+      redirect_uri: config.appleRedirectUri,
+      response_type: 'code id_token',
+      response_mode: 'form_post',
+      scope: 'name email',
+      state,
+    });
+    res.redirect(`https://appleid.apple.com/auth/authorize?${params.toString()}`);
+  });
+
+  // Apple OAuth 콜백 — Apple이 form_post로 전달 (application/x-www-form-urlencoded)
+  router.post(
+    '/auth/apple/callback',
+    express.urlencoded({ extended: false }),
+    async (req, res) => {
+      const body = req.body as Record<string, string | undefined>;
+      const { id_token: idToken, state, user: userJson } = body;
+
+      if (!idToken) {
+        log.warn('Apple callback: id_token missing');
+        return res.redirect(`${config.webOrigin}/login?error=apple_failed`);
+      }
+
+      // CSRF state 검증
+      // [C1] clearCookie는 state 검증 성공 후에 실행 — replay attack 방지를 위해 검증 실패 시 쿠키를 유지
+      const savedState = parseCookieValue(req.headers.cookie, 'apple_oauth_state');
+      if (!savedState || state !== savedState) {
+        log.warn({ state, savedState }, 'Apple callback: state mismatch');
+        return res.redirect(`${config.webOrigin}/login?error=apple_failed`);
+      }
+      res.clearCookie('apple_oauth_state', {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true,
+      });
+
+      // Apple id_token 검증 (JWKS)
+      let appleId: string;
+      let appleEmail: string | null = null;
+      try {
+        const { payload } = await jwtVerify(idToken, APPLE_JWKS, {
+          issuer: 'https://appleid.apple.com',
+          audience: config.appleClientId,
+        });
+
+        // [C4] sub 타입 체크 강화 — 숫자 등 비문자열 값이 오면 검증 실패 처리
+        const sub = payload.sub;
+        if (typeof sub !== 'string' || !sub) throw new Error('sub missing or invalid type');
+        appleId = sub;
+
+        // email은 string 또는 undefined
+        const emailClaim = payload['email'];
+        appleEmail = typeof emailClaim === 'string' ? emailClaim : null;
+      } catch (err) {
+        log.error({ err }, 'Apple id_token verification failed');
+        return res.redirect(`${config.webOrigin}/login?error=apple_failed`);
+      }
+
+      // Apple은 첫 로그인 시에만 name을 form body의 user JSON으로 전달
+      let appleName = 'AppleUser';
+      if (userJson) {
+        try {
+          const parsed = JSON.parse(userJson) as {
+            name?: { firstName?: string; lastName?: string };
+          };
+          const parts = [parsed.name?.firstName, parsed.name?.lastName].filter(Boolean);
+          if (parts.length > 0) appleName = parts.join(' ');
+        } catch {
+          // name 파싱 실패 시 기본값 유지
+        }
+      }
+
+      // DB 유저 조회/생성
+      const user = await findOrCreateSocialUser({
+        provider: 'APPLE',
+        providerId: appleId,
+        name: appleName,
+        profileImage: null, // Apple은 프로필 이미지 미제공
+      });
+      log.info({ userId: user.id, appleId }, 'Apple login success');
+
+      const token = signToken(user.id);
+      return redirectWithToken(res, token);
+    },
+  );
 
   // 텔레그램 OAuth 콜백 — 프론트가 fragment를 파싱하여 POST로 전달
   router.post('/auth/telegram/callback', async (req, res) => {

@@ -71,6 +71,7 @@
     "kakaoLogin": "カカオでログイン",
     "naverLogin": "Naverでログイン",
     "telegramLogin": "Telegramでログイン",
+    "appleLogin": "Appleでサインイン",
     "orDivider": "または"
   },
   "browse": {
@@ -327,6 +328,7 @@
     "button": "共有する",
     "twitter": "X（Twitter）でシェア",
     "kakao": "カカオトークでシェア",
+    "instagram": "Instagramでシェア",
     "copyLink": "リンクをコピー",
     "copied": "コピーしました！",
     "copyPrompt": "リンクをコピーしてください：",

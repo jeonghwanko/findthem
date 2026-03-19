@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
-import type { AdminActionSource } from '@findthem/shared';
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type AdminActionSource } from '@findthem/shared';
 
 export interface CreateAuditLogParams {
   action: string;
@@ -37,7 +37,7 @@ export interface ListAuditLogsOptions {
 
 export async function listAuditLogs(options: ListAuditLogsOptions) {
   const page = options.page ?? 1;
-  const limit = Math.min(options.limit ?? 20, 50);
+  const limit = Math.min(options.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
   const skip = (page - 1) * limit;
 
   const where: Prisma.AdminAuditLogWhereInput = {};

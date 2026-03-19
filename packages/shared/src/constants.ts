@@ -186,7 +186,12 @@ export const QUEUE_NAMES = {
   CRAWL: 'crawl',
   CRAWL_AGENT: 'crawl-agent',
   OUTREACH: 'outreach',
+  QA_CRAWL: 'qa-crawl',
 } as const;
+
+// ── Instagram ──
+
+export const INSTAGRAM_POST_DAILY_LIMIT = 25;
 
 // ── 아웃리치 ──
 

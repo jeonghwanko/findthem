@@ -132,12 +132,6 @@ export function registerSponsorRoutes(router: Router) {
     const { paymentKey, orderId, amount, agentId, displayName, message } =
       req.body as z.infer<typeof verifySchema>;
 
-    // 중복 검증 방지
-    const existing = await prisma.sponsor.findUnique({ where: { orderId } });
-    if (existing) {
-      throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
-    }
-
     // Toss API 호출 (secretKey 없으면 dev 환경에서 스킵)
     if (config.tossSecretKey) {
       const credentials = Buffer.from(`${config.tossSecretKey}:`).toString('base64');
@@ -178,10 +172,9 @@ export function registerSponsorRoutes(router: Router) {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === 'P2002'
       ) {
-        // 동시 요청으로 이미 저장된 경우 — 정상 응답 반환
-        log.warn({ orderId }, 'Toss sponsor already saved by concurrent request');
-        res.json({ success: true });
-        return;
+        // RACE-05: 동시 요청으로 이미 저장된 경우 — P2002(unique)로 중복 방지
+        log.warn({ orderId }, 'Toss sponsor already saved (duplicate request)');
+        throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
       }
       throw err;
     }

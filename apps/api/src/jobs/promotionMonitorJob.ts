@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { createWorker, promotionMonitorQueue, promotionQueue, type PromotionMonitorJobData } from './queues.js';
 import { TwitterAdapter } from '../platforms/twitter.js';
-import type { PromotionMetrics, PlatformAdapter } from '@findthem/shared';
+import { QUEUE_NAMES, type PromotionMetrics, type PlatformAdapter } from '@findthem/shared';
 import { analyzePerformance } from '../ai/promotionFeedbackAgent.js';
 import { createLogger } from '../logger.js';
 
@@ -162,7 +162,7 @@ async function processPromotionMonitorJob(job: Job<PromotionMonitorJobData>) {
 
 export function startPromotionMonitorWorker() {
   log.info('Promotion monitor worker started');
-  createWorker<PromotionMonitorJobData>('promotion-monitor', processPromotionMonitorJob, {
+  createWorker<PromotionMonitorJobData>(QUEUE_NAMES.PROMOTION_MONITOR, processPromotionMonitorJob, {
     concurrency: 3,
   });
 }

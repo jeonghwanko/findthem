@@ -10,7 +10,7 @@ import {
   promotionMonitorQueue,
   type PromotionJobData,
 } from './queues.js';
-import type { PromoPlatform, PromotionMetrics } from '@findthem/shared';
+import { QUEUE_NAMES, type PromoPlatform, type PromotionMetrics } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('promotionJob');
@@ -160,6 +160,9 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
   if (targetPlatforms.includes('KAKAO_CHANNEL')) {
     platformTextMap['kakao_channel'] = promoTexts.kakao;
   }
+  if (targetPlatforms.includes('INSTAGRAM')) {
+    platformTextMap['instagram'] = promoTexts.instagram;
+  }
   platformTextMap['general'] = promoTexts.general;
 
   const results = await postToAllPlatforms(platformTextMap, imagePaths);
@@ -168,6 +171,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
   const platformNameMap: Record<PromoPlatform, string> = {
     TWITTER: 'twitter',
     KAKAO_CHANNEL: 'kakao_channel',
+    INSTAGRAM: 'instagram',
   };
 
   for (const tPlatform of targetPlatforms) {
@@ -178,20 +182,28 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
 
     // 재게시: 새 레코드 생성 (@@unique 제약 때문에 기존이 DELETED가 된 후 새로 생성)
     let savedPromotion: { id: string };
+    const platformContent =
+      tPlatform === 'TWITTER' ? promoTexts.twitter
+      : tPlatform === 'INSTAGRAM' ? promoTexts.instagram
+      : promoTexts.kakao;
+
+    const promotionData = {
+      content: platformContent,
+      imageUrls: imagePaths,
+      postId: result.postId,
+      postUrl: result.postUrl,
+      status: result.success ? 'POSTED' as const : 'FAILED' as const,
+      errorMessage: result.error ?? null,
+      postedAt: result.success ? new Date() : null,
+      version: safeVersion,
+    };
+
     if (isRepost) {
-      savedPromotion = await prisma.promotion.create({
-        data: {
-          reportId,
-          platform: tPlatform,
-          content: tPlatform === 'TWITTER' ? promoTexts.twitter : promoTexts.kakao,
-          imageUrls: imagePaths,
-          postId: result.postId,
-          postUrl: result.postUrl,
-          status: result.success ? 'POSTED' : 'FAILED',
-          errorMessage: result.error ?? null,
-          postedAt: result.success ? new Date() : null,
-          version: safeVersion,
-        },
+      // RACE-06: upsert로 멱등성 보장 — 중복 재게시 job 실행 시에도 안전
+      savedPromotion = await prisma.promotion.upsert({
+        where: { reportId_platform: { reportId, platform: tPlatform } },
+        create: { reportId, platform: tPlatform, ...promotionData },
+        update: promotionData,
         select: { id: true },
       });
     } else {
@@ -201,7 +213,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
         create: {
           reportId,
           platform: tPlatform,
-          content: tPlatform === 'TWITTER' ? promoTexts.twitter : promoTexts.kakao,
+          content: platformContent,
           imageUrls: imagePaths,
           postId: result.postId,
           postUrl: result.postUrl,
@@ -211,7 +223,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
           version: 1,
         },
         update: {
-          content: tPlatform === 'TWITTER' ? promoTexts.twitter : promoTexts.kakao,
+          content: platformContent,
           postId: result.postId,
           postUrl: result.postUrl,
           status: result.success ? 'POSTED' : 'FAILED',
@@ -267,7 +279,7 @@ async function processPromotionJob(job: Job<PromotionJobData>) {
 
 export function startPromotionWorker() {
   log.info('Promotion worker started');
-  createWorker<PromotionJobData>('promotion', processPromotionJob, {
+  createWorker<PromotionJobData>(QUEUE_NAMES.PROMOTION, processPromotionJob, {
     concurrency: 2,
   });
 }

@@ -339,9 +339,9 @@ export default function OutreachPage() {
   const total = data?.total ?? 0;
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold text-gray-900">아웃리치 관리</h1>
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-5">
+        <h1 className="text-lg lg:text-xl font-bold text-gray-900">아웃리치 관리</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -368,7 +368,7 @@ export default function OutreachPage() {
       </div>
 
       {/* 탭 */}
-      <div className="flex gap-1 mb-5 border-b border-gray-200">
+      <div className="flex gap-1 mb-5 border-b border-gray-200 overflow-x-auto scrollbar-hide">
         {TABS.map((tab) => (
           <button
             key={tab.value}

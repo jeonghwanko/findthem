@@ -38,6 +38,8 @@ vi.mock('../src/db/client.js', () => {
     communityComment: createModelMock(),
     externalAgent: createModelMock(),
     userReward: createModelMock(),
+    sponsor: createModelMock(),
+    sponsorCryptoQuote: createModelMock(),
     $connect: vi.fn(),
     $executeRaw: vi.fn(),
     $disconnect: vi.fn(),

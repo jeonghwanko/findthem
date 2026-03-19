@@ -36,6 +36,7 @@ export default function ExternalAgentsPage() {
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
   const [createAvatarUrl, setCreateAvatarUrl] = useState('');
+  const [createWebhookUrl, setCreateWebhookUrl] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -72,6 +73,7 @@ export default function ExternalAgentsPage() {
         name: createName.trim(),
         description: createDescription.trim() || null,
         avatarUrl: createAvatarUrl.trim() || null,
+        webhookUrl: createWebhookUrl.trim() || null,
       });
       setAgents((prev) => [result.agent, ...prev]);
       setTotal((prev) => prev + 1);
@@ -79,6 +81,7 @@ export default function ExternalAgentsPage() {
       setCreateName('');
       setCreateDescription('');
       setCreateAvatarUrl('');
+      setCreateWebhookUrl('');
       // API 키 표시 모달 열기
       setNewApiKey(result.apiKey);
       setNewAgentName(result.agent.name);
@@ -132,10 +135,10 @@ export default function ExternalAgentsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-5">
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">외부 에이전트 관리</h1>
+          <h1 className="text-lg lg:text-xl font-bold text-gray-900">외부 에이전트 관리</h1>
           <p className="text-sm text-gray-500 mt-0.5">전체 {total}개</p>
         </div>
         <div className="flex gap-2">
@@ -166,7 +169,8 @@ export default function ExternalAgentsPage() {
 
       {/* 테이블 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse min-w-[600px]">
           <thead>
             <tr className="bg-gray-50 text-left">
               <th className="px-4 py-3 font-medium text-gray-600 border-b">ID</th>
@@ -175,19 +179,20 @@ export default function ExternalAgentsPage() {
               <th className="px-4 py-3 font-medium text-gray-600 border-b text-center">상태</th>
               <th className="px-4 py-3 font-medium text-gray-600 border-b">등록일</th>
               <th className="px-4 py-3 font-medium text-gray-600 border-b">마지막 사용</th>
+              <th className="px-4 py-3 font-medium text-gray-600 border-b">Webhook</th>
               <th className="px-4 py-3 font-medium text-gray-600 border-b">액션</th>
             </tr>
           </thead>
           <tbody>
             {loading && agents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-gray-400">
+                <td colSpan={8} className="text-center py-12 text-gray-400">
                   데이터를 불러오는 중...
                 </td>
               </tr>
             ) : agents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-gray-400">
+                <td colSpan={8} className="text-center py-12 text-gray-400">
                   등록된 외부 에이전트가 없습니다.
                 </td>
               </tr>
@@ -231,6 +236,13 @@ export default function ExternalAgentsPage() {
                   <td className="px-4 py-3 text-gray-500">
                     {agent.lastUsedAt ? formatDate(agent.lastUsedAt) : '-'}
                   </td>
+                  <td className="px-4 py-3 text-xs max-w-[180px] truncate">
+                    {agent.webhookUrl ? (
+                      <span className="text-green-600" title={agent.webhookUrl}>설정됨</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <button
@@ -262,6 +274,7 @@ export default function ExternalAgentsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 신규 등록 모달 */}
@@ -302,6 +315,17 @@ export default function ExternalAgentsPage() {
                   placeholder="https://... (선택)"
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+                <input
+                  type="url"
+                  value={createWebhookUrl}
+                  onChange={(e) => setCreateWebhookUrl(e.target.value)}
+                  placeholder="https://your-agent.example.com/webhook (선택)"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-400 mt-1">새 질문/댓글 발생 시 이 URL로 알림을 보냅니다.</p>
               </div>
 
               {createError && (

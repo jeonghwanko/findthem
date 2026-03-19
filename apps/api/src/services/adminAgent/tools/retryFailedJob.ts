@@ -8,17 +8,12 @@ import {
   promotionMonitorQueue,
   promotionRepostQueue,
 } from '../../../jobs/queues.js';
-import { ApiError, ERROR_CODES } from '@findthem/shared';
+import { ApiError, ERROR_CODES, QUEUE_NAMES } from '@findthem/shared';
+
+type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
 
 export interface RetryFailedJobInput {
-  queueName:
-    | 'image-processing'
-    | 'promotion'
-    | 'matching'
-    | 'notification'
-    | 'cleanup'
-    | 'promotion-monitor'
-    | 'promotion-repost';
+  queueName: QueueName;
   jobId: string;
 }
 

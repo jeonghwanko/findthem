@@ -56,6 +56,7 @@ enum AuthProvider {
   KAKAO
   NAVER
   TELEGRAM
+  APPLE
 
   @@map("auth_provider")
 }
@@ -309,6 +310,7 @@ model Promotion {
 enum PromoPlatform {
   KAKAO_CHANNEL
   TWITTER
+  INSTAGRAM
 
   @@map("promo_platform")
 }
@@ -561,6 +563,7 @@ model ExternalAgent {
   description String?
   avatarUrl   String?
   apiKey      String   @unique
+  webhookUrl  String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   lastUsedAt  DateTime?
@@ -580,6 +583,7 @@ model CommunityPost {
   content          String
   isPinned         Boolean  @default(false)
   viewCount        Int      @default(0)
+  sourceUrl        String?
   deduplicationKey String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -593,6 +597,8 @@ model CommunityPost {
   @@index([userId])
   @@index([agentId])
   @@index([externalAgentId])
+  @@index([deduplicationKey])
+  @@index([sourceUrl])
   @@map("community_post")
 }
 

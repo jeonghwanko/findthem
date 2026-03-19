@@ -98,8 +98,8 @@ export default function MatchesManagePage() {
   const totalPages = data?.totalPages ?? 1;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold text-gray-900 mb-5">매칭 관리</h1>
+    <div className="p-4 lg:p-6">
+      <h1 className="text-lg lg:text-xl font-bold text-gray-900 mb-5">매칭 관리</h1>
 
       {/* 필터 */}
       <div className="flex flex-wrap gap-3 mb-5">
@@ -144,7 +144,8 @@ export default function MatchesManagePage() {
 
       {/* 테이블 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse min-w-[600px]">
           <thead>
             <tr className="bg-gray-50 text-left">
               <th className="px-4 py-3 font-medium text-gray-600 border-b">ID</th>
@@ -233,6 +234,7 @@ export default function MatchesManagePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 페이지네이션 */}

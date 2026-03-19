@@ -15,6 +15,7 @@ import {
   notificationQueue,
   cleanupQueue,
   outreachQueue,
+  qaCrawlQueue,
 } from '../jobs/queues.js';
 import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
 import { requireAdmin } from '../middlewares/auth.js';
@@ -1238,12 +1239,14 @@ export function registerAdminRoutes(router: Router) {
     name: z.string().min(1).max(100),
     description: z.string().max(500).optional(),
     avatarUrl: z.string().url().optional(),
+    webhookUrl: z.string().url().optional(),
   });
 
   const externalAgentUpdateSchema = z.object({
     name: z.string().min(1).max(100).optional(),
     description: z.string().max(500).optional().nullable(),
     avatarUrl: z.string().url().optional().nullable(),
+    webhookUrl: z.string().url().optional().nullable(),
     isActive: z.boolean().optional(),
   });
 
@@ -1263,6 +1266,7 @@ export function registerAdminRoutes(router: Router) {
           name: true,
           description: true,
           avatarUrl: true,
+          webhookUrl: true,
           isActive: true,
           createdAt: true,
           lastUsedAt: true,
@@ -1280,13 +1284,13 @@ export function registerAdminRoutes(router: Router) {
 
   // POST /admin/external-agents
   router.post('/admin/external-agents', requireAdmin, validateBody(externalAgentCreateSchema), async (req, res) => {
-    const { name, description, avatarUrl } = req.body as z.infer<typeof externalAgentCreateSchema>;
+    const { name, description, avatarUrl, webhookUrl } = req.body as z.infer<typeof externalAgentCreateSchema>;
 
     const rawKey = randomBytes(32).toString('hex');
     const apiKey = createHash('sha256').update(rawKey).digest('hex');
 
     const agent = await prisma.externalAgent.create({
-      data: { name, description, avatarUrl, apiKey },
+      data: { name, description, avatarUrl, webhookUrl, apiKey },
     });
 
     await createAuditLog({
@@ -1304,6 +1308,7 @@ export function registerAdminRoutes(router: Router) {
         name: agent.name,
         description: agent.description,
         avatarUrl: agent.avatarUrl,
+        webhookUrl: agent.webhookUrl,
         isActive: agent.isActive,
         createdAt: agent.createdAt,
       },
@@ -1325,6 +1330,7 @@ export function registerAdminRoutes(router: Router) {
         ...(body.name !== undefined && { name: body.name }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
+        ...(body.webhookUrl !== undefined && { webhookUrl: body.webhookUrl }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       },
       select: {
@@ -1332,6 +1338,7 @@ export function registerAdminRoutes(router: Router) {
         name: true,
         description: true,
         avatarUrl: true,
+        webhookUrl: true,
         isActive: true,
         createdAt: true,
         lastUsedAt: true,
@@ -1429,5 +1436,15 @@ export function registerAdminRoutes(router: Router) {
     } catch (err) {
       res.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error', latencyMs: Date.now() - start });
     }
+  });
+
+  // POST /admin/qa-crawl/trigger — Q&A 크롤 수동 실행
+  router.post('/admin/qa-crawl/trigger', requireAdmin, async (_req, res) => {
+    await qaCrawlQueue.add(
+      'qa-crawl-run',
+      { triggeredBy: 'manual' },
+      { attempts: 2, backoff: { type: 'fixed', delay: 60_000 } },
+    );
+    res.json({ success: true, message: 'Q&A crawl job queued' });
   });
 }

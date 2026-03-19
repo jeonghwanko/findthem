@@ -8,16 +8,12 @@ import {
   promotionMonitorQueue,
   promotionRepostQueue,
 } from '../../../jobs/queues.js';
+import { QUEUE_NAMES } from '@findthem/shared';
+
+type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
 
 export interface RecentErrorsInput {
-  queueName?:
-    | 'image-processing'
-    | 'promotion'
-    | 'matching'
-    | 'notification'
-    | 'cleanup'
-    | 'promotion-monitor'
-    | 'promotion-repost';
+  queueName?: QueueName;
   limit?: number;
 }
 

@@ -96,9 +96,9 @@ export default function AuditLogPage() {
   const totalPages = data?.totalPages ?? 1;
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold text-gray-900">감사 로그</h1>
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-5">
+        <h1 className="text-lg lg:text-xl font-bold text-gray-900">감사 로그</h1>
         <button
           onClick={() => { void fetchData(); }}
           disabled={loading}
@@ -156,7 +156,8 @@ export default function AuditLogPage() {
 
       {/* 테이블 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse min-w-[600px]">
           <thead>
             <tr className="bg-gray-50 text-left">
               <th className="px-4 py-3 font-medium text-gray-600 border-b whitespace-nowrap">시간</th>
@@ -208,6 +209,7 @@ export default function AuditLogPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 페이지네이션 */}

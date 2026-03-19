@@ -321,7 +321,11 @@ async function handleDailyDiscoveryScan(): Promise<void> {
     await outreachQueue.add(
       'discover-contacts',
       { type: 'discover-contacts', reportId: report.id },
-      { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+      {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 30_000 },
+        jobId: `discover-contacts-${report.id}`,
+      },
     );
   }
 }

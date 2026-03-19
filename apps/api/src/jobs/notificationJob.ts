@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { sendMatchNotification } from '../services/notificationService.js';
 import { sendPushNotification } from '../services/fcmService.js';
 import { createWorker, type NotificationJobData } from './queues.js';
+import { QUEUE_NAMES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('notificationJob');
@@ -67,7 +68,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
 
 export function startNotificationWorker() {
   log.info('Notification worker started');
-  createWorker<NotificationJobData>('notification', processNotificationJob, {
+  createWorker<NotificationJobData>(QUEUE_NAMES.NOTIFICATION, processNotificationJob, {
     concurrency: 5,
   });
 }

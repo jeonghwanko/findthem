@@ -12,11 +12,11 @@ export type Gender = 'MALE' | 'FEMALE' | 'UNKNOWN';
 export type SightingSource = 'WEB' | 'KAKAO_CHATBOT' | 'ADMIN';
 export type SightingStatus = 'PENDING' | 'ANALYZED' | 'CONFIRMED' | 'REJECTED';
 export type MatchStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'NOTIFIED';
-export type PromoPlatform = 'KAKAO_CHANNEL' | 'TWITTER';
+export type PromoPlatform = 'KAKAO_CHANNEL' | 'TWITTER' | 'INSTAGRAM';
 export type PromoStatus = 'PENDING' | 'POSTED' | 'FAILED' | 'DELETED';
 export type ChatPlatform = 'WEB' | 'KAKAO';
 export type ChatStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
-export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM';
+export type AuthProvider = 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE';
 
 // ── API 응답 타입 ──
 
@@ -192,6 +192,7 @@ export interface NotificationJobData {
 export interface PlatformPromoTexts {
   kakao: string;
   twitter: string;
+  instagram: string;
   general: string;
 }
 
@@ -260,6 +261,24 @@ export interface OutreachJobData {
   type: 'discover-contacts' | 'send-outreach';
   reportId?: string;
   outreachRequestId?: string;
+}
+
+export interface QaCrawlJobData {
+  /** 특정 소스만 크롤 (없으면 전체) */
+  sources?: string[];
+  triggeredBy?: 'scheduler' | 'manual';
+}
+
+/** Q&A 크롤러가 반환하는 외부 질문 데이터 */
+export interface ExternalQuestion {
+  externalId: string;
+  title: string;
+  content: string;
+  sourceUrl: string;
+  sourceName: string;
+  authorName?: string;
+  tags?: string[];
+  postedAt: Date;
 }
 
 // ── 정보 수집 에이전트 타입 ──
@@ -409,6 +428,7 @@ export interface ExternalAgentPublic {
 
 export interface ExternalAgentAdmin extends ExternalAgentPublic {
   isActive: boolean;
+  webhookUrl: string | null;
   createdAt: string;
   lastUsedAt: string | null;
 }

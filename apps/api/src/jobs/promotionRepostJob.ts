@@ -2,6 +2,7 @@ import type { Job } from 'bullmq';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { createWorker, promotionQueue, promotionRepostQueue, type PromotionRepostJobData } from './queues.js';
+import { QUEUE_NAMES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('promotionRepostJob');
@@ -117,7 +118,7 @@ const REPOST_CRON = '0 7,19 * * *'; // 07:00, 19:00 KST
 
 export function startPromotionRepostWorker() {
   log.info('Promotion repost worker started');
-  createWorker<PromotionRepostJobData>('promotion-repost', processPromotionRepostJob, {
+  createWorker<PromotionRepostJobData>(QUEUE_NAMES.PROMOTION_REPOST, processPromotionRepostJob, {
     concurrency: 1,
   });
 }

@@ -3,6 +3,7 @@ import { prisma } from '../db/client.js';
 import { deleteFromAllPlatforms, postToAllPlatforms } from '../platforms/platformManager.js';
 import { generateThankYouMessage } from '../ai/promotionContentAgent.js';
 import { createWorker, type CleanupJobData } from './queues.js';
+import { QUEUE_NAMES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('cleanupJob');
@@ -26,11 +27,20 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
     return;
   }
 
-  // POSTED 상태인 게시물 조회
-  const promotions = await prisma.promotion.findMany({
+  // RACE-07: POSTED → DELETED 원자적 선점 — 중복 cleanup job 실행 시 SNS API 이중 호출 방지
+  // 먼저 updateMany로 POSTED → DELETED를 선점한 후, 선점 성공한 것만 SNS 삭제
+  const { count: claimedCount } = await prisma.promotion.updateMany({
     where: { reportId, status: 'POSTED' },
-    select: { id: true, platform: true, postId: true },
+    data: { status: 'DELETED' },
   });
+
+  // 선점한 게시물 조회 (이미 DELETED로 변경됨)
+  const promotions = claimedCount > 0
+    ? await prisma.promotion.findMany({
+        where: { reportId, status: 'DELETED' },
+        select: { id: true, platform: true, postId: true },
+      })
+    : [];
 
   // SNS 게시물 삭제
   if (promotions.length > 0) {
@@ -42,12 +52,6 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
       }));
 
     await deleteFromAllPlatforms(deletionTargets);
-
-    // DB 상태 일괄 업데이트
-    await prisma.promotion.updateMany({
-      where: { id: { in: promotions.map((p) => p.id) } },
-      data: { status: 'DELETED' },
-    });
 
     await prisma.promotionLog.create({
       data: {
@@ -137,7 +141,7 @@ async function processCleanupJob(job: Job<CleanupJobData>) {
 
 export function startCleanupWorker() {
   log.info('Cleanup worker started');
-  createWorker<CleanupJobData>('cleanup', processCleanupJob, {
+  createWorker<CleanupJobData>(QUEUE_NAMES.CLEANUP, processCleanupJob, {
     concurrency: 3,
   });
 }

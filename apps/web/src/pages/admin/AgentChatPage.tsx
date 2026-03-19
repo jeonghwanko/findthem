@@ -66,6 +66,64 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ko-KR');
 }
 
+function SessionList({
+  sessions,
+  sessionsLoading,
+  activeSessionId,
+  sending,
+  onNewSession,
+  onSelectSession,
+}: {
+  sessions: AdminAgentSession[];
+  sessionsLoading: boolean;
+  activeSessionId: string | null;
+  sending: boolean;
+  onNewSession: () => void;
+  onSelectSession: (session: AdminAgentSession) => void;
+}) {
+  return (
+    <>
+      <div className="p-3 border-b border-gray-100">
+        <button
+          onClick={onNewSession}
+          disabled={sending}
+          className="w-full bg-indigo-600 text-white rounded px-3 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+        >
+          + 새 대화
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-1">
+        {sessionsLoading ? (
+          <div className="text-center py-8 text-sm text-gray-400">로딩 중...</div>
+        ) : sessions.length === 0 ? (
+          <div className="text-center py-8 text-sm text-gray-400">세션 없음</div>
+        ) : (
+          sessions.map((session) => (
+            <button
+              key={session.id}
+              onClick={() => onSelectSession(session)}
+              className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                activeSessionId === session.id ? 'bg-indigo-50 border-l-2 border-l-indigo-600' : ''
+              }`}
+            >
+              <div className="font-mono text-xs text-gray-500 mb-0.5">
+                {shortId(session.id)}
+              </div>
+              {session.summary && (
+                <div className="text-gray-700 truncate text-xs mb-0.5">
+                  {session.summary}
+                </div>
+              )}
+              <div className="text-xs text-gray-400">{formatDate(session.createdAt)}</div>
+            </button>
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function AgentChatPage() {
   const [sessions, setSessions] = useState<AdminAgentSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -74,6 +132,7 @@ export default function AgentChatPage() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchSessions = useCallback(async () => {
@@ -83,8 +142,8 @@ export default function AgentChatPage() {
         '/admin/agent/sessions',
       );
       setSessions(result.sessions ?? []);
-    } catch (e: unknown) {
-      console.error('세션 로드 실패:', e);
+    } catch {
+      // 세션 로드 실패 시 무시
     } finally {
       setSessionsLoading(false);
     }
@@ -99,6 +158,7 @@ export default function AgentChatPage() {
   }, [messages]);
 
   async function handleNewSession() {
+    setDrawerOpen(false);
     setSending(true);
     setError(null);
     try {
@@ -122,17 +182,16 @@ export default function AgentChatPage() {
   }
 
   async function handleSelectSession(session: AdminAgentSession) {
+    setDrawerOpen(false);
     setActiveSessionId(session.id);
     setMessages([]);
     setError(null);
-    // 세션 내 메시지 로드 — API가 없으면 빈 상태로 시작
     try {
       const result = await adminApi.get<{ messages: DisplayMessage[] }>(
         `/admin/agent/sessions/${session.id}`,
       );
       setMessages(result.messages ?? []);
     } catch {
-      // 세션 상세 API 없는 경우 무시
       setMessages([]);
     }
   }
@@ -186,63 +245,75 @@ export default function AgentChatPage() {
     }
   }
 
+  const sessionListProps = {
+    sessions,
+    sessionsLoading,
+    activeSessionId,
+    sending,
+    onNewSession: () => { void handleNewSession(); },
+    onSelectSession: (s: AdminAgentSession) => { void handleSelectSession(s); },
+  };
+
   return (
     <div className="flex h-full">
-      {/* 세션 목록 */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-        <div className="p-3 border-b border-gray-100">
+      {/* 모바일 세션 drawer 오버레이 */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* 모바일 세션 drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col transform transition-transform duration-200 ease-in-out lg:hidden ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+          <span className="font-semibold text-sm text-gray-900">세션 목록</span>
           <button
-            onClick={() => { void handleNewSession(); }}
-            disabled={sending}
-            className="w-full bg-indigo-600 text-white rounded px-3 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+            onClick={() => setDrawerOpen(false)}
+            className="text-gray-400 hover:text-gray-600 p-1"
+            aria-label="세션 목록 닫기"
           >
-            + 새 대화
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
+        <SessionList {...sessionListProps} />
+      </aside>
 
-        <div className="flex-1 overflow-y-auto py-1">
-          {sessionsLoading ? (
-            <div className="text-center py-8 text-sm text-gray-400">로딩 중...</div>
-          ) : sessions.length === 0 ? (
-            <div className="text-center py-8 text-sm text-gray-400">세션 없음</div>
-          ) : (
-            sessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => { void handleSelectSession(session); }}
-                className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                  activeSessionId === session.id ? 'bg-indigo-50 border-l-2 border-l-indigo-600' : ''
-                }`}
-              >
-                <div className="font-mono text-xs text-gray-500 mb-0.5">
-                  {shortId(session.id)}
-                </div>
-                {session.summary && (
-                  <div className="text-gray-700 truncate text-xs mb-0.5">
-                    {session.summary}
-                  </div>
-                )}
-                <div className="text-xs text-gray-400">{formatDate(session.createdAt)}</div>
-              </button>
-            ))
-          )}
-        </div>
+      {/* 데스크톱 세션 사이드바 */}
+      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0">
+        <SessionList {...sessionListProps} />
       </aside>
 
       {/* 대화 영역 */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* 헤더 */}
-        <div className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3">
-          <h1 className="font-semibold text-gray-900">AI 에이전트 대화</h1>
+        <div className="bg-white border-b border-gray-200 px-4 lg:px-5 py-3 flex items-center gap-3">
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="lg:hidden text-gray-600 hover:text-gray-900 p-1"
+            aria-label="세션 목록 열기"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8M4 18h16" />
+            </svg>
+          </button>
+          <h1 className="font-semibold text-gray-900 text-sm lg:text-base">AI 에이전트 대화</h1>
           {activeSessionId && (
-            <span className="font-mono text-xs text-gray-400 bg-gray-100 rounded px-2 py-0.5">
+            <span className="font-mono text-xs text-gray-400 bg-gray-100 rounded px-2 py-0.5 hidden sm:inline">
               {shortId(activeSessionId)}
             </span>
           )}
         </div>
 
         {/* 메시지 목록 */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-4 lg:px-5 py-4">
           {!activeSessionId && messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400">
               <div className="text-4xl mb-3">🤖</div>
@@ -255,7 +326,7 @@ export default function AgentChatPage() {
           ) : (
             <>
               {messages.map((msg, i) => (
-                <AgentMessageBubble key={i} message={msg} />
+                <AgentMessageBubble key={`${msg.createdAt}-${msg.role}-${i}`} message={msg} />
               ))}
               {sending && (
                 <div className="flex justify-start mb-3">
@@ -275,19 +346,19 @@ export default function AgentChatPage() {
 
         {/* 에러 */}
         {error && (
-          <div className="mx-5 mb-2 bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">
+          <div className="mx-4 lg:mx-5 mb-2 bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">
             {error}
           </div>
         )}
 
         {/* 입력 */}
-        <div className="bg-white border-t border-gray-200 px-5 py-3">
-          <div className="flex gap-3">
+        <div className="bg-white border-t border-gray-200 px-4 lg:px-5 py-3">
+          <div className="flex gap-2 lg:gap-3">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="메시지를 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)"
+              placeholder="메시지를 입력하세요..."
               disabled={sending}
               rows={2}
               className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none disabled:opacity-50"

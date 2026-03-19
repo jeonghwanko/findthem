@@ -1,4 +1,4 @@
-import type { SubjectType } from '@findthem/shared';
+import { getSubjectTypeLabel, type SubjectType } from '@findthem/shared';
 import { askClaudeWithImage } from '../../ai/aiClient.js';
 import { imageService } from '../../services/imageService.js';
 
@@ -23,7 +23,7 @@ export async function analyzePhoto(
 
   try {
     const subjectHint = subjectType
-      ? `대상 유형: ${subjectType === 'PERSON' ? '사람' : subjectType === 'DOG' ? '강아지' : '고양이'}`
+      ? `대상 유형: ${getSubjectTypeLabel(subjectType, 'ko')}`
       : '대상 유형은 이미지에서 판단해주세요';
 
     const systemPrompt = `당신은 실종자/반려동물 사진을 분석하는 전문가입니다.

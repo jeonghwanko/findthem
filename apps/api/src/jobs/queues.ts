@@ -13,6 +13,7 @@ import {
   type CrawlSourceJobData,
   type CrawlAgentJobData,
   type OutreachJobData,
+  type QaCrawlJobData,
 } from '@findthem/shared';
 import { createLogger } from '../logger.js';
 
@@ -31,6 +32,7 @@ export type {
   CrawlSourceJobData,
   CrawlAgentJobData,
   OutreachJobData,
+  QaCrawlJobData,
 } from '@findthem/shared';
 
 
@@ -50,6 +52,7 @@ export const crawlSchedulerQueue = new Queue<CrawlDispatchJobData>(QUEUE_NAMES.C
 export const crawlQueue = new Queue<CrawlSourceJobData>(QUEUE_NAMES.CRAWL, { connection });
 export const crawlAgentQueue = new Queue<CrawlAgentJobData>(QUEUE_NAMES.CRAWL_AGENT, { connection });
 export const outreachQueue = new Queue<OutreachJobData>(QUEUE_NAMES.OUTREACH, { connection });
+export const qaCrawlQueue = new Queue<QaCrawlJobData>(QUEUE_NAMES.QA_CRAWL, { connection });
 
 // ── Worker 생성 헬퍼 ──
 

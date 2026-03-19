@@ -102,9 +102,9 @@ export default function QueuesPage() {
   const failedJobs = failedJobsData?.jobs ?? [];
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-900">큐 모니터링</h1>
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-6">
+        <h1 className="text-lg lg:text-xl font-bold text-gray-900">큐 모니터링</h1>
         <button
           onClick={handleRefreshAll}
           disabled={queuesLoading || failedLoading}
@@ -155,7 +155,8 @@ export default function QueuesPage() {
         )}
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-sm border-collapse">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse min-w-[600px]">
             <thead>
               <tr className="bg-gray-50 text-left">
                 <th className="px-4 py-3 font-medium text-gray-600 border-b">큐 이름</th>
@@ -213,6 +214,7 @@ export default function QueuesPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
     </div>

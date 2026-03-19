@@ -11,6 +11,7 @@ import {
   MATCH_THRESHOLD,
   NOTIFY_THRESHOLD,
   MAX_CANDIDATES,
+  QUEUE_NAMES,
   type SubjectType,
 } from '@findthem/shared';
 import { createLogger } from '../logger.js';
@@ -180,7 +181,7 @@ async function comparePairDirect(
 
 export function startMatchingWorker() {
   log.info('Matching worker started');
-  createWorker<MatchingJobData>('matching', processMatchingJob, {
+  createWorker<MatchingJobData>(QUEUE_NAMES.MATCHING, processMatchingJob, {
     concurrency: 2,
   });
 }

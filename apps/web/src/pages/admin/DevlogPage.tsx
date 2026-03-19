@@ -18,7 +18,7 @@ export default function DevlogPage() {
   return (
     <div className="flex flex-col h-full">
       {/* 페이지 헤더 */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
         <h1 className="text-lg font-semibold text-gray-900">데브로그</h1>
         <p className="text-sm text-gray-500 mt-0.5">
           커밋 히스토리와 작업 내용을 바탕으로 AI가 개발 블로그 글을 작성합니다.
@@ -120,7 +120,7 @@ function GenerateTab() {
   const isLoading = previewing || publishing;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6">
+    <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6 flex flex-col lg:flex-row gap-6">
       {/* 왼쪽: 입력 폼 */}
       <div className="lg:w-80 flex-shrink-0 space-y-4">
         <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
@@ -342,7 +342,7 @@ function ListTab() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-6 space-y-4">
+    <div className="max-w-4xl mx-auto px-4 lg:px-6 py-6 space-y-4">
       {/* 사이트 설정 패널 */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between gap-4">
         <div>

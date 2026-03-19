@@ -1,6 +1,7 @@
 import type { PlatformAdapter } from './types.js';
 import { TwitterAdapter } from './twitter.js';
 import { KakaoChannelAdapter } from './kakaoChannel.js';
+import { InstagramAdapter } from './instagram.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('platformManager');
@@ -8,6 +9,7 @@ const log = createLogger('platformManager');
 const adapters: PlatformAdapter[] = [
   new TwitterAdapter(),
   new KakaoChannelAdapter(),
+  new InstagramAdapter(),
 ];
 
 export interface PostAllResult {
