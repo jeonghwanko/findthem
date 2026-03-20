@@ -140,7 +140,7 @@ describe('GET /api/community/agent-activity', () => {
 
   it('Cache-Control 헤더 포함', async () => {
     const res = await app.get('/api/community/agent-activity');
-    expect(res.headers['cache-control']).toBe('public, max-age=10');
+    expect(res.headers['cache-control']).toBe('private, max-age=10');
   });
 
   it('todayPosts가 communityPost.groupBy 카운트와 일치', async () => {

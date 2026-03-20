@@ -337,7 +337,7 @@ export default function AgentActivityScene() {
           bg.clear();
           const tw = state.bubbleText.width + 16;
           const th = state.bubbleText.height + 10;
-          bg.roundRect(-tw / 2, -th / 2, tw, th, 6).fill(0xffffffdd);
+          bg.roundRect(-tw / 2, -th / 2, tw, th, 6).fill({ color: 0xffffff, alpha: 0.87 });
           bg.roundRect(-tw / 2, -th / 2, tw, th, 6).stroke({ color: 0xccbbaa, width: 1 });
         };
 

@@ -138,16 +138,23 @@ vi.mock('../src/services/imageService.js', () => ({
 }));
 
 // ── Queue Mock ──
+const mockQueue = () => ({
+  add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }),
+  getWaitingCount: vi.fn().mockResolvedValue(0),
+  getActiveCount: vi.fn().mockResolvedValue(0),
+});
 vi.mock('../src/jobs/queues.js', () => ({
-  imageQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  promotionQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  matchingQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  notificationQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  cleanupQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  promotionMonitorQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  promotionRepostQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  crawlSchedulerQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
-  crawlQueue: { add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }) },
+  imageQueue: mockQueue(),
+  promotionQueue: mockQueue(),
+  matchingQueue: mockQueue(),
+  notificationQueue: mockQueue(),
+  cleanupQueue: mockQueue(),
+  promotionMonitorQueue: mockQueue(),
+  promotionRepostQueue: mockQueue(),
+  crawlSchedulerQueue: mockQueue(),
+  crawlQueue: mockQueue(),
+  outreachQueue: mockQueue(),
+  qaCrawlQueue: mockQueue(),
   createWorker: vi.fn(),
 }));
 
