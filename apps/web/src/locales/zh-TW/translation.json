@@ -254,7 +254,10 @@
     "placeholder": "輸入訊息...",
     "send": "傳送",
     "photoAttach": "附加照片",
-    "openChat": "開啟聊天"
+    "openChat": "開啟聊天",
+    "connectionError": "連線失敗。",
+    "messageError": "發生錯誤，請重試。",
+    "uploadError": "照片上傳失敗。"
   },
   "card": {
     "found": "已尋獲！",
@@ -275,6 +278,7 @@
   },
   "admin": {
     "authFailed": "驗證失敗",
+    "errorFallback": "請求處理失敗。",
     "dashboard": {
       "title": "控制台",
       "refresh": "重新整理",

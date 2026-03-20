@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { type GhostPostListItem } from '@findthem/shared';
 import {
@@ -67,6 +68,7 @@ function TabButton({
 /* ────────────────────────────────────────── GenerateTab ── */
 
 function GenerateTab() {
+  const { t } = useTranslation();
   const [context, setContext] = useState('');
   const [commitCount, setCommitCount] = useState(5);
   const [publishStatus, setPublishStatus] = useState<'draft' | 'published'>('published');
@@ -87,13 +89,14 @@ function GenerateTab() {
 
   async function handlePreview() {
     if (isPreviewingRef.current) return;
-    if (!context.trim()) { setError('작업 내용을 입력해 주세요.'); return; }
+    if (!context.trim()) { setError(t('errors.DEVLOG_CONTEXT_REQUIRED', { defaultValue: t('admin.errorFallback') })); return; }
     isPreviewingRef.current = true;
     setError(null); setPreview(null); setGhostResult(null); setPreviewing(true);
     try {
       setPreview(await devlogApi.preview(buildRequest()));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '미리보기 생성 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setPreviewing(false);
       isPreviewingRef.current = false;
@@ -102,7 +105,7 @@ function GenerateTab() {
 
   async function handleGenerate() {
     if (isGeneratingRef.current) return;
-    if (!context.trim()) { setError('작업 내용을 입력해 주세요.'); return; }
+    if (!context.trim()) { setError(t('errors.DEVLOG_CONTEXT_REQUIRED', { defaultValue: t('admin.errorFallback') })); return; }
     isGeneratingRef.current = true;
     setError(null); setGhostResult(null); setPublishing(true);
     try {
@@ -110,7 +113,8 @@ function GenerateTab() {
       setPreview(result);
       setGhostResult(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Ghost 게시 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setPublishing(false);
       isGeneratingRef.current = false;
@@ -284,6 +288,7 @@ function GenerateTab() {
 /* ────────────────────────────────────────── ListTab ── */
 
 function ListTab() {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<GhostPostListItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -305,7 +310,8 @@ function ListTab() {
       setSettingsMsg({ ok: true, text: '사이트 설정이 적용되었습니다.' });
       setTimeout(() => setSettingsMsg(null), 4000);
     } catch (e: unknown) {
-      setSettingsMsg({ ok: false, text: e instanceof Error ? e.message : '설정 적용 실패' });
+      const code = e instanceof Error ? e.message : '';
+      setSettingsMsg({ ok: false, text: t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }) });
     } finally {
       setApplyingSettings(false);
       isApplyingRef.current = false;
@@ -320,11 +326,12 @@ function ListTab() {
       setPosts(result.posts);
       setTotalPages(result.meta.pagination.pages);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '목록 조회 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void fetchList(page); }, [fetchList, page]);
 
@@ -335,7 +342,8 @@ function ListTab() {
       setConfirmId(null);
       await fetchList(page);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '삭제 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setDeletingId(null);
     }

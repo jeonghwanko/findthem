@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import type { AuditLogEntry, AdminActionSource } from '@findthem/shared';
 
 interface AuditLogListResponse {
-  logs: AuditLogEntry[];
+  items: AuditLogEntry[];
   total: number;
   page: number;
   totalPages: number;
@@ -57,6 +58,7 @@ function JsonToggle({ data }: { data: unknown }) {
 }
 
 export default function AuditLogPage() {
+  const { t } = useTranslation();
   const [targetType, setTargetType] = useState('');
   const [source, setSource] = useState('');
   const [from, setFrom] = useState('');
@@ -82,17 +84,18 @@ export default function AuditLogPage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [targetType, source, from, to, page]);
+  }, [targetType, source, from, to, page, t]);
 
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
 
-  const logs = data?.logs ?? [];
+  const logs = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
 
   return (

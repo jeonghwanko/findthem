@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import type { MatchStatus, AdminMatchItem, AdminMatchListResponse } from '@findthem/shared';
 
@@ -30,6 +31,7 @@ function truncate(str: string, n: number) {
 }
 
 export default function MatchesManagePage() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState('');
   const [minConfidence, setMinConfidence] = useState('');
   const [page, setPage] = useState(1);
@@ -52,11 +54,12 @@ export default function MatchesManagePage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [status, minConfidence, page]);
+  }, [status, minConfidence, page, t]);
 
   useEffect(() => {
     void fetchData();
@@ -71,7 +74,8 @@ export default function MatchesManagePage() {
       await adminApi.patch(`/admin/matches/${matchId}/status`, { status: action });
       await fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '처리 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }

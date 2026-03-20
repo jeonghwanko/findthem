@@ -6,6 +6,7 @@ import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, VALID_AGENT_IDS, SUPPORTED_PAY_TOKENS } from '@findthem/shared';
+import { rateLimit } from '../middlewares/rateLimit.js';
 import { createLogger } from '../logger.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -59,6 +60,8 @@ const verifySchema = z.object({
   displayName: z.string().max(30).optional(),
   message: z.string().max(100).optional(),
 });
+
+const sponsorLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'Too many payment requests' });
 
 export function registerSponsorRoutes(router: Router) {
   // 후원자 목록 (최신순)
@@ -128,7 +131,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // Toss 결제 확인 후 DB 저장
-  router.post('/sponsors/verify', validateBody(verifySchema), async (req, res) => {
+  router.post('/sponsors/verify', sponsorLimiter, validateBody(verifySchema), async (req, res) => {
     const { paymentKey, orderId, amount, agentId, displayName, message } =
       req.body as z.infer<typeof verifySchema>;
 
@@ -185,7 +188,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // 크립토 결제 견적 생성
-  router.post('/sponsors/crypto/quote', validateBody(cryptoQuoteSchema), async (req, res) => {
+  router.post('/sponsors/crypto/quote', sponsorLimiter, validateBody(cryptoQuoteSchema), async (req, res) => {
     const { agentId, amountUsdCents, walletAddress, tokenSymbol, chainId } =
       req.body as z.infer<typeof cryptoQuoteSchema>;
 
@@ -272,7 +275,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // 크립토 결제 온체인 검증 후 DB 저장
-  router.post('/sponsors/crypto/verify', validateBody(cryptoVerifySchema), async (req, res) => {
+  router.post('/sponsors/crypto/verify', sponsorLimiter, validateBody(cryptoVerifySchema), async (req, res) => {
     const { quoteId, txHash, displayName, message } =
       req.body as z.infer<typeof cryptoVerifySchema>;
 

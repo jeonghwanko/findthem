@@ -41,7 +41,7 @@ async function callGemini(
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const apiKey = await getApiKey('gemini');
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY가 설정되지 않았습니다.');
+    throw new Error('GEMINI_API_KEY_NOT_CONFIGURED');
   }
 
   const url = `${BASE_URL}/${model}:generateContent`;
@@ -63,7 +63,7 @@ async function callGemini(
   const data = (await res.json()) as GeminiResponse;
 
   if (!res.ok || data.error) {
-    throw new Error(`Gemini API 오류: ${data.error?.message ?? res.statusText}`);
+    throw new Error(`GEMINI_API_ERROR: ${data.error?.message ?? res.statusText}`);
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';

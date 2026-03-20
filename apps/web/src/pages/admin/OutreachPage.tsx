@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 
 interface OutreachRequestItem {
@@ -273,6 +274,7 @@ function OutreachCard({ item, onApprove, onReject, actionLoading }: OutreachCard
 }
 
 export default function OutreachPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('PENDING_APPROVAL');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<OutreachListResponse | null>(null);
@@ -294,11 +296,12 @@ export default function OutreachPage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, t]);
 
   useEffect(() => {
     void fetchData();
@@ -310,7 +313,8 @@ export default function OutreachPage() {
       await adminApi.patch(`/admin/outreach/${id}/approve`, { content });
       await fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '승인 처리 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }
@@ -323,7 +327,8 @@ export default function OutreachPage() {
       await adminApi.patch(`/admin/outreach/${id}/reject`, {});
       await fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '거부 처리 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }
@@ -349,7 +354,7 @@ export default function OutreachPage() {
               setTriggerLoading(true);
               adminApi.post<{ jobId: string }>('/admin/outreach/trigger', {})
                 .then(() => { alert('아웃리치 스캔이 시작되었습니다. 잠시 후 새로고침하세요.'); })
-                .catch(() => { alert('스캔 실행에 실패했습니다.'); })
+                .catch((e: unknown) => { const code = e instanceof Error ? e.message : ''; alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') })); })
                 .finally(() => setTriggerLoading(false));
             }}
             disabled={triggerLoading}

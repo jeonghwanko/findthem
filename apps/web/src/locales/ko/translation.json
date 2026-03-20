@@ -254,7 +254,10 @@
     "placeholder": "메시지를 입력하세요...",
     "send": "전송",
     "photoAttach": "사진 첨부",
-    "openChat": "채팅 열기"
+    "openChat": "채팅 열기",
+    "connectionError": "연결에 실패했습니다.",
+    "messageError": "오류가 발생했습니다. 다시 시도해주세요.",
+    "uploadError": "사진 업로드에 실패했습니다."
   },
   "card": {
     "found": "찾았습니다!",
@@ -275,6 +278,7 @@
   },
   "admin": {
     "authFailed": "인증에 실패했습니다",
+    "errorFallback": "요청 처리에 실패했습니다.",
     "dashboard": {
       "title": "대시보드",
       "refresh": "새로고침",

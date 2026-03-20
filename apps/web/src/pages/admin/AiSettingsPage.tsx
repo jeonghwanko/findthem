@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAdminData } from '../../hooks/useAdminApi.js';
 import { adminApi } from '../../api/admin.js';
 
@@ -7,7 +8,7 @@ import { adminApi } from '../../api/admin.js';
 const AGENT_LIST = [
   { id: 'image-matching', name: '탐정 클로드', icon: '🔍' },
   { id: 'promotion', name: '홍보왕 헤르미', icon: '📢' },
-  { id: 'chatbot', name: '안내봇 알리', icon: '💬' },
+  { id: 'chatbot-alert', name: '안내봇 알리', icon: '💬' },
   { id: 'outreach', name: '아웃리치', icon: '📬' },
   { id: 'crawl', name: '데이터 수집', icon: '🕷️' },
   { id: 'admin', name: '관리자 에이전트', icon: '🛡️' },
@@ -70,6 +71,7 @@ interface SettingsTabProps {
 }
 
 function SettingsTab({ settings, onSaved }: SettingsTabProps) {
+  const { t } = useTranslation();
   const { availableProviders } = settings;
 
   const [defaultProvider, setDefaultProvider] = useState(settings.defaultProvider);
@@ -141,7 +143,8 @@ function SettingsTab({ settings, onSaved }: SettingsTabProps) {
 
       onSaved();
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : '저장 실패');
+      const code = e instanceof Error ? e.message : '';
+      setSaveError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setSaving(false);
     }

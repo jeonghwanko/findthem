@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import type { InquiryAdmin, InquiryListResponse } from '@findthem/shared';
 
@@ -147,6 +148,7 @@ function InquiryRow({ item, onReply, actionLoading }: InquiryRowProps) {
 }
 
 export default function InquiriesPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('OPEN');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<InquiryListResponse | null>(null);
@@ -167,11 +169,12 @@ export default function InquiriesPage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, t]);
 
   useEffect(() => {
     void fetchData();
@@ -183,7 +186,7 @@ export default function InquiriesPage() {
       await adminApi.patch(`/admin/inquiries/${id}/reply`, { replyContent });
       await fetchData();
     } catch {
-      setError('답변 등록에 실패했습니다');
+      setError(t('admin.errorFallback'));
     } finally {
       setActionLoading(null);
     }

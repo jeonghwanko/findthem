@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import type {
   AdminAgentChatResponse,
@@ -125,6 +126,7 @@ function SessionList({
 }
 
 export default function AgentChatPage() {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<AdminAgentSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -175,7 +177,8 @@ export default function AgentChatPage() {
       ]);
       await fetchSessions();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '세션 생성 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setSending(false);
     }
@@ -232,7 +235,8 @@ export default function AgentChatPage() {
         },
       ]);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '전송 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setSending(false);
     }

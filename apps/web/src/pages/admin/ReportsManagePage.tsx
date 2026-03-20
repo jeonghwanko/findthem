@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import { SUBJECT_TYPE_LABELS } from '@findthem/shared';
 import type { ReportSummary, ReportStatus, SubjectType, ReportListResponse } from '@findthem/shared';
@@ -36,6 +37,7 @@ function formatDate(iso: string) {
 }
 
 export default function ReportsManagePage() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState('');
   const [subjectType, setSubjectType] = useState('');
   const [q, setQ] = useState('');
@@ -61,11 +63,12 @@ export default function ReportsManagePage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [status, subjectType, q, page]);
+  }, [status, subjectType, q, page, t]);
 
   useEffect(() => {
     void fetchData();
@@ -101,13 +104,14 @@ export default function ReportsManagePage() {
       });
       await fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '상태 변경 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }
   }
 
-  const reports = data?.reports ?? [];
+  const reports = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
 
   return (

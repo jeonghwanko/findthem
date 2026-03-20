@@ -508,13 +508,18 @@ export function registerReportRoutes(router: Router) {
         if (currentCount + files.length > MAX_REPORT_PHOTOS) {
           throw new ApiError(400, ERROR_CODES.REPORT_PHOTO_LIMIT);
         }
-        return Promise.all(
-          processedPhotos.map((p) =>
-            tx.reportPhoto.create({
-              data: { reportId: id, photoUrl: p.photoUrl, thumbnailUrl: p.thumbnailUrl },
-            }),
-          ),
-        );
+        await tx.reportPhoto.createMany({
+          data: processedPhotos.map((p) => ({
+            reportId: id,
+            photoUrl: p.photoUrl,
+            thumbnailUrl: p.thumbnailUrl,
+          })),
+        });
+        return tx.reportPhoto.findMany({
+          where: { reportId: id },
+          orderBy: { createdAt: 'desc' },
+          take: files.length,
+        });
       });
 
       res.status(201).json(photos);

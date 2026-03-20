@@ -1,19 +1,38 @@
 import type { Router } from 'express';
+import { createHmac } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { config } from '../config.js';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('webhooks');
 
+/**
+ * 카카오 웹훅 HMAC-SHA256 서명 검증.
+ * kakaoChannelPublicKey가 설정된 경우에만 검증 (미설정 시 개발 환경으로 간주하고 통과).
+ */
+function verifyKakaoSignature(body: string, signature: string | undefined): boolean {
+  if (!config.kakaoChannelPublicKey) return true; // 개발 환경
+  if (!signature) return false;
+  const expected = createHmac('sha256', config.kakaoChannelPublicKey)
+    .update(body)
+    .digest('base64');
+  return expected === signature;
+}
+
 export function registerWebhookRoutes(router: Router) {
-  // 카카오톡 채널 웹훅
-  // TODO(SEC-W1): 카카오 웹훅 서명 검증 미구현
-  // 카카오 채널 API가 X-Kakao-Signature 헤더(HMAC-SHA256)를 제공하는 경우
-  // 요청 수신 직후 서명을 검증하여 위변조 요청을 차단해야 합니다.
-  // 참고: https://i.kakao.com/docs/skill-response-format#보안
+  // 카카오톡 채널 웹훅 (HMAC-SHA256 서명 검증)
   router.post('/webhooks/kakao', async (req, res) => {
+    // 서명 검증
+    const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    const signature = req.headers['x-kakao-signature'] as string | undefined;
+    if (!verifyKakaoSignature(rawBody, signature)) {
+      log.warn('Kakao webhook signature verification failed');
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
     // 카카오톡 채널 챗봇 요청 형식
     // https://chatbot.kakao.com/docs/skill-response-format
     const { userRequest } = req.body;

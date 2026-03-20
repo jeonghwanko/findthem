@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.js';
 import type { AdminUserItem, AdminUserListResponse } from '@findthem/shared';
 
@@ -17,6 +18,7 @@ function formatDate(iso: string) {
 }
 
 export default function UsersManagePage() {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [blocked, setBlocked] = useState('');
@@ -40,11 +42,12 @@ export default function UsersManagePage() {
       );
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, [q, blocked, page]);
+  }, [q, blocked, page, t]);
 
   useEffect(() => {
     void fetchData();
@@ -69,7 +72,8 @@ export default function UsersManagePage() {
         await adminApi.patch(`/admin/users/${user.id}/block`, { blocked: false });
         await fetchData();
       } catch (e: unknown) {
-        alert(e instanceof Error ? e.message : '처리 실패');
+        const code = e instanceof Error ? e.message : '';
+        alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
       } finally {
         setActionLoading(null);
       }
@@ -86,7 +90,8 @@ export default function UsersManagePage() {
         await adminApi.patch(`/admin/users/${user.id}/block`, { blocked: true, reason });
         await fetchData();
       } catch (e: unknown) {
-        alert(e instanceof Error ? e.message : '처리 실패');
+        const code = e instanceof Error ? e.message : '';
+        alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
       } finally {
         setActionLoading(null);
       }

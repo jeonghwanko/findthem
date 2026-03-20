@@ -139,11 +139,9 @@ export interface ReportListResponse extends PaginatedResponse<ReportSummary> {
   reports: ReportSummary[];
 }
 
-export interface SightingListResponse {
+export interface SightingListResponse extends PaginatedResponse<Sighting> {
+  /** @deprecated sightings 대신 items 사용 */
   sightings: Sighting[];
-  total: number;
-  page: number;
-  totalPages: number;
 }
 
 export interface AuthResponse {

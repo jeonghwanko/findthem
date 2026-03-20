@@ -349,7 +349,8 @@ describe('Reports E2E', () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       // 트랜잭션 안에서 reportPhoto.count → 현재 3장
       prismaMock.reportPhoto.count.mockResolvedValue(3);
-      prismaMock.reportPhoto.create.mockResolvedValue({
+      prismaMock.reportPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.reportPhoto.findMany.mockResolvedValue([{
         id: 'new-photo-id',
         reportId: testReport.id,
         photoUrl: '/uploads/reports/new-photo.jpg',
@@ -357,7 +358,7 @@ describe('Reports E2E', () => {
         isPrimary: false,
         aiAnalysis: null,
         createdAt: new Date(),
-      });
+      }]);
 
       const res = await app
         .post(`/api/reports/${testReport.id}/photos`)

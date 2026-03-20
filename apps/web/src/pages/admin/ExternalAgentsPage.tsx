@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ExternalAgentAdmin } from '@findthem/shared';
 import { adminApi } from '../../api/admin.js';
 
@@ -25,6 +26,7 @@ function shortId(id: string) {
 }
 
 export default function ExternalAgentsPage() {
+  const { t } = useTranslation();
   const [agents, setAgents] = useState<ExternalAgentAdmin[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -53,11 +55,12 @@ export default function ExternalAgentsPage() {
       setAgents(result.items);
       setTotal(result.total);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void fetchAgents();
@@ -87,7 +90,8 @@ export default function ExternalAgentsPage() {
       setNewAgentName(result.agent.name);
       setCopied(false);
     } catch (e: unknown) {
-      setCreateError(e instanceof Error ? e.message : '등록 실패');
+      const code = e instanceof Error ? e.message : '';
+      setCreateError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setCreateLoading(false);
     }
@@ -104,7 +108,8 @@ export default function ExternalAgentsPage() {
       );
       setAgents((prev) => prev.map((a) => (a.id === agent.id ? updated : a)));
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '처리 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }
@@ -118,7 +123,8 @@ export default function ExternalAgentsPage() {
       setAgents((prev) => prev.filter((a) => a.id !== agent.id));
       setTotal((prev) => prev - 1);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '삭제 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setActionLoading(null);
     }

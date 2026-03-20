@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAdminData } from '../../hooks/useAdminApi.js';
 import { adminApi } from '../../api/admin.js';
 import type { QueueStatusSummary } from '@findthem/shared';
@@ -62,6 +63,7 @@ function truncate(str: string, n: number) {
 }
 
 export default function QueuesPage() {
+  const { t } = useTranslation();
   const {
     data: queues,
     loading: queuesLoading,
@@ -93,7 +95,8 @@ export default function QueuesPage() {
       );
       void refreshFailed();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '재시도 실패');
+      const code = e instanceof Error ? e.message : '';
+      alert(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setRetryLoading(null);
     }

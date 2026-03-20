@@ -1,4 +1,5 @@
 import type { Queue } from 'bullmq';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { imageQueue, QUEUE_MAP } from '../jobs/queues.js';
 import { NOTIFY_THRESHOLD, type QueueStatusSummary, type AdminOverviewStats } from '@findthem/shared';
@@ -173,14 +174,14 @@ export async function getTimelineStats(options: TimelineOptions) {
     throw new Error(`Disallowed trunc unit: ${truncUnit}`);
   }
 
-  const result = await prisma.$queryRawUnsafe<RawTimelineRow[]>(
-    `SELECT date_trunc('${truncUnit}', created_at) AS date, COUNT(*)::bigint AS count
-     FROM "${tableName}"
-     WHERE created_at >= $1 AND created_at <= $2
+  // SEC-C1: 화이트리스트 검증 통과한 식별자를 Prisma.raw()로 삽입,
+  // 파라미터($1, $2)는 tagged template으로 안전하게 바인딩
+  const result = await prisma.$queryRaw<RawTimelineRow[]>(
+    Prisma.sql`SELECT date_trunc(${Prisma.raw(`'${truncUnit}'`)}, created_at) AS date, COUNT(*)::bigint AS count
+     FROM ${Prisma.raw(`"${tableName}"`)}
+     WHERE created_at >= ${from} AND created_at <= ${to}
      GROUP BY date
      ORDER BY date`,
-    from,
-    to,
   );
 
   return {

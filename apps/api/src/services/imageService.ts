@@ -1,6 +1,25 @@
 import sharp from 'sharp';
 import crypto from 'crypto';
+import { resolve as dnsResolve4 } from 'node:dns/promises';
 import { storageService } from './storageService.js';
+
+/** SSRF 방어: 사설/루프백 IP 차단 (외부 이미지 다운로드 시) */
+const PRIVATE_IP = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|169\.254\.|::1$|fc00:|fd)/;
+
+async function assertSafeImageUrl(rawUrl: string): Promise<void> {
+  const u = new URL(rawUrl);
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    throw new Error('Image URL must use HTTP(S)');
+  }
+  try {
+    const addresses = await dnsResolve4(u.hostname);
+    if (addresses.some((a) => PRIVATE_IP.test(a))) {
+      throw new Error(`Image URL resolved to private IP: ${u.hostname}`);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('private IP')) throw err;
+  }
+}
 
 export interface ImageMetadata {
   width: number;
@@ -54,6 +73,7 @@ export const imageService = {
   ): Promise<{ photoUrl: string; thumbnailUrl: string } | null> {
     let buffer: Buffer;
     try {
+      await assertSafeImageUrl(url);
       const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
       if (!res.ok) return null;
       buffer = Buffer.from(await res.arrayBuffer());

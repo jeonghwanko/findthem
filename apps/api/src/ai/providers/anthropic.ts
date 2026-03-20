@@ -9,7 +9,7 @@ let lastKey = '';
 async function getClient(): Promise<Anthropic> {
   const key = await getApiKey('anthropic');
   if (!key) {
-    throw new Error('ANTHROPIC_API_KEY가 설정되지 않았습니다.');
+    throw new Error('ANTHROPIC_API_KEY_NOT_CONFIGURED');
   }
   if (!client || key !== lastKey) {
     lastKey = key;
@@ -21,7 +21,7 @@ async function getClient(): Promise<Anthropic> {
 function extractText(content: Anthropic.Messages.ContentBlock[]): string {
   const block = content[0];
   if (!block || block.type !== 'text') {
-    throw new Error('Anthropic 응답에서 텍스트를 찾을 수 없습니다.');
+    throw new Error('ANTHROPIC_TEXT_NOT_FOUND');
   }
   return block.text;
 }

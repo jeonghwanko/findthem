@@ -162,7 +162,11 @@ async function comparePairDirect(
         await notificationQueue.add(
           'notify-reporter',
           { matchId: match.id, reportId: report.id },
-          { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+          {
+            jobId: `notify-${match.id}`,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 30_000 },
+          },
         );
 
         // 커뮤니티 게시 (fire-and-forget)

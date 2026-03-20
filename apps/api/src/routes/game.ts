@@ -10,6 +10,7 @@ import {
   MAX_AD_PLAYS_PER_DAY,
   VALID_AGENT_IDS,
 } from '@findthem/shared';
+import { rateLimit } from '../middlewares/rateLimit.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('game');
@@ -24,6 +25,8 @@ const recordPlaySchema = z.object({
   score: z.number().int().min(0).max(999999),
   usedAd: z.boolean().default(false),
 });
+
+const gameLimiter = rateLimit({ windowMs: 60_000, max: 30 });
 
 export function registerGameRoutes(router: Router) {
   // GET /game/status — 오늘 플레이 현황 조회
@@ -60,7 +63,7 @@ export function registerGameRoutes(router: Router) {
   });
 
   // POST /game/play — 플레이 기록 + 한도 체크 (원자적)
-  router.post('/game/play', optionalAuth, validateBody(recordPlaySchema), async (req, res) => {
+  router.post('/game/play', gameLimiter, optionalAuth, validateBody(recordPlaySchema), async (req, res) => {
     const { character, score, usedAd } = req.body as z.infer<typeof recordPlaySchema>;
     const userId = req.user?.userId ?? null;
     const today = utcDayStart();

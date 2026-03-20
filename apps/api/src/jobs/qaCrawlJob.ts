@@ -72,7 +72,18 @@ function startQaCrawlWorker() {
 
         log.info({ source: fetcher.source, fetched: questions.length }, 'Q&A fetcher returned');
 
-        for (const q of questions) {
+        // 일괄 중복 체크 (N+1 방지)
+        const dedupKeys = questions.map((q) => `qa_${q.sourceName}_${q.externalId}`);
+        const existingPosts = await prisma.communityPost.findMany({
+          where: { deduplicationKey: { in: dedupKeys } },
+          select: { deduplicationKey: true },
+        });
+        const existingSet = new Set(existingPosts.map((p) => p.deduplicationKey));
+        const newQuestions = questions.filter(
+          (q) => !existingSet.has(`qa_${q.sourceName}_${q.externalId}`),
+        );
+
+        for (const q of newQuestions) {
           const postId = await saveQuestion(q);
           if (!postId) continue;
 

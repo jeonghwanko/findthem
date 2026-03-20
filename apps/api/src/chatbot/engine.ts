@@ -312,14 +312,23 @@ export class ChatbotEngine {
 
       case 'CONFIRM': {
         if (keywords.confirm.some((kw) => lower.includes(kw))) {
-          // 제보 생성
-          await this.createSighting(sessionId, context);
-          await this.updateSession(sessionId, 'SUBMITTED', context, sessionUpdatedAt);
-
-          await prisma.chatSession.update({
-            where: { id: sessionId },
-            data: { status: 'COMPLETED' },
+          // RACE: 낙관적 잠금으로 CONFIRM→SUBMITTED 선점 후 제보 생성
+          // (동시 CONFIRM 메시지 시 제보 2회 생성 방지)
+          const lockResult = await prisma.chatSession.updateMany({
+            where: { id: sessionId, updatedAt: sessionUpdatedAt },
+            data: {
+              state: { currentStep: 'SUBMITTED' } as object,
+              context: context as object,
+              status: 'COMPLETED',
+            },
           });
+          if (lockResult.count === 0) {
+            // 다른 요청이 이미 CONFIRM 처리 완료
+            return { text: STEP_MESSAGES[locale].SUBMITTED, completed: true };
+          }
+
+          // 선점 성공 후 제보 생성
+          await this.createSighting(sessionId, context);
 
           return {
             text: STEP_MESSAGES[locale].SUBMITTED,

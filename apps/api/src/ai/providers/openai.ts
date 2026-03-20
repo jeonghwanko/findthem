@@ -38,7 +38,7 @@ async function callOpenAi(
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const apiKey = await getApiKey('openai');
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
+    throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
   }
 
   const res = await fetch(BASE_URL, {
@@ -53,7 +53,7 @@ async function callOpenAi(
   const data = (await res.json()) as OpenAiResponse;
 
   if (!res.ok || data.error) {
-    throw new Error(`OpenAI API 오류: ${data.error?.message ?? res.statusText}`);
+    throw new Error(`OPENAI_API_ERROR: ${data.error?.message ?? res.statusText}`);
   }
 
   const text = data.choices?.[0]?.message?.content ?? '';

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import type { BotResponse } from '@findthem/shared';
 
@@ -18,6 +19,7 @@ interface ChatSession {
 }
 
 export function useChat(reportId?: string) {
+  const { t } = useTranslation();
   const [session, setSession] = useState<ChatSession>({
     sessionId: '',
     messages: [],
@@ -53,7 +55,7 @@ export function useChat(reportId?: string) {
         loading: false,
         messages: [
           ...s.messages,
-          { id: nextId(), role: 'assistant', content: '연결에 실패했습니다.' },
+          { id: nextId(), role: 'assistant', content: t('chat.connectionError') },
         ],
       }));
     }
@@ -96,7 +98,7 @@ export function useChat(reportId?: string) {
           loading: false,
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: '오류가 발생했습니다. 다시 시도해주세요.' },
+            { id: nextId(), role: 'assistant', content: t('chat.messageError') },
           ],
         }));
       }
@@ -143,7 +145,7 @@ export function useChat(reportId?: string) {
           loading: false,
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: '사진 업로드에 실패했습니다.' },
+            { id: nextId(), role: 'assistant', content: t('chat.uploadError') },
           ],
         }));
       }

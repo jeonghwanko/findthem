@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi, setAdminKey, clearAdminKey } from '../api/admin.js';
 
 export function useAdminAuth() {
@@ -41,6 +42,7 @@ export function useAdminAuth() {
 }
 
 export function useAdminData<T>(path: string, deps: unknown[] = []) {
+  const { t } = useTranslation();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,12 +54,13 @@ export function useAdminData<T>(path: string, deps: unknown[] = []) {
       const result = await adminApi.get<T>(path);
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '데이터 로드 실패');
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.errorFallback') }));
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, ...deps]); // deps는 호출자가 제어하는 spread 배열
+  }, [path, t, ...deps]); // deps는 호출자가 제어하는 spread 배열
 
   useEffect(() => {
     void refresh();

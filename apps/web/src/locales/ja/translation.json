@@ -254,7 +254,10 @@
     "placeholder": "メッセージを入力...",
     "send": "送信",
     "photoAttach": "写真添付",
-    "openChat": "チャットを開く"
+    "openChat": "チャットを開く",
+    "connectionError": "接続に失敗しました。",
+    "messageError": "エラーが発生しました。もう一度お試しください。",
+    "uploadError": "写真のアップロードに失敗しました。"
   },
   "card": {
     "found": "見つかりました！",
@@ -275,6 +278,7 @@
   },
   "admin": {
     "authFailed": "認証に失敗しました",
+    "errorFallback": "リクエストの処理に失敗しました。",
     "dashboard": {
       "title": "ダッシュボード",
       "refresh": "更新",

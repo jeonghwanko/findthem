@@ -254,7 +254,10 @@
     "placeholder": "Type a message...",
     "send": "Send",
     "photoAttach": "Attach Photo",
-    "openChat": "Open Chat"
+    "openChat": "Open Chat",
+    "connectionError": "Connection failed.",
+    "messageError": "An error occurred. Please try again.",
+    "uploadError": "Photo upload failed."
   },
   "card": {
     "found": "Found!",
@@ -275,6 +278,7 @@
   },
   "admin": {
     "authFailed": "Authentication failed",
+    "errorFallback": "Request failed.",
     "dashboard": {
       "title": "Dashboard",
       "refresh": "Refresh",

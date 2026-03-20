@@ -5,6 +5,7 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
+import { rateLimit } from '../middlewares/rateLimit.js';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, LOCALE_VALUES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
 
 const upload = multer({
@@ -50,8 +51,10 @@ function resolveLocale(
 }
 
 export function registerChatRoutes(router: Router) {
+  const chatLimiter = rateLimit({ windowMs: 15 * 60_000, max: 20 });
+
   // 새 챗봇 세션 생성
-  router.post('/chat/sessions', optionalAuth, async (req, res) => {
+  router.post('/chat/sessions', chatLimiter, optionalAuth, async (req, res) => {
     const { reportId, locale: bodyLocale } = createSessionSchema.parse(req.body);
     const locale = resolveLocale(
       req.headers['accept-language'],

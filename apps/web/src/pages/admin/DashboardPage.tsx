@@ -95,7 +95,8 @@ function CrawlSection() {
       const result = await adminApi.get<CrawlStats>('/admin/crawl/stats');
       setStats(result);
     } catch (e: unknown) {
-      setStatsError(e instanceof Error ? e.message : t('admin.crawl.statsError'));
+      const code = e instanceof Error ? e.message : '';
+      setStatsError(t(`errors.${code}`, { defaultValue: t('admin.crawl.statsError') }));
     } finally {
       setStatsLoading(false);
     }
@@ -143,7 +144,8 @@ function CrawlSection() {
       setStatusMsg({ type: 'success', text: t('admin.crawl.triggerSuccess') });
       await loadStats();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t('admin.crawl.triggerError');
+      const code = e instanceof Error ? e.message : '';
+      const msg = t(`errors.${code}`, { defaultValue: t('admin.crawl.triggerError') });
       setStatusMsg({ type: 'error', text: msg });
     } finally {
       setTriggering(false);
@@ -261,7 +263,8 @@ function BrokenPhotosSection() {
       const res = await adminApi.post<CleanupResult>('/admin/cleanup-broken-photos', {});
       setResult(res);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('admin.crawl.triggerError'));
+      const code = e instanceof Error ? e.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('admin.crawl.triggerError') }));
     } finally {
       setRunning(false);
     }

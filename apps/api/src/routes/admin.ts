@@ -1064,53 +1064,47 @@ export function registerAdminRoutes(router: Router) {
       prisma.aiUsageLog.count({ where }),
     ]);
 
-    // 집계: byAgent, byProvider
-    const allInRange = await prisma.aiUsageLog.findMany({
-      where,
-      select: {
-        agentId: true,
-        provider: true,
-        inputTokens: true,
-        outputTokens: true,
-        totalTokens: true,
-        latencyMs: true,
-        success: true,
-      },
-    });
+    // 집계: DB 레벨 groupBy로 처리 (전체 레코드 메모리 로드 방지)
+    const [byAgentRaw, byProviderRaw, aggregates] = await Promise.all([
+      prisma.aiUsageLog.groupBy({
+        by: ['agentId'],
+        where,
+        _count: { id: true },
+        _sum: { totalTokens: true },
+      }),
+      prisma.aiUsageLog.groupBy({
+        by: ['provider'],
+        where,
+        _count: { id: true },
+        _sum: { totalTokens: true },
+      }),
+      prisma.aiUsageLog.aggregate({
+        where,
+        _sum: { inputTokens: true, outputTokens: true, latencyMs: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    const successCount = await prisma.aiUsageLog.count({ where: { ...where, success: true } });
+    const total = aggregates._count.id;
 
     const byAgent: Record<string, { calls: number; tokens: number }> = {};
-    const byProvider: Record<string, { calls: number; tokens: number }> = {};
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
-    let totalLatency = 0;
-    let successCount = 0;
-
-    for (const row of allInRange) {
-      totalInputTokens += row.inputTokens;
-      totalOutputTokens += row.outputTokens;
-      totalLatency += row.latencyMs;
-      if (row.success) successCount++;
-
-      const aEntry = byAgent[row.agentId] ?? { calls: 0, tokens: 0 };
-      aEntry.calls++;
-      aEntry.tokens += row.totalTokens;
-      byAgent[row.agentId] = aEntry;
-
-      const pEntry = byProvider[row.provider] ?? { calls: 0, tokens: 0 };
-      pEntry.calls++;
-      pEntry.tokens += row.totalTokens;
-      byProvider[row.provider] = pEntry;
+    for (const row of byAgentRaw) {
+      byAgent[row.agentId] = { calls: row._count.id, tokens: row._sum.totalTokens ?? 0 };
     }
 
-    const total = allInRange.length;
+    const byProvider: Record<string, { calls: number; tokens: number }> = {};
+    for (const row of byProviderRaw) {
+      byProvider[row.provider] = { calls: row._count.id, tokens: row._sum.totalTokens ?? 0 };
+    }
 
     res.json({
       items,
       summary: {
         totalCalls,
-        totalInputTokens,
-        totalOutputTokens,
-        avgLatencyMs: total > 0 ? Math.round(totalLatency / total) : 0,
+        totalInputTokens: aggregates._sum.inputTokens ?? 0,
+        totalOutputTokens: aggregates._sum.outputTokens ?? 0,
+        avgLatencyMs: total > 0 ? Math.round((aggregates._sum.latencyMs ?? 0) / total) : 0,
         successRate: total > 0 ? Math.round((successCount / total) * 10000) / 10000 : 1,
         byAgent,
         byProvider,
