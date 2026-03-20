@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Heart, ExternalLink } from 'lucide-react';
+import { Heart, ExternalLink, Gamepad2 } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
@@ -243,9 +243,16 @@ export default function TeamPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-12">
         {/* 헤딩 */}
-        <div className="text-center mb-12">
+        <div className="relative text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('team.title')}</h1>
           <p className="text-gray-500 text-lg">{t('team.desc')}</p>
+          <Link
+            to="/game"
+            className="absolute right-0 top-0 flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
+          >
+            <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
+            <span className="text-xs">{t('home.playToSponsor')}</span>
+          </Link>
         </div>
 
         {/* 에이전트 카드 그리드 */}
