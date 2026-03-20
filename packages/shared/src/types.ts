@@ -641,6 +641,16 @@ export interface AgentActivityEvent {
   reportId: string | null;
 }
 
+/** 에이전트 세부 활동 (Pixi 씬 말풍선 피드용) */
+export interface AgentActivity {
+  type: 'outreach_discover' | 'outreach_pending' | 'outreach_sent'
+      | 'promotion_posted' | 'match_found' | 'report_received' | 'sighting_analyzed';
+  description: string;
+  createdAt: string;
+  /** 외부 링크 (유튜브/트위터 등, 클릭 시 새 창) */
+  url?: string;
+}
+
 export interface AgentActivityAgent {
   agentId: string;
   todayPosts: number;
@@ -649,6 +659,8 @@ export interface AgentActivityAgent {
   recentEvents: AgentActivityEvent[];
   /** BullMQ 큐 대기+처리중 작업 수 (waiting + active) */
   queuePending: number;
+  /** 세부 활동 스트림 (최근 10개, 말풍선 피드용) */
+  recentActivities: AgentActivity[];
 }
 
 export interface AgentActivityResponse {

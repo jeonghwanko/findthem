@@ -163,16 +163,16 @@ export default function BrowsePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
-
-      {/* 게임 후원 버튼 — 헤더 바로 아래 우측 고정 */}
-      <Link
-        to="/game"
-        className="fixed right-4 top-[56px] z-30 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-bold shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-150 px-3.5 py-2"
-      >
-        <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" />
-        <span className="text-xs">{t('home.playToSponsor')}</span>
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t('browse.title')}</h1>
+        <Link
+          to="/game"
+          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_3px_0_0_#b45309] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#b45309] active:translate-y-[3px] active:shadow-none transition-all duration-100 px-3.5 py-2"
+        >
+          <Gamepad2 className="w-4 h-4" aria-hidden="true" />
+          <span className="text-xs">{t('home.playToSponsor')}</span>
+        </Link>
+      </div>
 
       {/* 필터 영역 */}
       <div className="space-y-3 mb-6">

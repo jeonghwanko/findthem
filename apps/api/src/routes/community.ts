@@ -43,6 +43,144 @@ async function getAgentPendingCounts(): Promise<Record<string, number>> {
   }
 }
 
+// ── 에이전트별 세부 활동 스트림 (Pixi 씬 말풍선용) ──
+type RawActivity = { type: string; description: string; createdAt: Date; url?: string };
+
+async function getRecentActivities(todayStart: Date): Promise<Record<string, RawActivity[]>> {
+  try {
+    const [outreachReqs, promotions, matches, recentReports, recentSightings] = await Promise.all([
+      // 헤르미: 아웃리치 요청 (발견/대기/발송)
+      prisma.outreachRequest.findMany({
+        where: { createdAt: { gte: todayStart } },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+        select: {
+          status: true, channel: true, createdAt: true,
+          contact: { select: { name: true, type: true, videoId: true, youtubeChannelUrl: true } },
+          report: { select: { name: true } },
+        },
+      }),
+      // 헤르미: 프로모션 게시
+      prisma.promotion.findMany({
+        where: { postedAt: { gte: todayStart }, status: 'POSTED' },
+        orderBy: { postedAt: 'desc' },
+        take: 10,
+        select: { platform: true, postUrl: true, postedAt: true, report: { select: { name: true } } },
+      }),
+      // 클로드: 매칭 결과
+      prisma.match.findMany({
+        where: { createdAt: { gte: todayStart }, confidence: { gte: 0.6 } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { confidence: true, createdAt: true, report: { select: { name: true } } },
+      }),
+      // 알리: 최근 신고 접수
+      prisma.report.findMany({
+        where: { createdAt: { gte: todayStart }, userId: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { name: true, subjectType: true, lastSeenAddress: true, createdAt: true },
+      }),
+      // 알리: 최근 제보 분석
+      prisma.sighting.findMany({
+        where: { createdAt: { gte: todayStart }, status: 'ANALYZED' },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { address: true, createdAt: true, report: { select: { name: true } } },
+      }),
+    ]);
+
+    const result: Record<string, RawActivity[]> = {
+      'image-matching': [],
+      promotion: [],
+      'chatbot-alert': [],
+    };
+
+    // 클로드: 매칭
+    for (const m of matches) {
+      const pct = Math.round(m.confidence * 100);
+      result['image-matching'].push({
+        type: 'match_found',
+        description: `🔍 '${m.report.name}' 매칭 ${pct}%`,
+        createdAt: m.createdAt,
+      });
+    }
+
+    // 헤르미: 아웃리치
+    for (const r of outreachReqs) {
+      const contactType = r.contact.type === 'VIDEO' || r.contact.type === 'YOUTUBER' ? '유튜버' : '기자';
+      let url: string | undefined;
+      if (r.contact.videoId) url = `https://youtube.com/watch?v=${r.contact.videoId}`;
+      else if (r.contact.youtubeChannelUrl) url = r.contact.youtubeChannelUrl;
+
+      if (r.status === 'PENDING_APPROVAL') {
+        result.promotion.push({
+          type: 'outreach_pending',
+          description: `⏳ ${contactType} '${r.contact.name}' 승인 대기`,
+          createdAt: r.createdAt, url,
+        });
+      } else if (r.status === 'SENT') {
+        const ch = r.channel === 'EMAIL' ? '이메일' : '댓글';
+        result.promotion.push({
+          type: 'outreach_sent',
+          description: `✅ ${contactType} '${r.contact.name}'에게 ${ch} 발송`,
+          createdAt: r.createdAt, url,
+        });
+      } else if (r.status === 'APPROVED' || r.status === 'SENDING') {
+        result.promotion.push({
+          type: 'outreach_discover',
+          description: `📣 ${contactType} '${r.contact.name}' 연락 준비 중`,
+          createdAt: r.createdAt, url,
+        });
+      }
+    }
+
+    // 헤르미: SNS 게시
+    for (const p of promotions) {
+      const platform = p.platform === 'TWITTER' ? '트위터' : p.platform === 'KAKAO_CHANNEL' ? '카카오' : 'Instagram';
+      result.promotion.push({
+        type: 'promotion_posted',
+        description: `📢 '${p.report.name}' ${platform} 게시 완료`,
+        createdAt: p.postedAt ?? p.postedAt!,
+        url: p.postUrl ?? undefined,
+      });
+    }
+
+    // 알리: 신고 접수
+    for (const r of recentReports) {
+      const addr = r.lastSeenAddress ? ` — ${r.lastSeenAddress.slice(0, 15)}` : '';
+      result['chatbot-alert'].push({
+        type: 'report_received',
+        description: `📋 '${r.name}' 실종 신고 접수${addr}`,
+        createdAt: r.createdAt,
+      });
+    }
+
+    // 알리: 제보 분석
+    for (const s of recentSightings) {
+      const addr = s.address ? s.address.slice(0, 15) : '위치 미상';
+      const name = s.report?.name ?? '미등록';
+      result['chatbot-alert'].push({
+        type: 'sighting_analyzed',
+        description: `📸 ${addr} 제보 분석 완료 (${name})`,
+        createdAt: s.createdAt,
+      });
+    }
+
+    // 각 에이전트별 최신순 정렬 + 10개 제한
+    for (const key of Object.keys(result)) {
+      result[key] = result[key]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 10);
+    }
+
+    return result;
+  } catch (err) {
+    log.warn({ err }, 'Failed to fetch recent activities');
+    return { 'image-matching': [], promotion: [], 'chatbot-alert': [] };
+  }
+}
+
 // ── Zod schemas ──
 
 const createPostSchema = z.object({
@@ -110,7 +248,7 @@ export function registerCommunityRoutes(router: Router) {
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
 
-      const [decisions, postCounts, latestPosts, todayPostCountsRaw, pendingCounts] = await Promise.all([
+      const [decisions, postCounts, latestPosts, todayPostCountsRaw, pendingCounts, activitiesMap] = await Promise.all([
         prisma.agentDecisionLog.findMany({
           where: { createdAt: { gte: sinceDate } },
           orderBy: { createdAt: 'desc' },
@@ -142,6 +280,7 @@ export function registerCommunityRoutes(router: Router) {
           _count: true,
         }),
         getAgentPendingCounts(),
+        getRecentActivities(todayStart),
       ]);
 
       const todayPostCounts = todayPostCountsRaw;
@@ -172,6 +311,12 @@ export function registerCommunityRoutes(router: Router) {
             : null,
           recentEvents: events,
           queuePending: pendingCounts[agentId] ?? 0,
+          recentActivities: (activitiesMap[agentId] ?? []).map((a) => ({
+            type: a.type,
+            description: a.description,
+            createdAt: a.createdAt.toISOString(),
+            ...(a.url ? { url: a.url } : {}),
+          })),
         };
       });
 

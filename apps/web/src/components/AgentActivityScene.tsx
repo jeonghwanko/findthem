@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
 import type { AgentActivityAgent, AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { drawTileScene, tileToPx, tileRoomCenter, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
+import { drawTileScene, tileToPx, tileRoomCenter, centerCamera, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
 // ── 에이전트 설정 (FolkCharacter 32px) ──
@@ -37,6 +37,8 @@ const SCENE_H = 480;
 interface SceneLayout {
   getCenter(roomKey: 'claude' | 'heimi' | 'ali'): { x: number; y: number };
   getRoomBounds(roomKey: 'claude' | 'heimi' | 'ali'): { x: number; y: number; w: number; h: number };
+  /** 뷰포트에 보이는 월드 영역 (카메라 위치 기반) */
+  getVisibleBounds(): { x: number; y: number; w: number; h: number };
   tileSize: number;
 }
 
@@ -50,6 +52,12 @@ function tileLayout(l: TileRoomLayout): SceneLayout {
       const s = td * l.scale;
       return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
     },
+    getVisibleBounds: () => ({
+      x: -l.world.x,
+      y: -l.world.y,
+      w: l.viewportW,
+      h: l.viewportH,
+    }),
     tileSize: td * l.scale,
   };
 }
@@ -63,6 +71,7 @@ function graphicsLayout(l: RoomLayout): SceneLayout {
       const pos = tileToPixel(r.x, r.y, l);
       return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
     },
+    getVisibleBounds: () => ({ x: 0, y: 0, w: l.sceneW, h: l.sceneH }),
     tileSize: s,
   };
 }
@@ -112,6 +121,9 @@ interface AgentState {
   questPhase: QuestPhase;
   questTimer: number;
   questIdx: number; // QUEST_BUBBLES 인덱스
+  // 활동 피드 (API recentActivities → 말풍선 순차 표시)
+  activityQueue: string[];
+  activityShowTimer: number;
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -205,6 +217,9 @@ export default function AgentActivityScene() {
           const tl = await drawTileScene(roomLayer, W, H);
           scene = tileLayout(tl);
           worldContainer = tl.world;
+          // 카메라를 heimi(중앙) 캐릭터 위치에 맞춤
+          const heimiCenter = tileRoomCenter('heimi', tl);
+          centerCamera(heimiCenter.x, heimiCenter.y, tl);
           // 드래그를 app.stage에 바인딩 (캐릭터/UI 위에서도 동작)
           setupDrag(tl.world, tl, app.stage);
         } catch {
@@ -328,6 +343,8 @@ export default function AgentActivityScene() {
             questPhase: 'idle',
             questTimer: 0,
             questIdx: 0,
+            activityQueue: [],
+            activityShowTimer: 0,
           };
         });
 
@@ -434,12 +451,29 @@ export default function AgentActivityScene() {
         app.ticker.add((ticker) => {
           const dt = ticker.deltaMS / 1000;
 
-          // ── 보드 갱신 + 큐 기반 퀘스트 트리거 ──
+          // ── 보드 갱신 + 활동 피드 동기화 + 퀘스트 트리거 ──
           boardCheckTimer -= dt;
           if (boardCheckTimer <= 0) {
             updateBoard();
-            // 큐에 대기 작업이 있고 idle인 에이전트 중 대기 수 가장 많은 에이전트에 퀘스트 트리거
             const cur = agentsRef.current;
+
+            // 활동 피드 동기화: recentActivities → activityQueue
+            for (let ai = 0; ai < agentStates.length; ai++) {
+              const agent = cur.find((a) => a.agentId === AGENT_CONFIGS[ai].id);
+              if (!agent) continue;
+              const newDescs = agent.recentActivities
+                .map((a) => a.description)
+                .filter((d) => !agentStates[ai].activityQueue.includes(d));
+              if (newDescs.length > 0) {
+                agentStates[ai].activityQueue.push(...newDescs);
+                // 최대 15개 유지
+                if (agentStates[ai].activityQueue.length > 15) {
+                  agentStates[ai].activityQueue = agentStates[ai].activityQueue.slice(-15);
+                }
+              }
+            }
+
+            // 큐에 대기 작업이 있고 idle인 에이전트에 퀘스트 트리거
             let bestIdx = -1;
             let bestPending = 0;
             for (let ai = 0; ai < agentStates.length; ai++) {
@@ -504,7 +538,9 @@ export default function AgentActivityScene() {
                   state.questTimer = randBetween(3, 5);
                   state.workIcon.position.set(state.x, state.y - state.char.pixelHeight - 4);
                   state.workIcon.alpha = 1;
-                  showBubble(state, quests[state.questIdx].working, 3);
+                  // 활동 큐에서 실제 설명 사용, 없으면 폴백
+                  const workMsg = state.activityQueue.shift() ?? quests[state.questIdx].working;
+                  showBubble(state, workMsg, 3);
                 }
                 break;
               }
@@ -515,7 +551,8 @@ export default function AgentActivityScene() {
                   state.questPhase = 'complete';
                   state.questTimer = 2;
                   state.workIcon.alpha = 0;
-                  showBubble(state, quests[state.questIdx].done, 3);
+                  const doneMsg = state.activityQueue.shift() ?? quests[state.questIdx].done;
+                  showBubble(state, doneMsg, 3);
                   updateBoard();
                 }
                 break;
@@ -529,20 +566,21 @@ export default function AgentActivityScene() {
                 break;
               }
               default: {
-                // ── idle: 유휴 패트롤 ──
+                // ── idle: 유휴 패트롤 (뷰포트 내로 제한) ──
                 state.patrolTimer -= dt;
                 if (state.patrolTimer <= 0) {
-                  const bounds = scene.getRoomBounds(cfg.roomKey);
-                  const margin = scene.tileSize * 0.8;
+                  const vis = scene.getVisibleBounds();
+                  const pad = scene.tileSize * 2;
+                  // 캐릭터 home 근처 ±80px, 뷰포트 안으로 클램핑
                   state.targetX = clamp(
-                    bounds.x + margin + Math.random() * (bounds.w - margin * 2),
-                    bounds.x + margin,
-                    bounds.x + bounds.w - margin,
+                    state.homeX + randBetween(-80, 80),
+                    vis.x + pad,
+                    vis.x + vis.w - pad,
                   );
                   state.targetY = clamp(
-                    bounds.y + margin + Math.random() * (bounds.h - margin * 2),
-                    bounds.y + scene.tileSize * 2,
-                    bounds.y + bounds.h - margin,
+                    state.homeY + randBetween(-60, 60),
+                    vis.y + pad,
+                    vis.y + vis.h - pad,
                   );
                   state.patrolTimer = randBetween(5, 15);
                 }
@@ -559,6 +597,15 @@ export default function AgentActivityScene() {
                   state.char.play('run');
                 } else {
                   state.char.play('idle');
+                  // ── idle 중 활동 피드 말풍선 표시 ──
+                  if (state.activityQueue.length > 0 && state.bubbleShowTimer <= 0) {
+                    state.activityShowTimer -= dt;
+                    if (state.activityShowTimer <= 0) {
+                      const msg = state.activityQueue.shift()!;
+                      showBubble(state, msg, 4);
+                      state.activityShowTimer = randBetween(5, 8);
+                    }
+                  }
                 }
                 break;
               }
