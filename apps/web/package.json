@@ -12,8 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aptos-labs/ts-sdk": "^1.39.0",
-    "@aptos-labs/wallet-adapter-react": "^8.3.1",
+    "@aptos-labs/ts-sdk": "^6.2.0",
+    "@aptos-labs/wallet-adapter-react": "^8.3.2",
     "@capacitor-community/admob": "^8.0.0",
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
