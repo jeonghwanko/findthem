@@ -6,7 +6,6 @@ import { formatTimeAgo, type Locale, type ExternalAgentPublic } from '@findthem/
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { getAuthorName } from '../utils/community';
-import AgentActivityScene from '../components/AgentActivityScene';
 
 interface PostSummary {
   id: string;
@@ -64,9 +63,6 @@ export default function CommunityPage() {
 
   return (
     <div className="bg-white">
-      {/* Agent Activity Scene — 에이전트 작업 모습 시각화 */}
-      <AgentActivityScene />
-
       {/* 커뮤니티 콘텐츠 */}
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}

@@ -3,29 +3,29 @@ import { useTranslation } from 'react-i18next';
 import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
 import type { AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { drawTileScene, tileToPx, tileRoomCenter, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
+import { drawTileScene, tileToPx, tileRoomCenter, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
-// ── 에이전트 설정 (Spine → PixelCharacter) ──
+// ── 에이전트 설정 (FolkCharacter 32px) ──
 const AGENT_CONFIGS = [
   {
     id: 'image-matching' as const,
     roomKey: 'claude' as const,
-    charName: 'Adam' as const,  // 탐정 클로드
+    folkId: 1,   // 탐정 클로드
     workIcon: '🔍',
     nameKey: 'agentScene.claude.name',
   },
   {
     id: 'promotion' as const,
     roomKey: 'heimi' as const,
-    charName: 'Amelia' as const, // 홍보왕 헤르미
+    folkId: 6,   // 홍보왕 헤르미 (핑크)
     workIcon: '📣',
     nameKey: 'agentScene.heimi.name',
   },
   {
     id: 'chatbot-alert' as const,
     roomKey: 'ali' as const,
-    charName: 'Alex' as const,  // 안내봇 알리
+    folkId: 3,   // 안내봇 알리
     workIcon: '📋',
     nameKey: 'agentScene.ali.name',
   },
@@ -69,8 +69,8 @@ function graphicsLayout(l: RoomLayout): SceneLayout {
 
 // ── 에이전트 상태 ──
 interface AgentState {
-  char: import('@findthem/pixi-scenes/game').PixelCharacter;
-  nameTag: Text;
+  char: import('@findthem/pixi-scenes/game').FolkCharacter;
+  nameTag: Container;
   bubble: Container;
   bubbleText: Text;
   bubbleBg: Graphics;
@@ -180,6 +180,8 @@ export default function AgentActivityScene() {
           const tl = await drawTileScene(roomLayer, W, H);
           scene = tileLayout(tl);
           worldContainer = tl.world;
+          // 드래그를 app.stage에 바인딩 (캐릭터/UI 위에서도 동작)
+          setupDrag(tl.world, tl, app.stage);
         } catch {
           const gl = computeLayout(W, H);
           drawScene(roomLayer, gl);
@@ -199,12 +201,12 @@ export default function AgentActivityScene() {
 
         app.ticker.stop();
 
-        // ── 픽셀 캐릭터 로드 (Spine 대신) ──
-        const { PixelCharacter } = await import('@findthem/pixi-scenes/game');
+        // ── Folk 캐릭터 로드 (32px, ai-town 스타일) ──
+        const { FolkCharacter } = await import('@findthem/pixi-scenes/game');
         if (destroyed) return;
 
         const chars = await Promise.all(
-          AGENT_CONFIGS.map((c) => PixelCharacter.create(c.charName)),
+          AGENT_CONFIGS.map((c) => FolkCharacter.create(c.folkId)),
         );
         if (destroyed) return;
 
@@ -224,17 +226,29 @@ export default function AgentActivityScene() {
           char.setPosition(center.x, center.y);
           charLayer.addChild(char.view);
 
-          // 이름 태그
-          const nameStyle = new TextStyle({
+          // 이름 태그 (흰색 배경 + 텍스트)
+          const nameTag = new Container();
+          const nameTextStyle = new TextStyle({
             fontSize: 10,
             fontFamily: 'sans-serif',
-            fill: 0x554433,
+            fill: 0x333333,
             align: 'center',
             fontWeight: 'bold',
           });
-          const nameTag = new Text({ text: tr(cfg.nameKey), style: nameStyle });
-          nameTag.anchor.set(0.5, 0);
-          nameTag.position.set(center.x, center.y + 4);
+          const nameText = new Text({ text: tr(cfg.nameKey), style: nameTextStyle });
+          nameText.anchor.set(0.5, 0.5);
+          const pad = 4;
+          const nameBg = new Graphics();
+          nameBg.roundRect(
+            -nameText.width / 2 - pad,
+            -nameText.height / 2 - pad / 2,
+            nameText.width + pad * 2,
+            nameText.height + pad,
+            4,
+          ).fill({ color: 0xffffff, alpha: 0.85 });
+          nameTag.addChild(nameBg);
+          nameTag.addChild(nameText);
+          nameTag.position.set(center.x, center.y + char.pixelHeight / 2 + 6);
           uiLayer.addChild(nameTag);
 
           // 작업 아이콘 (평소 숨김)
@@ -332,7 +346,7 @@ export default function AgentActivityScene() {
               state.isWorking = true;
               state.workTimer = randBetween(3, 5);
               // 작업 중 phone 애니메이션
-              state.char.play('phone');
+              state.char.play('idle');
               state.workIcon.alpha = 1;
               showBubble(state, getEventBubbleText(evt, tRef.current), 4);
             }
@@ -401,7 +415,7 @@ export default function AgentActivityScene() {
             }
 
             // ── 이름 태그 위치 동기화 ──
-            state.nameTag.position.set(state.x, state.y + 4);
+            state.nameTag.position.set(state.x, state.y + state.char.pixelHeight / 2 + 6);
 
             // ── 말풍선 페이드 ──
             if (state.bubbleShowTimer > 0) {

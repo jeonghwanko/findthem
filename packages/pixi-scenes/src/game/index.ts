@@ -1,5 +1,6 @@
 export { SpineCharacterLite, setSpineLoadProgress } from './SpineCharacterLite';
 export { PixelCharacter, type CharacterName } from './PixelCharacter';
+export { FolkCharacter } from './FolkCharacter';
 export {
   computeLayout,
   drawScene,
@@ -12,5 +13,6 @@ export {
   tileToPx,
   tileRoomCenter,
   centerCamera,
+  setupDrag,
   type TileRoomLayout,
 } from './TileMapRoom';

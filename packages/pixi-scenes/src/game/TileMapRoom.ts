@@ -83,11 +83,8 @@ function createTileCache(baseTex: Texture, tileDim: number, pxW: number): (idx: 
   };
 }
 
-// ── 드래그 핸들러 설정 ──
-function setupDrag(world: Container, layout: TileRoomLayout) {
-  const stage = world.parent;
-  if (!stage) return;
-
+/** 드래그로 맵 이동 — stage에 바인딩 (캐릭터/UI 위에서도 동작) */
+export function setupDrag(world: Container, layout: TileRoomLayout, stage: Container) {
   stage.eventMode = 'static';
   stage.hitArea = { contains: () => true };
 
@@ -142,7 +139,7 @@ export async function drawTileScene(
 
   // ── 스케일: 원본 크기 (32px 타일, 선명한 픽셀아트) ──
   const scale = 1;
-  const tileSize = tileDim * scale; // 64px
+  const tileSize = tileDim * scale; // 32px
   const worldPxW = cols * tileSize;
   const worldPxH = rows * tileSize;
 
@@ -211,9 +208,6 @@ export async function drawTileScene(
 
   // ── 카메라 초기 위치: 맵 중앙 ──
   centerCamera(worldPxW / 2, worldPxH / 2, layout);
-
-  // ── 드래그 이동 설정 ──
-  setupDrag(world, layout);
 
   return layout;
 }

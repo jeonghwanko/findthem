@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Heart, ExternalLink } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
-import { AgentPortrait } from '../components/AgentPortrait';
 import { AGENT_SKINS } from '../constants/agentSkins';
+import AgentActivityScene from '../components/AgentActivityScene';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -34,12 +34,36 @@ interface AgentConfig {
   roleKey: string;
   descKey: string;
   skins: readonly string[];
+  folkId: number; // 32x32folk.png 캐릭터 ID (1-8)
   iconBg: string;
   portraitBorder: string;
   badgeBg: string;
   badgeText: string;
   onchainId: string;
   wallet: string;
+}
+
+/** 32x32folk.png에서 특정 캐릭터의 정면(down) 첫 프레임을 CSS로 표시 */
+function FolkPortrait({ folkId, size = 48 }: { folkId: number; size?: number }) {
+  // 캐릭터 배치: 1-4 → row 0, 5-8 → row 1, 각 캐릭터 96px 간격
+  const col = ((folkId - 1) % 4);
+  const row = Math.floor((folkId - 1) / 4);
+  const bgX = col * 96; // down 첫 프레임 = 각 캐릭터 영역의 (0,0)
+  const bgY = row * 128;
+  const scale = size / 32;
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: 'url(/tiles/32x32folk.png)',
+        backgroundPosition: `-${bgX * scale}px -${bgY * scale}px`,
+        backgroundSize: `${384 * scale}px ${256 * scale}px`,
+        imageRendering: 'pixelated',
+      }}
+    />
+  );
 }
 
 const BASESCAN_NFT_URL = 'https://basescan.org/nft/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432';
@@ -51,6 +75,7 @@ const AGENTS: AgentConfig[] = [
     roleKey: 'team.agentImageMatching.role',
     descKey: 'team.agentImageMatching.desc',
     skins: AGENT_SKINS['image-matching'],
+    folkId: 1,
     iconBg: 'bg-blue-50',
     portraitBorder: '#818cf8',
     badgeBg: 'bg-blue-50',
@@ -64,6 +89,7 @@ const AGENTS: AgentConfig[] = [
     roleKey: 'team.agentPromotion.role',
     descKey: 'team.agentPromotion.desc',
     skins: AGENT_SKINS['promotion'],
+    folkId: 6,
     iconBg: 'bg-pink-50',
     portraitBorder: '#f472b6',
     badgeBg: 'bg-pink-50',
@@ -77,6 +103,7 @@ const AGENTS: AgentConfig[] = [
     roleKey: 'team.agentChatbotAlert.role',
     descKey: 'team.agentChatbotAlert.desc',
     skins: AGENT_SKINS['chatbot-alert'],
+    folkId: 3,
     iconBg: 'bg-green-50',
     portraitBorder: '#4ade80',
     badgeBg: 'bg-green-50',
@@ -181,28 +208,61 @@ export default function TeamPage() {
     return map;
   }, []);
 
+  const agentCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const scrollToAgent = (agentId: string) => {
+    const el = agentCardRefs.current[agentId];
+    if (!el) return;
+    // 헤더 높이를 고려해서 카드 상단이 보이도록 스크롤
+    const headerOffset = 80;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      {/* 헤딩 */}
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('team.title')}</h1>
-        <p className="text-gray-500 text-lg">{t('team.desc')}</p>
+    <div className="bg-white">
+      {/* Pixi 타일맵 씬 + 에이전트 HUD 오버레이 */}
+      <div className="relative">
+        <AgentActivityScene />
+
+        {/* 에이전트 썸네일 HUD (씬 중앙 상단) */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+          {AGENTS.map((agent) => (
+            <button
+              key={agent.id}
+              type="button"
+              onClick={() => scrollToAgent(agent.id)}
+              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg bg-black/40 backdrop-blur-sm hover:bg-black/55 hover:scale-105 transition-all cursor-pointer border border-white/20"
+            >
+              <FolkPortrait folkId={agent.folkId} size={40} />
+              <span className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-sm">{t(agent.nameKey)}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* 에이전트 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        {/* 헤딩 */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('team.title')}</h1>
+          <p className="text-gray-500 text-lg">{t('team.desc')}</p>
+        </div>
+
+        {/* 에이전트 카드 그리드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         {AGENTS.map((agent) => {
           return (
             <div
               key={agent.id}
+              ref={(el) => { agentCardRefs.current[agent.id] = el; }}
               className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}
+                  className={`w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${agent.iconBg}`}
                   style={{ border: `2px solid ${agent.portraitBorder}` }}
                 >
-                  <AgentPortrait agentId={agent.id} skins={agent.skins} />
+                  <FolkPortrait folkId={agent.folkId} size={56} />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{t(agent.nameKey)}</p>
@@ -303,6 +363,7 @@ export default function TeamPage() {
             ))}
           </ul>
         )}
+      </div>
       </div>
     </div>
   );
