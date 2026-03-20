@@ -119,3 +119,44 @@ export async function generateDevlogArticle(input: DevlogInput): Promise<DevlogO
 
   return { title, markdown, html, excerpt };
 }
+
+// ── Twitter 공유 ──
+
+import { TwitterAdapter } from '../platforms/twitter.js';
+
+const twitterAdapter = new TwitterAdapter();
+
+/** Twitter 280자 제한을 맞춰 데브로그 트윗 문구 생성 */
+function buildDevlogTweet(title: string, excerpt: string, url: string): string {
+  const URL_LENGTH = 23;
+  const SUFFIX = '\n\n#FindThem #데브로그';
+  const maxTextLen = 280 - URL_LENGTH - SUFFIX.length - 3; // 3 = "\n\n" + margin
+  let text = `📝 ${title}`;
+  if (excerpt && text.length + excerpt.length + 3 <= maxTextLen) {
+    text += `\n\n${excerpt}`;
+  }
+  if (text.length > maxTextLen) {
+    text = text.slice(0, maxTextLen - 1) + '…';
+  }
+  return `${text}\n\n${url}${SUFFIX}`;
+}
+
+export interface TweetResult {
+  tweetId: string | null;
+  tweetUrl: string | null;
+  text: string;
+}
+
+export async function shareDevlogToTwitter(
+  title: string,
+  excerpt: string,
+  url: string,
+): Promise<TweetResult> {
+  const tweetText = buildDevlogTweet(title, excerpt, url);
+  const result = await twitterAdapter.post(tweetText, []);
+  return {
+    tweetId: result.postId,
+    tweetUrl: result.postUrl ?? null,
+    text: tweetText,
+  };
+}

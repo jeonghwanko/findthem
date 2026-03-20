@@ -18,7 +18,7 @@ import {
   qaCrawlQueue,
   QUEUE_MAP,
 } from '../jobs/queues.js';
-import { fetchers } from '../jobs/crawl/fetcherRegistry.js';
+import { getAvailableCrawlSources } from '../services/adminCrawlService.js';
 import { requireAdmin } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { adminLimiter } from '../middlewares/rateLimit.js';
@@ -35,31 +35,15 @@ import { getRecentDiff } from '../services/gitDiffService.js';
 import { storageService } from '../services/storageService.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { generateDevlogArticle } from '../services/devlogService.js';
+import { generateDevlogArticle, shareDevlogToTwitter } from '../services/devlogService.js';
 import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
-import { TwitterAdapter } from '../platforms/twitter.js';
 import { config } from '../config.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES, ADMIN_AGENT_IDS, OUTREACH_REQUEST_STATUS_VALUES, OUTREACH_CONTACT_TYPE_VALUES, AI_PROVIDER_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
-import { getAllSettings, invalidateSettingsCache, getApiKey } from '../ai/aiSettings.js';
+import { getAiSettings, updateAiSetting, getApiKeyStatuses, saveApiKey, testApiKey } from '../services/aiConfigService.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('adminRoutes');
-
-// ── 데브로그 트윗 헬퍼 ──
-
-const twitterAdapter = new TwitterAdapter();
-
-/** Twitter 280자 제한을 맞춰 데브로그 트윗 문구 생성 */
-function buildDevlogTweet(title: string, excerpt: string, url: string): string {
-  // Twitter가 URL을 항상 23자로 계산함
-  const URL_COST = 23;
-  const hashtags = '#FindThem #개발로그';
-  const fixed = `📝 ${title}\n\n\n\n${hashtags}`;
-  const budget = 280 - URL_COST - 1 - fixed.length; // URL + 개행 1칸
-  const trimmedExcerpt = budget > 10 ? excerpt.slice(0, budget) + (excerpt.length > budget ? '…' : '') : '';
-  return `📝 ${title}\n\n${trimmedExcerpt}\n\n${url}\n${hashtags}`;
-}
 
 // ── Query / Body 스키마 ──
 
@@ -443,7 +427,7 @@ export function registerAdminRoutes(router: Router) {
 
   // GET /admin/crawl/sources — 등록된 소스 목록
   router.get('/admin/crawl/sources', requireAdmin, (_req, res) => {
-    res.json({ sources: fetchers.map((f) => f.source) });
+    res.json({ sources: getAvailableCrawlSources() });
   });
 
   // POST /admin/crawl/trigger — 즉시 크롤 실행
@@ -454,7 +438,7 @@ export function registerAdminRoutes(router: Router) {
       { sources },
       { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `manual-crawl-${Date.now()}` },
     );
-    res.json({ jobId: job.id, sources: sources ?? fetchers.map((f) => f.source) });
+    res.json({ jobId: job.id, sources: sources ?? getAvailableCrawlSources() });
   });
 
   // GET /admin/crawl/stats — 크롤 결과 통계 (최근 수집 현황)
@@ -558,10 +542,9 @@ export function registerAdminRoutes(router: Router) {
     let tweetUrl: string | null = null;
     if (twitterShare && publishStatus === 'published' && ghostResult.url) {
       try {
-        const tweetText = buildDevlogTweet(title, excerpt, ghostResult.url);
-        const tweetResult = await twitterAdapter.post(tweetText, []);
-        tweetId = tweetResult.postId;
-        tweetUrl = tweetResult.postUrl ?? null;
+        const tweetResult = await shareDevlogToTwitter(title, excerpt, ghostResult.url);
+        tweetId = tweetResult.tweetId;
+        tweetUrl = tweetResult.tweetUrl;
       } catch (twitterErr) {
         log.warn({ err: twitterErr }, 'Twitter 게시 실패 (non-fatal) — Ghost 포스트는 정상 게시됨');
       }
@@ -650,22 +633,21 @@ export function registerAdminRoutes(router: Router) {
     async (req, res) => {
       const { url, title, excerpt } = req.body as { url: string; title: string; excerpt: string };
 
-      const tweetText = buildDevlogTweet(title, excerpt, url);
-      const result = await twitterAdapter.post(tweetText, []);
+      const tweetResult = await shareDevlogToTwitter(title, excerpt, url);
 
-      if (!result.postId) {
+      if (!tweetResult.tweetId) {
         throw new ApiError(502, ERROR_CODES.TWITTER_POST_FAILED);
       }
 
       await createAuditLog({
         action: 'devlog.tweet',
         targetType: 'Devlog',
-        targetId: result.postId,
-        detail: { title, url, tweetUrl: result.postUrl },
+        targetId: tweetResult.tweetId,
+        detail: { title, url, tweetUrl: tweetResult.tweetUrl },
         source: 'DASHBOARD' as AdminActionSource,
       });
 
-      res.json({ tweetId: result.postId, tweetUrl: result.postUrl, text: tweetText });
+      res.json(tweetResult);
     },
   );
 
@@ -977,53 +959,16 @@ export function registerAdminRoutes(router: Router) {
     limit: z.coerce.number().int().min(1).max(200).default(50),
   });
 
-  const PROVIDER_MODELS: Record<string, string[]> = {
-    anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'],
-    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3-pro-preview'],
-    openai: ['gpt-4o-mini', 'gpt-4o'],
-  };
-
   // GET /admin/ai/settings
   router.get('/admin/ai/settings', requireAdmin, async (_req, res) => {
-    const settings = await getAllSettings();
-
-    const defaultProvider = settings.get('default_provider') ?? 'gemini';
-    const defaultModel = settings.get('default_model') ?? 'gemini-2.5-flash';
-
-    const agents: Record<string, { provider: string | null; model: string | null }> = {};
-    for (const agentId of ADMIN_AGENT_IDS) {
-      agents[agentId] = {
-        provider: settings.get(`agent:${agentId}:provider`) ?? null,
-        model: settings.get(`agent:${agentId}:model`) ?? null,
-      };
-    }
-
-    const availableProviders = await Promise.all(
-      Object.entries(PROVIDER_MODELS).map(async ([name, models]) => ({
-        name,
-        configured: !!(await getApiKey(name)),
-        models,
-      })),
-    );
-
-    res.json({ defaultProvider, defaultModel, agents, availableProviders });
+    res.json(await getAiSettings());
   });
 
   // PUT /admin/ai/settings
   router.put('/admin/ai/settings', requireAdmin, validateBody(aiSettingUpdateSchema), async (req, res) => {
     const { key, value } = req.body as z.infer<typeof aiSettingUpdateSchema>;
 
-    if (value === null) {
-      await prisma.aiSetting.deleteMany({ where: { key } });
-    } else {
-      await prisma.aiSetting.upsert({
-        where: { key },
-        create: { key, value },
-        update: { value },
-      });
-    }
-
-    invalidateSettingsCache();
+    await updateAiSetting(key, value);
 
     await createAuditLog({
       action: 'ai.setting.update',
@@ -1171,25 +1116,9 @@ export function registerAdminRoutes(router: Router) {
 
   // ── API 키 관리 ──
 
-  const API_KEY_PROVIDERS = AI_PROVIDER_VALUES;
-
   // GET /admin/ai/keys — API 키 상태 (마스킹)
   router.get('/admin/ai/keys', requireAdmin, async (_req, res) => {
-    const keys: Record<string, { configured: boolean; masked: string }> = {};
-    for (const provider of API_KEY_PROVIDERS) {
-      const dbKey = await prisma.aiSetting.findUnique({ where: { key: `api_key_${provider}` } });
-      const envKey = provider === 'anthropic' ? config.anthropicApiKey
-        : provider === 'gemini' ? config.geminiApiKey
-        : config.openaiApiKey;
-      const rawKey = dbKey?.value || envKey;
-      keys[provider] = {
-        configured: !!rawKey,
-        masked: rawKey
-          ? (rawKey.length > 16 ? `${rawKey.slice(0, 8)}...${rawKey.slice(-4)}` : '***configured***')
-          : '',
-      };
-    }
-    res.json(keys);
+    res.json(await getApiKeyStatuses());
   });
 
   // PUT /admin/ai/keys — API 키 저장 (DB에 저장, 런타임 반영)
@@ -1201,11 +1130,7 @@ export function registerAdminRoutes(router: Router) {
   router.put('/admin/ai/keys', requireAdmin, validateBody(aiKeyUpdateSchema), async (req, res) => {
     const { provider, apiKey } = req.body as z.infer<typeof aiKeyUpdateSchema>;
 
-    await prisma.aiSetting.upsert({
-      where: { key: `api_key_${provider}` },
-      create: { key: `api_key_${provider}`, value: apiKey },
-      update: { value: apiKey },
-    });
+    await saveApiKey(provider, apiKey);
 
     await createAuditLog({
       action: 'ai.key.update',
@@ -1369,58 +1294,7 @@ export function registerAdminRoutes(router: Router) {
 
   router.post('/admin/ai/keys/test', requireAdmin, adminLimiter, validateBody(aiKeyTestSchema), async (req, res) => {
     const { provider, apiKey: inputKey } = req.body as z.infer<typeof aiKeyTestSchema>;
-
-    // 테스트할 키 결정: 입력 > DB > env
-    let testKey = inputKey;
-    if (!testKey) {
-      const dbKey = await prisma.aiSetting.findUnique({ where: { key: `api_key_${provider}` } });
-      const envKey = provider === 'anthropic' ? config.anthropicApiKey
-        : provider === 'gemini' ? config.geminiApiKey
-        : config.openaiApiKey;
-      testKey = dbKey?.value || envKey;
-    }
-
-    if (!testKey) {
-      res.json({ success: false, error: 'API 키가 설정되지 않았습니다.', latencyMs: 0 });
-      return;
-    }
-
-    const start = Date.now();
-    try {
-      if (provider === 'anthropic') {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'x-api-key': testKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 16, messages: [{ role: 'user', content: 'Hi' }] }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        const body = await r.json() as Record<string, unknown>;
-        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
-        res.json({ success: true, model: (body.model as string) ?? 'claude', latencyMs: Date.now() - start });
-      } else if (provider === 'gemini') {
-        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-          method: 'POST',
-          headers: { 'x-goog-api-key': testKey, 'content-type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 16 } }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        const body = await r.json() as Record<string, unknown>;
-        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
-        res.json({ success: true, model: 'gemini-2.5-flash', latencyMs: Date.now() - start });
-      } else {
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${testKey}`, 'content-type': 'application/json' },
-          body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: 'Hi' }], max_tokens: 16 }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        const body = await r.json() as Record<string, unknown>;
-        if (!r.ok) throw new Error((body.error as Record<string, string>)?.message ?? `HTTP ${r.status}`);
-        res.json({ success: true, model: (body.model as string) ?? 'gpt-4o-mini', latencyMs: Date.now() - start });
-      }
-    } catch (err) {
-      res.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error', latencyMs: Date.now() - start });
-    }
+    res.json(await testApiKey(provider, inputKey));
   });
 
   // POST /admin/qa-crawl/trigger — Q&A 크롤 수동 실행
