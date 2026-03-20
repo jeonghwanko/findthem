@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const useRemoteServer = process.env['BUILD_TARGET'] !== 'native';
 
 const config: CapacitorConfig = {
-  appId: 'com.findthem.app',
+  appId: 'gg.pryzm.union',
   appName: 'FindThem',
   webDir: 'dist',
   ...(useRemoteServer && {
