@@ -121,7 +121,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Search className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <span className="text-lg font-bold text-gray-900 whitespace-nowrap">{t('brand')}</span>
-          <span className="hidden sm:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">{t('home.heroBadge')}</span>
+          <span className="hidden md:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">{t('home.heroBadge')}</span>
         </Link>
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}
@@ -162,10 +162,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
         {/* 모바일 우측 (md 미만에서만 표시) */}
         <div className="flex md:hidden items-center gap-2">
-          <Link to="/team" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 px-1.5 py-1 rounded transition-colors whitespace-nowrap">
-            <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
-            {t('nav.team')}
-          </Link>
           <LanguageSwitcher />
           {user ? (
             <ProfileDropdown user={user} onLogout={onLogout} />

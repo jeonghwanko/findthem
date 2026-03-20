@@ -118,14 +118,14 @@ export default function HomePage() {
               <div className="flex gap-3 flex-wrap">
                 <Link
                   to="/sightings/new"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-[0_4px_0_0_#c2410c,0_6px_12px_rgba(234,88,12,0.3)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#c2410c,0_4px_8px_rgba(234,88,12,0.3)] active:translate-y-[4px] active:shadow-none"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-7 py-5 rounded-xl font-semibold text-base transition-all shadow-[0_4px_0_0_#c2410c,0_6px_12px_rgba(234,88,12,0.3)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#c2410c,0_4px_8px_rgba(234,88,12,0.3)] active:translate-y-[4px] active:shadow-none"
                 >
                   <Camera className="w-4 h-4" aria-hidden="true" />
                   {t('home.submitSighting')}
                 </Link>
                 <Link
                   to="/reports/new"
-                  className="inline-flex items-center gap-2 bg-white text-gray-700 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all shadow-[0_4px_0_0_#d1d5db,0_6px_12px_rgba(0,0,0,0.08)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#d1d5db,0_4px_8px_rgba(0,0,0,0.06)] active:translate-y-[4px] active:shadow-none"
+                  className="inline-flex items-center gap-2 bg-white text-gray-700 px-7 py-5 rounded-xl font-semibold text-base transition-all shadow-[0_4px_0_0_#d1d5db,0_6px_12px_rgba(0,0,0,0.08)] hover:translate-y-[2px] hover:shadow-[0_2px_0_0_#d1d5db,0_4px_8px_rgba(0,0,0,0.06)] active:translate-y-[4px] active:shadow-none"
                 >
                   {t('home.newReport')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </Link>

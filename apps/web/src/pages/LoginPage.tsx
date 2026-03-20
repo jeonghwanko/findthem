@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import MobileQuickLinks from '../components/MobileQuickLinks';
 
 interface LoginPageProps {
   onLogin: (phone: string, password: string) => Promise<unknown>;
@@ -196,6 +197,8 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
             {isRegister ? t('auth.login') : t('auth.register')}
           </button>
         </p>
+
+        <MobileQuickLinks />
       </div>
     </div>
   );

@@ -10,11 +10,11 @@ export interface TabConfig {
 }
 
 const DEFAULT_TABS: TabConfig[] = [
-  { titleKey: 'nav.home', path: '/' },
-  { titleKey: 'nav.browse', path: '/browse' },
-  { titleKey: 'nav.sighting', path: '/sightings/new' },
-  { titleKey: 'nav.community', path: '/community' },
-  { titleKey: 'nav.profile', path: '/profile' },
+  { titleKey: 'nav.home', path: '/', image: '/icon/tab-home.svg' },
+  { titleKey: 'nav.browse', path: '/team', image: '/icon/tab-search.svg' },
+  { titleKey: 'nav.sighting', path: '/sightings/new', image: '/icon/tab-camera.svg' },
+  { titleKey: 'nav.community', path: '/community', image: '/icon/tab-chat.svg' },
+  { titleKey: 'nav.profile', path: '/profile', image: '/icon/tab-user.svg' },
 ];
 
 export interface BootstrapOptions {

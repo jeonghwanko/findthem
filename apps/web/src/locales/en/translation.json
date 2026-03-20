@@ -5,9 +5,9 @@
   "nav": {
     "home": "Home",
     "sighting": "Report",
-    "browse": "Browse All",
+    "browse": "Detective",
     "devlog": "Dev Blog",
-    "team": "Team",
+    "team": "AI Detective",
     "myReports": "My Reports",
     "newReport": "New Report",
     "newSighting": "Report Sighting",
@@ -17,10 +17,10 @@
     "profile": "My Profile"
   },
   "home": {
-    "heroBadge": "AI Lost Pet Tracking Service",
+    "heroBadge": "Connecting Clues, AI Detective",
     "heroTitle": "One photo is all it takes.\nAI will find them.",
     "heroDesc": "Upload a photo of your missing pet — AI analyzes sightings, promotes on social media, and helps reunite your family",
-    "newReport": "Report Missing",
+    "newReport": "AI Detective",
     "playToSponsor": "Play & Sponsor",
     "submitSighting": "Submit Sighting",
     "featurePromo": "AI Auto Promotion",

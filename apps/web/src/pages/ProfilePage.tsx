@@ -7,6 +7,7 @@ import { MAX_FILE_SIZE } from '@findthem/shared';
 import type { SponsorXpStats, XpGrantResult } from '@findthem/shared';
 import XpHistoryModal from '../components/XpHistoryModal';
 import { useXpToast } from '../components/XpRewardToast';
+import MobileQuickLinks from '../components/MobileQuickLinks';
 
 interface ProfilePageProps {
   user: User;
@@ -407,6 +408,8 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       )}
 
       <XpHistoryModal open={xpHistoryOpen} onClose={() => setXpHistoryOpen(false)} />
+
+      <MobileQuickLinks />
     </div>
   );
 }
