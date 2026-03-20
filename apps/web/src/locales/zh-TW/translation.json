@@ -386,6 +386,7 @@
     "GAME_PLAY_LIMIT_REACHED": "今日遊戲次數已全部使用。",
     "INVALID_GAME_CHARACTER": "無效的遊戲角色。",
     "AD_REWARD_COOLDOWN": "請稍後再領取廣告獎勵。",
+    "XP_DAILY_LIMIT_REACHED": "今日已達XP每日上限。",
     "VALIDATION_ERROR": "輸入值不正確。",
     "INQUIRY_NOT_FOUND": "找不到該詢問。",
     "ADMIN_AUTH_FAILED": "無效的API金鑰。",
@@ -524,6 +525,22 @@
     "referralShareTitle": "FindThem — AI失蹤人員配對平台",
     "referralShareDesc": "幫助尋找失蹤的家人。一起能更快找到他們。",
     "referralJoin": "立即加入"
+  },
+  "xp": {
+    "history": "XP 記錄",
+    "gained": "+{{xp}} XP",
+    "AD_WATCH": "觀看廣告",
+    "SIGHTING": "提交目擊",
+    "COMMUNITY_POST": "發表文章",
+    "COMMUNITY_COMMENT": "留言",
+    "SHARE": "分享",
+    "REFERRAL": "推薦好友",
+    "SPONSOR": "贊助",
+    "GAME": "遊戲",
+    "noHistory": "尚無 XP 記錄。",
+    "dailyLimitReached": "已達今日上限。",
+    "loadMore": "載入更多",
+    "levelUp": "達成等級 {{level}}！"
   },
   "boost": {
     "title": "加速報案曝光",

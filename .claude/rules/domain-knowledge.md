@@ -751,19 +751,29 @@ GET    /admin/ai/usage/summary     토큰 사용량 집계
 
 ---
 
-## 14. 후원 XP & 레벨 (Sponsor XP)
+## 14. 활동 XP & 레벨 (Activity XP)
 
-홈페이지 히어로 씬(PixiHeroScene)에서 광고를 시청하면 후원 XP가 적립되고 레벨이 오른다.
+다양한 활동을 통해 XP를 획득하고 레벨이 오른다. 광고 시청, 제보, 커뮤니티 활동, 공유, 레퍼럴, 후원 등.
+
+### XP 액션별 설정 (`XP_ACTIONS`)
+
+| 액션 | XP | 일일 한도 | 쿨다운 | 트리거 |
+|------|-----|----------|--------|--------|
+| `AD_WATCH` | 50 | - | 60초 | 광고 시청 |
+| `SIGHTING` | 200 | 5 | - | 제보 등록 (로그인 유저) |
+| `COMMUNITY_POST` | 100 | 3 | - | 커뮤니티 글 작성 |
+| `COMMUNITY_COMMENT` | 30 | 10 | - | 커뮤니티 댓글 작성 |
+| `SHARE` | 20 | 5 | - | 공유 버튼 클릭 |
+| `REFERRAL` | 500 | 10 | - | 추천 유저 가입 시 추천인에게 |
+| `SPONSOR` | 동적 | - | - | 후원 (1 USD cent = 1 XP, 100 KRW = 1 XP) |
+| `GAME` | 동적 | - | - | 게임 점수 기반 |
 
 ### XP 공식
 
 ```ts
-XP_PER_AD = 50                           // 광고 1회당 XP
-AD_REWARD_COOLDOWN_SECS = 60             // 쿨다운 (동일 유저)
 requirementForSponsorLevel(level)        // base 1000, +15%/레벨, 50단위 반올림
+computeSponsorLevel(xpTotal)             // → { level, currentXP, xpToNextLevel }
 ```
-
-`computeSponsorLevel(xpTotal)` → `{ level, currentXP, xpToNextLevel }`
 
 ### 레벨업 보상
 
@@ -781,28 +791,61 @@ LEVEL_REWARDS: {
 
 - `User.sponsorXp` (Int, 기본 0) — 누적 XP
 - `User.userLevel` (Int, 기본 1) — 현재 레벨
-- `User.sponsorXpLastAt` (DateTime?) — 쿨다운 체크용
+- `User.sponsorXpLastAt` (DateTime?) — 광고 쿨다운 체크용
+- `User.referredByUserId` (String?) — 추천인 유저 ID (self-relation)
 - `UserReward` — 레벨업 보상 기록 (`@@unique([userId, level])`)
+- `XpLog` — XP 획득 이력 (action, xpAmount, sourceId, createdAt)
+
+### 핵심 서비스: `grantXp()`
+
+`apps/api/src/services/xpService.ts` — 모든 XP 지급의 단일 진입점.
+
+```ts
+grantXp(userId, action, { sourceId?, xpOverride?, tx? }) → XpGrantResult | null
+```
+
+내부 로직:
+1. 일일 한도 체크: `INSERT ... WHERE (SELECT count) < limit` 원자 SQL (TOCTOU 방지)
+2. `SELECT FOR UPDATE`로 현재 XP 잠금 읽기 (동시 갱신 시 XP 손실 방지)
+3. 레벨 계산 + 레벨업 보상 upsert
 
 ### 라우트
 
 ```
-GET    /api/users/me/xp-stats   현재 XP & 레벨 조회 (requireAuth)
-POST   /api/users/me/ad-reward  광고 시청 후 XP 지급 (requireAuth)
+GET    /api/users/me/xp-stats       현재 XP & 레벨 조회 (requireAuth)
+POST   /api/users/me/ad-reward      광고 시청 XP 지급 (requireAuth, 쿨다운 60초)
+POST   /api/users/me/share-reward   공유 XP 지급 (requireAuth, rateLimit 60s/10)
+GET    /api/users/me/xp-history     XP 이력 조회 (requireAuth, ?page&limit)
+POST   /api/auth/me/apply-referral  레퍼럴 코드 적용 (requireAuth, 소셜 로그인 후)
 ```
 
-### 레이스 컨디션 방지
+### XP 지급 통합 포인트
 
-`POST /users/me/ad-reward`는 `$transaction` 내에서:
-1. `$executeRaw` 조건부 UPDATE로 쿨다운 원자적 선점 (`sponsorXpLastAt` 갱신)
-2. `claimed === 0` → `429 AD_REWARD_COOLDOWN`
-3. XP 계산 + `user.update` + `userReward.upsert` (중복 보상 방지)
+| 파일 | 액션 | 패턴 |
+|------|------|------|
+| `routes/sightings.ts` | SIGHTING | fire-and-forget |
+| `routes/community.ts` | COMMUNITY_POST, COMMUNITY_COMMENT | fire-and-forget |
+| `routes/users.ts` | AD_WATCH, SHARE | 동기 응답 |
+| `routes/auth.ts` | REFERRAL | fire-and-forget (가입/apply-referral 시) |
+| `routes/sponsors.ts` | SPONSOR | fire-and-forget (optionalAuth) |
+
+### 레퍼럴 시스템
+
+- 회원가입 시 `referralCode` body 파라미터로 추천인 설정
+- 소셜 로그인 후 `POST /auth/me/apply-referral`로 별도 적용
+- `updateMany(where: { referredByUserId: null })` 원자적 처리
+- 프론트: `?ref=` URL 파라미터 → sessionStorage → 가입/로그인 시 전달
 
 ### 프론트엔드
 
-- **PixiHeroScene**: 15~30초마다 랜덤 캐릭터에 광고 이벤트 발생 → `expression_surprise_1` + 🎁 아이콘
-- **useRewardAd**: 네이티브(Capacitor)에서만 AdMob 리워드 광고 시청, 웹은 즉시 완료
-- **ProfilePage**: XP 게이지 + 레벨 표시
+- **XpRewardToast** (`components/XpRewardToast.tsx`): pryzm 포팅, Framer Motion 애니메이션
+  - 우하단 고정, 프로그레스 바 + shimmer, 레벨업 보라/핑크 그라데이션
+  - `showXPClaimToast()` 글로벌 함수 (React 외부에서도 호출 가능)
+  - `useXpToast()` / `XpToastProvider` Context 인터페이스
+  - 200ms 내 연속 XP 자동 머지
+- **XpHistoryModal** (`components/XpHistoryModal.tsx`): XP 이력 모달 (페이지네이션)
+- **PixiHeroScene**: 광고 XP → `showXPClaimToast()` 직접 호출
+- **ProfilePage**: 공유 XP → `useXpToast()` 호출, XP 이력 버튼
 
 ---
 

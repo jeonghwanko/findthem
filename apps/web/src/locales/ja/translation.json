@@ -386,6 +386,7 @@
     "GAME_PLAY_LIMIT_REACHED": "本日のゲームプレイ回数をすべて使用しました。",
     "INVALID_GAME_CHARACTER": "無効なゲームキャラクターです。",
     "AD_REWARD_COOLDOWN": "しばらくしてから広告報酬を受け取ってください。",
+    "XP_DAILY_LIMIT_REACHED": "本日のXP上限に達しました。",
     "VALIDATION_ERROR": "入力値が正しくありません。",
     "INQUIRY_NOT_FOUND": "お問い合わせが見つかりません。",
     "ADMIN_AUTH_FAILED": "無効なAPIキーです。",
@@ -523,6 +524,22 @@
     "referralShareTitle": "FindThem — AI行方不明者マッチングプラットフォーム",
     "referralShareDesc": "行方不明の家族を見つける手助けをしてください。一緒ならもっと早く見つかります。",
     "referralJoin": "今すぐ参加"
+  },
+  "xp": {
+    "history": "XP履歴",
+    "gained": "+{{xp}} XP",
+    "AD_WATCH": "広告視聴",
+    "SIGHTING": "目撃情報提供",
+    "COMMUNITY_POST": "投稿作成",
+    "COMMUNITY_COMMENT": "コメント投稿",
+    "SHARE": "シェア",
+    "REFERRAL": "友達紹介",
+    "SPONSOR": "スポンサー",
+    "GAME": "ゲーム",
+    "noHistory": "まだXP履歴がありません。",
+    "dailyLimitReached": "本日の上限に達しました。",
+    "loadMore": "もっと見る",
+    "levelUp": "レベル{{level}}達成！"
   },
   "boost": {
     "title": "届出ブースト",

@@ -15,6 +15,14 @@ describe('Sightings E2E', () => {
     prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       return callback(prismaMock);
     });
+    // XP 관련 mock — grantXp 내부 (SIGHTING dailyLimit:5 → $executeRaw)
+    prismaMock.xpLog = {
+      create: vi.fn().mockResolvedValue({}),
+      count: vi.fn().mockResolvedValue(0),
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+    prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
   });
 
   // ── POST /api/sightings ──
@@ -111,6 +119,96 @@ describe('Sightings E2E', () => {
         }));
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  // ── POST /api/sightings — XP 지급 ──
+  describe('POST /api/sightings — XP 지급', () => {
+    const tinyPng = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64',
+    );
+
+    it('로그인 유저의 제보 성공 시 SIGHTING XP가 fire-and-forget으로 지급된다', async () => {
+      prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
+      prismaMock.sighting.create.mockResolvedValue(testSighting);
+      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+        id: 'sp-xp-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
+        thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
+      }]);
+      // SIGHTING dailyLimit:5 → $executeRaw 조건부 INSERT
+      prismaMock.$executeRaw.mockResolvedValue(1);
+      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.user.update.mockResolvedValue({});
+
+      const res = await app
+        .post('/api/sightings')
+        .set('Authorization', authHeader())
+        .field('data', JSON.stringify({
+          reportId: testReport.id,
+          description: '제보 내용입니다',
+          sightedAt: '2025-01-16T10:00:00Z',
+          address: '서울시 강남구',
+        }))
+        .attach('photos', tinyPng, 'sighting.png');
+
+      expect(res.status).toBe(201);
+      // fire-and-forget 실행 대기
+      await new Promise((r) => setTimeout(r, 20));
+      expect(prismaMock.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('비로그인 유저의 제보 시 XP 미지급', async () => {
+      prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
+      prismaMock.sighting.create.mockResolvedValue({ ...testSighting, userId: null });
+      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+        id: 'sp-anon-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
+        thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
+      }]);
+
+      const res = await app
+        .post('/api/sightings')
+        // Authorization 헤더 없음 — 비로그인
+        .field('data', JSON.stringify({
+          reportId: testReport.id,
+          description: '비로그인 제보',
+          sightedAt: '2025-01-16T10:00:00Z',
+          address: '서울시 마포구',
+        }))
+        .attach('photos', tinyPng, 'sighting.png');
+
+      expect(res.status).toBe(201);
+      await new Promise((r) => setTimeout(r, 20));
+      // 비로그인이므로 XP 지급 없음
+      expect(prismaMock.$executeRaw).not.toHaveBeenCalled();
+    });
+
+    it('XP 지급 실패해도 제보는 성공한다 (fire-and-forget)', async () => {
+      prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
+      prismaMock.sighting.create.mockResolvedValue(testSighting);
+      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+        id: 'sp-err-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
+        thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
+      }]);
+      // grantXp 실패 시뮬레이션
+      prismaMock.$executeRaw.mockRejectedValue(new Error('DB error'));
+
+      const res = await app
+        .post('/api/sightings')
+        .set('Authorization', authHeader())
+        .field('data', JSON.stringify({
+          reportId: testReport.id,
+          description: 'XP 실패해도 제보 성공',
+          sightedAt: '2025-01-16T10:00:00Z',
+          address: '서울시 서초구',
+        }))
+        .attach('photos', tinyPng, 'sighting.png');
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
     });
   });
 

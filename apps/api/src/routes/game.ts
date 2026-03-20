@@ -10,15 +10,11 @@ import {
   MAX_AD_PLAYS_PER_DAY,
   VALID_AGENT_IDS,
 } from '@findthem/shared';
+import { utcDayStart } from '@findthem/shared';
 import { rateLimit } from '../middlewares/rateLimit.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('game');
-
-function utcDayStart(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
 
 const recordPlaySchema = z.object({
   character: z.enum(VALID_AGENT_IDS),

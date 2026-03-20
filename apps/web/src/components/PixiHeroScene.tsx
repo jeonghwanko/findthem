@@ -7,10 +7,11 @@ import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import { getBgmEngine } from '@findthem/pixi-scenes/audio';
 import { HeroLoadingOverlay } from '@findthem/pixi-scenes/components';
 import { StatsStrip } from '@findthem/pixi-scenes/components';
-import { XP_PER_AD, TOKEN_STORAGE_KEY } from '@findthem/shared';
+import { XP_PER_AD, TOKEN_STORAGE_KEY, ERROR_CODES } from '@findthem/shared';
 import type { AdRewardResult, SponsorXpStats } from '@findthem/shared';
 import { api } from '../api/client';
 import { useRewardAd } from '../hooks/useRewardAd';
+import { showXPClaimToast } from './XpRewardToast';
 
 // Explicitly register Spine render pipe (Vite may tree-shake the side-effect import)
 extensions.add(SpinePipe);
@@ -184,6 +185,8 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
   const [adEventDisplay, setAdEventDisplay] = useState<{ charIdx: number; x: number } | null>(null);
   const isHandlingAdRef = useRef(false);
   const [xpStats, setXpStats] = useState<SponsorXpStats | null>(null);
+  const xpStatsRef = useRef<SponsorXpStats | null>(null);
+  useEffect(() => { xpStatsRef.current = xpStats; }, [xpStats]);
   const [xpToast, setXpToast] = useState<string | null>(null);
 
   const { showRewardAd, isNative } = useRewardAd();
@@ -253,18 +256,20 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
         if (!rewarded) return;
       }
 
+      const prevStats = xpStatsRef.current;
       const result = await api.post<AdRewardResult>('/users/me/ad-reward');
       setXpStats((prev) => prev ? { ...prev, sponsorXp: result.newXp, userLevel: result.newLevel } : null);
-      if (result.leveledUp) {
-        setXpToast(tRef.current('home.adReward.levelUp', { level: result.newLevel, reward: result.reward?.label ?? '' }));
-      } else {
-        setXpToast(tRef.current('home.adReward.xpGained', { xp: XP_PER_AD }));
-      }
+      void showXPClaimToast(
+        result.xpGained,
+        tRef.current('xp.AD_WATCH'),
+        prevStats?.userLevel ?? 1,
+        prevStats?.currentXP ?? 0,
+      );
     } catch (err) {
       const msg = (err as Error).message;
-      if (msg === 'AUTH_REQUIRED') {
+      if (msg === ERROR_CODES.AUTH_REQUIRED) {
         setXpToast(tRef.current('home.adReward.loginRequired'));
-      } else if (msg === 'AD_REWARD_COOLDOWN') {
+      } else if (msg === ERROR_CODES.AD_REWARD_COOLDOWN) {
         setXpToast(tRef.current('home.adReward.cooldown'));
       } else {
         setXpToast(tRef.current('home.adReward.error'));

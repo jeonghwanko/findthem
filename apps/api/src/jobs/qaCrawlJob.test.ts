@@ -100,44 +100,7 @@ function makeQuestion(overrides: Partial<ExternalQuestion> = {}): ExternalQuesti
 describe('qaCrawlJob — saveQuestion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.communityPost.findFirst.mockResolvedValue(null);
     prismaMock.communityPost.create.mockResolvedValue({ id: 'post-new-1' });
-  });
-
-  describe('중복 체크', () => {
-    it('deduplicationKey가 이미 존재하면 null 반환 (create 미호출)', async () => {
-      prismaMock.communityPost.findFirst.mockResolvedValue({ id: 'post-existing-1' });
-
-      const result = await saveQuestion(makeQuestion());
-
-      expect(result).toBeNull();
-      expect(prismaMock.communityPost.create).not.toHaveBeenCalled();
-    });
-
-    it('findFirst에 올바른 deduplicationKey 전달', async () => {
-      prismaMock.communityPost.findFirst.mockResolvedValue({ id: 'existing' });
-
-      const q = makeQuestion({ externalId: 'kin-xyz', sourceName: 'naver-kin' });
-      await saveQuestion(q);
-
-      expect(prismaMock.communityPost.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { deduplicationKey: 'qa_naver-kin_kin-xyz' },
-        }),
-      );
-    });
-
-    it('deduplicationKey 형식: qa_{sourceName}_{externalId}', async () => {
-      prismaMock.communityPost.findFirst.mockResolvedValue({ id: 'existing' });
-
-      const q = makeQuestion({ externalId: 'my-ext-id', sourceName: 'my-source' });
-      await saveQuestion(q);
-
-      const call = prismaMock.communityPost.findFirst.mock.calls[0][0] as {
-        where: { deduplicationKey: string };
-      };
-      expect(call.where.deduplicationKey).toBe('qa_my-source_my-ext-id');
-    });
   });
 
   describe('정상 저장', () => {
@@ -208,12 +171,11 @@ describe('qaCrawlJob — saveQuestion', () => {
       expect(result).toBeNull();
     });
 
-    it('findFirst 에러 → null 반환 가능성 없음 (findFirst는 throw 허용)', async () => {
-      // findFirst가 실패하면 saveQuestion 자체가 throw됨 — 이는 의도된 동작
-      // (빠른 사전 체크 실패 = 치명적 오류)
-      prismaMock.communityPost.findFirst.mockRejectedValue(new Error('DB error'));
+    it('P2002가 아닌 일반 create 에러 → null 반환 (graceful)', async () => {
+      prismaMock.communityPost.create.mockRejectedValue(new Error('DB error'));
 
-      await expect(saveQuestion(makeQuestion())).rejects.toThrow('DB error');
+      const result = await saveQuestion(makeQuestion());
+      expect(result).toBeNull();
     });
   });
 

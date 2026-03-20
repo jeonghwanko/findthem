@@ -1,6 +1,6 @@
 import './i18n';
-import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
@@ -9,6 +9,7 @@ import BottomTab from './components/BottomTab';
 import AgentChatWidget from './components/AgentChatWidget';
 import InquiryModal from './components/InquiryModal';
 import AdminRoute from './components/AdminRoute';
+import { XpToastProvider } from './components/XpRewardToast';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
@@ -32,6 +33,22 @@ export default function App() {
   const { t } = useTranslation();
   const [partnershipOpen, setPartnershipOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const location = useLocation();
+
+  // ?ref= 파라미터를 sessionStorage에 저장하고 URL에서 제거
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    if (ref && /^[A-Z2-9]{8}$/.test(ref)) {
+      sessionStorage.setItem('referralCode', ref);
+      params.delete('ref');
+      const newSearch = params.toString();
+      const newUrl = location.pathname + (newSearch ? `?${newSearch}` : '') + location.hash;
+      window.history.replaceState(null, '', newUrl);
+    }
+  // 마운트 시 1회만 실행
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -42,6 +59,7 @@ export default function App() {
   }
 
   return (
+    <XpToastProvider>
     <Routes>
       {/* 관리자 전용 라우트 — 별도 레이아웃 */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -151,5 +169,6 @@ export default function App() {
         }
       />
     </Routes>
+    </XpToastProvider>
   );
 }

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { createTestApp, authHeader, testUser } from '../helpers.js';
 import { prisma } from '../../src/db/client.js';
 
+
 // setup.ts의 vi.mock 팩토리가 생성한 실제 mock 객체를 사용
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prismaMock = prisma as any;
@@ -424,4 +425,5 @@ describe('Auth E2E', () => {
       expect(res.body).toHaveProperty('provider');
     });
   });
+
 });

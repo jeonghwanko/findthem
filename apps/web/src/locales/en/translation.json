@@ -386,6 +386,7 @@
     "GAME_PLAY_LIMIT_REACHED": "You have used all game plays for today.",
     "INVALID_GAME_CHARACTER": "Invalid game character.",
     "AD_REWARD_COOLDOWN": "Please wait before claiming another ad reward.",
+    "XP_DAILY_LIMIT_REACHED": "You've reached today's XP daily limit.",
     "VALIDATION_ERROR": "Invalid input.",
     "INQUIRY_NOT_FOUND": "Inquiry not found.",
     "ADMIN_AUTH_FAILED": "Invalid API Key.",
@@ -524,6 +525,22 @@
     "referralShareTitle": "FindThem — AI-based missing person matching",
     "referralShareDesc": "Help find missing loved ones. Together we can find them faster.",
     "referralJoin": "Join Now"
+  },
+  "xp": {
+    "history": "XP History",
+    "gained": "+{{xp}} XP",
+    "AD_WATCH": "Ad Watched",
+    "SIGHTING": "Sighting Submitted",
+    "COMMUNITY_POST": "Post Written",
+    "COMMUNITY_COMMENT": "Comment Written",
+    "SHARE": "Shared",
+    "REFERRAL": "Friend Referred",
+    "SPONSOR": "Sponsored",
+    "GAME": "Game",
+    "noHistory": "No XP history yet.",
+    "dailyLimitReached": "You've reached the daily limit.",
+    "loadMore": "Load more",
+    "levelUp": "Level {{level}} reached!"
   },
   "boost": {
     "title": "Boost Report",

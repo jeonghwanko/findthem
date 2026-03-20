@@ -14,7 +14,7 @@ export default function BottomTab({ user }: BottomTabProps) {
   const tabs = [
     { to: '/', label: t('nav.home'), icon: '🏠', match: (p: string) => p === '/' },
     { to: '/browse', label: t('nav.browse'), icon: '🔍', match: (p: string) => p.startsWith('/browse') },
-    { to: '/reports/new', label: t('nav.newReport'), icon: '➕', match: (p: string) => p === '/reports/new', requireAuth: true },
+    { to: '/sightings/new', label: t('nav.sighting'), icon: '➕', match: (p: string) => p === '/sightings/new' },
     { to: '/community', label: t('nav.community'), icon: '💬', match: (p: string) => p.startsWith('/community') },
     { to: user ? '/profile' : '/login', label: user ? t('nav.profile') : t('nav.login'), icon: '👤', match: (p: string) => p === '/profile' || (!user && p === '/login') },
   ];

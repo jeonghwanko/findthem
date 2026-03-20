@@ -7,11 +7,15 @@ const config: CapacitorConfig = {
   appName: 'FindThem',
   webDir: 'dist',
   ios: {
-    // AdMob 제외 (iOS 13 지원 위해 — AdMob은 iOS 16+ 필요)
+    // iOS 16.0+ — AdMob, Firebase 포함
     includePlugins: [
       '@capacitor/keyboard',
       '@capacitor/splash-screen',
       '@capacitor/status-bar',
+      '@capacitor-community/admob',
+      '@capacitor-firebase/analytics',
+      '@capacitor-firebase/crashlytics',
+      '@capacitor-firebase/messaging',
     ],
   },
   ...(useRemoteServer && {

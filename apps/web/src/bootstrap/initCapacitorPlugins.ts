@@ -19,16 +19,18 @@ export async function initCapacitorPlugins(): Promise<void> {
   try {
     const { FirebaseAnalytics } = await import('@capacitor-firebase/analytics');
     await FirebaseAnalytics.setEnabled({ enabled: true });
-  } catch {
-    // 무시
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[Firebase] Analytics init failed:', err);
   }
 
   // Firebase Crashlytics
   try {
     const { FirebaseCrashlytics } = await import('@capacitor-firebase/crashlytics');
     await FirebaseCrashlytics.setEnabled({ enabled: true });
-  } catch {
-    // 무시
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[Firebase] Crashlytics init failed:', err);
   }
 
   // FCM 푸시 알림
@@ -39,7 +41,8 @@ export async function initCapacitorPlugins(): Promise<void> {
       const { token } = await FirebaseMessaging.getToken();
       if (token) localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
     }
-  } catch {
-    // 무시
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[Firebase] Messaging init failed:', err);
   }
 }

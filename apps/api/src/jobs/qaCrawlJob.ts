@@ -21,13 +21,7 @@ const MAX_WEBHOOK_CONTENT = 500;
 export async function saveQuestion(q: ExternalQuestion): Promise<string | null> {
   const dedupKey = `qa_${q.sourceName}_${q.externalId}`;
 
-  // 빠른 사전 체크 (인덱스 활용)
-  const existing = await prisma.communityPost.findFirst({
-    where: { deduplicationKey: dedupKey },
-    select: { id: true },
-  });
-  if (existing) return null;
-
+  // P2002 catch 패턴으로 중복 방지 (findFirst 사전 체크 불필요 — TOCTOU 위험 제거)
   try {
     const post = await prisma.communityPost.create({
       data: {

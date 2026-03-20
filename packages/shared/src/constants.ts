@@ -176,8 +176,10 @@ export const ERROR_CODES = {
   GAME_PLAY_LIMIT_REACHED: 'GAME_PLAY_LIMIT_REACHED',
   INVALID_GAME_CHARACTER: 'INVALID_GAME_CHARACTER',
   AD_REWARD_COOLDOWN: 'AD_REWARD_COOLDOWN',
+  XP_DAILY_LIMIT_REACHED: 'XP_DAILY_LIMIT_REACHED',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   INQUIRY_NOT_FOUND: 'INQUIRY_NOT_FOUND',
+  ADMIN_AUTH_FAILED: 'ADMIN_AUTH_FAILED',
 } as const;
 
 // ── BullMQ 큐 이름 ──
@@ -249,6 +251,25 @@ export const PUBLIC_API_DEFAULT_ROWS = 50;
 
 export const XP_PER_AD = 50;
 export const AD_REWARD_COOLDOWN_SECS = 60;
+
+/** 활동별 XP 설정 */
+export const XP_ACTIONS = {
+  AD_WATCH:          { xp: 50,  dailyLimit: null, cooldownSecs: 60 },
+  SIGHTING:          { xp: 200, dailyLimit: 5,    cooldownSecs: 0 },
+  COMMUNITY_POST:    { xp: 100, dailyLimit: 3,    cooldownSecs: 0 },
+  COMMUNITY_COMMENT: { xp: 30,  dailyLimit: 10,   cooldownSecs: 0 },
+  SHARE:             { xp: 20,  dailyLimit: 5,    cooldownSecs: 0 },
+  REFERRAL:          { xp: 500, dailyLimit: 10,   cooldownSecs: 0 },
+  SPONSOR:           { xp: 0,   dailyLimit: null, cooldownSecs: 0 },
+  GAME:              { xp: 0,   dailyLimit: null, cooldownSecs: 0 },
+} as const;
+
+export type XpActionType = keyof typeof XP_ACTIONS;
+
+/** 후원 XP 변환: 1 USD cent = 1 XP */
+export const XP_PER_USD_CENT = 1;
+/** 후원 XP 변환: 100 KRW = 1 XP */
+export const XP_PER_KRW_100 = 1;
 
 /** pryzm 동일 공식: base 1000 XP, +15%/레벨, 50단위 반올림 */
 export function requirementForSponsorLevel(level: number): number {

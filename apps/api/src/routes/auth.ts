@@ -14,6 +14,7 @@ import { ApiError } from '../middlewares/errors.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { authLimiter, apiLimiter } from '../middlewares/rateLimit.js';
 import { ERROR_CODES, MAX_FILE_SIZE } from '@findthem/shared';
+import { grantXp } from '../services/xpService.js';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
 import { storageService } from '../services/storageService.js';
@@ -63,6 +64,7 @@ const registerSchema = z.object({
   phone: z.string().regex(/^01[016789]\d{7,8}$/),
   password: z.string().min(6),
   email: z.string().email().optional(),
+  referralCode: z.string().length(8).optional(),
 });
 
 const loginSchema = z.object({
@@ -123,20 +125,42 @@ function redirectWithToken(res: import('express').Response, token: string) {
 export function registerAuthRoutes(router: Router) {
   // ── 로컬 회원가입 ──────────────────────────────────────────────────────────
   router.post('/auth/register', authLimiter, validateBody(registerSchema), async (req, res) => {
-    const { name, phone, password, email } = req.body;
+    const { name, phone, password, email, referralCode } = req.body;
 
     const passwordHash = await bcrypt.hash(password, 10);
+
+    // 레퍼럴 코드로 추천인 조회
+    let referrerId: string | undefined;
+    if (referralCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+        select: { id: true },
+      });
+      if (referrer) referrerId = referrer.id;
+    }
 
     let user;
     try {
       user = await prisma.user.create({
-        data: { name, phone, passwordHash, email },
+        data: {
+          name,
+          phone,
+          passwordHash,
+          email,
+          ...(referrerId ? { referredByUserId: referrerId } : {}),
+        },
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
       throw err;
+    }
+
+    // 추천인에게 레퍼럴 XP 지급 (fire-and-forget)
+    if (referrerId) {
+      void grantXp(referrerId, 'REFERRAL', { sourceId: user.id })
+        .catch((err) => log.warn({ err, referrerId }, 'Referral XP grant failed'));
     }
 
     const token = signToken(user.id);
@@ -251,6 +275,41 @@ export function registerAuthRoutes(router: Router) {
     const { userId } = req.user!;
     const code = await ensureReferralCode(userId);
     res.json({ referralCode: code });
+  });
+
+  // POST /auth/me/apply-referral — 레퍼럴 코드 적용 (소셜 로그인 후 프론트에서 호출)
+  const applyReferralSchema = z.object({
+    referralCode: z.string().length(8),
+  });
+
+  router.post('/auth/me/apply-referral', requireAuth, validateBody(applyReferralSchema), async (req, res) => {
+    const { userId } = req.user!;
+    const { referralCode } = req.body as z.infer<typeof applyReferralSchema>;
+
+    // 추천인 조회
+    const referrer = await prisma.user.findUnique({
+      where: { referralCode },
+      select: { id: true },
+    });
+    if (!referrer || referrer.id === userId) {
+      res.json({ applied: false });
+      return;
+    }
+
+    // 원자적 업데이트: referredByUserId가 null인 경우에만 설정 (TOCTOU 방지)
+    const result = await prisma.user.updateMany({
+      where: { id: userId, referredByUserId: null },
+      data: { referredByUserId: referrer.id },
+    });
+
+    if (result.count > 0) {
+      // 추천인에게 XP 지급 (fire-and-forget)
+      void grantXp(referrer.id, 'REFERRAL', { sourceId: userId })
+        .catch((err) => log.warn({ err, referrerId: referrer.id }, 'Referral XP grant failed'));
+      res.json({ applied: true });
+    } else {
+      res.json({ applied: false });
+    }
   });
 
   // ── Kakao OAuth ───────────────────────────────────────────────────────────

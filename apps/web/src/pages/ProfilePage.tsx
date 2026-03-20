@@ -4,7 +4,9 @@ import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Use
 import { usePushNotification } from '../hooks/usePushNotification';
 import { api, type User } from '../api/client';
 import { MAX_FILE_SIZE } from '@findthem/shared';
-import type { SponsorXpStats } from '@findthem/shared';
+import type { SponsorXpStats, XpGrantResult } from '@findthem/shared';
+import XpHistoryModal from '../components/XpHistoryModal';
+import { useXpToast } from '../components/XpRewardToast';
 
 interface ProfilePageProps {
   user: User;
@@ -21,7 +23,9 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [xpStats, setXpStats] = useState<SponsorXpStats | null>(null);
+  const [xpHistoryOpen, setXpHistoryOpen] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
+  const { showXpToast } = useXpToast();
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSharingRef = useRef(false);
 
@@ -80,6 +84,32 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     copyTimerRef.current = setTimeout(() => setReferralCopied(false), 2000);
   }
 
+  async function claimShareReward() {
+    try {
+      const result = await api.post<XpGrantResult>('/users/me/share-reward');
+      showXpToast({
+        xpGained: result.xpGained,
+        action: 'SHARE',
+        leveledUp: result.leveledUp,
+        newLevel: result.newLevel,
+        reward: result.reward,
+        userLevel: xpStats?.userLevel,
+        userCurrentXP: xpStats?.currentXP,
+      });
+      if (result.leveledUp) {
+        setXpStats((prev) =>
+          prev
+            ? {
+                ...prev,
+                sponsorXp: result.newXp,
+                userLevel: result.newLevel,
+              }
+            : prev,
+        );
+      }
+    } catch {/* 무시 */}
+  }
+
   async function handleReferralShare() {
     if (isSharingRef.current || !user.referralCode) return;
     isSharingRef.current = true;
@@ -91,6 +121,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       if (navigator.share) {
         try {
           await navigator.share({ title: shareTitle, text: shareDesc, url: referralUrl });
+          await claimShareReward();
         } catch { /* 사용자 취소 */ }
         return;
       }
@@ -118,6 +149,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             },
             buttons: [{ title: t('profile.referralJoin'), link: { mobileWebUrl: referralUrl, webUrl: referralUrl } }],
           });
+          await claimShareReward();
           return;
         } catch {
           // Kakao SDK 실패 → 클립보드 fallback
@@ -130,6 +162,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       } catch {
         window.prompt(t('profile.referralCode'), referralUrl);
       }
+      await claimShareReward();
     } finally {
       isSharingRef.current = false;
     }
@@ -358,6 +391,22 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           </p>
         )}
       </div>
+
+      {/* XP 이력 보기 버튼 */}
+      {xpStats && (
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setXpHistoryOpen(true)}
+            className="w-full flex items-center justify-center gap-2 border border-pink-200 text-pink-600 hover:bg-pink-50 py-2.5 rounded-lg font-medium transition-colors text-sm"
+          >
+            <Star className="w-4 h-4" />
+            {t('xp.history')}
+          </button>
+        </div>
+      )}
+
+      <XpHistoryModal open={xpHistoryOpen} onClose={() => setXpHistoryOpen(false)} />
     </div>
   );
 }

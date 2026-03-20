@@ -11,6 +11,10 @@ import { rateLimit } from '../middlewares/rateLimit.js';
 import { imageService } from '../services/imageService.js';
 import { imageQueue } from '../jobs/queues.js';
 import { MAX_FILE_SIZE, MAX_REPORT_PHOTOS, ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { grantXp, XpDailyLimitError } from '../services/xpService.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('sightingsRoute');
 
 // SEC-W3: 제보 접수 rate limit — IP 기준 15분에 10회
 const sightingLimiter = rateLimit({ windowMs: 15 * 60_000, max: 10 });
@@ -171,6 +175,16 @@ export function registerSightingRoutes(router: Router) {
           { type: 'sighting', sightingId: sighting.id },
           { attempts: 3, backoff: { type: 'exponential', delay: 30_000 }, jobId: `image-sighting-${sighting.id}` },
         );
+      }
+
+      // 로그인 유저에게 제보 XP 지급 (fire-and-forget, 한도 초과는 무시)
+      if (req.user?.userId) {
+        void grantXp(req.user.userId, 'SIGHTING', { sourceId: sighting.id })
+          .catch((err) => {
+            if (!(err instanceof XpDailyLimitError)) {
+              log.warn({ err, userId: req.user?.userId }, 'Sighting XP grant failed');
+            }
+          });
       }
 
       res.status(201).json({ ...sighting, photos, editPassword: undefined });

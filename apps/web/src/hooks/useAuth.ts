@@ -12,6 +12,18 @@ async function syncFcmToken() {
   }
 }
 
+async function applyPendingReferral() {
+  const referralCode = sessionStorage.getItem('referralCode');
+  if (!referralCode) return;
+  try {
+    await api.post('/auth/me/apply-referral', { referralCode });
+  } catch {
+    // 무시 (이미 적용됐거나 유효하지 않은 코드)
+  } finally {
+    sessionStorage.removeItem('referralCode');
+  }
+}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
@@ -46,19 +58,24 @@ export function useAuth() {
     localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
     setState({ user: res.user, loading: false });
     void syncFcmToken();
+    void applyPendingReferral();
     return res.user;
   }, []);
 
   const register = useCallback(
     async (name: string, phone: string, password: string) => {
+      const referralCode = sessionStorage.getItem('referralCode') ?? undefined;
       const res = await api.post<{ user: User; token: string }>('/auth/register', {
         name,
         phone,
         password,
+        ...(referralCode ? { referralCode } : {}),
       });
       localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
       setState({ user: res.user, loading: false });
       void syncFcmToken();
+      // 회원가입 시 referralCode를 body에 포함했으므로 sessionStorage 정리
+      sessionStorage.removeItem('referralCode');
       return res.user;
     },
     [],

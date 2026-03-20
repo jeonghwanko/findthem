@@ -6,12 +6,7 @@ import { ApiError } from '../middlewares/errors.js';
 import { validateBody } from '../middlewares/validate.js';
 import { promotionQueue } from '../jobs/queues.js';
 import { ERROR_CODES, MAX_BOOSTS_PER_DAY, type PromoPlatform } from '@findthem/shared';
-
-// UTC 기준 오늘 자정 (서버 로컬 타임존 의존 방지)
-function utcDayStart(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
+import { utcDayStart } from '@findthem/shared';
 
 const repostBodySchema = z.object({
   platforms: z.array(z.enum(['TWITTER', 'KAKAO_CHANNEL'])).optional(),

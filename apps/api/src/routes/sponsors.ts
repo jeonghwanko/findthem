@@ -7,7 +7,10 @@ import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, VALID_AGENT_IDS, SUPPORTED_PAY_TOKENS } from '@findthem/shared';
 import { rateLimit } from '../middlewares/rateLimit.js';
+import { optionalAuth } from '../middlewares/auth.js';
 import { createLogger } from '../logger.js';
+import { grantXp } from '../services/xpService.js';
+import { XP_PER_USD_CENT, XP_PER_KRW_100 } from '@findthem/shared';
 import { randomUUID } from 'node:crypto';
 import {
   getUsdPerToken,
@@ -131,7 +134,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // Toss 결제 확인 후 DB 저장
-  router.post('/sponsors/verify', sponsorLimiter, validateBody(verifySchema), async (req, res) => {
+  router.post('/sponsors/verify', sponsorLimiter, optionalAuth, validateBody(verifySchema), async (req, res) => {
     const { paymentKey, orderId, amount, agentId, displayName, message } =
       req.body as z.infer<typeof verifySchema>;
 
@@ -183,6 +186,15 @@ export function registerSponsorRoutes(router: Router) {
     }
 
     log.info({ orderId, agentId, amount }, 'Sponsor payment verified and saved');
+
+    // 로그인 유저에게 후원 XP 지급 (Toss: KRW, 100원=1XP)
+    if (req.user?.userId) {
+      const xpAmount = Math.floor(amount / 100) * XP_PER_KRW_100;
+      if (xpAmount > 0) {
+        void grantXp(req.user.userId, 'SPONSOR', { sourceId: orderId, xpOverride: xpAmount })
+          .catch((err) => log.warn({ err, orderId }, 'Sponsor XP grant failed'));
+      }
+    }
 
     res.json({ success: true });
   });
@@ -275,7 +287,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // 크립토 결제 온체인 검증 후 DB 저장
-  router.post('/sponsors/crypto/verify', sponsorLimiter, validateBody(cryptoVerifySchema), async (req, res) => {
+  router.post('/sponsors/crypto/verify', sponsorLimiter, optionalAuth, validateBody(cryptoVerifySchema), async (req, res) => {
     const { quoteId, txHash, displayName, message } =
       req.body as z.infer<typeof cryptoVerifySchema>;
 
@@ -441,6 +453,15 @@ export function registerSponsorRoutes(router: Router) {
     }
 
     log.info({ quoteId, txHash, tokenSymbol, agentId: quote.agentId }, 'Crypto sponsor payment verified and saved');
+
+    // 로그인 유저에게 후원 XP 지급 (Crypto: USD cents, 1cent=1XP)
+    if (req.user?.userId) {
+      const xpAmount = quote.amountUsdCents * XP_PER_USD_CENT;
+      if (xpAmount > 0) {
+        void grantXp(req.user.userId, 'SPONSOR', { sourceId: quoteId, xpOverride: xpAmount })
+          .catch((err) => log.warn({ err, quoteId }, 'Crypto sponsor XP grant failed'));
+      }
+    }
 
     res.json({ success: true });
   });

@@ -472,7 +472,12 @@ export function registerReportRoutes(router: Router) {
       );
     }
 
-    await prisma.report.delete({ where: { id } });
+    // 원자적 삭제: 소유권 확인과 삭제를 하나의 쿼리로 처리 (동시 요청 시 P2025 방지)
+    const deleted = await prisma.report.deleteMany({ where: { id, userId: deleteUserId } });
+    if (deleted.count === 0) {
+      // 이미 삭제되었거나 소유권 변경됨
+      throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
+    }
 
     res.json({ success: true });
   });

@@ -999,7 +999,8 @@ export function registerAdminRoutes(router: Router) {
     if (agentId) where.agentId = agentId;
     if (provider) where.provider = provider;
 
-    const [items, totalCalls] = await Promise.all([
+    // 6개 독립 쿼리를 단일 Promise.all로 병렬화
+    const [items, totalCalls, byAgentRaw, byProviderRaw, aggregates, successCount] = await Promise.all([
       prisma.aiUsageLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -1007,10 +1008,6 @@ export function registerAdminRoutes(router: Router) {
         take: limit,
       }),
       prisma.aiUsageLog.count({ where }),
-    ]);
-
-    // 집계: DB 레벨 groupBy로 처리 (전체 레코드 메모리 로드 방지)
-    const [byAgentRaw, byProviderRaw, aggregates] = await Promise.all([
       prisma.aiUsageLog.groupBy({
         by: ['agentId'],
         where,
@@ -1028,9 +1025,8 @@ export function registerAdminRoutes(router: Router) {
         _sum: { inputTokens: true, outputTokens: true, latencyMs: true },
         _count: { id: true },
       }),
+      prisma.aiUsageLog.count({ where: { ...where, success: true } }),
     ]);
-
-    const successCount = await prisma.aiUsageLog.count({ where: { ...where, success: true } });
     const total = aggregates._count.id;
 
     const byAgent: Record<string, { calls: number; tokens: number }> = {};
@@ -1070,7 +1066,7 @@ export function registerAdminRoutes(router: Router) {
       if (to) where.createdAt.lte = new Date(to as string);
     }
 
-    const [totalCalls, byAgentRaw, byProviderRaw, latencyStats] = await Promise.all([
+    const [totalCalls, byAgentRaw, byProviderRaw, latencyStats, successCount] = await Promise.all([
       prisma.aiUsageLog.count({ where }),
       prisma.aiUsageLog.groupBy({
         by: ['agentId'],
@@ -1089,9 +1085,8 @@ export function registerAdminRoutes(router: Router) {
         _avg: { latencyMs: true },
         _sum: { inputTokens: true, outputTokens: true },
       }),
+      prisma.aiUsageLog.count({ where: { ...where, success: true } }),
     ]);
-
-    const successCount = await prisma.aiUsageLog.count({ where: { ...where, success: true } });
 
     const byAgent: Record<string, { calls: number; tokens: number }> = {};
     for (const row of byAgentRaw) {

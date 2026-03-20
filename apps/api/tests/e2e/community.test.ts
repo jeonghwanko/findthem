@@ -37,6 +37,17 @@ describe('Community E2E', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
+    // XP 관련 mock — grantXp 내부 (dailyLimit 있는 액션은 $executeRaw 사용)
+    prismaMock.xpLog = {
+      create: vi.fn().mockResolvedValue({}),
+      count: vi.fn().mockResolvedValue(0),
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+    prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      return callback(prismaMock);
+    });
   });
 
   // ── GET /api/community/posts ──
@@ -517,6 +528,99 @@ describe('Community E2E', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ success: true });
+    });
+  });
+
+  // ── XP 지급 통합 테스트 ──
+
+  describe('POST /api/community/posts — XP 지급', () => {
+    it('글 작성 성공 시 COMMUNITY_POST XP가 fire-and-forget으로 지급된다', async () => {
+      prismaMock.communityPost.create.mockResolvedValue(testPost);
+      // COMMUNITY_POST dailyLimit:3 → $executeRaw 사용
+      prismaMock.$executeRaw.mockResolvedValue(1);
+      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.user.update.mockResolvedValue({});
+
+      const res = await app
+        .post('/api/community/posts')
+        .set('Authorization', authHeader())
+        .send({ title: 'XP 테스트 글', content: 'XP가 지급되어야 합니다.' });
+
+      expect(res.status).toBe(201);
+      // fire-and-forget 실행 대기
+      await new Promise((r) => setTimeout(r, 20));
+      // grantXp 내부에서 $executeRaw (조건부 INSERT) 호출됨
+      expect(prismaMock.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('XP 지급 실패해도 글 작성은 성공한다 (fire-and-forget)', async () => {
+      prismaMock.communityPost.create.mockResolvedValue(testPost);
+      // grantXp 자체가 던지는 에러 시뮬레이션
+      prismaMock.$executeRaw.mockRejectedValue(new Error('DB error'));
+
+      const res = await app
+        .post('/api/community/posts')
+        .set('Authorization', authHeader())
+        .send({ title: 'XP 실패 테스트', content: '글 작성은 성공해야 합니다.' });
+
+      // XP 지급 실패와 무관하게 201 반환
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
+    });
+
+    it('일일 한도 초과 시 XP 미지급이지만 글 작성은 성공', async () => {
+      prismaMock.communityPost.create.mockResolvedValue(testPost);
+      // $executeRaw → 0 반환 (한도 초과 → XpDailyLimitError)
+      prismaMock.$executeRaw.mockResolvedValue(0);
+
+      const res = await app
+        .post('/api/community/posts')
+        .set('Authorization', authHeader())
+        .send({ title: '한도 초과 테스트', content: '글은 성공해야 합니다.' });
+
+      expect(res.status).toBe(201);
+    });
+  });
+
+  describe('POST /api/community/posts/:id/comments — XP 지급', () => {
+    it('댓글 작성 성공 시 COMMUNITY_COMMENT XP가 fire-and-forget으로 지급된다', async () => {
+      prismaMock.communityPost.findUnique.mockResolvedValue({
+        ...testPost,
+        sourceUrl: null,
+        externalAgentId: null,
+      });
+      prismaMock.communityComment.create.mockResolvedValue(testComment);
+      // COMMUNITY_COMMENT dailyLimit:10 → $executeRaw 사용
+      prismaMock.$executeRaw.mockResolvedValue(1);
+      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.user.update.mockResolvedValue({});
+
+      const res = await app
+        .post('/api/community/posts/post-1/comments')
+        .set('Authorization', authHeader())
+        .send({ content: 'XP 댓글 테스트입니다.' });
+
+      expect(res.status).toBe(201);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(prismaMock.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('댓글 XP 지급 실패해도 댓글 작성은 성공한다 (fire-and-forget)', async () => {
+      prismaMock.communityPost.findUnique.mockResolvedValue({
+        ...testPost,
+        sourceUrl: null,
+        externalAgentId: null,
+      });
+      prismaMock.communityComment.create.mockResolvedValue(testComment);
+      prismaMock.$executeRaw.mockRejectedValue(new Error('DB error'));
+
+      const res = await app
+        .post('/api/community/posts/post-1/comments')
+        .set('Authorization', authHeader())
+        .send({ content: 'XP 실패해도 댓글 성공' });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
     });
   });
 });

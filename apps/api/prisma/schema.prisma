@@ -32,6 +32,9 @@ model User {
   sponsorXpLastAt  DateTime?
   referralCode     String?   @unique
 
+  // 레퍼럴
+  referredByUserId String?
+
   // FCM 푸시 토큰
   fcmToken String?
 
@@ -47,8 +50,12 @@ model User {
   userRewards        UserReward[]
   gamePlays          GamePlay[]
   inquiries          Inquiry[]
+  xpLogs             XpLog[]
+  referredBy         User?    @relation("Referrals", fields: [referredByUserId], references: [id])
+  referrals          User[]   @relation("Referrals")
 
   @@unique([provider, providerId], name: "provider_providerId")
+  @@index([referredByUserId])
   @@map("user")
 }
 
@@ -212,6 +219,7 @@ model Sighting {
   @@index([status])
   @@index([status, createdAt])
   @@index([lat, lng])
+  @@index([userId])
   @@map("sighting")
 }
 
@@ -555,6 +563,7 @@ model OutreachRequest {
   @@unique([reportId, contactId, channel])
   @@index([status])
   @@index([reportId, status])
+  @@index([channel, sentAt])
   @@map("outreach_request")
 }
 
@@ -673,6 +682,23 @@ model AgentDecisionLog {
   @@map("agent_decision_log")
 }
 
+// ── XP Log (활동 XP 이력) ──
+
+model XpLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // 'AD_WATCH' | 'SIGHTING' | 'COMMUNITY_POST' | 'COMMUNITY_COMMENT' | 'SHARE' | 'REFERRAL' | 'SPONSOR' | 'GAME'
+  xpAmount  Int
+  sourceId  String?  // sightingId, postId, commentId, sponsorId 등
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, action, createdAt])
+  @@index([userId, createdAt])
+  @@map("xp_log")
+}
+
 // ── Game Play (게임 플레이 기록) ──
 
 model GamePlay {
@@ -686,6 +712,7 @@ model GamePlay {
   user User? @relation(fields: [userId], references: [id])
 
   @@index([userId, playedAt])
+  @@index([userId, usedAd, playedAt])
   @@map("game_play")
 }
 

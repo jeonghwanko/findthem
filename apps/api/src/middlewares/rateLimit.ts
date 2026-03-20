@@ -26,6 +26,11 @@ export function rateLimit(options: { windowMs: number; max: number; message?: st
   };
 }
 
+/** 테스트 전용: rate limiter 스토어 초기화 */
+export function clearRateLimitStore() {
+  store.clear();
+}
+
 // 주기적 정리 (메모리 누수 방지)
 setInterval(() => {
   const now = Date.now();

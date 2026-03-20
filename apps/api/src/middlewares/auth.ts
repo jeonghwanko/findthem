@@ -50,7 +50,10 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     where: { id: payload.userId },
     select: { isBlocked: true },
   });
-  if (!user || user.isBlocked) {
+  if (!user) {
+    throw new ApiError(401, ERROR_CODES.INVALID_TOKEN);
+  }
+  if (user.isBlocked) {
     throw new ApiError(403, ERROR_CODES.USER_BLOCKED);
   }
 

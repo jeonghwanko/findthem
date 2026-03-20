@@ -12,7 +12,7 @@ export interface TabConfig {
 const DEFAULT_TABS: TabConfig[] = [
   { titleKey: 'nav.home', path: '/' },
   { titleKey: 'nav.browse', path: '/browse' },
-  { titleKey: 'nav.newReport', path: '/reports/new' },
+  { titleKey: 'nav.sighting', path: '/sightings/new' },
   { titleKey: 'nav.community', path: '/community' },
   { titleKey: 'nav.profile', path: '/profile' },
 ];

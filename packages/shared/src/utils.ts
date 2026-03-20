@@ -298,6 +298,14 @@ const TIME_AGO_LABELS: Record<Locale, {
   'zh-TW': { just: '剛才', min: '分鐘前', hour: '小時前', day: '天前', month: '個月前', year: '年前' },
 };
 
+// ── UTC 자정 (일일 한도 집계 기준) ──
+
+/** UTC 기준 오늘 자정 Date 반환 (서버 로컬 타임존 의존 방지) */
+export function utcDayStart(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
 // ── 후원 XP 레벨 계산 (pryzm 동일 공식) ──
 
 export interface SponsorLevelSnapshot {

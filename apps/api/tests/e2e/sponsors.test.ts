@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestApp, authHeader } from '../helpers.js';
 import { prisma } from '../../src/db/client.js';
 import { Prisma } from '@prisma/client';
+import { clearRateLimitStore } from '../../src/middlewares/rateLimit.js';
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prismaMock = prisma as any;
@@ -49,6 +51,7 @@ describe('Sponsors E2E — POST /api/sponsors/verify (RACE-05)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearRateLimitStore();
     prismaMock.user.findUnique.mockResolvedValue({ isBlocked: false });
     // global.fetch 기본값: Toss API 성공
     global.fetch = vi.fn().mockResolvedValue({
@@ -166,6 +169,7 @@ describe('Sponsors E2E — POST /api/sponsors/verify (RACE-05)', () => {
       expect(res.status).toBe(400);
     });
   });
+
 });
 
 describe('Sponsors E2E — GET /api/sponsors', () => {

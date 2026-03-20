@@ -4,7 +4,8 @@ import { prisma } from '../db/client.js';
 import { requireAuth, optionalAuth, requireAgentAuth, requireAdmin, requireExternalAgentAuth } from '../middlewares/auth.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MATCH_THRESHOLD } from '@findthem/shared';
+import { grantXp, XpDailyLimitError } from '../services/xpService.js';
 import { createLogger } from '../logger.js';
 import { imageQueue, matchingQueue, promotionQueue, promotionRepostQueue, outreachQueue, notificationQueue, qaCrawlQueue } from '../jobs/queues.js';
 import { dispatchWebhookToAll, dispatchWebhookToAgent } from '../services/webhookDispatcher.js';
@@ -79,7 +80,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       }),
       // 클로드: 매칭 결과
       prisma.match.findMany({
-        where: { createdAt: { gte: todayStart }, confidence: { gte: 0.6 } },
+        where: { createdAt: { gte: todayStart }, confidence: { gte: MATCH_THRESHOLD } },
         orderBy: { createdAt: 'desc' },
         take: 10,
         select: { confidence: true, createdAt: true, report: { select: { name: true } } },
@@ -471,6 +472,7 @@ export function registerCommunityRoutes(router: Router) {
         .update({
           where: { id: post.id },
           data: { viewCount: { increment: 1 } },
+          select: { id: true },
         })
         .catch((err) => log.warn({ err, postId: post.id }, 'viewCount increment failed'));
 
@@ -490,6 +492,13 @@ export function registerCommunityRoutes(router: Router) {
         include: postInclude,
       });
       log.info({ postId: post.id, userId: req.user!.userId }, 'Community post created');
+
+      // 커뮤니티 글 작성 XP (fire-and-forget)
+      void grantXp(req.user!.userId, 'COMMUNITY_POST', { sourceId: post.id })
+        .catch((err) => {
+          if (!(err instanceof XpDailyLimitError)) log.warn({ err }, 'Community post XP grant failed');
+        });
+
       res.status(201).json(post);
     },
   );
@@ -607,6 +616,12 @@ export function registerCommunityRoutes(router: Router) {
             .catch((err) => log.warn({ err, postId: id }, 'Webhook dispatch on comment failed'));
         }
       }
+
+      // 댓글 작성 XP (fire-and-forget)
+      void grantXp(req.user!.userId, 'COMMUNITY_COMMENT', { sourceId: comment.id })
+        .catch((err) => {
+          if (!(err instanceof XpDailyLimitError)) log.warn({ err }, 'Community comment XP grant failed');
+        });
 
       res.status(201).json(comment);
     },

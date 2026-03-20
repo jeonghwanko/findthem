@@ -486,12 +486,23 @@ export interface SponsorXpStats {
   xpRequiredForLevel: number; // 현재 레벨 총 XP 요구량
 }
 
-export interface AdRewardResult {
+export interface XpGrantResult {
+  xpGained: number;
   newXp: number;
   newLevel: number;
   leveledUp: boolean;
-  xpGained: number;
   reward?: { type: string; value: string; label: string };
+}
+
+/** @deprecated Use XpGrantResult instead */
+export type AdRewardResult = XpGrantResult;
+
+export interface XpLogEntry {
+  id: string;
+  action: string;
+  xpAmount: number;
+  sourceId?: string | null;
+  createdAt: string;
 }
 
 // ── Sponsor ──
