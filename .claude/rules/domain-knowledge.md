@@ -23,7 +23,6 @@
 13. AI 프로바이더 관리
 14. 후원 XP & 레벨 (Sponsor XP)
 15. 게임 (Game)
-14. 후원 XP & 레벨 (Sponsor XP)
 
 ---
 
@@ -946,49 +945,85 @@ QUEUE_NAMES.QA_CRAWL    // 'qa-crawl'    Q&A 크롤 (4시간마다 cron)
 
 ---
 
+## 15. 게임 (Game)
+
+"찾아가는 계단" — 캐릭터를 골라 계단 오르기 게임을 플레이하고 AI 팀을 후원하는 미니게임.
+
+### 플레이 횟수
+
+```ts
+MAX_FREE_PLAYS_PER_DAY = 1   // 일일 무료 플레이
+MAX_AD_PLAYS_PER_DAY = 2     // 광고 시청으로 추가 가능한 플레이
+```
+
+- **광고 1회 시청 → 2판 해금** (광고를 2번 보는 게 아님)
+- 비로그인: localStorage로 횟수 관리 (UTC 기준 일일 리셋)
+- 로그인: DB `GamePlay` 테이블로 횟수 관리
+
+### 캐릭터
+
+| 캐릭터 | agentId | 게임 스킨 |
+|--------|---------|----------|
+| 탐정 클로드 | `image-matching` | `skin_male_090` |
+| 안내봇 알리 | `chatbot-alert` | `skin_female_101` |
+| 홍보왕 헤르미 | `promotion` | `skin_female_102` |
+
+### 라우트
+
+```
+GET    /api/game/status   오늘 플레이 현황 (requireAuth)
+POST   /api/game/play     플레이 기록 (optionalAuth, rate limit 30/min)
+```
+
+### DB 모델
+
+```prisma
+model GamePlay {
+  id        String   @id @default(cuid())
+  userId    String?
+  character String   // agentId
+  score     Int
+  usedAd    Boolean  @default(false)
+  playedAt  DateTime @default(now())
+  @@index([userId, playedAt])
+  @@index([userId, usedAd, playedAt])
+}
+```
+
+### AdMob 연동
+
+- **네이티브(iOS/Android)**: `useRewardAd.ts` → `@capacitor-community/admob` 리워드 광고
+- **웹**: 광고 없이 바로 해금 (개발/테스트용)
+- 백엔드 광고 검증 없음 (클라이언트 `usedAd` boolean 신뢰)
+- `$transaction`으로 일일 한도 원자적 체크
+
+---
+
 ## 17. 에이전트 활동 씬 (Agent Activity Scene)
 
 커뮤니티 페이지에서 3종 AI 에이전트가 일하는 모습을 게임처럼 보여주는 Pixi.js 씬.
-TileMapRoom 타일맵 배경 + FolkCharacter (32px ai-town 스타일) 결합.
+Stanford Generative Agents 마을 타일맵 (the_ville, 140×100 타일) + FolkCharacter (32px) 결합.
 
-### 씬 구성
-
-```
-┌──────────┐  ┌──────┐  ┌──────────┐  ┌─────────┐
-│ 분석실    │  │ 복도 │  │ 홍보실    │  │안내데스크│
-│ Claude   │──│      │──│ Heimi    │──│  Ali    │
-└──────────┘  └──────┘  └──────────┘  └─────────┘
-```
-
-- 탑다운 뷰, 타일맵 배경 (TileMapRoom, Graphics 폴백)
-- FolkCharacter 32px, 방 안 미니 패트롤
-- 퀘스트 보드: BullMQ 큐 대기 수를 실시간 표시
+- 탑다운 뷰, Tiled JSON 멀티타일셋 배경 (18개 타일셋, 10개 시각 레이어)
+- FolkCharacter 32px, 마을 내 패트롤
+- 카메라 드래그 지원 (마을 전체 탐색)
 - 실시간 에이전트 활동 폴링 (15초 간격)
-
-### 큐 → 에이전트 매핑 (퀘스트 보드)
-
-| Agent | agentId | 관련 큐 |
-|---|---|---|
-| 탐정 클로드 | `image-matching` | `image-processing`, `matching` |
-| 홍보왕 헤르미 | `promotion` | `promotion`, `promotion-repost`, `outreach` |
-| 안내봇 알리 | `chatbot-alert` | `notification`, `qa-crawl` |
+- Graphics 폴백 (타일맵 로드 실패 시 오피스 스타일)
 
 ### 데이터 흐름
 
 ```
 useAgentActivity (15초 폴링)
   → GET /api/community/agent-activity?since=<ISO>
-  → agents[].queuePending → 퀘스트 보드 대기 건수 갱신
+  → agents[].queuePending → 퀘스트 트리거
   → agents[].todayDecisions → 오늘 완료 건수
   → pendingEventsRef → Pixi ticker에서 퀘스트 애니메이션 트리거
-  → queuePending > 0인 idle 에이전트 → 보드 이동 → 작업 애니메이션
 ```
 
 ### 렌더링 레이어 순서
 
 ```
-roomLayer  → 타일맵 배경
-boardLayer → 퀘스트 보드 (캐릭터보다 아래)
+roomLayer  → 타일맵 배경 (TiledMapRenderer / AgentRoom 폴백)
 charLayer  → FolkCharacter × 3
 uiLayer    → 이름 태그 + 말풍선 + 작업 아이콘
 ```
@@ -1007,10 +1042,11 @@ GET    /api/community/agent-activity   에이전트 활동 (공개, optionalAuth
 
 | 파일 | 역할 |
 |------|------|
-| `apps/web/src/components/AgentActivityScene.tsx` | 메인 Pixi 씬 + 퀘스트 보드 |
+| `apps/web/src/components/AgentActivityScene.tsx` | 메인 Pixi 씬 |
 | `apps/web/src/components/AgentActivityOverlay.tsx` | HTML 통계 오버레이 |
 | `apps/web/src/hooks/useAgentActivity.ts` | 15초 폴링 훅 |
-| `packages/pixi-scenes/src/game/TileMapRoom.ts` | 타일맵 렌더러 |
+| `packages/pixi-scenes/src/game/TiledMapRenderer.ts` | Tiled JSON 멀티타일셋 렌더러 |
+| `packages/pixi-scenes/src/game/AgentRoom.ts` | 오피스 Graphics 폴백 |
 | `packages/pixi-scenes/src/game/FolkCharacter.ts` | 32px 캐릭터 |
 | `apps/api/src/routes/community.ts` | agent-activity 엔드포인트 + 큐 stats |
 | `packages/shared/src/types.ts` | AgentActivityResponse 타입 |

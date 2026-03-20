@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Application, Graphics, Text, TextStyle, Container, ColorMatrixFilter } from 'pixi.js';
+import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
 import type { AgentActivityAgent, AgentActivity, AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { drawTileScene, tileToPx, tileRoomCenter, centerCamera, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
+import { computeLayout, drawScene, roomCenter, tileToPixel, type RoomLayout, drawTiledScene, tiledRoomCenter, centerTiledCamera, setupTiledDrag, type TiledSceneLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
 // ── 에이전트 설정 (FolkCharacter 32px) ──
@@ -42,26 +42,6 @@ interface SceneLayout {
   tileSize: number;
 }
 
-function tileLayout(l: TileRoomLayout): SceneLayout {
-  const td = l.tileDim;
-  return {
-    getCenter: (k) => tileRoomCenter(k, l),
-    getRoomBounds: (k) => {
-      const r = l.rooms[k];
-      const pos = tileToPx(r.x, r.y, l);
-      const s = td * l.scale;
-      return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
-    },
-    getVisibleBounds: () => ({
-      x: -l.world.x,
-      y: -l.world.y,
-      w: l.viewportW,
-      h: l.viewportH,
-    }),
-    tileSize: td * l.scale,
-  };
-}
-
 function graphicsLayout(l: RoomLayout): SceneLayout {
   const s = l.scale * 16;
   return {
@@ -73,6 +53,25 @@ function graphicsLayout(l: RoomLayout): SceneLayout {
     },
     getVisibleBounds: () => ({ x: 0, y: 0, w: l.sceneW, h: l.sceneH }),
     tileSize: s,
+  };
+}
+
+function tiledLayout(l: TiledSceneLayout): SceneLayout {
+  const td = l.tileDim;
+  return {
+    getCenter: (k) => tiledRoomCenter(k, l),
+    getRoomBounds: (k) => {
+      const r = l.rooms[k];
+      if (!r) return { x: 0, y: 0, w: td * 10, h: td * 10 };
+      return { x: r.x * td, y: r.y * td, w: r.w * td, h: r.h * td };
+    },
+    getVisibleBounds: () => ({
+      x: -l.world.x,
+      y: -l.world.y,
+      w: l.viewportW,
+      h: l.viewportH,
+    }),
+    tileSize: td,
   };
 }
 
@@ -212,23 +211,17 @@ export default function AgentActivityScene() {
 
         // ── 배경 (타일맵 우선, 실패 시 Graphics fallback) ──
         const roomLayer = new Container();
-        const desatFilter = new ColorMatrixFilter();
-        desatFilter.saturate(-0.55, false);
-        desatFilter.brightness(1.15, false);
-        roomLayer.filters = [desatFilter];
         app.stage.addChild(roomLayer);
 
         let scene: SceneLayout;
         let worldContainer: Container | null = null;
         try {
-          const tl = await drawTileScene(roomLayer, W, H);
-          scene = tileLayout(tl);
+          const tl = await drawTiledScene(roomLayer, W, H);
+          scene = tiledLayout(tl);
           worldContainer = tl.world;
-          // 카메라를 heimi(중앙) 캐릭터 위치에 맞춤
-          const heimiCenter = tileRoomCenter('heimi', tl);
-          centerCamera(heimiCenter.x, heimiCenter.y, tl);
-          // 드래그를 app.stage에 바인딩 (캐릭터/UI 위에서도 동작)
-          setupDrag(tl.world, tl, app.stage);
+          const heimiCenter = tiledRoomCenter('heimi', tl);
+          centerTiledCamera(heimiCenter.x, heimiCenter.y, tl);
+          setupTiledDrag(tl.world, tl, app.stage);
         } catch {
           const gl = computeLayout(W, H);
           drawScene(roomLayer, gl);
@@ -260,9 +253,7 @@ export default function AgentActivityScene() {
         // 캐릭터/UI를 world 컨테이너 안에 배치 (카메라 이동 시 함께 움직임)
         const parentContainer = worldContainer ?? app.stage;
 
-        // 보드 레이어 (캐릭터보다 아래)
-        const boardLayer = new Container();
-        parentContainer.addChild(boardLayer);
+        // (보드 제거됨)
 
         const charLayer = new Container();
         parentContainer.addChild(charLayer);
@@ -470,66 +461,7 @@ export default function AgentActivityScene() {
           }, duration * 1000);
         };
 
-        // ── 퀘스트 보드 — claude 방 왼쪽 상단 (텐트 아래 빈 공간) ──
-        const claudeBounds = scene.getRoomBounds('claude');
-        const boardPx = { x: claudeBounds.x + scene.tileSize * 2, y: claudeBounds.y + scene.tileSize * 3 };
-        const board = new Container();
-        board.position.set(boardPx.x, boardPx.y);
-
-        // 픽셀아트 스타일 게시판 (나무 프레임 + 양피지 배경)
-        const bw = 160, bh = 100;
-        const boardBg = new Graphics();
-        // 나무 기둥 2개
-        boardBg.rect(-bw/2 + 8, -4, 6, bh + 12).fill(0x6b4226);
-        boardBg.rect(bw/2 - 14, -4, 6, bh + 12).fill(0x6b4226);
-        // 나무 프레임 (바깥)
-        boardBg.rect(-bw/2, 0, bw, bh).fill(0x8B5E3C);
-        // 양피지 (안쪽)
-        boardBg.rect(-bw/2 + 4, 4, bw - 8, bh - 8).fill(0xF5E6C8);
-        // 나무 프레임 상단 장식
-        boardBg.rect(-bw/2 - 2, -2, bw + 4, 6).fill(0x6b4226);
-        boardBg.rect(-bw/2 - 2, bh - 2, bw + 4, 6).fill(0x6b4226);
-        // 못 장식 (4 corners)
-        boardBg.circle(-bw/2 + 8, 6, 2).fill(0x888888);
-        boardBg.circle(bw/2 - 8, 6, 2).fill(0x888888);
-        boardBg.circle(-bw/2 + 8, bh - 6, 2).fill(0x888888);
-        boardBg.circle(bw/2 - 8, bh - 6, 2).fill(0x888888);
-        board.addChild(boardBg);
-
-        const boardTitleStyle = new TextStyle({
-          fontSize: 9, fontFamily: '"Press Start 2P", monospace', fill: 0x5a3010, fontWeight: 'bold', align: 'center',
-        });
-        const boardTitle = new Text({ text: '📋 QUEST BOARD', style: boardTitleStyle });
-        boardTitle.anchor.set(0.5, 0); boardTitle.position.set(0, 10);
-        board.addChild(boardTitle);
-
-        const boardBodyStyle = new TextStyle({
-          fontSize: 8, fontFamily: '"Press Start 2P", monospace', fill: 0x4a3520, lineHeight: 14, align: 'left',
-        });
-        const boardBody = new Text({ text: '', style: boardBodyStyle });
-        boardBody.anchor.set(0.5, 0); boardBody.position.set(0, 26);
-        board.addChild(boardBody);
-        boardLayer.addChild(board);
-
-        const updateBoard = () => {
-          const cur = agentsRef.current;
-          const pending = AGENT_CONFIGS.map((cfg) => {
-            const a = cur.find((ag) => ag.agentId === cfg.id);
-            return a?.queuePending ?? 0;
-          });
-          const completed = cur.reduce((sum, a) => sum + a.todayDecisions, 0);
-          const lines = [
-            `🔍 사진 분석 대기: ${pending[0]}건`,
-            `📣 SNS 홍보 대기: ${pending[1]}건`,
-            `📋 제보 안내 대기: ${pending[2]}건`,
-            ``,
-            `✅ 오늘 완료: ${completed}건`,
-          ];
-          boardBody.text = lines.join('\n');
-        };
-        updateBoard();
-
-        // ── 보드 갱신 + 큐 기반 퀘스트 트리거 ──
+        // ── 큐 기반 퀘스트 트리거 ──
         let boardCheckTimer = randBetween(5, 10);
 
         // 이동 헬퍼
@@ -558,7 +490,6 @@ export default function AgentActivityScene() {
           // ── 보드 갱신 + 활동 피드 동기화 + 퀘스트 트리거 ──
           boardCheckTimer -= dt;
           if (boardCheckTimer <= 0) {
-            updateBoard();
             const cur = agentsRef.current;
 
             // 활동 피드 동기화: recentActivities → activityQueue
@@ -617,11 +548,10 @@ export default function AgentActivityScene() {
             // ── 퀘스트 상태 머신 ──
             switch (state.questPhase) {
               case 'going_to_board': {
-                if (moveToward(state, boardPx.x, boardPx.y + 40, dt)) {
-                  state.questPhase = 'at_board';
-                  state.questTimer = 1.5;
-                  showBubble(state, '📋 퀘스트 확인 중...', 1.5);
-                }
+                // 보드 제거됨 — 즉시 작업 시작
+                state.questPhase = 'at_board';
+                state.questTimer = 1.5;
+                showBubble(state, '📋 퀘스트 확인 중...', 1.5);
                 break;
               }
               case 'at_board': {
@@ -657,7 +587,6 @@ export default function AgentActivityScene() {
                   const doneItem = state.activityQueue.shift();
                   const doneMsg = doneItem?.description ?? quests[state.questIdx].done;
                   showBubble(state, doneMsg, 3);
-                  updateBoard();
                 }
                 break;
               }

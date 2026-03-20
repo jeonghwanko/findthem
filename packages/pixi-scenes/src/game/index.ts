@@ -16,3 +16,11 @@ export {
   setupDrag,
   type TileRoomLayout,
 } from './TileMapRoom';
+export {
+  drawTiledScene,
+  tiledToPx,
+  tiledRoomCenter,
+  centerTiledCamera,
+  setupTiledDrag,
+  type TiledSceneLayout,
+} from './TiledMapRenderer';
