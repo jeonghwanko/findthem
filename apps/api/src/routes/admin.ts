@@ -41,6 +41,7 @@ import { config } from '../config.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES, ADMIN_AGENT_IDS, OUTREACH_REQUEST_STATUS_VALUES, OUTREACH_CONTACT_TYPE_VALUES, AI_PROVIDER_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAiSettings, updateAiSetting, getApiKeyStatuses, saveApiKey, testApiKey } from '../services/aiConfigService.js';
+import { isCronEnabled, getCronIntervalHours, invalidateSettingsCache, type CronJobKey } from '../ai/aiSettings.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('adminRoutes');
@@ -957,6 +958,65 @@ export function registerAdminRoutes(router: Router) {
     provider: z.string().optional(),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(200).default(50),
+  });
+
+  // ── Cron Settings ──
+
+  const CRON_JOB_KEYS: CronJobKey[] = ['crawl-scheduler', 'qa-crawl', 'promotion-repost'];
+
+  const cronSettingUpdateSchema = z.object({
+    jobKey: z.enum(['crawl-scheduler', 'qa-crawl', 'promotion-repost']),
+    enabled: z.boolean().optional(),
+    interval: z.number().int().min(1).max(168).optional(), // 1~168시간 (최대 7일)
+  });
+
+  // GET /admin/cron-settings
+  router.get('/admin/cron-settings', requireAdmin, async (_req, res) => {
+    const settings = await Promise.all(
+      CRON_JOB_KEYS.map(async (jobKey) => ({
+        jobKey,
+        enabled: await isCronEnabled(jobKey),
+        interval: await getCronIntervalHours(jobKey),
+      })),
+    );
+    res.json({ settings });
+  });
+
+  // PUT /admin/cron-settings
+  router.put('/admin/cron-settings', requireAdmin, validateBody(cronSettingUpdateSchema), async (req, res) => {
+    const { jobKey, enabled, interval } = req.body as z.infer<typeof cronSettingUpdateSchema>;
+
+    if (enabled !== undefined) {
+      await prisma.aiSetting.upsert({
+        where: { key: `cron:${jobKey}:enabled` },
+        create: { key: `cron:${jobKey}:enabled`, value: String(enabled) },
+        update: { value: String(enabled) },
+      });
+    }
+
+    if (interval !== undefined) {
+      await prisma.aiSetting.upsert({
+        where: { key: `cron:${jobKey}:interval` },
+        create: { key: `cron:${jobKey}:interval`, value: String(interval) },
+        update: { value: String(interval) },
+      });
+    }
+
+    invalidateSettingsCache();
+
+    await createAuditLog({
+      action: 'cron.setting.update',
+      targetType: 'AiSetting',
+      targetId: jobKey,
+      detail: { jobKey, enabled, interval },
+      source: 'DASHBOARD' as AdminActionSource,
+    });
+
+    res.json({
+      jobKey,
+      enabled: await isCronEnabled(jobKey),
+      interval: await getCronIntervalHours(jobKey),
+    });
   });
 
   // GET /admin/ai/settings

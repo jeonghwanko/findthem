@@ -5,13 +5,15 @@ import { createWorker, qaCrawlQueue, type QaCrawlJobData } from './queues.js';
 import { qaFetchers } from './crawl/qa/qaFetcherRegistry.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
+import { isCronEnabled, getCronIntervalHours } from '../ai/aiSettings.js';
 import { answerQuestionWithAgents } from '../services/qaAgentAnswerService.js';
 import { dispatchWebhookToAll } from '../services/webhookDispatcher.js';
 import type { WebhookPayload } from '../services/webhookDispatcher.js';
 
 const log = createLogger('qaCrawlJob');
 
-const QA_CRAWL_CRON = '0 */4 * * *'; // 4시간마다
+// 고정 cron: 매시간 정각 트리거. enabled/interval은 job 실행 시 DB 설정으로 동적 판단
+const QA_CRAWL_CRON = '0 * * * *';
 const MAX_WEBHOOK_CONTENT = 500;
 
 /**
@@ -48,6 +50,32 @@ function startQaCrawlWorker() {
   return createWorker<QaCrawlJobData>(
     QUEUE_NAMES.QA_CRAWL,
     async (job) => {
+      // enabled 체크 — 관리자가 off 설정 시 즉시 skip (수동 트리거는 항상 실행)
+      if (job.data.triggeredBy !== 'manual') {
+        const enabled = await isCronEnabled('qa-crawl');
+        if (!enabled) {
+          log.info('Q&A crawl cron disabled, skipping');
+          return;
+        }
+
+        // interval 체크 — 마지막 실행으로부터 설정된 시간이 지나지 않았으면 skip
+        const intervalH = await getCronIntervalHours('qa-crawl');
+        const lastRunRow = await prisma.aiSetting.findUnique({ where: { key: 'cron:qa-crawl:last-run' } });
+        if (lastRunRow?.value) {
+          const elapsedMs = Date.now() - new Date(lastRunRow.value).getTime();
+          if (elapsedMs < intervalH * 3_600_000) {
+            log.info({ intervalH, elapsedH: (elapsedMs / 3_600_000).toFixed(1) }, 'Q&A crawl interval not reached, skipping');
+            return;
+          }
+        }
+
+        await prisma.aiSetting.upsert({
+          where: { key: 'cron:qa-crawl:last-run' },
+          create: { key: 'cron:qa-crawl:last-run', value: new Date().toISOString() },
+          update: { value: new Date().toISOString() },
+        });
+      }
+
       const targetSources = job.data.sources ?? qaFetchers.map((f) => f.source);
       log.info({ sources: targetSources, triggeredBy: job.data.triggeredBy }, 'Starting Q&A crawl');
 

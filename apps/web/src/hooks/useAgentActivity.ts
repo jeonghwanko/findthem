@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AgentActivityResponse, AgentActivityAgent, AgentActivityEvent } from '@findthem/shared';
 import { api } from '../api/client';
 
-const POLL_INTERVAL = 15_000;
+const POLL_INTERVAL = 60_000;
 const MAX_BUFFER_SIZE = 50;
 
 export interface UseAgentActivityResult {

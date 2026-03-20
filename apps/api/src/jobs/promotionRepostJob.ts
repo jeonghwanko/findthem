@@ -4,10 +4,37 @@ import { prisma } from '../db/client.js';
 import { createWorker, promotionQueue, promotionRepostQueue, type PromotionRepostJobData } from './queues.js';
 import { QUEUE_NAMES } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { isCronEnabled, getCronIntervalHours } from '../ai/aiSettings.js';
 
 const log = createLogger('promotionRepostJob');
 
 async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
+  // enabled 체크 — 관리자가 off 설정 시 즉시 skip (수동 트리거는 항상 실행)
+  if (job.data.reason !== 'manual') {
+    const enabled = await isCronEnabled('promotion-repost');
+    if (!enabled) {
+      log.info('Promotion repost cron disabled, skipping');
+      return;
+    }
+
+    // interval 체크 — 마지막 실행으로부터 설정된 시간이 지나지 않았으면 skip
+    const intervalH = await getCronIntervalHours('promotion-repost');
+    const lastRunRow = await prisma.aiSetting.findUnique({ where: { key: 'cron:promotion-repost:last-run' } });
+    if (lastRunRow?.value) {
+      const elapsedMs = Date.now() - new Date(lastRunRow.value).getTime();
+      if (elapsedMs < intervalH * 3_600_000) {
+        log.info({ intervalH, elapsedH: (elapsedMs / 3_600_000).toFixed(1) }, 'Promotion repost interval not reached, skipping');
+        return;
+      }
+    }
+
+    await prisma.aiSetting.upsert({
+      where: { key: 'cron:promotion-repost:last-run' },
+      create: { key: 'cron:promotion-repost:last-run', value: new Date().toISOString() },
+      update: { value: new Date().toISOString() },
+    });
+  }
+
   const { reason, platforms, regenerateContent } = job.data;
 
   log.info({ reason }, 'Repost scan started');
@@ -114,7 +141,8 @@ async function processPromotionRepostJob(job: Job<PromotionRepostJobData>) {
   log.info({ enqueued }, 'Repost scan complete');
 }
 
-const REPOST_CRON = '0 7,19 * * *'; // 07:00, 19:00 KST
+// 고정 cron: 매시간 정각 트리거. enabled/interval은 job 실행 시 DB 설정으로 동적 판단
+const REPOST_CRON = '0 * * * *';
 
 export function startPromotionRepostWorker() {
   log.info('Promotion repost worker started');
@@ -123,7 +151,7 @@ export function startPromotionRepostWorker() {
   });
 }
 
-/** 서버 시작 시 리포스트 크론 등록 (12시간마다 자동 스캔) */
+/** 서버 시작 시 리포스트 크론 등록 */
 export async function schedulePromotionRepostJob() {
   const existingJobs = await promotionRepostQueue.getRepeatableJobs();
   for (const job of existingJobs) {

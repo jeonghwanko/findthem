@@ -6,11 +6,12 @@ import type { ExternalReport } from './crawl/types.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
-import { isPersonCrawlEnabled } from '../ai/aiSettings.js';
+import { isPersonCrawlEnabled, isCronEnabled, getCronIntervalHours } from '../ai/aiSettings.js';
 
 const log = createLogger('crawl');
 
-const CRAWL_CRON = '0 */6 * * *';
+// 고정 cron: 매시간 정각 트리거. enabled/interval은 job 실행 시 DB 설정으로 동적 판단
+const CRAWL_CRON = '0 * * * *';
 
 // ── Dispatcher Worker ──
 // crawl-dispatch job: 등록된 모든 Fetcher를 소스별 job으로 분산
@@ -19,6 +20,33 @@ function startCrawlSchedulerWorker() {
   return createWorker<CrawlDispatchJobData>(
     QUEUE_NAMES.CRAWL_SCHEDULER,
     async (job) => {
+      // enabled 체크 — 관리자가 off 설정 시 즉시 skip
+      const enabled = await isCronEnabled('crawl-scheduler');
+      if (!enabled) {
+        log.info('Crawl cron disabled, skipping');
+        return;
+      }
+
+      // interval 체크 — 마지막 실행으로부터 설정된 시간이 지나지 않았으면 skip
+      const intervalH = await getCronIntervalHours('crawl-scheduler');
+      const lastRunRow = await prisma.aiSetting.findUnique({ where: { key: 'cron:crawl-scheduler:last-run' } });
+      if (lastRunRow?.value) {
+        const elapsedMs = Date.now() - new Date(lastRunRow.value).getTime();
+        if (elapsedMs < intervalH * 3_600_000) {
+          log.info({ intervalH, elapsedH: (elapsedMs / 3_600_000).toFixed(1) }, 'Crawl interval not reached, skipping');
+          return;
+        }
+      }
+
+      // 마지막 실행 시간 갱신 (수동 트리거 job.data.sources 있으면 last-run 갱신 생략)
+      if (!job.data.sources) {
+        await prisma.aiSetting.upsert({
+          where: { key: 'cron:crawl-scheduler:last-run' },
+          create: { key: 'cron:crawl-scheduler:last-run', value: new Date().toISOString() },
+          update: { value: new Date().toISOString() },
+        });
+      }
+
       const targetSources = job.data.sources ?? fetchers.map((f) => f.source);
       log.info({ sources: targetSources }, 'Dispatching crawl jobs');
 

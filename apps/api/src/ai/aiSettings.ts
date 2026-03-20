@@ -80,6 +80,30 @@ export async function isPersonCrawlEnabled(): Promise<boolean> {
   return settings.get('crawl:enable-person') === 'true';
 }
 
+// ── 크론 설정 ──
+
+export type CronJobKey = 'crawl-scheduler' | 'qa-crawl' | 'promotion-repost';
+
+const CRON_DEFAULT_INTERVAL: Record<CronJobKey, number> = {
+  'crawl-scheduler': 24,
+  'qa-crawl': 24,
+  'promotion-repost': 24,
+};
+
+/** 크론 잡 활성화 여부 (기본 false) */
+export async function isCronEnabled(jobKey: CronJobKey): Promise<boolean> {
+  const settings = await getCachedSettings();
+  return settings.get(`cron:${jobKey}:enabled`) === 'true';
+}
+
+/** 크론 잡 실행 간격(시간 단위, 기본 24) */
+export async function getCronIntervalHours(jobKey: CronJobKey): Promise<number> {
+  const settings = await getCachedSettings();
+  const raw = settings.get(`cron:${jobKey}:interval`);
+  const parsed = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : CRON_DEFAULT_INTERVAL[jobKey];
+}
+
 /** provider에 대한 API 키 반환. DB에 저장된 키가 있으면 우선, 없으면 환경 변수 fallback */
 export async function getApiKey(provider: string): Promise<string> {
   const settings = await getCachedSettings();
