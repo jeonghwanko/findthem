@@ -6,3 +6,9 @@ export {
   tileToPixel,
   type RoomLayout,
 } from './AgentRoom';
+export {
+  drawTileScene,
+  tileToPx,
+  tileRoomCenter,
+  type TileRoomLayout,
+} from './TileMapRoom';

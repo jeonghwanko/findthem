@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Application, Graphics, Text, TextStyle, Container, extensions } from 'pixi.js';
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import type { AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { computeLayout, drawScene, roomCenter, tileToPixel } from '@findthem/pixi-scenes/game';
+import { drawTileScene, tileToPx, tileRoomCenter } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
 extensions.add(SpinePipe);
@@ -146,11 +146,11 @@ export default function AgentActivityScene() {
 
         await document.fonts.ready;
 
-        // ── 방 배경 ──
-        const layout = computeLayout(W, H);
+        // ── 타일맵 배경 ──
         const roomLayer = new Container();
         app.stage.addChild(roomLayer);
-        drawScene(roomLayer, layout);
+        const layout = await drawTileScene(roomLayer, W, H);
+        if (destroyed) return;
 
         if (!destroyed) setPhase('loading');
 
@@ -182,7 +182,7 @@ export default function AgentActivityScene() {
         // ── 에이전트 상태 초기화 ──
         const agentStates: AgentState[] = AGENT_SPINE_CONFIGS.map((cfg, i) => {
           const char = chars[i];
-          const center = roomCenter(cfg.roomKey, layout);
+          const center = tileRoomCenter(cfg.roomKey, layout);
           char.setScale(cfg.scale);
           char.setPosition(center.x, center.y);
           charLayer.addChild(char.view);
@@ -327,8 +327,8 @@ export default function AgentActivityScene() {
               if (state.patrolTimer <= 0) {
                 // 방 안 랜덤 위치로 이동
                 const room = layout.rooms[cfg.roomKey];
-                const s = layout.scale * 16;
-                const { x: rx, y: ry } = tileToPixel(room.x, room.y, layout);
+                const s = 48 * layout.scale; // 타일 크기 × 스케일
+                const { x: rx, y: ry } = tileToPx(room.x, room.y, layout);
                 const margin = s * 0.8;
                 state.targetX = clamp(
                   rx + margin + Math.random() * (room.w * s - margin * 2),
