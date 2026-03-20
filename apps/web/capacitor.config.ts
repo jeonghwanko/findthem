@@ -6,6 +6,14 @@ const config: CapacitorConfig = {
   appId: 'gg.pryzm.union',
   appName: 'FindThem',
   webDir: 'dist',
+  ios: {
+    // AdMob 제외 (iOS 13 지원 위해 — AdMob은 iOS 16+ 필요)
+    includePlugins: [
+      '@capacitor/keyboard',
+      '@capacitor/splash-screen',
+      '@capacitor/status-bar',
+    ],
+  },
   ...(useRemoteServer && {
     server: {
       url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://union.pryzm.gg',
