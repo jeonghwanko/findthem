@@ -5,7 +5,7 @@
   "nav": {
     "home": "홈",
     "sighting": "제보",
-    "browse": "탐정",
+    "browse": "전체 목록",
     "devlog": "데브로그",
     "team": "AI 탐정",
     "myReports": "내 신고",
@@ -592,7 +592,7 @@
     "start": "게임 시작",
     "startWithAd": "광고 보고 시작",
     "limitReached": "오늘 무료 플레이 횟수를 모두 사용했어요",
-    "watchAd": "광고 보고 1판 더 하기",
+    "watchAd": "광고 보고 2판 더 하기",
     "adLoading": "광고 불러오는 중...",
     "back": "돌아가기",
     "characters": {
@@ -614,7 +614,7 @@
       "character": "선택한 캐릭터",
       "saving": "기록 저장 중...",
       "playAgain": "한 판 더",
-      "playAgainWithAd": "광고 보고 1판 더 하기",
+      "playAgainWithAd": "광고 보고 다시 하기",
       "noPlays": "오늘 플레이 횟수를 모두 사용했어요. 내일 다시 도전하세요!",
       "goHome": "홈으로 돌아가기"
     }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
+import { Application, Graphics, Text, TextStyle, Container, ColorMatrixFilter } from 'pixi.js';
 import type { AgentActivityAgent, AgentActivity, AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
 import { drawTileScene, tileToPx, tileRoomCenter, centerCamera, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
@@ -212,6 +212,10 @@ export default function AgentActivityScene() {
 
         // ── 배경 (타일맵 우선, 실패 시 Graphics fallback) ──
         const roomLayer = new Container();
+        const desatFilter = new ColorMatrixFilter();
+        desatFilter.saturate(-0.55, false);
+        desatFilter.brightness(1.15, false);
+        roomLayer.filters = [desatFilter];
         app.stage.addChild(roomLayer);
 
         let scene: SceneLayout;

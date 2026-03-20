@@ -164,7 +164,7 @@ export default function GamePage() {
         setLocalPlays(rec);
         setLocalPlaysState({ ...rec });
       }
-      setAdGranted(false);
+      // adGranted 유지 — 광고 1번으로 remainingAd 전부 해금
     } catch {
       // silent
     } finally {

@@ -5,7 +5,7 @@
   "nav": {
     "home": "ホーム",
     "sighting": "情報提供",
-    "browse": "探偵",
+    "browse": "一覧",
     "devlog": "開発ブログ",
     "team": "AI探偵",
     "myReports": "マイ届出",
@@ -591,7 +591,7 @@
     "start": "ゲーム開始",
     "startWithAd": "広告後に開始",
     "limitReached": "今日の無料プレイ回数を使い切りました",
-    "watchAd": "広告を見てもう1回",
+    "watchAd": "広告を見てあと2回プレイ",
     "adLoading": "広告読み込み中...",
     "back": "戻る",
     "characters": {
@@ -613,7 +613,7 @@
       "character": "選択キャラクター",
       "saving": "記録保存中...",
       "playAgain": "もう一回",
-      "playAgainWithAd": "広告を見てもう一回",
+      "playAgainWithAd": "広告を見てもう一度",
       "noPlays": "今日のプレイ回数を使い切りました。明日また挑戦してください！",
       "goHome": "ホームへ戻る"
     }

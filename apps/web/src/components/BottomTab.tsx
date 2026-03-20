@@ -15,7 +15,7 @@ export default function BottomTab({ user }: BottomTabProps) {
 
   const tabs: { to: string; label: string; Icon: LucideIcon; match: (p: string) => boolean }[] = [
     { to: '/', label: t('nav.home'), Icon: Home, match: (p) => p === '/' },
-    { to: '/team', label: t('nav.browse'), Icon: Search, match: (p) => p.startsWith('/team') || p.startsWith('/browse') },
+    { to: '/team', label: t('nav.team'), Icon: Search, match: (p) => p.startsWith('/team') },
     { to: '/sightings/new', label: t('nav.sighting'), Icon: Camera, match: (p) => p === '/sightings/new' },
     { to: '/community', label: t('nav.community'), Icon: MessageCircle, match: (p) => p.startsWith('/community') },
     { to: user ? '/profile' : '/login', label: user ? t('nav.profile') : t('nav.login'), Icon: UserIcon, match: (p) => p === '/profile' || (!user && p === '/login') },

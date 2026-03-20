@@ -5,7 +5,7 @@
   "nav": {
     "home": "Home",
     "sighting": "Report",
-    "browse": "Detective",
+    "browse": "Browse All",
     "devlog": "Dev Blog",
     "team": "AI Detective",
     "myReports": "My Reports",
@@ -592,7 +592,7 @@
     "start": "Start Game",
     "startWithAd": "Start (Ad watched)",
     "limitReached": "You've used all your free plays today",
-    "watchAd": "Watch an ad to play again",
+    "watchAd": "Watch ad for 2 more plays",
     "adLoading": "Loading ad...",
     "back": "Go back",
     "characters": {
@@ -614,7 +614,7 @@
       "character": "Character played",
       "saving": "Saving record...",
       "playAgain": "Play Again",
-      "playAgainWithAd": "Watch Ad 0026 Play Again",
+      "playAgainWithAd": "Watch Ad & Play Again",
       "noPlays": "No more plays left today. Come back tomorrow!",
       "goHome": "Back to Home"
     }

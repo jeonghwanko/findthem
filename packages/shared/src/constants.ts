@@ -289,10 +289,10 @@ export const LEVEL_REWARDS: Record<number, { type: string; value: string; label:
 // ── 게임 ──
 
 /** 일일 무료 플레이 횟수 */
-export const MAX_FREE_PLAYS_PER_DAY = 3;
+export const MAX_FREE_PLAYS_PER_DAY = 1;
 
 /** 광고 시청으로 추가 가능한 최대 플레이 횟수/일 */
-export const MAX_AD_PLAYS_PER_DAY = 5;
+export const MAX_AD_PLAYS_PER_DAY = 2;
 
 /** 점수 1점당 적립 XP (나중에 XP 지급 시 사용) */
 export const XP_PER_GAME_SCORE = 1;
