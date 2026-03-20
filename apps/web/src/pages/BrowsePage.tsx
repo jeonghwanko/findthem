@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Gamepad2 } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type Sighting, type SightingListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import SightingCard from '../components/SightingCard';
@@ -162,7 +163,16 @@ export default function BrowsePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
+      <div className="flex items-start justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t('browse.title')}</h1>
+        <Link
+          to="/game"
+          className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-6 py-4"
+        >
+          <Gamepad2 className="w-7 h-7 drop-shadow-sm" aria-hidden="true" />
+          <span className="text-sm">{t('home.playToSponsor')}</span>
+        </Link>
+      </div>
 
       {/* 필터 영역 */}
       <div className="space-y-3 mb-6">
@@ -303,6 +313,7 @@ export default function BrowsePage() {
           )}
         </>
       )}
+
     </div>
   );
 }

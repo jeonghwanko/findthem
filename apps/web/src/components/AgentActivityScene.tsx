@@ -67,6 +67,28 @@ function graphicsLayout(l: RoomLayout): SceneLayout {
   };
 }
 
+// ── 퀘스트 페이즈 ──
+type QuestPhase = 'idle' | 'going_to_board' | 'at_board' | 'going_to_work' | 'working' | 'complete';
+
+// ── 더미 퀘스트 텍스트 ──
+const DUMMY_QUESTS: Record<string, { working: string; done: string }[]> = {
+  'image-matching': [
+    { working: '🔍 사진 분석 중... 87%', done: '✅ 매칭 완료! 유사도 92%' },
+    { working: '🔍 특징 추출 중...', done: '✅ 분석 완료! 3건 매칭' },
+    { working: '🔍 이미지 비교 중...', done: '✅ 후보 5건 발견!' },
+  ],
+  promotion: [
+    { working: '📣 홍보글 작성 중...', done: '✅ 트위터 게시 완료!' },
+    { working: '📣 카카오 채널 전송 중...', done: '✅ 카카오 홍보 완료!' },
+    { working: '📣 해시태그 생성 중...', done: '✅ SNS 확산 시작!' },
+  ],
+  'chatbot-alert': [
+    { working: '📋 제보 접수 확인 중...', done: '✅ 신고자에게 알림 발송!' },
+    { working: '📋 위치 정보 분석 중...', done: '✅ 목격 지역 등록 완료!' },
+    { working: '📋 챗봇 응답 생성 중...', done: '✅ 안내 메시지 전송!' },
+  ],
+};
+
 // ── 에이전트 상태 ──
 interface AgentState {
   char: import('@findthem/pixi-scenes/game').FolkCharacter;
@@ -82,12 +104,14 @@ interface AgentState {
   targetX: number;
   targetY: number;
   speed: number;
-  isWorking: boolean;
-  workTimer: number;
   idleTimer: number;
   bubbleAlpha: number;
   bubbleShowTimer: number;
   patrolTimer: number;
+  // 퀘스트 시스템
+  questPhase: QuestPhase;
+  questTimer: number;
+  questIdx: number; // DUMMY_QUESTS 인덱스
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -147,7 +171,6 @@ export default function AgentActivityScene() {
 
     const tr = tRef.current;
     let destroyed = false;
-    const pendingTimers: number[] = [];
     const app = new Application();
 
     void (async () => {
@@ -212,6 +235,10 @@ export default function AgentActivityScene() {
 
         // 캐릭터/UI를 world 컨테이너 안에 배치 (카메라 이동 시 함께 움직임)
         const parentContainer = worldContainer ?? app.stage;
+
+        // 보드 레이어 (캐릭터보다 아래)
+        const boardLayer = new Container();
+        parentContainer.addChild(boardLayer);
 
         const charLayer = new Container();
         parentContainer.addChild(charLayer);
@@ -292,17 +319,15 @@ export default function AgentActivityScene() {
             targetX: center.x,
             targetY: center.y,
             speed: 30,
-            isWorking: false,
-            workTimer: 0,
             idleTimer: randBetween(5, 12),
             bubbleAlpha: 0,
             bubbleShowTimer: 0,
             patrolTimer: randBetween(4, 10),
+            questPhase: 'idle',
+            questTimer: 0,
+            questIdx: 0,
           };
         });
-
-        // 이벤트 큐 (Pixi ticker에서 소비)
-        const eventQueueRef = pendingEventsRef;
 
         // 말풍선 배경 갱신
         const refreshBubbleBg = (state: AgentState) => {
@@ -322,95 +347,210 @@ export default function AgentActivityScene() {
           state.bubbleAlpha = 1;
         };
 
-        // 에이전트 ID → 인덱스
-        const agentIdxMap: Record<string, number> = {
-          'image-matching': 0,
-          'promotion': 1,
-          'chatbot-alert': 2,
+        // ── 퀘스트 보드 — ali 방 오른쪽 아래에 배치 (중앙 가림 방지) ──
+        const aliCenter = scene.getCenter('ali');
+        const aliBounds = scene.getRoomBounds('ali');
+        const boardPx = { x: aliBounds.x + aliBounds.w - scene.tileSize * 2, y: aliCenter.y - scene.tileSize * 2 };
+        const boardStats = { pending: [2, 1, 1], completed: 0 }; // 에이전트별 대기
+
+        const board = new Container();
+        board.position.set(boardPx.x, boardPx.y);
+
+        // 픽셀아트 스타일 게시판 (나무 프레임 + 양피지 배경)
+        const bw = 160, bh = 100;
+        const boardBg = new Graphics();
+        // 나무 기둥 2개
+        boardBg.rect(-bw/2 + 8, -4, 6, bh + 12).fill(0x6b4226);
+        boardBg.rect(bw/2 - 14, -4, 6, bh + 12).fill(0x6b4226);
+        // 나무 프레임 (바깥)
+        boardBg.rect(-bw/2, 0, bw, bh).fill(0x8B5E3C);
+        // 양피지 (안쪽)
+        boardBg.rect(-bw/2 + 4, 4, bw - 8, bh - 8).fill(0xF5E6C8);
+        // 나무 프레임 상단 장식
+        boardBg.rect(-bw/2 - 2, -2, bw + 4, 6).fill(0x6b4226);
+        boardBg.rect(-bw/2 - 2, bh - 2, bw + 4, 6).fill(0x6b4226);
+        // 못 장식 (4 corners)
+        boardBg.circle(-bw/2 + 8, 6, 2).fill(0x888888);
+        boardBg.circle(bw/2 - 8, 6, 2).fill(0x888888);
+        boardBg.circle(-bw/2 + 8, bh - 6, 2).fill(0x888888);
+        boardBg.circle(bw/2 - 8, bh - 6, 2).fill(0x888888);
+        board.addChild(boardBg);
+
+        const boardTitleStyle = new TextStyle({
+          fontSize: 9, fontFamily: '"Press Start 2P", monospace', fill: 0x5a3010, fontWeight: 'bold', align: 'center',
+        });
+        const boardTitle = new Text({ text: '📋 QUEST BOARD', style: boardTitleStyle });
+        boardTitle.anchor.set(0.5, 0); boardTitle.position.set(0, 10);
+        board.addChild(boardTitle);
+
+        const boardBodyStyle = new TextStyle({
+          fontSize: 8, fontFamily: '"Press Start 2P", monospace', fill: 0x4a3520, lineHeight: 14, align: 'left',
+        });
+        const boardBody = new Text({ text: '', style: boardBodyStyle });
+        boardBody.anchor.set(0.5, 0); boardBody.position.set(0, 26);
+        board.addChild(boardBody);
+        boardLayer.addChild(board);
+
+        const updateBoard = () => {
+          const lines = [
+            `🔍 사진 분석 대기: ${boardStats.pending[0]}건`,
+            `📣 SNS 홍보 대기: ${boardStats.pending[1]}건`,
+            `📋 제보 안내 대기: ${boardStats.pending[2]}건`,
+            ``,
+            `✅ 오늘 완료: ${boardStats.completed}건`,
+          ];
+          boardBody.text = lines.join('\n');
+        };
+        updateBoard();
+
+        // ── 더미 퀘스트 타이머 ──
+        let dummyTimer = randBetween(3, 6); // 첫 퀘스트 빠르게
+
+        // 이동 헬퍼
+        const ARRIVE_DIST = 3;
+        const moveToward = (state: AgentState, tx: number, ty: number, dt: number): boolean => {
+          const dx = tx - state.x;
+          const dy = ty - state.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > ARRIVE_DIST) {
+            const step = state.speed * dt;
+            state.x += (dx / dist) * Math.min(step, dist);
+            state.y += (dy / dist) * Math.min(step, dist);
+            state.char.setPosition(state.x, state.y);
+            state.char.setFlipX(dx < 0);
+            state.char.play('run');
+            return false;
+          }
+          state.char.play('idle');
+          return true;
         };
 
         // ── Ticker 루프 ──
         app.ticker.add((ticker) => {
           const dt = ticker.deltaMS / 1000;
 
-          // 이벤트 큐 소비 (프레임당 1개)
-          if (eventQueueRef.current.length > 0) {
-            const evt = eventQueueRef.current.shift()!;
-            const idx = agentIdxMap[evt.id] ?? (() => {
-              if (evt.eventType === 'match_detected') return 0;
-              if (evt.eventType === 'outreach_sent') return 1;
-              return 2;
-            })();
+          // ── 더미 퀘스트 생성 ──
+          dummyTimer -= dt;
+          if (dummyTimer <= 0) {
+            // 가장 한가한 에이전트에 퀘스트 할당
+            const idle = agentStates.filter(s => s.questPhase === 'idle');
+            if (idle.length > 0) {
+              const s = idle[Math.floor(Math.random() * idle.length)];
+              const i = agentStates.indexOf(s);
+              s.questPhase = 'going_to_board';
+              s.questIdx = Math.floor(Math.random() * 3);
+              if (boardStats.pending[i] > 0) boardStats.pending[i]--;
+              updateBoard();
+            }
+            dummyTimer = randBetween(8, 15);
+          }
+
+          // 실제 API 이벤트도 소비 (퀘스트로 변환, idle일 때만)
+          if (pendingEventsRef.current.length > 0) {
+            const evt = pendingEventsRef.current[0];
+            const idx = evt.eventType === 'match_detected' ? 0
+              : evt.eventType === 'outreach_sent' ? 1 : 2;
             const state = agentStates[idx];
-            if (state && !state.isWorking) {
-              state.isWorking = true;
-              state.workTimer = randBetween(3, 5);
-              // 작업 중 phone 애니메이션
-              state.char.play('idle');
-              state.workIcon.alpha = 1;
-              showBubble(state, getEventBubbleText(evt, tRef.current), 4);
+            if (state && state.questPhase === 'idle') {
+              pendingEventsRef.current.shift();
+              state.questPhase = 'going_to_board';
+              state.questIdx = Math.floor(Math.random() * 3);
             }
           }
 
           for (let i = 0; i < agentStates.length; i++) {
             const state = agentStates[i];
             const cfg = AGENT_CONFIGS[i];
+            const quests = DUMMY_QUESTS[cfg.id] ?? DUMMY_QUESTS['chatbot-alert'];
 
             // 스프라이트 애니메이션 업데이트
             state.char.tick(dt);
 
-            // ── 작업 상태 ──
-            if (state.isWorking) {
-              state.workTimer -= dt;
-              state.workIcon.position.y = state.y - state.char.pixelHeight - 4 + Math.sin(Date.now() / 200) * 3;
-              if (state.workTimer <= 0) {
-                state.isWorking = false;
-                state.workIcon.alpha = 0;
-                state.char.play('idle');
-                state.idleTimer = randBetween(6, 12);
+            // ── 퀘스트 상태 머신 ──
+            switch (state.questPhase) {
+              case 'going_to_board': {
+                if (moveToward(state, boardPx.x, boardPx.y + 40, dt)) {
+                  state.questPhase = 'at_board';
+                  state.questTimer = 1.5;
+                  showBubble(state, '📋 퀘스트 확인 중...', 1.5);
+                }
+                break;
               }
-            } else {
-              // ── 유휴 패트롤 ──
-              state.patrolTimer -= dt;
-              if (state.patrolTimer <= 0) {
-                const bounds = scene.getRoomBounds(cfg.roomKey);
-                const margin = scene.tileSize * 0.8;
-                state.targetX = clamp(
-                  bounds.x + margin + Math.random() * (bounds.w - margin * 2),
-                  bounds.x + margin,
-                  bounds.x + bounds.w - margin,
-                );
-                state.targetY = clamp(
-                  bounds.y + margin + Math.random() * (bounds.h - margin * 2),
-                  bounds.y + scene.tileSize * 2,
-                  bounds.y + bounds.h - margin,
-                );
-                state.patrolTimer = randBetween(5, 15);
+              case 'at_board': {
+                state.questTimer -= dt;
+                if (state.questTimer <= 0) {
+                  state.questPhase = 'going_to_work';
+                  state.targetX = state.homeX + randBetween(-30, 30);
+                  state.targetY = state.homeY + randBetween(-20, 20);
+                  showBubble(state, '💪 수락!', 1);
+                }
+                break;
               }
+              case 'going_to_work': {
+                if (moveToward(state, state.targetX, state.targetY, dt)) {
+                  state.questPhase = 'working';
+                  state.questTimer = randBetween(3, 5);
+                  state.workIcon.position.set(state.x, state.y - state.char.pixelHeight - 4);
+                  state.workIcon.alpha = 1;
+                  showBubble(state, quests[state.questIdx].working, 3);
+                }
+                break;
+              }
+              case 'working': {
+                state.questTimer -= dt;
+                state.workIcon.position.set(state.x, state.y - state.char.pixelHeight - 4 + Math.sin(Date.now() / 200) * 3);
+                if (state.questTimer <= 0) {
+                  state.questPhase = 'complete';
+                  state.questTimer = 2;
+                  state.workIcon.alpha = 0;
+                  showBubble(state, quests[state.questIdx].done, 3);
+                  boardStats.completed++;
+                  boardStats.pending[i] = Math.max(0, boardStats.pending[i]) + Math.floor(Math.random() * 2); // 새 퀘스트 랜덤 추가
+                  updateBoard();
+                }
+                break;
+              }
+              case 'complete': {
+                state.questTimer -= dt;
+                if (state.questTimer <= 0) {
+                  state.questPhase = 'idle';
+                  state.patrolTimer = randBetween(3, 8);
+                }
+                break;
+              }
+              default: {
+                // ── idle: 유휴 패트롤 ──
+                state.patrolTimer -= dt;
+                if (state.patrolTimer <= 0) {
+                  const bounds = scene.getRoomBounds(cfg.roomKey);
+                  const margin = scene.tileSize * 0.8;
+                  state.targetX = clamp(
+                    bounds.x + margin + Math.random() * (bounds.w - margin * 2),
+                    bounds.x + margin,
+                    bounds.x + bounds.w - margin,
+                  );
+                  state.targetY = clamp(
+                    bounds.y + margin + Math.random() * (bounds.h - margin * 2),
+                    bounds.y + scene.tileSize * 2,
+                    bounds.y + bounds.h - margin,
+                  );
+                  state.patrolTimer = randBetween(5, 15);
+                }
 
-              // 이동
-              const dx = state.targetX - state.x;
-              const dy = state.targetY - state.y;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              if (dist > 2) {
-                const step = state.speed * dt;
-                state.x += (dx / dist) * Math.min(step, dist);
-                state.y += (dy / dist) * Math.min(step, dist);
-                state.char.setPosition(state.x, state.y);
-                state.char.setFlipX(dx < 0);
-                state.char.play('run');
-              } else {
-                state.char.play('idle');
-              }
-
-              // 유휴 시 가끔 sit
-              state.idleTimer -= dt;
-              if (state.idleTimer <= 0) {
-                state.char.play('sit');
-                state.idleTimer = randBetween(8, 15);
-                // 3초 후 idle로 복귀 (unmount 후 실행 방지)
-                const tid = window.setTimeout(() => { if (!destroyed && !state.isWorking) state.char.play('idle'); }, 3000);
-                pendingTimers.push(tid);
+                const dx = state.targetX - state.x;
+                const dy = state.targetY - state.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > ARRIVE_DIST) {
+                  const step = state.speed * dt;
+                  state.x += (dx / dist) * Math.min(step, dist);
+                  state.y += (dy / dist) * Math.min(step, dist);
+                  state.char.setPosition(state.x, state.y);
+                  state.char.setFlipX(dx < 0);
+                  state.char.play('run');
+                } else {
+                  state.char.play('idle');
+                }
+                break;
               }
             }
 
@@ -437,7 +577,6 @@ export default function AgentActivityScene() {
 
     return () => {
       destroyed = true;
-      pendingTimers.forEach(clearTimeout);
       app.destroy(true, { children: true });
     };
   }, [visible, pendingEventsRef]);
