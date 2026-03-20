@@ -1,4 +1,5 @@
 export { SpineCharacterLite, setSpineLoadProgress } from './SpineCharacterLite';
+export { PixelCharacter, type CharacterName } from './PixelCharacter';
 export {
   computeLayout,
   drawScene,

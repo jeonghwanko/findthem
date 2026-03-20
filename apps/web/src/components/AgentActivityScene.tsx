@@ -1,50 +1,74 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Application, Graphics, Text, TextStyle, Container, extensions } from 'pixi.js';
-import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
+import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
 import type { AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { drawTileScene, tileToPx, tileRoomCenter } from '@findthem/pixi-scenes/game';
+import { drawTileScene, tileToPx, tileRoomCenter, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
-extensions.add(SpinePipe);
-
-// ── 에이전트 Spine 설정 (PixiHeroScene과 동일) ──
-const AGENT_SPINE_CONFIGS = [
+// ── 에이전트 설정 (Spine → PixelCharacter) ──
+const AGENT_CONFIGS = [
   {
     id: 'image-matching' as const,
     roomKey: 'claude' as const,
-    skins: ['body_090', 'cos_090', 'hair_090', 'hat_090', 'weapon_090'] as const,
-    scale: 0.15,
-    expressions: ['expression_thinking_2', 'expression_surprise_1'] as const,
+    charName: 'Adam' as const,  // 탐정 클로드
     workIcon: '🔍',
     nameKey: 'agentScene.claude.name',
   },
   {
     id: 'promotion' as const,
     roomKey: 'heimi' as const,
-    skins: ['body_102', 'cos_102', 'hair_102', 'hat_102', 'weapon_102'] as const,
-    scale: 0.15,
-    expressions: ['expression_fun', 'expression_preen'] as const,
+    charName: 'Amelia' as const, // 홍보왕 헤르미
     workIcon: '📣',
     nameKey: 'agentScene.heimi.name',
   },
   {
     id: 'chatbot-alert' as const,
     roomKey: 'ali' as const,
-    skins: ['body_043', 'cos_042', 'hair_000', 'hat_042', 'weapon_042'] as const,
-    scale: 0.15,
-    expressions: ['expression_joke_1', 'expression_surprise_1'] as const,
+    charName: 'Alex' as const,  // 안내봇 알리
     workIcon: '📋',
     nameKey: 'agentScene.ali.name',
   },
 ] as const;
 
-const SCENE_H = 280;
+const SCENE_H = 480;
+
+// ── 레이아웃 어댑터 (TileMap / Graphics fallback 통합) ──
+interface SceneLayout {
+  getCenter(roomKey: 'claude' | 'heimi' | 'ali'): { x: number; y: number };
+  getRoomBounds(roomKey: 'claude' | 'heimi' | 'ali'): { x: number; y: number; w: number; h: number };
+  tileSize: number;
+}
+
+function tileLayout(l: TileRoomLayout): SceneLayout {
+  return {
+    getCenter: (k) => tileRoomCenter(k, l),
+    getRoomBounds: (k) => {
+      const r = l.rooms[k];
+      const pos = tileToPx(r.x, r.y, l);
+      const s = 48 * l.scale;
+      return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
+    },
+    tileSize: 48 * l.scale,
+  };
+}
+
+function graphicsLayout(l: RoomLayout): SceneLayout {
+  const s = l.scale * 16;
+  return {
+    getCenter: (k) => roomCenter(k, l),
+    getRoomBounds: (k) => {
+      const r = l.rooms[k];
+      const pos = tileToPixel(r.x, r.y, l);
+      return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
+    },
+    tileSize: s,
+  };
+}
 
 // ── 에이전트 상태 ──
 interface AgentState {
-  char: import('@findthem/pixi-scenes/game').SpineCharacterLite;
+  char: import('@findthem/pixi-scenes/game').PixelCharacter;
   nameTag: Text;
   bubble: Container;
   bubbleText: Text;
@@ -135,7 +159,7 @@ export default function AgentActivityScene() {
           width: W,
           height: H,
           background: 0xf5f0e8,
-          antialias: true,
+          antialias: false,
           autoDensity: true,
           resolution: dpr,
           roundPixels: true,
@@ -144,12 +168,19 @@ export default function AgentActivityScene() {
         });
         if (destroyed) return;
 
-        await document.fonts.ready;
-
-        // ── 타일맵 배경 ──
+        // ── 배경 (타일맵 우선, 실패 시 Graphics fallback) ──
         const roomLayer = new Container();
         app.stage.addChild(roomLayer);
-        const layout = await drawTileScene(roomLayer, W, H);
+
+        let scene: SceneLayout;
+        try {
+          const tl = await drawTileScene(roomLayer, W, H);
+          scene = tileLayout(tl);
+        } catch {
+          const gl = computeLayout(W, H);
+          drawScene(roomLayer, gl);
+          scene = graphicsLayout(gl);
+        }
         if (destroyed) return;
 
         if (!destroyed) setPhase('loading');
@@ -164,12 +195,12 @@ export default function AgentActivityScene() {
 
         app.ticker.stop();
 
-        // ── Spine 캐릭터 로드 ──
-        const { SpineCharacterLite } = await import('@findthem/pixi-scenes/game');
+        // ── 픽셀 캐릭터 로드 (Spine 대신) ──
+        const { PixelCharacter } = await import('@findthem/pixi-scenes/game');
         if (destroyed) return;
 
         const chars = await Promise.all(
-          AGENT_SPINE_CONFIGS.map((c) => SpineCharacterLite.create(c.skins)),
+          AGENT_CONFIGS.map((c) => PixelCharacter.create(c.charName)),
         );
         if (destroyed) return;
 
@@ -180,10 +211,9 @@ export default function AgentActivityScene() {
         app.stage.addChild(uiLayer);
 
         // ── 에이전트 상태 초기화 ──
-        const agentStates: AgentState[] = AGENT_SPINE_CONFIGS.map((cfg, i) => {
+        const agentStates: AgentState[] = AGENT_CONFIGS.map((cfg, i) => {
           const char = chars[i];
-          const center = tileRoomCenter(cfg.roomKey, layout);
-          char.setScale(cfg.scale);
+          const center = scene.getCenter(cfg.roomKey);
           char.setPosition(center.x, center.y);
           charLayer.addChild(char.view);
 
@@ -197,14 +227,14 @@ export default function AgentActivityScene() {
           });
           const nameTag = new Text({ text: tr(cfg.nameKey), style: nameStyle });
           nameTag.anchor.set(0.5, 0);
-          nameTag.position.set(center.x, center.y + 20);
+          nameTag.position.set(center.x, center.y + 4);
           uiLayer.addChild(nameTag);
 
           // 작업 아이콘 (평소 숨김)
-          const iconStyle = new TextStyle({ fontSize: 18 });
+          const iconStyle = new TextStyle({ fontSize: 16 });
           const workIcon = new Text({ text: cfg.workIcon, style: iconStyle });
           workIcon.anchor.set(0.5, 1);
-          workIcon.position.set(center.x, center.y - 30);
+          workIcon.position.set(center.x, center.y - char.pixelHeight - 4);
           workIcon.alpha = 0;
           uiLayer.addChild(workIcon);
 
@@ -224,7 +254,7 @@ export default function AgentActivityScene() {
           bubbleText.anchor.set(0.5, 0.5);
           bubble.addChild(bubbleBg);
           bubble.addChild(bubbleText);
-          bubble.position.set(center.x, center.y - 48);
+          bubble.position.set(center.x, center.y - char.pixelHeight - 20);
           uiLayer.addChild(bubble);
 
           return {
@@ -240,7 +270,7 @@ export default function AgentActivityScene() {
             y: center.y,
             targetX: center.x,
             targetY: center.y,
-            speed: 40,
+            speed: 30,
             isWorking: false,
             workTimer: 0,
             idleTimer: randBetween(5, 12),
@@ -286,7 +316,6 @@ export default function AgentActivityScene() {
           if (eventQueueRef.current.length > 0) {
             const evt = eventQueueRef.current.shift()!;
             const idx = agentIdxMap[evt.id] ?? (() => {
-              // eventType 기반으로 에이전트 매핑
               if (evt.eventType === 'match_detected') return 0;
               if (evt.eventType === 'outreach_sent') return 1;
               return 2;
@@ -295,9 +324,8 @@ export default function AgentActivityScene() {
             if (state && !state.isWorking) {
               state.isWorking = true;
               state.workTimer = randBetween(3, 5);
-              const cfg = AGENT_SPINE_CONFIGS[idx];
-              const expr = cfg.expressions[Math.floor(Math.random() * cfg.expressions.length)];
-              state.char.playExpression(expr);
+              // 작업 중 phone 애니메이션
+              state.char.play('phone');
               state.workIcon.alpha = 1;
               showBubble(state, getEventBubbleText(evt, tRef.current), 4);
             }
@@ -305,40 +333,36 @@ export default function AgentActivityScene() {
 
           for (let i = 0; i < agentStates.length; i++) {
             const state = agentStates[i];
-            const cfg = AGENT_SPINE_CONFIGS[i];
+            const cfg = AGENT_CONFIGS[i];
 
-            // Spine 업데이트
+            // 스프라이트 애니메이션 업데이트
             state.char.tick(dt);
 
             // ── 작업 상태 ──
             if (state.isWorking) {
               state.workTimer -= dt;
-              // 작업 아이콘 바운스
-              state.workIcon.position.y = state.y - 30 + Math.sin(Date.now() / 200) * 3;
+              state.workIcon.position.y = state.y - state.char.pixelHeight - 4 + Math.sin(Date.now() / 200) * 3;
               if (state.workTimer <= 0) {
                 state.isWorking = false;
                 state.workIcon.alpha = 0;
-                state.char.setBodyAnimation('idle', true);
+                state.char.play('idle');
                 state.idleTimer = randBetween(6, 12);
               }
             } else {
               // ── 유휴 패트롤 ──
               state.patrolTimer -= dt;
               if (state.patrolTimer <= 0) {
-                // 방 안 랜덤 위치로 이동
-                const room = layout.rooms[cfg.roomKey];
-                const s = 48 * layout.scale; // 타일 크기 × 스케일
-                const { x: rx, y: ry } = tileToPx(room.x, room.y, layout);
-                const margin = s * 0.8;
+                const bounds = scene.getRoomBounds(cfg.roomKey);
+                const margin = scene.tileSize * 0.8;
                 state.targetX = clamp(
-                  rx + margin + Math.random() * (room.w * s - margin * 2),
-                  rx + margin,
-                  rx + room.w * s - margin,
+                  bounds.x + margin + Math.random() * (bounds.w - margin * 2),
+                  bounds.x + margin,
+                  bounds.x + bounds.w - margin,
                 );
                 state.targetY = clamp(
-                  ry + margin + Math.random() * (room.h * s - margin * 2),
-                  ry + s * 2,
-                  ry + room.h * s - margin,
+                  bounds.y + margin + Math.random() * (bounds.h - margin * 2),
+                  bounds.y + scene.tileSize * 2,
+                  bounds.y + bounds.h - margin,
                 );
                 state.patrolTimer = randBetween(5, 15);
               }
@@ -353,28 +377,28 @@ export default function AgentActivityScene() {
                 state.y += (dy / dist) * Math.min(step, dist);
                 state.char.setPosition(state.x, state.y);
                 state.char.setFlipX(dx < 0);
-                // run 애니메이션이 있으면 재생
-                state.char.playBodyAnimSafe('run_1', true);
+                state.char.play('run');
               } else {
-                state.char.setBodyAnimation('idle', true);
+                state.char.play('idle');
               }
 
-              // 유휴 expression
+              // 유휴 시 가끔 sit
               state.idleTimer -= dt;
               if (state.idleTimer <= 0) {
-                const expr = cfg.expressions[Math.floor(Math.random() * cfg.expressions.length)];
-                state.char.playExpression(expr);
+                state.char.play('sit');
                 state.idleTimer = randBetween(8, 15);
+                // 3초 후 idle로 복귀
+                setTimeout(() => { if (!state.isWorking) state.char.play('idle'); }, 3000);
               }
             }
 
             // ── 이름 태그 위치 동기화 ──
-            state.nameTag.position.set(state.x, state.y + 20);
+            state.nameTag.position.set(state.x, state.y + 4);
 
             // ── 말풍선 페이드 ──
             if (state.bubbleShowTimer > 0) {
               state.bubbleShowTimer -= dt;
-              state.bubble.position.set(state.x, state.y - 48);
+              state.bubble.position.set(state.x, state.y - state.char.pixelHeight - 20);
               state.bubble.alpha = Math.min(state.bubbleAlpha, state.bubbleShowTimer > 0.3 ? 1 : state.bubbleShowTimer / 0.3);
             } else {
               state.bubble.alpha = 0;
@@ -385,7 +409,7 @@ export default function AgentActivityScene() {
         app.ticker.start();
         if (!destroyed) setPhase('ready');
       } catch {
-        // Pixi/Spine 로드 실패 시 조용히 무시
+        // Pixi 로드 실패 시 조용히 무시
       }
     })();
 
@@ -397,14 +421,12 @@ export default function AgentActivityScene() {
 
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden" style={{ minHeight: SCENE_H }}>
-      {/* Pixi Canvas */}
       <canvas
         ref={canvasRef}
         className="w-full block"
         style={{ height: SCENE_H, imageRendering: 'pixelated' }}
       />
 
-      {/* 로딩 상태 */}
       {phase !== 'ready' && (
         <div className="absolute inset-0 flex items-center justify-center bg-amber-50/80">
           <div className="text-center">
@@ -414,7 +436,6 @@ export default function AgentActivityScene() {
         </div>
       )}
 
-      {/* HTML 오버레이 — 일일 통계 + 활동 로그 */}
       {phase === 'ready' && (
         <AgentActivityOverlay agents={agents} isLoading={isLoading} />
       )}
