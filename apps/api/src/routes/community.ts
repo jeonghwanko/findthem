@@ -288,22 +288,17 @@ export function registerCommunityRoutes(router: Router) {
     const id = req.params.id as string;
     const userId = req.user!.userId;
 
-    // 존재 여부 먼저 확인 (404 vs 403 구분)
-    const exists = await prisma.communityPost.findUnique({
-      where: { id },
-      select: { userId: true },
-    });
-    if (!exists) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
-    if (exists.userId !== userId) {
-      throw new ApiError(403, ERROR_CODES.COMMUNITY_POST_OWNER_ONLY);
-    }
-
-    // 소유권 확인 + 삭제를 원자적으로 처리
+    // 소유권 확인 + 삭제를 원자적으로 처리 (1회 왕복)
     const result = await prisma.communityPost.deleteMany({ where: { id, userId } });
 
     if (result.count === 0) {
-      // 동시 삭제로 이미 없어진 경우
-      throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+      // 존재 여부 확인 → 404 vs 403 구분
+      const exists = await prisma.communityPost.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+      if (!exists) throw new ApiError(404, ERROR_CODES.COMMUNITY_POST_NOT_FOUND);
+      throw new ApiError(403, ERROR_CODES.COMMUNITY_POST_OWNER_ONLY);
     }
 
     log.info({ postId: id, userId }, 'Community post deleted');

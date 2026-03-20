@@ -1,5 +1,6 @@
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
+import type { Gender } from '@findthem/shared';
 import type { Fetcher, ExternalReport } from '../types.js';
 
 const log = createLogger('crawl:safe182');
@@ -29,7 +30,7 @@ function parseOccrde(ymd: string): Date {
   return isNaN(date.getTime()) ? new Date() : date;
 }
 
-function mapSex(code: string | undefined): 'MALE' | 'FEMALE' | 'UNKNOWN' {
+function mapSex(code: string | undefined): Gender {
   if (code === '남자') return 'MALE';
   if (code === '여자') return 'FEMALE';
   return 'UNKNOWN';

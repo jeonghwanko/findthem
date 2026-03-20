@@ -372,6 +372,7 @@
     "ALREADY_VERIFIED": "この支払いはすでに処理済みです。",
     "AMOUNT_MISMATCH": "支払い金額が一致しません。",
     "PAYMENT_FAILED": "支払いに失敗しました。",
+    "PAYMENT_GATEWAY_ERROR": "決済サービスに一時的な障害が発生しました。しばらくしてから再度お試しください。",
     "OAUTH_FAILED": "ソーシャルログインに失敗しました。",
     "OAUTH_INVALID_STATE": "無効なOAuth状態です。",
     "OAUTH_TELEGRAM_INVALID": "Telegram認証に失敗しました。",

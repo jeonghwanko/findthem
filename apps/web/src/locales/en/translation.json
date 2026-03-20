@@ -372,6 +372,7 @@
     "ALREADY_VERIFIED": "This payment has already been processed.",
     "AMOUNT_MISMATCH": "Payment amount does not match.",
     "PAYMENT_FAILED": "Payment failed.",
+    "PAYMENT_GATEWAY_ERROR": "Payment service temporarily unavailable. Please try again later.",
     "OAUTH_FAILED": "Social login failed.",
     "OAUTH_INVALID_STATE": "Invalid OAuth state.",
     "OAUTH_TELEGRAM_INVALID": "Telegram authentication failed.",

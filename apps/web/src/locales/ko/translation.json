@@ -372,6 +372,7 @@
     "ALREADY_VERIFIED": "이미 처리된 결제입니다.",
     "AMOUNT_MISMATCH": "결제 금액이 일치하지 않습니다.",
     "PAYMENT_FAILED": "결제에 실패했습니다.",
+    "PAYMENT_GATEWAY_ERROR": "결제 서비스에 일시적 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
     "OAUTH_FAILED": "소셜 로그인에 실패했습니다.",
     "OAUTH_INVALID_STATE": "유효하지 않은 OAuth 상태입니다.",
     "OAUTH_TELEGRAM_INVALID": "텔레그램 인증에 실패했습니다.",

@@ -372,6 +372,7 @@
     "ALREADY_VERIFIED": "此付款已處理。",
     "AMOUNT_MISMATCH": "付款金額不符。",
     "PAYMENT_FAILED": "付款失敗。",
+    "PAYMENT_GATEWAY_ERROR": "支付服務暫時出現錯誤，請稍後再試。",
     "OAUTH_FAILED": "社群登入失敗。",
     "OAUTH_INVALID_STATE": "無效的OAuth狀態。",
     "OAUTH_TELEGRAM_INVALID": "Telegram驗證失敗。",

@@ -239,7 +239,7 @@ export function registerSponsorRoutes(router: Router) {
     }
 
     if (!merchantWallet) {
-      throw new ApiError(503, ERROR_CODES.PAYMENT_FAILED);
+      throw new ApiError(503, ERROR_CODES.PAYMENT_GATEWAY_ERROR);
     }
 
     const usdPerToken = await getUsdPerToken(tokenSymbol);

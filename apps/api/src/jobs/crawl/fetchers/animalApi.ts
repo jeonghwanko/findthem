@@ -1,5 +1,6 @@
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
+import type { Gender } from '@findthem/shared';
 import type { Fetcher, ExternalReport } from '../types.js';
 
 const log = createLogger('crawl:animal-api');
@@ -34,7 +35,7 @@ function mapKindToSubjectType(upKindNm: string): 'DOG' | 'CAT' | null {
   return null;
 }
 
-function mapSexCode(sexCd: string): 'MALE' | 'FEMALE' | 'UNKNOWN' {
+function mapSexCode(sexCd: string): Gender {
   if (sexCd === 'M') return 'MALE';
   if (sexCd === 'F') return 'FEMALE';
   return 'UNKNOWN';

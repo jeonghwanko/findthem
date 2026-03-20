@@ -37,7 +37,7 @@ function startCrawlSchedulerWorker() {
       await crawlAgentQueue.add(
         'crawl-agent-run',
         { triggeredBy: 'scheduler' },
-        { attempts: 1 },
+        { attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
       );
     },
     { concurrency: 1 },

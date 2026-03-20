@@ -245,6 +245,8 @@ describe('Community E2E', () => {
     });
 
     it('타인 게시글 삭제 → 403', async () => {
+      // deleteMany가 0 반환 (userId 불일치) → findUnique로 존재 확인 → 403
+      prismaMock.communityPost.deleteMany.mockResolvedValue({ count: 0 });
       prismaMock.communityPost.findUnique.mockResolvedValue({
         ...testPost,
         userId: 'other-user-id',

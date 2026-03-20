@@ -1,3 +1,4 @@
+import type { Gender } from '@findthem/shared';
 import { config } from '../../../config.js';
 import { createLogger } from '../../../logger.js';
 
@@ -14,7 +15,7 @@ export interface AnimalRegistryResult {
   deviceType: 'INTERNAL' | 'EXTERNAL' | 'TAG';
   name: string;
   birthDate: string;
-  gender: 'MALE' | 'FEMALE' | 'UNKNOWN';
+  gender: Gender;
   breed: string;
   neutered: boolean;
   jurisdiction: string;
@@ -40,7 +41,7 @@ function mapDeviceType(code: string | undefined): 'INTERNAL' | 'EXTERNAL' | 'TAG
   return 'TAG';
 }
 
-function mapSexCode(code: string | undefined): 'MALE' | 'FEMALE' | 'UNKNOWN' {
+function mapSexCode(code: string | undefined): Gender {
   if (code === 'M') return 'MALE';
   if (code === 'F') return 'FEMALE';
   return 'UNKNOWN';
