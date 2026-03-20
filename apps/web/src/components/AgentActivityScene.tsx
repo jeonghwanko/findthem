@@ -41,15 +41,16 @@ interface SceneLayout {
 }
 
 function tileLayout(l: TileRoomLayout): SceneLayout {
+  const td = l.tileDim ?? 48;
   return {
     getCenter: (k) => tileRoomCenter(k, l),
     getRoomBounds: (k) => {
       const r = l.rooms[k];
       const pos = tileToPx(r.x, r.y, l);
-      const s = 48 * l.scale;
+      const s = td * l.scale;
       return { x: pos.x, y: pos.y, w: r.w * s, h: r.h * s };
     },
-    tileSize: 48 * l.scale,
+    tileSize: td * l.scale,
   };
 }
 
