@@ -11,5 +11,6 @@ export {
   drawTileScene,
   tileToPx,
   tileRoomCenter,
+  centerCamera,
   type TileRoomLayout,
 } from './TileMapRoom';

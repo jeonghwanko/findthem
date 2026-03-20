@@ -116,7 +116,7 @@ export class PixelCharacter {
     // phone
     if (phoneTex) {
       char.anims.phone = {
-        frames: extractFrames(phoneTex, 0, 4),
+        frames: extractFrames(phoneTex, 0, 9),
         speed: 4,
       };
     }
@@ -135,7 +135,7 @@ export class PixelCharacter {
     this.elapsed += dt;
     const frameDuration = 1 / anim.speed;
 
-    if (this.elapsed >= frameDuration) {
+    while (this.elapsed >= frameDuration) {
       this.elapsed -= frameDuration;
       this.frameIndex = (this.frameIndex + 1) % anim.frames.length;
       this.sprite.texture = anim.frames[this.frameIndex];

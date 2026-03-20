@@ -41,7 +41,7 @@ interface SceneLayout {
 }
 
 function tileLayout(l: TileRoomLayout): SceneLayout {
-  const td = l.tileDim ?? 48;
+  const td = l.tileDim;
   return {
     getCenter: (k) => tileRoomCenter(k, l),
     getRoomBounds: (k) => {
@@ -147,6 +147,7 @@ export default function AgentActivityScene() {
 
     const tr = tRef.current;
     let destroyed = false;
+    const pendingTimers: number[] = [];
     const app = new Application();
 
     void (async () => {
@@ -174,9 +175,11 @@ export default function AgentActivityScene() {
         app.stage.addChild(roomLayer);
 
         let scene: SceneLayout;
+        let worldContainer: Container | null = null;
         try {
           const tl = await drawTileScene(roomLayer, W, H);
           scene = tileLayout(tl);
+          worldContainer = tl.world;
         } catch {
           const gl = computeLayout(W, H);
           drawScene(roomLayer, gl);
@@ -205,11 +208,14 @@ export default function AgentActivityScene() {
         );
         if (destroyed) return;
 
+        // 캐릭터/UI를 world 컨테이너 안에 배치 (카메라 이동 시 함께 움직임)
+        const parentContainer = worldContainer ?? app.stage;
+
         const charLayer = new Container();
-        app.stage.addChild(charLayer);
+        parentContainer.addChild(charLayer);
 
         const uiLayer = new Container();
-        app.stage.addChild(uiLayer);
+        parentContainer.addChild(uiLayer);
 
         // ── 에이전트 상태 초기화 ──
         const agentStates: AgentState[] = AGENT_CONFIGS.map((cfg, i) => {
@@ -388,8 +394,9 @@ export default function AgentActivityScene() {
               if (state.idleTimer <= 0) {
                 state.char.play('sit');
                 state.idleTimer = randBetween(8, 15);
-                // 3초 후 idle로 복귀
-                setTimeout(() => { if (!state.isWorking) state.char.play('idle'); }, 3000);
+                // 3초 후 idle로 복귀 (unmount 후 실행 방지)
+                const tid = window.setTimeout(() => { if (!destroyed && !state.isWorking) state.char.play('idle'); }, 3000);
+                pendingTimers.push(tid);
               }
             }
 
@@ -410,12 +417,13 @@ export default function AgentActivityScene() {
         app.ticker.start();
         if (!destroyed) setPhase('ready');
       } catch {
-        // Pixi 로드 실패 시 조용히 무시
+        if (!destroyed) setPhase('ready');
       }
     })();
 
     return () => {
       destroyed = true;
+      pendingTimers.forEach(clearTimeout);
       app.destroy(true, { children: true });
     };
   }, [visible, pendingEventsRef]);

@@ -1,16 +1,16 @@
 /**
- * TileMapRoom — a16z AI Town 타일맵 기반 씬 렌더러
+ * TileMapRoom — a16z AI Town 타일맵 + 뷰포트(카메라) 렌더러
  *
  * gentle-obj.png (1440×1024, 32px 타일) + gentle-map.json (64×48, 2 bg + 2 obj 레이어)
- * 스프라이트 기반 타일 렌더링 (ai-town 방식: Sprite-per-tile, 플러그인 불필요)
+ * - 전체 맵을 고정 배율(2×)로 렌더 → 월드 컨테이너에 배치
+ * - 뷰포트(캔버스 크기)가 월드의 일부만 표시
+ * - 드래그로 카메라 이동, 모바일 터치 지원
  */
-import { Container, Sprite, Texture, Rectangle, Assets, Text, TextStyle } from 'pixi.js';
+import { Container, Sprite, Texture, Rectangle, Assets, Text, TextStyle, FederatedPointerEvent, SCALE_MODES } from 'pixi.js';
 
 // ── 맵 데이터 타입 ──
 interface MapData {
   tileDim: number;
-  cols: number;
-  rows: number;
   tilesetPxW: number;
   tilesetPxH: number;
   bgTiles: number[][][];  // [layer][x][y] = tileIndex (-1 = empty)
@@ -25,18 +25,35 @@ export interface TileRoomLayout {
   rooms: { claude: RoomRect; hallway: RoomRect; heimi: RoomRect; ali: RoomRect };
   totalW: number; totalH: number;
   tileDim: number;
+  /** 월드 컨테이너 (드래그 이동 대상) */
+  world: Container;
+  /** 월드 전체 픽셀 크기 */
+  worldPxW: number;
+  worldPxH: number;
+  /** 뷰포트(캔버스) 크기 */
+  viewportW: number;
+  viewportH: number;
 }
 
+/** 타일 좌표 → 월드 픽셀 좌표 (world 내부 기준) */
 export function tileToPx(tx: number, ty: number, layout: TileRoomLayout): { x: number; y: number } {
-  return {
-    x: layout.offsetX + tx * layout.tileDim * layout.scale,
-    y: layout.offsetY + ty * layout.tileDim * layout.scale,
-  };
+  const s = layout.tileDim * layout.scale;
+  return { x: tx * s, y: ty * s };
 }
 
 export function tileRoomCenter(roomKey: 'claude' | 'heimi' | 'ali', layout: TileRoomLayout): { x: number; y: number } {
   const room = layout.rooms[roomKey];
   return tileToPx(room.x + room.w / 2, room.y + room.h / 2, layout);
+}
+
+/** 카메라를 월드 좌표(px)에 중심 맞추기 */
+export function centerCamera(worldX: number, worldY: number, layout: TileRoomLayout) {
+  const { world, worldPxW, worldPxH, viewportW, viewportH } = layout;
+  const targetX = -worldX + viewportW / 2;
+  const targetY = -worldY + viewportH / 2;
+  // 클램프: 월드 밖으로 넘어가지 않도록
+  world.x = Math.min(0, Math.max(targetX, viewportW - worldPxW));
+  world.y = Math.min(0, Math.max(targetY, viewportH - worldPxH));
 }
 
 function assetPath(path: string): string {
@@ -47,20 +64,54 @@ function assetPath(path: string): string {
   } catch { return path; }
 }
 
-// ── 타일셋 → 개별 텍스처 슬라이싱 ──
-function sliceTileset(baseTex: Texture, tileDim: number, pxW: number, pxH: number): Texture[] {
-  const cols = Math.floor(pxW / tileDim);
-  const rows = Math.floor(pxH / tileDim);
-  const textures: Texture[] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      textures.push(new Texture({
+// ── 타일셋 → 개별 텍스처 lazy 캐시 ──
+function createTileCache(baseTex: Texture, tileDim: number, pxW: number): (idx: number) => Texture | undefined {
+  const tilesetCols = Math.floor(pxW / tileDim);
+  const cache = new Map<number, Texture>();
+  return (idx: number) => {
+    let tex = cache.get(idx);
+    if (!tex) {
+      const c = idx % tilesetCols;
+      const r = Math.floor(idx / tilesetCols);
+      tex = new Texture({
         source: baseTex.source,
         frame: new Rectangle(c * tileDim, r * tileDim, tileDim, tileDim),
-      }));
+      });
+      cache.set(idx, tex);
     }
-  }
-  return textures;
+    return tex;
+  };
+}
+
+// ── 드래그 핸들러 설정 ──
+function setupDrag(world: Container, layout: TileRoomLayout) {
+  const stage = world.parent;
+  if (!stage) return;
+
+  stage.eventMode = 'static';
+  stage.hitArea = { contains: () => true };
+
+  let dragging = false;
+  let lastX = 0, lastY = 0;
+
+  stage.on('pointerdown', (e: FederatedPointerEvent) => {
+    dragging = true;
+    lastX = e.globalX;
+    lastY = e.globalY;
+  });
+  stage.on('pointermove', (e: FederatedPointerEvent) => {
+    if (!dragging) return;
+    const dx = e.globalX - lastX;
+    const dy = e.globalY - lastY;
+    lastX = e.globalX;
+    lastY = e.globalY;
+
+    const { worldPxW, worldPxH, viewportW, viewportH } = layout;
+    world.x = Math.min(0, Math.max(world.x + dx, viewportW - worldPxW));
+    world.y = Math.min(0, Math.max(world.y + dy, viewportH - worldPxH));
+  });
+  stage.on('pointerup', () => { dragging = false; });
+  stage.on('pointerupoutside', () => { dragging = false; });
 }
 
 // ═══════════════════════════════════════
@@ -77,93 +128,68 @@ export async function drawTileScene(
     fetch(assetPath('/tiles/gentle-map.json')).then(r => r.json()) as Promise<MapData>,
   ]);
 
-  const { tileDim, cols, rows, tilesetPxW, tilesetPxH, bgTiles, objTiles } = mapData;
+  const { tileDim, tilesetPxW, bgTiles, objTiles } = mapData;
 
-  // ── 타일셋 슬라이싱 ──
-  const tiles = sliceTileset(tilesetTex, tileDim, tilesetPxW, tilesetPxH);
-  const tilesetCols = Math.floor(tilesetPxW / tileDim);
+  // 픽셀아트 선명하게 (NEAREST 스케일링)
+  tilesetTex.source.scaleMode = SCALE_MODES.NEAREST;
 
-  // ── 뷰포트 (화면에 표시할 영역) ──
-  // 전체 맵(64×48)에서 관심 영역만 크롭 — 중앙 부분 사용
-  const viewCols = Math.min(cols, 40); // 최대 40열
-  const viewRows = Math.min(rows, 30); // 최대 30행
-  const cropX = Math.floor((cols - viewCols) / 2); // 중앙 정렬
-  const cropY = Math.floor((rows - viewRows) / 2);
+  // column-major: [layer][x][y]
+  const cols = bgTiles[0]?.length ?? 0;
+  const rows = bgTiles[0]?.[0]?.length ?? 0;
 
-  // ── 스케일 계산 ──
-  const scale = Math.min(sceneW / (viewCols * tileDim), sceneH / (viewRows * tileDim));
-  const offsetX = (sceneW - viewCols * tileDim * scale) / 2;
-  const offsetY = (sceneH - viewRows * tileDim * scale) / 2;
+  // ── 타일셋 lazy 캐시 ──
+  const getTile = createTileCache(tilesetTex, tileDim, tilesetPxW);
 
-  // ── 에이전트 "방" 위치 (크롭 좌표 기준) ──
+  // ── 스케일: 원본 크기 (32px 타일, 선명한 픽셀아트) ──
+  const scale = 1;
+  const tileSize = tileDim * scale; // 64px
+  const worldPxW = cols * tileSize;
+  const worldPxH = rows * tileSize;
+
+  // ── 월드 컨테이너 (전체 맵 + 캐릭터가 들어감) ──
+  const world = new Container();
+  container.addChild(world);
+
+  // ── 에이전트 "방" 위치 (타일 좌표) ──
   // 맵 내 건물/구역을 3개 에이전트에 할당
-  const thirdW = Math.floor(viewCols / 3);
+  const thirdW = Math.floor(cols / 3);
   const rooms = {
-    claude:  { x: 2,              y: 2,  w: thirdW - 2, h: viewRows - 4 },
-    hallway: { x: thirdW,         y: 0,  w: 2,          h: viewRows },
-    heimi:   { x: thirdW + 2,     y: 2,  w: thirdW - 2, h: viewRows - 4 },
-    ali:     { x: thirdW * 2 + 2, y: 2,  w: viewCols - thirdW * 2 - 4, h: viewRows - 4 },
+    claude:  { x: 2,              y: 2,  w: thirdW - 2, h: rows - 4 },
+    hallway: { x: thirdW,         y: 0,  w: 2,          h: rows },
+    heimi:   { x: thirdW + 2,     y: 2,  w: thirdW - 2, h: rows - 4 },
+    ali:     { x: thirdW * 2 + 2, y: 2,  w: cols - thirdW * 2 - 4, h: rows - 4 },
   };
 
   const layout: TileRoomLayout = {
-    scale, offsetX, offsetY,
+    scale, offsetX: 0, offsetY: 0,
     rooms,
-    totalW: viewCols,
-    totalH: viewRows,
+    totalW: cols, totalH: rows,
     tileDim,
+    world, worldPxW, worldPxH,
+    viewportW: sceneW, viewportH: sceneH,
   };
 
-  // ── 배경 레이어 렌더링 ──
-  const bgLayer = new Container();
-  container.addChild(bgLayer);
-
-  for (const layer of bgTiles) {
-    for (let vx = 0; vx < viewCols; vx++) {
-      for (let vy = 0; vy < viewRows; vy++) {
-        const mx = cropX + vx; // 원본 맵 좌표
-        const my = cropY + vy;
-        if (mx >= cols || my >= rows) continue;
-
-        const tileIdx = layer[mx]?.[my];
+  // ── 배경 + 오브젝트 레이어 렌더링 ──
+  const allLayers = [...bgTiles, ...objTiles];
+  for (const layer of allLayers) {
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        const tileIdx = layer[x]?.[y];
         if (tileIdx == null || tileIdx < 0) continue;
-        if (tileIdx >= tiles.length) continue;
+        const tex = getTile(tileIdx);
+        if (!tex) continue;
 
-        const sprite = new Sprite(tiles[tileIdx]);
-        const pos = tileToPx(vx, vy, layout);
-        sprite.position.set(pos.x, pos.y);
+        const sprite = new Sprite(tex);
+        sprite.position.set(x * tileSize, y * tileSize);
         sprite.scale.set(scale);
-        bgLayer.addChild(sprite);
-      }
-    }
-  }
-
-  // ── 오브젝트 레이어 렌더링 ──
-  const objLayer = new Container();
-  container.addChild(objLayer);
-
-  for (const layer of objTiles) {
-    for (let vx = 0; vx < viewCols; vx++) {
-      for (let vy = 0; vy < viewRows; vy++) {
-        const mx = cropX + vx;
-        const my = cropY + vy;
-        if (mx >= cols || my >= rows) continue;
-
-        const tileIdx = layer[mx]?.[my];
-        if (tileIdx == null || tileIdx < 0) continue;
-        if (tileIdx >= tiles.length) continue;
-
-        const sprite = new Sprite(tiles[tileIdx]);
-        const pos = tileToPx(vx, vy, layout);
-        sprite.position.set(pos.x, pos.y);
-        sprite.scale.set(scale);
-        objLayer.addChild(sprite);
+        world.addChild(sprite);
       }
     }
   }
 
   // ── 라벨 ──
   const labelStyle = new TextStyle({
-    fontSize: Math.max(7, tileDim * scale * 0.45),
+    fontSize: Math.max(10, tileSize * 0.4),
     fontFamily: '"Press Start 2P", monospace',
     fill: 0xffffff,
     stroke: { color: 0x000000, width: 2 },
@@ -175,12 +201,19 @@ export async function drawTileScene(
     { text: '📋 Guide', room: rooms.ali },
   ];
   for (const { text, room } of labels) {
-    const pos = tileToPx(room.x + room.w / 2, room.y + room.h - 0.5, layout);
+    const px = (room.x + room.w / 2) * tileSize;
+    const py = (room.y + room.h - 0.5) * tileSize;
     const label = new Text({ text, style: labelStyle });
     label.anchor.set(0.5, 0.5);
-    label.position.set(pos.x, pos.y);
-    objLayer.addChild(label);
+    label.position.set(px, py);
+    world.addChild(label);
   }
+
+  // ── 카메라 초기 위치: 맵 중앙 ──
+  centerCamera(worldPxW / 2, worldPxH / 2, layout);
+
+  // ── 드래그 이동 설정 ──
+  setupDrag(world, layout);
 
   return layout;
 }
