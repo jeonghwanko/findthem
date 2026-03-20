@@ -19,10 +19,21 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file(System.getenv('KEYSTORE_PATH') ?: '../findthem-release.keystore')
-            storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
-            keyAlias System.getenv('KEY_ALIAS') ?: 'findthem'
-            keyPassword System.getenv('KEY_PASSWORD') ?: ''
+            // Jenkins: keystore.properties 파일 우선, 로컬: 환경변수 폴백
+            def keystorePropsFile = rootProject.file("keystore.properties")
+            if (keystorePropsFile.exists()) {
+                def props = new Properties()
+                props.load(new FileInputStream(keystorePropsFile))
+                storeFile file(props['storeFile'] ?: '../findthem-release.keystore')
+                storePassword props['storePassword'] ?: ''
+                keyAlias props['keyAlias'] ?: 'findthem'
+                keyPassword props['keyPassword'] ?: ''
+            } else {
+                storeFile file(System.getenv('KEYSTORE_PATH') ?: '../findthem-release.keystore')
+                storePassword System.getenv('KEYSTORE_PASSWORD') ?: ''
+                keyAlias System.getenv('KEY_ALIAS') ?: 'findthem'
+                keyPassword System.getenv('KEY_PASSWORD') ?: ''
+            }
         }
     }
     buildTypes {
