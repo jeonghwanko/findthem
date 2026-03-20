@@ -1,0 +1,26 @@
+{
+  "name": "@findthem/pixi-scenes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./game": "./src/game/index.ts",
+    "./components": "./src/components/index.ts",
+    "./audio": "./src/audio/BgmEngine.ts"
+  },
+  "dependencies": {
+    "@findthem/shared": "*"
+  },
+  "peerDependencies": {
+    "pixi.js": ">=8",
+    "@esotericsoftware/spine-pixi-v8": ">=4",
+    "react": ">=18",
+    "react-i18next": ">=14",
+    "lucide-react": ">=0.300"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/react": "^19.0.0"
+  }
+}

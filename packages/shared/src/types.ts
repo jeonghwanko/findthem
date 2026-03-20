@@ -88,6 +88,34 @@ export interface Sighting {
   createdAt: string;
 }
 
+export interface SightingDetail extends Sighting {
+  userId?: string | null;
+  source?: SightingSource;
+  subjectType?: SubjectType | null;
+  status?: SightingStatus;
+  tipsterName?: string | null;
+  tipsterPhone?: string | null;
+  aiAnalysis?: unknown;
+  user?: { id: string; name: string } | null;
+  report?: {
+    id: string;
+    name: string;
+    subjectType: SubjectType;
+    status: ReportStatus;
+    lastSeenAddress: string;
+    lastSeenLat?: number | null;
+    lastSeenLng?: number | null;
+    photos?: { thumbnailUrl?: string | null }[];
+  } | null;
+  matches?: {
+    id: string;
+    confidence: number;
+    aiReasoning: string;
+    status: MatchStatus;
+    reportId: string;
+  }[];
+}
+
 export interface Match {
   id: string;
   reportId: string;

@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Gamepad2, Volume2, VolumeX } from 'lucide-react';
 import { Application, Graphics, Text, TextStyle, Container, extensions } from 'pixi.js';
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
-import { getBgmEngine } from '../audio/BgmEngine';
-import { HeroLoadingOverlay } from './HeroLoadingOverlay';
-import StatsStrip from './StatsStrip';
+import { getBgmEngine } from '@findthem/pixi-scenes/audio';
+import { HeroLoadingOverlay } from '@findthem/pixi-scenes/components';
+import { StatsStrip } from '@findthem/pixi-scenes/components';
 import { XP_PER_AD, TOKEN_STORAGE_KEY } from '@findthem/shared';
 import type { AdRewardResult, SponsorXpStats } from '@findthem/shared';
 import { api } from '../api/client';
@@ -14,7 +14,7 @@ import { useRewardAd } from '../hooks/useRewardAd';
 
 // Explicitly register Spine render pipe (Vite may tree-shake the side-effect import)
 extensions.add(SpinePipe);
-import AgentWorldScene from './AgentWorldScene';
+import { AgentWorldScene } from '@findthem/pixi-scenes/components';
 
 interface Props {
   stats: { total: number; found: number } | null;
@@ -39,7 +39,7 @@ const AGENT_SPINE_CONFIGS = [
 ] as const;
 
 interface CharState {
-  char: import('../game/SpineCharacterLite').SpineCharacterLite;
+  char: import('@findthem/pixi-scenes/game').SpineCharacterLite;
   nameTag: Container;
   bubble: Container;
   bubbleText: Text;
@@ -366,7 +366,7 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
 
           app.ticker.stop();
 
-          const { SpineCharacterLite, setSpineLoadProgress } = await import('../game/SpineCharacterLite');
+          const { SpineCharacterLite, setSpineLoadProgress } = await import('@findthem/pixi-scenes/game');
           if (destroyed) return;
 
           setSpineLoadProgress((loaded, _t) => { if (!destroyed) setLoadProgress(loaded); });
@@ -625,7 +625,7 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
     return () => {
       destroyed = true;
       // Fire-and-forget unregister (module may not be imported yet if destroyed early)
-      void import('../game/SpineCharacterLite').then(({ setSpineLoadProgress }) => setSpineLoadProgress(null)).catch(() => {});
+      void import('@findthem/pixi-scenes/game').then(({ setSpineLoadProgress }) => setSpineLoadProgress(null)).catch(() => {});
       try {
         cleanupRef.current?.();
         cleanupRef.current = null;

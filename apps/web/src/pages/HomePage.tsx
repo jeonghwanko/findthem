@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, Camera, Megaphone, MessageSquare, ScanFace, type LucideIcon } from 'lucide-react';
 import { api, type Report, type ReportListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
-import StatsStrip from '../components/StatsStrip';
+import { StatsStrip } from '@findthem/pixi-scenes/components';
 import OutreachHighlights from '../components/OutreachHighlights';
 import heroIllustration from '../assets/hero-illustration.svg';
 import type { SubjectType } from '@findthem/shared';

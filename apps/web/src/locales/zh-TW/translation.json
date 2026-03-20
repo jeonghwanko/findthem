@@ -635,5 +635,33 @@
       "posts": "篇",
       "decisions": "次"
     }
+  },
+  "sightingDetail": {
+    "badge": "目擊",
+    "notFound": "找不到目擊資訊。",
+    "noDescription": "目擊報告",
+    "info": "目擊資訊",
+    "address": "目擊地點",
+    "sightedAt": "目擊時間",
+    "createdAt": "報案時間",
+    "tipster": "報案者",
+    "tipsterPhone": "聯繫方式",
+    "map": "位置",
+    "sightingLocation": "目擊位置",
+    "linkedReport": "關聯的失蹤報案",
+    "matches": "AI比對結果",
+    "confidence": "比對信心度",
+    "status": {
+      "PENDING": "待分析",
+      "ANALYZED": "分析完成",
+      "CONFIRMED": "已確認",
+      "REJECTED": "已排除"
+    },
+    "matchStatus": {
+      "PENDING": "待處理",
+      "CONFIRMED": "已確認",
+      "REJECTED": "已排除",
+      "NOTIFIED": "已通知"
+    }
   }
 }

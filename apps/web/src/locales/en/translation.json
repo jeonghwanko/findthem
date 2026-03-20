@@ -635,5 +635,33 @@
       "posts": " posts",
       "decisions": " acts"
     }
+  },
+  "sightingDetail": {
+    "badge": "Sighting",
+    "notFound": "Sighting not found.",
+    "noDescription": "Sighting Report",
+    "info": "Sighting Info",
+    "address": "Location",
+    "sightedAt": "Sighted At",
+    "createdAt": "Reported At",
+    "tipster": "Reporter",
+    "tipsterPhone": "Contact",
+    "map": "Location",
+    "sightingLocation": "Sighting Location",
+    "linkedReport": "Linked Missing Report",
+    "matches": "AI Match Results",
+    "confidence": "Match Confidence",
+    "status": {
+      "PENDING": "Pending Analysis",
+      "ANALYZED": "Analyzed",
+      "CONFIRMED": "Confirmed",
+      "REJECTED": "Rejected"
+    },
+    "matchStatus": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "REJECTED": "Rejected",
+      "NOTIFIED": "Notified"
+    }
   }
 }

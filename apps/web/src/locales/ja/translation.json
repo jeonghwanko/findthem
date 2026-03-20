@@ -634,5 +634,33 @@
       "posts": "件",
       "decisions": "件"
     }
+  },
+  "sightingDetail": {
+    "badge": "目撃情報",
+    "notFound": "目撃情報が見つかりません。",
+    "noDescription": "目撃報告",
+    "info": "目撃情報",
+    "address": "目撃場所",
+    "sightedAt": "目撃時間",
+    "createdAt": "受付時間",
+    "tipster": "情報提供者",
+    "tipsterPhone": "連絡先",
+    "map": "位置",
+    "sightingLocation": "目撃位置",
+    "linkedReport": "関連する行方不明届",
+    "matches": "AIマッチ結果",
+    "confidence": "マッチ信頼度",
+    "status": {
+      "PENDING": "分析待ち",
+      "ANALYZED": "分析完了",
+      "CONFIRMED": "確認済み",
+      "REJECTED": "除外"
+    },
+    "matchStatus": {
+      "PENDING": "待機",
+      "CONFIRMED": "確認",
+      "REJECTED": "除外",
+      "NOTIFIED": "通知完了"
+    }
   }
 }

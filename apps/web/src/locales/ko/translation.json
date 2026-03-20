@@ -635,5 +635,33 @@
       "posts": "건",
       "decisions": "건"
     }
+  },
+  "sightingDetail": {
+    "badge": "제보",
+    "notFound": "제보를 찾을 수 없습니다.",
+    "noDescription": "목격 제보",
+    "info": "제보 정보",
+    "address": "목격 장소",
+    "sightedAt": "목격 시간",
+    "createdAt": "접수 시간",
+    "tipster": "제보자",
+    "tipsterPhone": "연락처",
+    "map": "위치",
+    "sightingLocation": "제보 위치",
+    "linkedReport": "연결된 실종 신고",
+    "matches": "AI 매칭 결과",
+    "confidence": "매칭 신뢰도",
+    "status": {
+      "PENDING": "분석 대기",
+      "ANALYZED": "분석 완료",
+      "CONFIRMED": "확인됨",
+      "REJECTED": "제외됨"
+    },
+    "matchStatus": {
+      "PENDING": "대기",
+      "CONFIRMED": "확인",
+      "REJECTED": "제외",
+      "NOTIFIED": "알림 완료"
+    }
   }
 }

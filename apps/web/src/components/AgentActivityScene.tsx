@@ -4,8 +4,8 @@ import { Application, Graphics, Text, TextStyle, Container, extensions } from 'p
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
 import type { AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
-import { computeLayout, drawScene, roomCenter, tileToPixel } from '../game/AgentRoom';
-import AgentActivityOverlay from './AgentActivityOverlay';
+import { computeLayout, drawScene, roomCenter, tileToPixel } from '@findthem/pixi-scenes/game';
+import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
 
 extensions.add(SpinePipe);
 
@@ -44,7 +44,7 @@ const SCENE_H = 280;
 
 // ── 에이전트 상태 ──
 interface AgentState {
-  char: import('../game/SpineCharacterLite').SpineCharacterLite;
+  char: import('@findthem/pixi-scenes/game').SpineCharacterLite;
   nameTag: Text;
   bubble: Container;
   bubbleText: Text;
@@ -165,7 +165,7 @@ export default function AgentActivityScene() {
         app.ticker.stop();
 
         // ── Spine 캐릭터 로드 ──
-        const { SpineCharacterLite } = await import('../game/SpineCharacterLite');
+        const { SpineCharacterLite } = await import('@findthem/pixi-scenes/game');
         if (destroyed) return;
 
         const chars = await Promise.all(

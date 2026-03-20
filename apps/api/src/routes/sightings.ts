@@ -238,6 +238,42 @@ export function registerSightingRoutes(router: Router) {
     res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
   });
 
+  // 제보 상세 조회
+  router.get('/sightings/:id', optionalAuth, async (req, res) => {
+    const id = req.params.id as string;
+
+    const sighting = await prisma.sighting.findUnique({
+      where: { id },
+      include: {
+        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true } },
+        report: {
+          select: {
+            id: true, name: true, subjectType: true, status: true,
+            lastSeenAddress: true, lastSeenLat: true, lastSeenLng: true,
+            photos: { where: { isPrimary: true }, take: 1, select: { thumbnailUrl: true } },
+          },
+        },
+        user: { select: { id: true, name: true } },
+        matches: {
+          select: { id: true, confidence: true, aiReasoning: true, status: true, reportId: true },
+          orderBy: { confidence: 'desc' },
+          take: 5,
+        },
+      },
+    });
+
+    if (!sighting) throw new ApiError(404, ERROR_CODES.SIGHTING_NOT_FOUND);
+
+    // 민감 정보 제거 (editPassword, tipsterPhone은 본인만)
+    const isOwner = req.user && sighting.userId === req.user.userId;
+    const { editPassword: _pw, tipsterPhone, ...safe } = sighting;
+
+    res.json({
+      ...safe,
+      tipsterPhone: isOwner ? tipsterPhone : undefined,
+    });
+  });
+
   // 전체 제보 목록 (반경 검색 지원)
   router.get('/sightings', optionalAuth, validateQuery(sightingListQuerySchema), async (req, res) => {
     const { page, limit, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof sightingListQuerySchema>;

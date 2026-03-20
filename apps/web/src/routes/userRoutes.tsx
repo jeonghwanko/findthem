@@ -11,6 +11,7 @@ import BrowsePage from '../pages/BrowsePage';
 import RegisterReportPage from '../pages/RegisterReportPage';
 import ReportDetailPage from '../pages/ReportDetailPage';
 import SightingSubmitPage from '../pages/SightingSubmitPage';
+import SightingDetailPage from '../pages/SightingDetailPage';
 import TeamPage from '../pages/TeamPage';
 import SponsorPage from '../pages/SponsorPage';
 import SponsorSuccessPage from '../pages/SponsorSuccessPage';
@@ -60,6 +61,7 @@ export function userRoutes(ctx: UserRoutesContext): RouteEntry[] {
     },
     { path: '/reports/:id', element: <ReportDetailPage /> },
     { path: '/sightings/new', element: <SightingSubmitPage /> },
+    { path: '/sightings/:id', element: <SightingDetailPage /> },
     { path: '/auth/callback', element: <AuthCallbackPage /> },
     { path: '/community', element: <CommunityPage /> },
     {

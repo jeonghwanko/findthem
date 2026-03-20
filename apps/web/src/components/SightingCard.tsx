@@ -16,7 +16,7 @@ export default function SightingCard({ sighting }: SightingCardProps) {
   const photo = sighting.photos?.[0];
   const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l}-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
   const timeAgo = formatTimeAgo(sighting.createdAt, locale);
-  const linkTo = sighting.reportId ? `/reports/${sighting.reportId}` : '#';
+  const linkTo = `/sightings/${sighting.id}`;
 
   return (
     <Link

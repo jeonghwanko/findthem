@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Application, extensions } from 'pixi.js';
 import { SpinePipe } from '@esotericsoftware/spine-pixi-v8';
-import { SpineCharacterLite } from '../game/SpineCharacterLite';
+import { SpineCharacterLite } from '@findthem/pixi-scenes/game';
 
 // Register SpinePipe (idempotent — safe to call multiple times)
 extensions.add(SpinePipe);
