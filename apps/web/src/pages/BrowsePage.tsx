@@ -165,12 +165,12 @@ export default function BrowsePage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('browse.title')}</h1>
 
-      {/* 게임 후원 버튼 — 우하단 고정 */}
+      {/* 게임 후원 버튼 — 헤더 바로 아래 우측 고정 */}
       <Link
         to="/game"
-        className="fixed right-4 bottom-20 z-40 flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-4 py-3"
+        className="fixed right-4 top-[56px] z-30 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-bold shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-150 px-3.5 py-2"
       >
-        <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
+        <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" />
         <span className="text-xs">{t('home.playToSponsor')}</span>
       </Link>
 
