@@ -55,6 +55,13 @@ export class FolkCharacter {
   private elapsed = 0;
   private animSpeed = 6; // fps
 
+  // idle 애니메이션: 호흡 + 고개 돌리기
+  private idleTime = 0;
+  private breathBaseY = 0;
+  private lookTimer = 0;
+  private lookDir = 'down';
+  private readonly LOOK_DIRS = ['down', 'left', 'right', 'down'];
+
   private constructor(sprite: Sprite, frames: Record<string, Texture[]>) {
     this.sprite = sprite;
     this.frames = frames;
@@ -114,23 +121,43 @@ export class FolkCharacter {
     this.elapsed = 0;
 
     if (state === 'idle' || state === 'sit') {
-      // idle/sit: down 방향 첫 프레임 고정
       this.currentDir = 'down';
       this.sprite.texture = this.frames['down'][0];
+      this.idleTime = 0;
+      this.lookTimer = 2 + Math.random() * 3;
+      this.lookDir = 'down';
+      this.sprite.y = 0;
     }
   }
 
   tick(dt: number) {
-    if (this.currentState !== 'run') return;
+    if (this.currentState === 'run') {
+      this.elapsed += dt;
+      const frameDuration = 1 / this.animSpeed;
+      while (this.elapsed >= frameDuration) {
+        this.elapsed -= frameDuration;
+        const dirFrames = this.frames[this.currentDir] ?? this.frames['down'];
+        this.frameIndex = (this.frameIndex + 1) % dirFrames.length;
+        this.sprite.texture = dirFrames[this.frameIndex];
+      }
+      return;
+    }
 
-    this.elapsed += dt;
-    const frameDuration = 1 / this.animSpeed;
+    // idle 애니메이션
+    if (this.currentState === 'idle') {
+      this.idleTime += dt;
 
-    while (this.elapsed >= frameDuration) {
-      this.elapsed -= frameDuration;
-      const dirFrames = this.frames[this.currentDir] ?? this.frames['down'];
-      this.frameIndex = (this.frameIndex + 1) % dirFrames.length;
-      this.sprite.texture = dirFrames[this.frameIndex];
+      // 호흡: sin 곡선으로 y 1px 상하 흔들림
+      this.sprite.y = Math.sin(this.idleTime * 2.5) * 1;
+
+      // 고개 돌리기: 3~6초마다 랜덤 방향
+      this.lookTimer -= dt;
+      if (this.lookTimer <= 0) {
+        this.lookTimer = 3 + Math.random() * 3;
+        const nextDir = this.LOOK_DIRS[Math.floor(Math.random() * this.LOOK_DIRS.length)];
+        this.lookDir = nextDir;
+        this.sprite.texture = this.frames[nextDir][0];
+      }
     }
   }
 }

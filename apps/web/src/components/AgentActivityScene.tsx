@@ -31,6 +31,15 @@ const AGENT_CONFIGS = [
   },
 ] as const;
 
+// ── NPC 마을 주민 (배경 캐릭터, 랜덤 패트롤만) ──
+const NPC_CONFIGS = [
+  { folkId: 2, offsetX: -120, offsetY: -80 },
+  { folkId: 4, offsetX: 100, offsetY: -60 },
+  { folkId: 5, offsetX: -80, offsetY: 90 },
+  { folkId: 7, offsetX: 60, offsetY: 70 },
+  { folkId: 8, offsetX: -40, offsetY: -30 },
+];
+
 const SCENE_H = 480;
 
 // ── 레이아웃 어댑터 (TileMap / Graphics fallback 통합) ──
@@ -245,9 +254,10 @@ export default function AgentActivityScene() {
         const { FolkCharacter } = await import('@findthem/pixi-scenes/game');
         if (destroyed) return;
 
-        const chars = await Promise.all(
-          AGENT_CONFIGS.map((c) => FolkCharacter.create(c.folkId)),
-        );
+        const [chars, npcChars] = await Promise.all([
+          Promise.all(AGENT_CONFIGS.map((c) => FolkCharacter.create(c.folkId))),
+          Promise.all(NPC_CONFIGS.map((n) => FolkCharacter.create(n.folkId))),
+        ]);
         if (destroyed) return;
 
         // 캐릭터/UI를 world 컨테이너 안에 배치 (카메라 이동 시 함께 움직임)
@@ -345,6 +355,30 @@ export default function AgentActivityScene() {
             questIdx: 0,
             activityQueue: [],
             activityShowTimer: randBetween(2, 5),
+          };
+        });
+
+        // ── NPC 마을 주민 초기화 ──
+        interface NpcState {
+          char: Awaited<ReturnType<typeof FolkCharacter.create>>;
+          x: number; y: number;
+          targetX: number; targetY: number;
+          homeX: number; homeY: number;
+          patrolTimer: number;
+          speed: number;
+        }
+        const mapCenter = scene.getCenter('claude');
+        const npcStates: NpcState[] = NPC_CONFIGS.map((cfg, i) => {
+          const char = npcChars[i];
+          const x = mapCenter.x + cfg.offsetX;
+          const y = mapCenter.y + cfg.offsetY;
+          char.setPosition(x, y);
+          char.play('idle');
+          charLayer.addChild(char.view);
+          return {
+            char, x, y, targetX: x, targetY: y, homeX: x, homeY: y,
+            patrolTimer: randBetween(3, 8),
+            speed: 20 + Math.random() * 15,
           };
         });
 
@@ -670,6 +704,36 @@ export default function AgentActivityScene() {
               state.bubble.alpha = Math.min(state.bubbleAlpha, state.bubbleShowTimer > 0.3 ? 1 : state.bubbleShowTimer / 0.3);
             } else {
               state.bubble.alpha = 0;
+            }
+          }
+        });
+
+        // ── NPC 패트롤 ticker ──
+        app.ticker.add((ticker) => {
+          if (destroyed) return;
+          const dt = ticker.deltaMS / 1000;
+          for (const npc of npcStates) {
+            npc.char.tick(dt);
+            npc.patrolTimer -= dt;
+            if (npc.patrolTimer <= 0) {
+              npc.targetX = npc.homeX + (Math.random() - 0.5) * 160;
+              npc.targetY = npc.homeY + (Math.random() - 0.5) * 120;
+              npc.patrolTimer = randBetween(5, 15);
+            }
+            const dx = npc.targetX - npc.x;
+            const dy = npc.targetY - npc.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 2) {
+              const step = Math.min(npc.speed * dt, dist);
+              npc.x += (dx / dist) * step;
+              npc.y += (dy / dist) * step;
+              npc.char.setPosition(npc.x, npc.y);
+              if (Math.abs(dx) > Math.abs(dy)) {
+                npc.char.setFlipX(dx < 0);
+              }
+              npc.char.play('run');
+            } else {
+              npc.char.play('idle');
             }
           }
         });
