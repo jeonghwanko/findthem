@@ -347,10 +347,9 @@ export default function AgentActivityScene() {
           state.bubbleAlpha = 1;
         };
 
-        // ── 퀘스트 보드 — ali 방 오른쪽 아래에 배치 (중앙 가림 방지) ──
-        const aliCenter = scene.getCenter('ali');
-        const aliBounds = scene.getRoomBounds('ali');
-        const boardPx = { x: aliBounds.x + aliBounds.w - scene.tileSize * 2, y: aliCenter.y - scene.tileSize * 2 };
+        // ── 퀘스트 보드 — claude 방 왼쪽 상단 (텐트 아래 빈 공간) ──
+        const claudeBounds = scene.getRoomBounds('claude');
+        const boardPx = { x: claudeBounds.x + scene.tileSize * 2, y: claudeBounds.y + scene.tileSize * 3 };
         const boardStats = { pending: [2, 1, 1], completed: 0 }; // 에이전트별 대기
 
         const board = new Container();
