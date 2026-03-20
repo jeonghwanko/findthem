@@ -5,7 +5,6 @@ import { Gamepad2, X, Trophy, Play, Tv } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useRewardAd } from '../hooks/useRewardAd';
 import { getGameStatus, recordGamePlay, type GameStatus } from '../api/game';
-import { SpinePortrait } from '../components/SpinePortrait';
 import { MAX_FREE_PLAYS_PER_DAY, MAX_AD_PLAYS_PER_DAY } from '@findthem/shared';
 
 // ── 스토리지 키 (비로그인 로컬 한도 관리) ──
@@ -277,12 +276,10 @@ export default function GamePage() {
                 }}
               />
               <div className="relative w-full flex items-end justify-center pt-3" style={{ height: 130 }}>
-                <SpinePortrait
-                  skins={ch.skins}
-                  animate={selected === ch.id}
-                  fullBody={true}
-                  width={80}
-                  height={120}
+                <img
+                  src={`/agents/${ch.id}.webp`}
+                  alt={t(ch.nameKey)}
+                  className={`w-20 h-auto object-contain transition-transform duration-200 ${selected === ch.id ? 'scale-110' : ''}`}
                 />
               </div>
               <div className="relative w-full py-2.5 px-2 text-center bg-gradient-to-t from-white/90 to-transparent">
@@ -384,7 +381,11 @@ export default function GamePage() {
               className="w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center mb-2"
               style={{ border: `2px solid ${resultChar.portraitBorder}` }}
             >
-              <SpinePortrait skins={resultChar.skins} animate={false} />
+              <img
+                src={`/agents/${resultChar.id}.webp`}
+                alt={t(resultChar.nameKey)}
+                className="w-full h-full object-contain"
+              />
             </div>
             <p className="text-base font-semibold text-gray-700">
               {t(resultChar.nameKey)}

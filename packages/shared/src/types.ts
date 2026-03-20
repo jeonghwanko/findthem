@@ -647,6 +647,8 @@ export interface AgentActivityAgent {
   todayDecisions: number;
   latestPost: { id: string; title: string; createdAt: string } | null;
   recentEvents: AgentActivityEvent[];
+  /** BullMQ 큐 대기+처리중 작업 수 (waiting + active) */
+  queuePending: number;
 }
 
 export interface AgentActivityResponse {

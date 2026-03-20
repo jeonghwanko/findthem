@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
-import type { AgentActivityEvent } from '@findthem/shared';
+import type { AgentActivityAgent, AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
 import { drawTileScene, tileToPx, tileRoomCenter, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
@@ -70,8 +70,8 @@ function graphicsLayout(l: RoomLayout): SceneLayout {
 // ── 퀘스트 페이즈 ──
 type QuestPhase = 'idle' | 'going_to_board' | 'at_board' | 'going_to_work' | 'working' | 'complete';
 
-// ── 더미 퀘스트 텍스트 ──
-const DUMMY_QUESTS: Record<string, { working: string; done: string }[]> = {
+// ── 퀘스트 말풍선 텍스트 (시각 연출용) ──
+const QUEST_BUBBLES: Record<string, { working: string; done: string }[]> = {
   'image-matching': [
     { working: '🔍 사진 분석 중... 87%', done: '✅ 매칭 완료! 유사도 92%' },
     { working: '🔍 특징 추출 중...', done: '✅ 분석 완료! 3건 매칭' },
@@ -111,7 +111,7 @@ interface AgentState {
   // 퀘스트 시스템
   questPhase: QuestPhase;
   questTimer: number;
-  questIdx: number; // DUMMY_QUESTS 인덱스
+  questIdx: number; // QUEST_BUBBLES 인덱스
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -144,6 +144,8 @@ export default function AgentActivityScene() {
   const [phase, setPhase] = useState<'init' | 'loading' | 'ready'>('init');
   const [visible, setVisible] = useState(false);
   const { agents, pendingEventsRef, isLoading } = useAgentActivity(visible);
+  const agentsRef = useRef<AgentActivityAgent[]>([]);
+  agentsRef.current = agents;
 
   // IntersectionObserver — 뷰포트 진입 시 로드
   useEffect(() => {
@@ -350,8 +352,6 @@ export default function AgentActivityScene() {
         // ── 퀘스트 보드 — claude 방 왼쪽 상단 (텐트 아래 빈 공간) ──
         const claudeBounds = scene.getRoomBounds('claude');
         const boardPx = { x: claudeBounds.x + scene.tileSize * 2, y: claudeBounds.y + scene.tileSize * 3 };
-        const boardStats = { pending: [2, 1, 1], completed: 0 }; // 에이전트별 대기
-
         const board = new Container();
         board.position.set(boardPx.x, boardPx.y);
 
@@ -391,19 +391,25 @@ export default function AgentActivityScene() {
         boardLayer.addChild(board);
 
         const updateBoard = () => {
+          const cur = agentsRef.current;
+          const pending = AGENT_CONFIGS.map((cfg) => {
+            const a = cur.find((ag) => ag.agentId === cfg.id);
+            return a?.queuePending ?? 0;
+          });
+          const completed = cur.reduce((sum, a) => sum + a.todayDecisions, 0);
           const lines = [
-            `🔍 사진 분석 대기: ${boardStats.pending[0]}건`,
-            `📣 SNS 홍보 대기: ${boardStats.pending[1]}건`,
-            `📋 제보 안내 대기: ${boardStats.pending[2]}건`,
+            `🔍 사진 분석 대기: ${pending[0]}건`,
+            `📣 SNS 홍보 대기: ${pending[1]}건`,
+            `📋 제보 안내 대기: ${pending[2]}건`,
             ``,
-            `✅ 오늘 완료: ${boardStats.completed}건`,
+            `✅ 오늘 완료: ${completed}건`,
           ];
           boardBody.text = lines.join('\n');
         };
         updateBoard();
 
-        // ── 더미 퀘스트 타이머 ──
-        let dummyTimer = randBetween(3, 6); // 첫 퀘스트 빠르게
+        // ── 보드 갱신 + 큐 기반 퀘스트 트리거 ──
+        let boardCheckTimer = randBetween(5, 10);
 
         // 이동 헬퍼
         const ARRIVE_DIST = 3;
@@ -428,23 +434,30 @@ export default function AgentActivityScene() {
         app.ticker.add((ticker) => {
           const dt = ticker.deltaMS / 1000;
 
-          // ── 더미 퀘스트 생성 ──
-          dummyTimer -= dt;
-          if (dummyTimer <= 0) {
-            // 가장 한가한 에이전트에 퀘스트 할당
-            const idle = agentStates.filter(s => s.questPhase === 'idle');
-            if (idle.length > 0) {
-              const s = idle[Math.floor(Math.random() * idle.length)];
-              const i = agentStates.indexOf(s);
-              s.questPhase = 'going_to_board';
-              s.questIdx = Math.floor(Math.random() * 3);
-              if (boardStats.pending[i] > 0) boardStats.pending[i]--;
-              updateBoard();
+          // ── 보드 갱신 + 큐 기반 퀘스트 트리거 ──
+          boardCheckTimer -= dt;
+          if (boardCheckTimer <= 0) {
+            updateBoard();
+            // 큐에 대기 작업이 있고 idle인 에이전트 중 대기 수 가장 많은 에이전트에 퀘스트 트리거
+            const cur = agentsRef.current;
+            let bestIdx = -1;
+            let bestPending = 0;
+            for (let ai = 0; ai < agentStates.length; ai++) {
+              if (agentStates[ai].questPhase !== 'idle') continue;
+              const pending = cur.find((a) => a.agentId === AGENT_CONFIGS[ai].id)?.queuePending ?? 0;
+              if (pending > bestPending) {
+                bestPending = pending;
+                bestIdx = ai;
+              }
             }
-            dummyTimer = randBetween(8, 15);
+            if (bestIdx >= 0) {
+              agentStates[bestIdx].questPhase = 'going_to_board';
+              agentStates[bestIdx].questIdx = Math.floor(Math.random() * 3);
+            }
+            boardCheckTimer = randBetween(15, 25);
           }
 
-          // 실제 API 이벤트도 소비 (퀘스트로 변환, idle일 때만)
+          // 실제 API 이벤트 소비 (퀘스트로 변환, idle일 때만)
           if (pendingEventsRef.current.length > 0) {
             const evt = pendingEventsRef.current[0];
             const idx = evt.eventType === 'match_detected' ? 0
@@ -460,7 +473,7 @@ export default function AgentActivityScene() {
           for (let i = 0; i < agentStates.length; i++) {
             const state = agentStates[i];
             const cfg = AGENT_CONFIGS[i];
-            const quests = DUMMY_QUESTS[cfg.id] ?? DUMMY_QUESTS['chatbot-alert'];
+            const quests = QUEST_BUBBLES[cfg.id] ?? QUEST_BUBBLES['chatbot-alert'];
 
             // 스프라이트 애니메이션 업데이트
             state.char.tick(dt);
@@ -503,8 +516,6 @@ export default function AgentActivityScene() {
                   state.questTimer = 2;
                   state.workIcon.alpha = 0;
                   showBubble(state, quests[state.questIdx].done, 3);
-                  boardStats.completed++;
-                  boardStats.pending[i] = Math.max(0, boardStats.pending[i]) + Math.floor(Math.random() * 2); // 새 퀘스트 랜덤 추가
                   updateBoard();
                 }
                 break;
@@ -578,7 +589,8 @@ export default function AgentActivityScene() {
       destroyed = true;
       app.destroy(true, { children: true });
     };
-  }, [visible, pendingEventsRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- pendingEventsRef는 stable ref
+  }, [visible]);
 
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden" style={{ minHeight: SCENE_H }}>

@@ -6,10 +6,42 @@ import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
 import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
 import { createLogger } from '../logger.js';
+import { imageQueue, matchingQueue, promotionQueue, promotionRepostQueue, outreachQueue, notificationQueue, qaCrawlQueue } from '../jobs/queues.js';
 import { dispatchWebhookToAll, dispatchWebhookToAgent } from '../services/webhookDispatcher.js';
 import type { WebhookPayload } from '../services/webhookDispatcher.js';
 
 const log = createLogger('communityRoute');
+
+// ── 에이전트별 큐 매핑 (대기 작업 수 조회용) ──
+const AGENT_QUEUES = {
+  'image-matching': [imageQueue, matchingQueue],
+  promotion: [promotionQueue, promotionRepostQueue, outreachQueue],
+  'chatbot-alert': [notificationQueue, qaCrawlQueue],
+} as const;
+
+async function getAgentPendingCounts(): Promise<Record<string, number>> {
+  try {
+    const result: Record<string, number> = {};
+    await Promise.all(
+      Object.entries(AGENT_QUEUES).map(async ([agentId, queues]) => {
+        const counts = await Promise.allSettled(
+          queues.map(async (q) => {
+            const [w, a] = await Promise.all([q.getWaitingCount(), q.getActiveCount()]);
+            return w + a;
+          }),
+        );
+        result[agentId] = counts.reduce(
+          (sum, c) => sum + (c.status === 'fulfilled' ? c.value : 0),
+          0,
+        );
+      }),
+    );
+    return result;
+  } catch (err) {
+    log.warn({ err }, 'Failed to fetch queue pending counts');
+    return {};
+  }
+}
 
 // ── Zod schemas ──
 
@@ -78,7 +110,7 @@ export function registerCommunityRoutes(router: Router) {
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
 
-      const [decisions, postCounts, latestPosts, todayPostCountsRaw] = await Promise.all([
+      const [decisions, postCounts, latestPosts, todayPostCountsRaw, pendingCounts] = await Promise.all([
         prisma.agentDecisionLog.findMany({
           where: { createdAt: { gte: sinceDate } },
           orderBy: { createdAt: 'desc' },
@@ -109,6 +141,7 @@ export function registerCommunityRoutes(router: Router) {
           where: { agentId: { not: null }, createdAt: { gte: todayStart } },
           _count: true,
         }),
+        getAgentPendingCounts(),
       ]);
 
       const todayPostCounts = todayPostCountsRaw;
@@ -138,10 +171,11 @@ export function registerCommunityRoutes(router: Router) {
             ? { id: latest.id, title: latest.title, createdAt: latest.createdAt.toISOString() }
             : null,
           recentEvents: events,
+          queuePending: pendingCounts[agentId] ?? 0,
         };
       });
 
-      res.set('Cache-Control', 'public, max-age=10');
+      res.set('Cache-Control', 'private, max-age=10');
       res.json({ agents, serverTime: new Date().toISOString() });
     },
   );
