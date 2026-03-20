@@ -39,6 +39,7 @@ const config: CapacitorConfig = {
     AdMob: {
       appId: {
         android: 'ca-app-pub-3320768302064088~3216379440',
+        ios: 'ca-app-pub-3320768302064088~1876982270',
       },
     },
     CapacitorUpdater: {
