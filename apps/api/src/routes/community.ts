@@ -46,6 +46,11 @@ async function getAgentPendingCounts(): Promise<Record<string, number>> {
 // ── 에이전트별 세부 활동 스트림 (Pixi 씬 말풍선용) ──
 type RawActivity = { type: string; description: string; createdAt: Date; url?: string };
 
+/** 이름을 말풍선에 맞게 짧게 자르기 */
+function shortName(name: string, max = 10): string {
+  return name.length > max ? name.slice(0, max) + '…' : name;
+}
+
 async function getRecentActivities(todayStart: Date): Promise<Record<string, RawActivity[]>> {
   try {
     const [outreachReqs, promotions, matches, recentReports, recentSightings] = await Promise.all([
@@ -101,7 +106,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       const pct = Math.round(m.confidence * 100);
       result['image-matching'].push({
         type: 'match_found',
-        description: `🔍 '${m.report.name}' 매칭 ${pct}%`,
+        description: `🔍 '${shortName(m.report.name)}' 매칭 ${pct}%`,
         createdAt: m.createdAt,
       });
     }
@@ -116,20 +121,20 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       if (r.status === 'PENDING_APPROVAL') {
         result.promotion.push({
           type: 'outreach_pending',
-          description: `⏳ ${contactType} '${r.contact.name}' 승인 대기`,
+          description: `⏳ ${contactType} '${shortName(r.contact.name)}' 승인 대기`,
           createdAt: r.createdAt, url,
         });
       } else if (r.status === 'SENT') {
         const ch = r.channel === 'EMAIL' ? '이메일' : '댓글';
         result.promotion.push({
           type: 'outreach_sent',
-          description: `✅ ${contactType} '${r.contact.name}'에게 ${ch} 발송`,
+          description: `✅ '${shortName(r.contact.name)}' ${ch} 발송!`,
           createdAt: r.createdAt, url,
         });
       } else if (r.status === 'APPROVED' || r.status === 'SENDING') {
         result.promotion.push({
           type: 'outreach_discover',
-          description: `📣 ${contactType} '${r.contact.name}' 연락 준비 중`,
+          description: `📣 '${shortName(r.contact.name)}' 연락 준비`,
           createdAt: r.createdAt, url,
         });
       }
@@ -140,7 +145,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       const platform = p.platform === 'TWITTER' ? '트위터' : p.platform === 'KAKAO_CHANNEL' ? '카카오' : 'Instagram';
       result.promotion.push({
         type: 'promotion_posted',
-        description: `📢 '${p.report.name}' ${platform} 게시 완료`,
+        description: `📢 '${shortName(p.report.name)}' ${platform} 게시`,
         createdAt: p.postedAt ?? p.postedAt!,
         url: p.postUrl ?? undefined,
       });
@@ -151,7 +156,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       const addr = r.lastSeenAddress ? ` — ${r.lastSeenAddress.slice(0, 15)}` : '';
       result['chatbot-alert'].push({
         type: 'report_received',
-        description: `📋 '${r.name}' 실종 신고 접수${addr}`,
+        description: `📋 '${shortName(r.name)}' 신고 접수${addr}`,
         createdAt: r.createdAt,
       });
     }
@@ -165,6 +170,69 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
         description: `📸 ${addr} 제보 분석 완료 (${name})`,
         createdAt: s.createdAt,
       });
+    }
+
+    // 데이터가 부족하면 최근 신고/제보에서 시나리오 활동 생성
+    const needsFallback = Object.values(result).every((arr) => arr.length < 3);
+    if (needsFallback) {
+      const [fallbackReports, fallbackSightings, fallbackOutreach] = await Promise.all([
+        prisma.report.findMany({
+          orderBy: { createdAt: 'desc' }, take: 8,
+          select: { name: true, subjectType: true, lastSeenAddress: true, createdAt: true },
+        }),
+        prisma.sighting.findMany({
+          orderBy: { createdAt: 'desc' }, take: 5,
+          select: { address: true, createdAt: true, report: { select: { name: true } } },
+        }),
+        prisma.outreachContact.findMany({
+          orderBy: { createdAt: 'desc' }, take: 5,
+          select: { name: true, type: true, videoId: true, youtubeChannelUrl: true, createdAt: true },
+        }),
+      ]);
+
+      const now = new Date();
+      // 클로드: 신고 기반 분석 시나리오
+      for (const r of fallbackReports.slice(0, 4)) {
+        const conf = 60 + Math.floor(Math.random() * 35);
+        result['image-matching'].push(
+          { type: 'match_found', description: `🔍 '${shortName(r.name)}' 분석 중...`, createdAt: now },
+          { type: 'match_found', description: `✅ '${shortName(r.name)}' 유사도 ${conf}%`, createdAt: now },
+        );
+      }
+
+      // 헤르미: 아웃리치 대상자 시나리오
+      for (const c of fallbackOutreach) {
+        const cType = c.type === 'VIDEO' || c.type === 'YOUTUBER' ? '유튜버' : '기자';
+        let url: string | undefined;
+        if (c.videoId) url = `https://youtube.com/watch?v=${c.videoId}`;
+        else if (c.youtubeChannelUrl) url = c.youtubeChannelUrl;
+        result.promotion.push(
+          { type: 'outreach_discover', description: `📣 ${cType} '${shortName(c.name)}' 발견!`, createdAt: now, url },
+          { type: 'outreach_pending', description: `✉️ '${shortName(c.name)}' 초안 작성 중`, createdAt: now, url },
+        );
+      }
+      // 헤르미: 프로모션 시나리오
+      for (const r of fallbackReports.slice(0, 3)) {
+        const platforms = ['트위터', '카카오 채널'];
+        const p = platforms[Math.floor(Math.random() * platforms.length)];
+        result.promotion.push(
+          { type: 'promotion_posted', description: `📢 '${shortName(r.name)}' ${p} 게시`, createdAt: now },
+        );
+      }
+
+      // 알리: 신고/제보 시나리오
+      for (const r of fallbackReports.slice(0, 4)) {
+        const addr = r.lastSeenAddress ? ` — ${r.lastSeenAddress.slice(0, 12)}` : '';
+        result['chatbot-alert'].push(
+          { type: 'report_received', description: `📋 '${shortName(r.name)}' 신고 접수${addr}`, createdAt: now },
+        );
+      }
+      for (const s of fallbackSightings) {
+        const addr = s.address ? s.address.slice(0, 12) : '위치 미상';
+        result['chatbot-alert'].push(
+          { type: 'sighting_analyzed', description: `📸 ${addr} 근처 제보 분석 중...`, createdAt: now },
+        );
+      }
     }
 
     // 각 에이전트별 최신순 정렬 + 10개 제한

@@ -167,9 +167,9 @@ export default function BrowsePage() {
         <h1 className="text-2xl font-bold">{t('browse.title')}</h1>
         <Link
           to="/game"
-          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_3px_0_0_#b45309] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#b45309] active:translate-y-[3px] active:shadow-none transition-all duration-100 px-3.5 py-2"
+          className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
         >
-          <Gamepad2 className="w-4 h-4" aria-hidden="true" />
+          <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
           <span className="text-xs">{t('home.playToSponsor')}</span>
         </Link>
       </div>

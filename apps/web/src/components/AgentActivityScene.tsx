@@ -308,18 +308,20 @@ export default function AgentActivityScene() {
           bubble.alpha = 0;
           const bubbleBg = new Graphics();
           const bubbleTextStyle = new TextStyle({
-            fontSize: 9,
-            fontFamily: 'sans-serif',
-            fill: 0x333333,
+            fontSize: 13,
+            fontFamily: '"Pretendard", "Apple SD Gothic Neo", sans-serif',
+            fill: 0x1a1a1a,
+            fontWeight: '600',
             wordWrap: true,
-            wordWrapWidth: 100,
+            wordWrapWidth: 180,
             align: 'center',
+            lineHeight: 18,
           });
           const bubbleText = new Text({ text: '', style: bubbleTextStyle });
           bubbleText.anchor.set(0.5, 0.5);
           bubble.addChild(bubbleBg);
           bubble.addChild(bubbleText);
-          bubble.position.set(center.x, center.y - char.pixelHeight - 20);
+          bubble.position.set(center.x, center.y - char.pixelHeight - 30);
           uiLayer.addChild(bubble);
 
           return {
@@ -344,7 +346,7 @@ export default function AgentActivityScene() {
             questTimer: 0,
             questIdx: 0,
             activityQueue: [],
-            activityShowTimer: 0,
+            activityShowTimer: randBetween(2, 5),
           };
         });
 
@@ -352,10 +354,16 @@ export default function AgentActivityScene() {
         const refreshBubbleBg = (state: AgentState) => {
           const bg = state.bubbleBg;
           bg.clear();
-          const tw = state.bubbleText.width + 16;
-          const th = state.bubbleText.height + 10;
-          bg.roundRect(-tw / 2, -th / 2, tw, th, 6).fill({ color: 0xffffff, alpha: 0.87 });
-          bg.roundRect(-tw / 2, -th / 2, tw, th, 6).stroke({ color: 0xccbbaa, width: 1 });
+          const pw = 20, ph = 14;
+          const tw = state.bubbleText.width + pw * 2;
+          const th = state.bubbleText.height + ph * 2;
+          // 그림자
+          bg.roundRect(-tw / 2 + 2, -th / 2 + 2, tw, th, 10).fill({ color: 0x000000, alpha: 0.1 });
+          // 배경
+          bg.roundRect(-tw / 2, -th / 2, tw, th, 10).fill({ color: 0xffffff, alpha: 0.95 });
+          bg.roundRect(-tw / 2, -th / 2, tw, th, 10).stroke({ color: 0xd4c5a9, width: 1.5 });
+          // 말풍선 꼬리 (아래쪽 삼각형)
+          bg.moveTo(-6, th / 2).lineTo(0, th / 2 + 8).lineTo(6, th / 2).fill({ color: 0xffffff, alpha: 0.95 });
         };
 
         // 말풍선 표시
@@ -598,9 +606,15 @@ export default function AgentActivityScene() {
                 } else {
                   state.char.play('idle');
                   // ── idle 중 활동 피드 말풍선 표시 ──
-                  if (state.activityQueue.length > 0 && state.bubbleShowTimer <= 0) {
+                  if (state.bubbleShowTimer <= 0) {
+                    // 큐 비면 API recentActivities에서 리필
+                    if (state.activityQueue.length === 0) {
+                      const agent = agentsRef.current.find((a) => a.agentId === cfg.id);
+                      const descs = agent?.recentActivities.map((a) => a.description) ?? [];
+                      if (descs.length > 0) state.activityQueue.push(...descs);
+                    }
                     state.activityShowTimer -= dt;
-                    if (state.activityShowTimer <= 0) {
+                    if (state.activityShowTimer <= 0 && state.activityQueue.length > 0) {
                       const msg = state.activityQueue.shift()!;
                       showBubble(state, msg, 4);
                       state.activityShowTimer = randBetween(5, 8);
@@ -617,7 +631,7 @@ export default function AgentActivityScene() {
             // ── 말풍선 페이드 ──
             if (state.bubbleShowTimer > 0) {
               state.bubbleShowTimer -= dt;
-              state.bubble.position.set(state.x, state.y - state.char.pixelHeight - 20);
+              state.bubble.position.set(state.x, state.y - state.char.pixelHeight - 35);
               state.bubble.alpha = Math.min(state.bubbleAlpha, state.bubbleShowTimer > 0.3 ? 1 : state.bubbleShowTimer / 0.3);
             } else {
               state.bubble.alpha = 0;
