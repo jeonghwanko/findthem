@@ -6,7 +6,7 @@ const TEST_REWARD_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
 
 const REWARD_AD_IDS: Record<string, string> = {
   android: import.meta.env.VITE_ADMOB_REWARD_AD_ID_ANDROID || 'ca-app-pub-3320768302064088/4922782163',
-  ios: import.meta.env.VITE_ADMOB_REWARD_AD_ID_IOS || 'ca-app-pub-3320768302064088/4299965636',
+  ios: import.meta.env.VITE_ADMOB_REWARD_AD_ID_IOS || 'ca-app-pub-3320768302064088/4922782163',
 };
 
 export function useRewardAd() {
