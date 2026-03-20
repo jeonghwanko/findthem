@@ -30,7 +30,7 @@ const config: CapacitorConfig = {
       },
     },
     CapacitorUpdater: {
-      autoUpdate: true,
+      autoUpdate: false,
       statsUrl: '',
     },
   },
