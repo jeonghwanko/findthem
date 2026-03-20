@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, MapPin, Clock, User, FileText, ArrowRight } from 'lucide-react';
-import type { SightingDetail } from '@findthem/shared';
+import { Camera, MapPin, Clock, User, FileText, ArrowRight, Bot, Loader2 } from 'lucide-react';
+import type { SightingDetail, SightingPhotoAnalysis } from '@findthem/shared';
 import { formatTimeAgo, type Locale } from '@findthem/shared';
 import { api } from '../api/client';
 import ShareButton from '../components/ShareButton';
@@ -142,6 +142,95 @@ export default function SightingDetailPage() {
           )}
         </div>
       )}
+
+      {/* AI 분석 결과 */}
+      {sighting.status === 'PENDING' ? (
+        <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6 mb-6">
+          <div className="flex items-center gap-2 text-yellow-700">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="font-semibold">{t('sightingDetail.analysis.analyzing')}</span>
+          </div>
+          <p className="text-sm text-yellow-600 mt-2">{t('sightingDetail.analysis.analyzingDesc')}</p>
+        </div>
+      ) : (() => {
+        const analysis = sighting.photos.find((p) => p.aiAnalysis)?.aiAnalysis as SightingPhotoAnalysis | undefined;
+        if (!analysis) return null;
+        return (
+          <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Bot className="w-5 h-5 text-blue-600" />
+              <h2 className="font-semibold text-lg text-blue-900">{t('sightingDetail.analysis.title')}</h2>
+            </div>
+            {analysis.description && (
+              <p className="text-sm text-blue-800 mb-4">{analysis.description}</p>
+            )}
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {analysis.species && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.species')}</dt>
+                  <dd className="text-blue-900">{analysis.species}</dd>
+                </>
+              )}
+              {analysis.color && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.color')}</dt>
+                  <dd className="text-blue-900">{analysis.color}</dd>
+                </>
+              )}
+              {analysis.size && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.size')}</dt>
+                  <dd className="text-blue-900">{analysis.size}</dd>
+                </>
+              )}
+              {analysis.estimatedAge && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.age')}</dt>
+                  <dd className="text-blue-900">{analysis.estimatedAge}</dd>
+                </>
+              )}
+              {analysis.collarDetected != null && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.collar')}</dt>
+                  <dd className="text-blue-900">
+                    {analysis.collarDetected
+                      ? analysis.collarDescription || t('sightingDetail.analysis.collarYes')
+                      : t('sightingDetail.analysis.collarNo')}
+                  </dd>
+                </>
+              )}
+              {analysis.healthCondition && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.health')}</dt>
+                  <dd className="text-blue-900">{analysis.healthCondition}</dd>
+                </>
+              )}
+              {analysis.furCondition && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.fur')}</dt>
+                  <dd className="text-blue-900">{analysis.furCondition}</dd>
+                </>
+              )}
+              {analysis.accessories && (
+                <>
+                  <dt className="text-blue-600">{t('sightingDetail.analysis.accessories')}</dt>
+                  <dd className="text-blue-900">{analysis.accessories}</dd>
+                </>
+              )}
+            </dl>
+            {analysis.distinctiveFeatures && analysis.distinctiveFeatures.length > 0 && (
+              <div className="mt-3">
+                <dt className="text-sm text-blue-600 mb-1">{t('sightingDetail.analysis.features')}</dt>
+                <div className="flex flex-wrap gap-1.5">
+                  {analysis.distinctiveFeatures.map((f, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* 제보 정보 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">

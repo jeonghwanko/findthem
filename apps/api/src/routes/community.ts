@@ -44,7 +44,12 @@ async function getAgentPendingCounts(): Promise<Record<string, number>> {
 }
 
 // ── 에이전트별 세부 활동 스트림 (Pixi 씬 말풍선용) ──
-type RawActivity = { type: string; description: string; createdAt: Date; url?: string };
+type RawActivity = { type: string; description: string; createdAt: Date; url?: string; thumbnailUrl?: string };
+
+const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+function ytThumb(videoId: string | null | undefined): string | undefined {
+  return videoId && YOUTUBE_ID_RE.test(videoId) ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined;
+}
 
 /** 이름을 말풍선에 맞게 짧게 자르기 */
 function shortName(name: string, max = 10): string {
@@ -61,7 +66,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
         take: 15,
         select: {
           status: true, channel: true, createdAt: true,
-          contact: { select: { name: true, type: true, videoId: true, youtubeChannelUrl: true } },
+          contact: { select: { name: true, type: true, videoId: true, youtubeChannelUrl: true, thumbnailUrl: true } },
           report: { select: { name: true } },
         },
       }),
@@ -117,25 +122,26 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       let url: string | undefined;
       if (r.contact.videoId) url = `https://youtube.com/watch?v=${r.contact.videoId}`;
       else if (r.contact.youtubeChannelUrl) url = r.contact.youtubeChannelUrl;
+      const thumb = r.contact.thumbnailUrl ?? ytThumb(r.contact.videoId);
 
       if (r.status === 'PENDING_APPROVAL') {
         result.promotion.push({
           type: 'outreach_pending',
           description: `⏳ ${contactType} '${shortName(r.contact.name)}' 승인 대기`,
-          createdAt: r.createdAt, url,
+          createdAt: r.createdAt, url, thumbnailUrl: thumb,
         });
       } else if (r.status === 'SENT') {
         const ch = r.channel === 'EMAIL' ? '이메일' : '댓글';
         result.promotion.push({
           type: 'outreach_sent',
           description: `✅ '${shortName(r.contact.name)}' ${ch} 발송!`,
-          createdAt: r.createdAt, url,
+          createdAt: r.createdAt, url, thumbnailUrl: thumb,
         });
       } else if (r.status === 'APPROVED' || r.status === 'SENDING') {
         result.promotion.push({
           type: 'outreach_discover',
           description: `📣 '${shortName(r.contact.name)}' 연락 준비`,
-          createdAt: r.createdAt, url,
+          createdAt: r.createdAt, url, thumbnailUrl: thumb,
         });
       }
     }
@@ -146,7 +152,7 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
       result.promotion.push({
         type: 'promotion_posted',
         description: `📢 '${shortName(p.report.name)}' ${platform} 게시`,
-        createdAt: p.postedAt ?? p.postedAt!,
+        createdAt: p.postedAt ?? new Date(),
         url: p.postUrl ?? undefined,
       });
     }
@@ -186,51 +192,50 @@ async function getRecentActivities(todayStart: Date): Promise<Record<string, Raw
         }),
         prisma.outreachContact.findMany({
           orderBy: { createdAt: 'desc' }, take: 5,
-          select: { name: true, type: true, videoId: true, youtubeChannelUrl: true, createdAt: true },
+          select: { name: true, type: true, videoId: true, youtubeChannelUrl: true, thumbnailUrl: true, createdAt: true },
         }),
       ]);
 
-      const now = new Date();
-      // 클로드: 신고 기반 분석 시나리오
+      // 클로드: 최근 신고 기반 활동
       for (const r of fallbackReports.slice(0, 4)) {
-        const conf = 60 + Math.floor(Math.random() * 35);
         result['image-matching'].push(
-          { type: 'match_found', description: `🔍 '${shortName(r.name)}' 분석 중...`, createdAt: now },
-          { type: 'match_found', description: `✅ '${shortName(r.name)}' 유사도 ${conf}%`, createdAt: now },
+          { type: 'match_found', description: `🔍 '${shortName(r.name)}' 분석 준비 중`, createdAt: r.createdAt },
+          { type: 'match_found', description: `📊 '${shortName(r.name)}' 특징 추출 대기`, createdAt: r.createdAt },
         );
       }
 
-      // 헤르미: 아웃리치 대상자 시나리오
+      // 헤르미: 아웃리치 대상자
       for (const c of fallbackOutreach) {
         const cType = c.type === 'VIDEO' || c.type === 'YOUTUBER' ? '유튜버' : '기자';
         let url: string | undefined;
         if (c.videoId) url = `https://youtube.com/watch?v=${c.videoId}`;
         else if (c.youtubeChannelUrl) url = c.youtubeChannelUrl;
+        const thumb = c.thumbnailUrl ?? ytThumb(c.videoId);
         result.promotion.push(
-          { type: 'outreach_discover', description: `📣 ${cType} '${shortName(c.name)}' 발견!`, createdAt: now, url },
-          { type: 'outreach_pending', description: `✉️ '${shortName(c.name)}' 초안 작성 중`, createdAt: now, url },
+          { type: 'outreach_discover', description: `📣 ${cType} '${shortName(c.name)}' 발견!`, createdAt: c.createdAt, url, thumbnailUrl: thumb },
+          { type: 'outreach_pending', description: `✉️ '${shortName(c.name)}' 초안 작성 중`, createdAt: c.createdAt, url, thumbnailUrl: thumb },
         );
       }
-      // 헤르미: 프로모션 시나리오
-      for (const r of fallbackReports.slice(0, 3)) {
-        const platforms = ['트위터', '카카오 채널'];
-        const p = platforms[Math.floor(Math.random() * platforms.length)];
+      // 헤르미: 최근 신고 프로모션
+      for (let ri = 0; ri < Math.min(3, fallbackReports.length); ri++) {
+        const r = fallbackReports[ri];
+        const platform = ri % 2 === 0 ? '트위터' : '카카오 채널';
         result.promotion.push(
-          { type: 'promotion_posted', description: `📢 '${shortName(r.name)}' ${p} 게시`, createdAt: now },
+          { type: 'promotion_posted', description: `📢 '${shortName(r.name)}' ${platform} 게시`, createdAt: r.createdAt },
         );
       }
 
-      // 알리: 신고/제보 시나리오
+      // 알리: 최근 신고/제보
       for (const r of fallbackReports.slice(0, 4)) {
         const addr = r.lastSeenAddress ? ` — ${r.lastSeenAddress.slice(0, 12)}` : '';
         result['chatbot-alert'].push(
-          { type: 'report_received', description: `📋 '${shortName(r.name)}' 신고 접수${addr}`, createdAt: now },
+          { type: 'report_received', description: `📋 '${shortName(r.name)}' 신고 접수${addr}`, createdAt: r.createdAt },
         );
       }
       for (const s of fallbackSightings) {
         const addr = s.address ? s.address.slice(0, 12) : '위치 미상';
         result['chatbot-alert'].push(
-          { type: 'sighting_analyzed', description: `📸 ${addr} 근처 제보 분석 중...`, createdAt: now },
+          { type: 'sighting_analyzed', description: `📸 ${addr} 근처 제보 분석 중...`, createdAt: s.createdAt },
         );
       }
     }
@@ -384,6 +389,7 @@ export function registerCommunityRoutes(router: Router) {
             description: a.description,
             createdAt: a.createdAt.toISOString(),
             ...(a.url ? { url: a.url } : {}),
+            ...(a.thumbnailUrl ? { thumbnailUrl: a.thumbnailUrl } : {}),
           })),
         };
       });

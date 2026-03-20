@@ -666,6 +666,22 @@
       "CONFIRMED": "確認",
       "REJECTED": "除外",
       "NOTIFIED": "通知完了"
+    },
+    "analysis": {
+      "title": "AI写真分析",
+      "analyzing": "AIが写真を分析しています",
+      "analyzingDesc": "品種、色、特徴などを自動で分析中です。しばらくお待ちください。",
+      "species": "品種",
+      "color": "色",
+      "size": "サイズ",
+      "age": "推定年齢",
+      "collar": "首輪",
+      "collarYes": "あり",
+      "collarNo": "なし",
+      "health": "健康状態",
+      "fur": "毛の状態",
+      "accessories": "装着物",
+      "features": "特徴"
     }
   }
 }

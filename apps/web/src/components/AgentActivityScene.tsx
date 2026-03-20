@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Application, Graphics, Text, TextStyle, Container } from 'pixi.js';
-import type { AgentActivityAgent, AgentActivityEvent } from '@findthem/shared';
+import type { AgentActivityAgent, AgentActivity, AgentActivityEvent } from '@findthem/shared';
 import { useAgentActivity } from '../hooks/useAgentActivity';
 import { drawTileScene, tileToPx, tileRoomCenter, centerCamera, setupDrag, computeLayout, drawScene, roomCenter, tileToPixel, type TileRoomLayout, type RoomLayout } from '@findthem/pixi-scenes/game';
 import { AgentActivityOverlay } from '@findthem/pixi-scenes/components';
@@ -121,8 +121,8 @@ interface AgentState {
   questPhase: QuestPhase;
   questTimer: number;
   questIdx: number; // QUEST_BUBBLES 인덱스
-  // 활동 피드 (API recentActivities → 말풍선 순차 표시)
-  activityQueue: string[];
+  // 활동 피드 (API recentActivities → HTML 말풍선 순차 표시)
+  activityQueue: AgentActivity[];
   activityShowTimer: number;
 }
 
@@ -186,6 +186,9 @@ export default function AgentActivityScene() {
     const tr = tRef.current;
     let destroyed = false;
     const app = new Application();
+    const activeIntervals: ReturnType<typeof setInterval>[] = [];
+    type HtmlBubbleEntry = { el: HTMLDivElement; intervalId: ReturnType<typeof setInterval> };
+    const htmlBubbleMap = new Map<number, HtmlBubbleEntry>();
 
     void (async () => {
       try {
@@ -374,6 +377,95 @@ export default function AgentActivityScene() {
           state.bubbleAlpha = 1;
         };
 
+        // ── HTML 오버레이 말풍선 (썸네일 + 링크) ──
+        const removeHtmlBubble = (agentIdx: number) => {
+          const entry = htmlBubbleMap.get(agentIdx);
+          if (!entry) return;
+          clearInterval(entry.intervalId);
+          entry.el.remove();
+          htmlBubbleMap.delete(agentIdx);
+          const arrIdx = activeIntervals.indexOf(entry.intervalId);
+          if (arrIdx >= 0) activeIntervals.splice(arrIdx, 1);
+        };
+
+        const showHtmlBubble = (agentIdx: number, item: AgentActivity, duration: number) => {
+          // 해당 에이전트의 기존 버블만 제거
+          removeHtmlBubble(agentIdx);
+
+          const el = document.createElement('div');
+          el.className = 'agent-html-bubble';
+          el.style.cssText = `
+            position:absolute; z-index:20; pointer-events:auto;
+            background:#fff; border:1.5px solid #d4c5a9; border-radius:12px;
+            box-shadow:0 4px 16px rgba(0,0,0,0.12);
+            padding:8px; max-width:220px; cursor:${item.url ? 'pointer' : 'default'};
+            opacity:0; transition:opacity 0.3s ease;
+            display:flex; gap:8px; align-items:center;
+          `;
+
+          // 썸네일
+          if (item.thumbnailUrl) {
+            const img = document.createElement('img');
+            img.src = item.thumbnailUrl;
+            img.style.cssText = 'width:56px;height:42px;object-fit:cover;border-radius:6px;flex-shrink:0;';
+            img.onerror = () => { img.style.display = 'none'; };
+            el.appendChild(img);
+          }
+
+          // 텍스트
+          const textDiv = document.createElement('div');
+          textDiv.style.cssText = 'font-size:12px;font-weight:600;color:#1a1a1a;line-height:1.4;font-family:Pretendard,sans-serif;';
+          textDiv.textContent = item.description;
+          el.appendChild(textDiv);
+
+          // 링크 아이콘
+          if (item.url) {
+            const link = document.createElement('div');
+            link.style.cssText = 'font-size:14px;flex-shrink:0;';
+            link.textContent = '↗';
+            el.appendChild(link);
+            el.addEventListener('click', () => window.open(item.url, '_blank', 'noopener,noreferrer'));
+          }
+
+          // 꼬리
+          const tail = document.createElement('div');
+          tail.style.cssText = `
+            position:absolute; bottom:-7px; left:50%; transform:translateX(-50%);
+            width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent;
+            border-top:7px solid #fff; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.08));
+          `;
+          el.appendChild(tail);
+
+          container.appendChild(el);
+
+          // 위치 갱신 함수
+          const updatePos = () => {
+            if (destroyed) return;
+            const st = agentStates[agentIdx];
+            if (!st) return;
+            const wx = worldContainer ? (st.x + worldContainer.x) : st.x;
+            const wy = worldContainer ? ((st.y - st.char.pixelHeight - 50) + worldContainer.y) : (st.y - st.char.pixelHeight - 50);
+            el.style.left = `${wx - el.offsetWidth / 2}px`;
+            el.style.top = `${wy - el.offsetHeight}px`;
+          };
+          // 레이아웃 후 위치 설정 + 페이드인
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (destroyed) return;
+            updatePos();
+            el.style.opacity = '1';
+          }));
+          const posInterval = setInterval(updatePos, 50);
+          activeIntervals.push(posInterval);
+          htmlBubbleMap.set(agentIdx, { el, intervalId: posInterval });
+
+          // 자동 제거
+          setTimeout(() => {
+            if (destroyed) return;
+            el.style.opacity = '0';
+            setTimeout(() => removeHtmlBubble(agentIdx), 300);
+          }, duration * 1000);
+        };
+
         // ── 퀘스트 보드 — claude 방 왼쪽 상단 (텐트 아래 빈 공간) ──
         const claudeBounds = scene.getRoomBounds('claude');
         const boardPx = { x: claudeBounds.x + scene.tileSize * 2, y: claudeBounds.y + scene.tileSize * 3 };
@@ -469,12 +561,10 @@ export default function AgentActivityScene() {
             for (let ai = 0; ai < agentStates.length; ai++) {
               const agent = cur.find((a) => a.agentId === AGENT_CONFIGS[ai].id);
               if (!agent) continue;
-              const newDescs = agent.recentActivities
-                .map((a) => a.description)
-                .filter((d) => !agentStates[ai].activityQueue.includes(d));
-              if (newDescs.length > 0) {
-                agentStates[ai].activityQueue.push(...newDescs);
-                // 최대 15개 유지
+              const existingDescs = new Set(agentStates[ai].activityQueue.map((a) => a.description));
+              const newItems = agent.recentActivities.filter((a) => !existingDescs.has(a.description));
+              if (newItems.length > 0) {
+                agentStates[ai].activityQueue.push(...newItems);
                 if (agentStates[ai].activityQueue.length > 15) {
                   agentStates[ai].activityQueue = agentStates[ai].activityQueue.slice(-15);
                 }
@@ -547,7 +637,8 @@ export default function AgentActivityScene() {
                   state.workIcon.position.set(state.x, state.y - state.char.pixelHeight - 4);
                   state.workIcon.alpha = 1;
                   // 활동 큐에서 실제 설명 사용, 없으면 폴백
-                  const workMsg = state.activityQueue.shift() ?? quests[state.questIdx].working;
+                  const workItem = state.activityQueue.shift();
+                  const workMsg = workItem?.description ?? quests[state.questIdx].working;
                   showBubble(state, workMsg, 3);
                 }
                 break;
@@ -559,7 +650,8 @@ export default function AgentActivityScene() {
                   state.questPhase = 'complete';
                   state.questTimer = 2;
                   state.workIcon.alpha = 0;
-                  const doneMsg = state.activityQueue.shift() ?? quests[state.questIdx].done;
+                  const doneItem = state.activityQueue.shift();
+                  const doneMsg = doneItem?.description ?? quests[state.questIdx].done;
                   showBubble(state, doneMsg, 3);
                   updateBoard();
                 }
@@ -605,18 +697,28 @@ export default function AgentActivityScene() {
                   state.char.play('run');
                 } else {
                   state.char.play('idle');
-                  // ── idle 중 활동 피드 말풍선 표시 ──
+                  // ── idle 중 활동 피드 표시 ──
                   if (state.bubbleShowTimer <= 0) {
-                    // 큐 비면 API recentActivities에서 리필
+                    // 큐 비면 API recentActivities에서 리필 (중복 방지)
                     if (state.activityQueue.length === 0) {
                       const agent = agentsRef.current.find((a) => a.agentId === cfg.id);
-                      const descs = agent?.recentActivities.map((a) => a.description) ?? [];
-                      if (descs.length > 0) state.activityQueue.push(...descs);
+                      const items = agent?.recentActivities ?? [];
+                      if (items.length > 0) {
+                        const existing = new Set(state.activityQueue.map((a) => a.description));
+                        const fresh = items.filter((a) => !existing.has(a.description));
+                        state.activityQueue.push(...(fresh.length > 0 ? fresh : items));
+                      }
                     }
                     state.activityShowTimer -= dt;
                     if (state.activityShowTimer <= 0 && state.activityQueue.length > 0) {
-                      const msg = state.activityQueue.shift()!;
-                      showBubble(state, msg, 4);
+                      const item = state.activityQueue.shift()!;
+                      if (item.thumbnailUrl || item.url) {
+                        // HTML 오버레이 말풍선 (썸네일 + 링크)
+                        showHtmlBubble(i, item, 6);
+                        state.bubbleShowTimer = 6; // Pixi bubble 숨김 유지
+                      } else {
+                        showBubble(state, item.description, 4);
+                      }
                       state.activityShowTimer = randBetween(5, 8);
                     }
                   }
@@ -648,6 +750,12 @@ export default function AgentActivityScene() {
 
     return () => {
       destroyed = true;
+      // HTML 오버레이 + interval 정리
+      activeIntervals.forEach(clearInterval);
+      activeIntervals.length = 0;
+      htmlBubbleMap.forEach((entry) => { clearInterval(entry.intervalId); entry.el.remove(); });
+      htmlBubbleMap.clear();
+      container.querySelectorAll('.agent-html-bubble').forEach((el) => el.remove());
       app.destroy(true, { children: true });
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- pendingEventsRef는 stable ref

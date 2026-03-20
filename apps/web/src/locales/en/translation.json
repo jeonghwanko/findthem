@@ -667,6 +667,22 @@
       "CONFIRMED": "Confirmed",
       "REJECTED": "Rejected",
       "NOTIFIED": "Notified"
+    },
+    "analysis": {
+      "title": "AI Photo Analysis",
+      "analyzing": "AI is analyzing the photo",
+      "analyzingDesc": "Automatically identifying breed, color, and features. Please wait a moment.",
+      "species": "Breed",
+      "color": "Color",
+      "size": "Size",
+      "age": "Estimated Age",
+      "collar": "Collar",
+      "collarYes": "Yes",
+      "collarNo": "No",
+      "health": "Health",
+      "fur": "Fur Condition",
+      "accessories": "Accessories",
+      "features": "Distinctive Features"
     }
   }
 }

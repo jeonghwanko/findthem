@@ -667,6 +667,22 @@
       "CONFIRMED": "확인",
       "REJECTED": "제외",
       "NOTIFIED": "알림 완료"
+    },
+    "analysis": {
+      "title": "AI 사진 분석",
+      "analyzing": "AI가 사진을 분석하고 있습니다",
+      "analyzingDesc": "품종, 색상, 특징 등을 자동으로 분석 중이에요. 잠시만 기다려 주세요.",
+      "species": "품종",
+      "color": "색상",
+      "size": "크기",
+      "age": "추정 나이",
+      "collar": "목줄",
+      "collarYes": "있음",
+      "collarNo": "없음",
+      "health": "건강 상태",
+      "fur": "털 상태",
+      "accessories": "착용물",
+      "features": "특이사항"
     }
   }
 }

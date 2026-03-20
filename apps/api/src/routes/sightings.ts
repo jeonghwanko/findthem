@@ -245,7 +245,7 @@ export function registerSightingRoutes(router: Router) {
     const sighting = await prisma.sighting.findUnique({
       where: { id },
       include: {
-        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true } },
+        photos: { select: { id: true, photoUrl: true, thumbnailUrl: true, aiAnalysis: true } },
         report: {
           select: {
             id: true, name: true, subjectType: true, status: true,

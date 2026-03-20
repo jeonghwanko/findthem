@@ -667,6 +667,22 @@
       "CONFIRMED": "已確認",
       "REJECTED": "已排除",
       "NOTIFIED": "已通知"
+    },
+    "analysis": {
+      "title": "AI照片分析",
+      "analyzing": "AI正在分析照片",
+      "analyzingDesc": "正在自動識別品種、顏色和特徵，請稍候。",
+      "species": "品種",
+      "color": "顏色",
+      "size": "體型",
+      "age": "預估年齡",
+      "collar": "項圈",
+      "collarYes": "有",
+      "collarNo": "無",
+      "health": "健康狀況",
+      "fur": "毛髮狀態",
+      "accessories": "配戴物",
+      "features": "特徵"
     }
   }
 }

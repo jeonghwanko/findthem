@@ -70,10 +70,25 @@ export interface ReportDetail extends ReportSummary {
   user?: { id: string; name: string };
 }
 
+export interface SightingPhotoAnalysis {
+  species?: string;
+  color?: string;
+  size?: string;
+  distinctiveFeatures?: string[];
+  collarDetected?: boolean;
+  collarDescription?: string;
+  healthCondition?: string;
+  furCondition?: string;
+  estimatedAge?: string;
+  accessories?: string;
+  description?: string;
+}
+
 export interface SightingPhoto {
   id: string;
   photoUrl: string;
   thumbnailUrl?: string | null;
+  aiAnalysis?: SightingPhotoAnalysis | null;
 }
 
 export interface Sighting {
@@ -649,6 +664,8 @@ export interface AgentActivity {
   createdAt: string;
   /** 외부 링크 (유튜브/트위터 등, 클릭 시 새 창) */
   url?: string;
+  /** 썸네일 이미지 URL */
+  thumbnailUrl?: string;
 }
 
 export interface AgentActivityAgent {
