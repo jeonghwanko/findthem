@@ -3,7 +3,11 @@ import { Capacitor } from '@capacitor/core';
 
 // Google AdMob 테스트 리워드 광고 ID
 const TEST_REWARD_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
-const PROD_REWARD_AD_ID = import.meta.env.VITE_ADMOB_REWARD_AD_ID || TEST_REWARD_AD_ID;
+
+const REWARD_AD_IDS: Record<string, string> = {
+  android: import.meta.env.VITE_ADMOB_REWARD_AD_ID_ANDROID || 'ca-app-pub-3320768302064088/1583600125',
+  ios: import.meta.env.VITE_ADMOB_REWARD_AD_ID_IOS || 'ca-app-pub-3320768302064088/4299965636',
+};
 
 export function useRewardAd() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +20,7 @@ export function useRewardAd() {
     try {
       const { AdMob, RewardAdPluginEvents } = await import('@capacitor-community/admob');
 
-      const adId = import.meta.env.DEV ? TEST_REWARD_AD_ID : PROD_REWARD_AD_ID;
+      const adId = import.meta.env.DEV ? TEST_REWARD_AD_ID : (REWARD_AD_IDS[Capacitor.getPlatform()] ?? TEST_REWARD_AD_ID);
 
       // 리스너 등록 → 광고 로드 순서 보장 (타이밍 버그 및 메모리 누수 방지)
       return await new Promise<boolean>((resolve) => {
