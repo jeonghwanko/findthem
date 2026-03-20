@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
             manifest: {
               name: 'FindThem — 실종 신고 플랫폼',
               short_name: 'FindThem',
-              description: '실종자/반려동물을 찾는 AI 기반 플랫폼',
+              description: '반려동물을 찾는 AI 기반 플랫폼',
               theme_color: '#2563eb',
               background_color: '#f9fafb',
               display: 'standalone',
