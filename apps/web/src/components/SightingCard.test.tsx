@@ -40,10 +40,10 @@ describe('SightingCard', () => {
     expect(screen.getByText('제보')).toBeInTheDocument();
   });
 
-  it('reportId가 있으면 신고 상세 링크를 생성한다', () => {
-    renderCard(createSighting({ reportId: 'report-123' }));
+  it('제보 상세 링크를 생성한다', () => {
+    renderCard(createSighting({ id: 'sighting-123' }));
     const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', '/reports/report-123');
+    expect(link).toHaveAttribute('href', '/sightings/sighting-123');
   });
 
   it('설명이 없으면 (설명 없음)을 표시한다', () => {
