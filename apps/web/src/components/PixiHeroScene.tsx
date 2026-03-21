@@ -327,7 +327,7 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
           autoDensity: true,
           resolution: dpr,
           roundPixels: true,
-          preference: 'webgl',
+          preferWebGLVersion: 2,
           autoStart: false,
         });
         if (destroyed) return;
@@ -618,11 +618,13 @@ export default function PixiHeroScene({ stats, recoveryRate, hideStatsAndBillboa
 
           if (!destroyed) setPhase('ready');
           app.ticker.start();
-        } catch {
+        } catch (spineErr) {
+          console.error('[PixiHeroScene] Spine load failed:', spineErr);
           if (!destroyed) setPhase('ready');
           app.ticker.start();
         }
-      } catch {
+      } catch (sceneErr) {
+        console.error('[PixiHeroScene] Scene init failed:', sceneErr);
         if (!destroyed) setError(true);
       }
     })();

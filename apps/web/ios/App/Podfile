@@ -15,14 +15,14 @@ def capacitor_pods
   pod 'CapacitorSplashScreen', :path => '../../../../node_modules/@capacitor/splash-screen'
   pod 'CapacitorStatusBar', :path => '../../../../node_modules/@capacitor/status-bar'
   pod 'CapacitorCommunityAdmob', :path => '../../../../node_modules/@capacitor-community/admob'
-  pod 'CapacitorFirebaseAnalytics/Analytics', :path => '../../../../node_modules/@capacitor-firebase/analytics'
   pod 'CapacitorFirebaseCrashlytics', :path => '../../../../node_modules/@capacitor-firebase/crashlytics'
   pod 'CapacitorFirebaseMessaging', :path => '../../../../node_modules/@capacitor-firebase/messaging'
 end
 
 target 'App' do
   capacitor_pods
-  # Add your Pods here
+  # cap sync가 Analytics subspec을 제거하는 문제 방지 — 직접 고정
+  pod 'CapacitorFirebaseAnalytics/Analytics', :path => '../../../../node_modules/@capacitor-firebase/analytics'
 end
 
 post_install do |installer|

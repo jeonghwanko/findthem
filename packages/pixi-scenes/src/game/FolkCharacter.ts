@@ -9,6 +9,7 @@
  *   Row 3: up (3 frames)
  */
 import { Container, Sprite, Texture, Rectangle, Assets, SCALE_MODES } from 'pixi.js';
+import { assetUrl } from './assetUrl';
 
 const TILE = 32;
 const FRAMES_PER_DIR = 3;
@@ -34,14 +35,6 @@ const DIR_ROW: Record<string, number> = {
 };
 
 type AnimState = 'idle' | 'run' | 'sit';
-
-function assetPath(path: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const base: string = (import.meta as any)?.env?.BASE_URL ?? '/';
-    return `${base}${path.replace(/^\//, '')}`;
-  } catch { return path; }
-}
 
 export class FolkCharacter {
   readonly view = new Container();
@@ -76,7 +69,7 @@ export class FolkCharacter {
   static async create(charId: number): Promise<FolkCharacter> {
     let frames = FolkCharacter.frameCache.get(charId);
     if (!frames) {
-      const tex = await Assets.load(assetPath('/tiles/32x32folk.png')) as Texture;
+      const tex = await Assets.load(assetUrl('/tiles/32x32folk.png')) as Texture;
       tex.source.scaleMode = SCALE_MODES.NEAREST;
 
       const offset = CHAR_OFFSETS[charId] ?? CHAR_OFFSETS[1];

@@ -8,12 +8,13 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   ios: {
     // iOS 16.0+ — AdMob, Firebase 포함
+    // @capacitor-firebase/analytics는 Podfile에서 직접 /Analytics subspec으로 고정
+    // (cap sync가 subspec을 제거하는 문제 방지)
     includePlugins: [
       '@capacitor/keyboard',
       '@capacitor/splash-screen',
       '@capacitor/status-bar',
       '@capacitor-community/admob',
-      '@capacitor-firebase/analytics',
       '@capacitor-firebase/crashlytics',
       '@capacitor-firebase/messaging',
     ],

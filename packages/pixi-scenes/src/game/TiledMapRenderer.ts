@@ -3,6 +3,7 @@
  * generative_agents (Stanford) 마을 맵용 멀티 타일셋 지원.
  */
 import { Assets, Container, Sprite, Texture, Rectangle } from 'pixi.js';
+import { assetUrl } from './assetUrl';
 
 // ── Tiled JSON 타입 ──
 interface TiledTileset {
@@ -60,10 +61,7 @@ const VISUAL_LAYERS = [
 
 /** 이미지 경로를 public URL로 변환 */
 function toPublicUrl(imagePath: string): string {
-  // "map_assets/v1/Room_Builder_32x32.png" → "/tiles/the_ville/v1/Room_Builder_32x32.png"
-  // "map_assets/cute_rpg_word_VXAce/tilesets/X.png" → "/tiles/the_ville/cute_rpg_word_VXAce/tilesets/X.png"
-  // "map_assets/blocks/X.png" → "/tiles/the_ville/blocks/X.png"
-  return '/tiles/the_ville/' + imagePath.replace('map_assets/', '');
+  return assetUrl('/tiles/the_ville/' + imagePath.replace('map_assets/', ''));
 }
 
 /**
@@ -75,7 +73,7 @@ export async function drawTiledScene(
   viewportH: number,
 ): Promise<TiledSceneLayout> {
   // 맵 JSON 로드
-  const res = await fetch('/tiles/the_ville/map.json');
+  const res = await fetch(assetUrl('/tiles/the_ville/map.json'));
   const map: TiledMap = await res.json() as TiledMap;
   const { width: cols, height: rows, tilewidth: td } = map;
 

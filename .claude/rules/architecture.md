@@ -29,27 +29,43 @@ findthem/
 캐릭터 3명(탐정 클로드, 홍보왕 헤르미, 안내봇 알리)이 건물 배경에서 자율 이동하며, 우측 말풍선 광고판 + StatsStrip이 표시됨:
 
 ```
+packages/pixi-scenes/src/game/
+├── assetUrl.ts              # Capacitor 호환 에셋 URL 유틸 (IS_NATIVE 판별)
+├── SpineCharacterLite.ts    # Spine 캐릭터 래퍼 (웹: WebP, 네이티브: PNG)
+├── FolkCharacter.ts         # 32px ai-town 스프라이트 캐릭터
+├── PixelCharacter.ts        # 16×32 LimeZu 스프라이트 캐릭터
+├── AgentRoom.ts             # 오피스 스타일 Graphics 폴백 렌더러
+├── TileMapRoom.ts           # gentle-obj 타일맵 렌더러
+└── TiledMapRenderer.ts      # Tiled JSON 멀티타일셋 렌더러
+
 apps/web/
-├── public/spine/                     # Spine 에셋 (pryzm town과 동일)
-│   ├── human_type.skel.bytes         # 스켈레톤 바이너리
-│   ├── human_type.atlas.txt          # 텍스처 아틀라스
-│   └── human_type*.webp (3개)        # 텍스처 이미지 (WebP 압축)
-├── src/game/
-│   ├── SpineCharacterLite.ts         # Spine 캐릭터 래퍼 (경량화)
-│   ├── AgentRoom.ts                  # 오피스 스타일 Graphics 폴백 렌더러
-│   └── TiledMapRenderer.ts           # Tiled JSON 멀티타일셋 렌더러 (generative_agents 마을)
+├── public/spine/
+│   ├── human_type.skel.bytes        # 스켈레톤 바이너리
+│   ├── human_type.atlas.txt         # 텍스처 아틀라스 (페이지명 .webp)
+│   ├── human_type*.webp (3개)       # 웹용 텍스처 (WebP)
+│   └── human_type*.png (3개)        # 네이티브용 텍스처 (PNG)
 └── src/components/
-    ├── PixiHeroScene.tsx             # Pixi 히어로 씬 (홈페이지)
-    ├── AgentActivityScene.tsx        # 에이전트 활동 씬 (커뮤니티, 탑다운)
-    ├── AgentActivityOverlay.tsx      # 에이전트 통계 HTML 오버레이
-    └── AgentWorldScene.tsx           # Canvas 2D 폴백
+    ├── PixiHeroScene.tsx            # Pixi 히어로 씬 (홈페이지)
+    ├── AgentActivityScene.tsx       # 에이전트 활동 씬 (커뮤니티, 탑다운)
+    ├── AgentActivityOverlay.tsx     # 에이전트 통계 HTML 오버레이
+    └── AgentWorldScene.tsx          # Canvas 2D 폴백
 ```
+
+**에셋 URL 호환 (`assetUrl.ts`)**:
+- Capacitor WebView(`capacitor://localhost`)에서 `/path`가 `capacitor://path`로 잘못 해석됨
+- `assetUrl(path)` — `window.location.origin`을 포함한 절대 URL 반환
+- 모든 Pixi 에셋 로딩(`Assets.load`, `fetch`)에서 반드시 `assetUrl()` 사용
+- `IS_NATIVE` — `capacitor:` 또는 `ionic:` 프로토콜 감지
+
+**Spine 텍스처 네이티브/웹 분기**:
+- **웹**: WebP 텍스처 + blob → dataURL → Assets.load (MIME 타입 감지)
+- **네이티브**: PNG 텍스처 + 직접 URL 로딩 (iOS 이미지 디코더 WebP 호환 문제 방지)
+- atlas.txt는 WebP 페이지명 기준, 네이티브에서 런타임에 `.webp` → `.png` 치환
 
 **주의사항**:
 - pixi.js `8.15.0` + @esotericsoftware/spine-pixi-v8 `4.2.98` (pryzm과 동일 버전 필수)
 - `SpinePipe`는 반드시 명시적으로 등록: `extensions.add(SpinePipe)` (Vite tree-shaking 방지)
 - Pixi `Application.init()`에 `autoStart: false` 필수 (Spine 로드 전 ticker 에러 방지)
-- Spine 텍스처는 `fetch → blob → dataURL → Assets.load` 방식 사용 (MIME 타입 감지)
 - Graphics에 수백 개의 `.circle().fill()` 호출하면 `validateRenderable` 에러 발생 → 도트 패턴은 CSS로 처리
 - `Graphics.fill()`에 알파 포함 단일 숫자(`0xFFFFFFDD`) 금지 → `{ color: 0xffffff, alpha: 0.87 }` 객체 형태 사용 (Pixi v8 Color._normalize 범위 초과 에러)
 
@@ -203,6 +219,71 @@ npm run build:native
 **iOS 릴리스**:
 - `apps/web/ios/App/Podfile` — Firebase 의존성 포함 (`pod install` 필요)
 - `capacitor.config.ts` — `appId`, `appName` 기준으로 Xcode 프로젝트 구성
+
+## iOS 빌드 주의사항
+
+### `cap sync` 후 Podfile 확인 필수
+
+`npx cap sync ios` 실행 시 Capacitor가 Podfile의 pod 목록을 재생성한다.
+`CapacitorFirebaseAnalytics/Analytics` subspec이 `CapacitorFirebaseAnalytics`로 바뀌면
+Firebase 모듈 의존성이 누락되어 빌드 실패함.
+
+**대응**: `@capacitor-firebase/analytics`를 `capacitor.config.ts`의 `includePlugins`에서 제외하고,
+Podfile의 `target 'App'` 블록에 직접 고정:
+
+```ruby
+target 'App' do
+  capacitor_pods
+  pod 'CapacitorFirebaseAnalytics/Analytics', :path => '...'
+end
+```
+
+### GoogleService-Info.plist 등록 필수
+
+Firebase 플러그인 사용 시 `GoogleService-Info.plist`가 Xcode 프로젝트의 **빌드 리소스**에
+포함되어야 한다. 파일이 `App/App/` 디렉토리에 존재하더라도 `project.pbxproj`에 등록되지 않으면
+`FirebaseApp.configure()` 시 크래시 발생.
+
+- PBXFileReference + PBXBuildFile + PBXResourcesBuildPhase 3곳에 등록 필요
+- Xcode에서 파일을 드래그&드롭으로 추가하면 자동 등록됨
+
+### AppDelegate에서 Firebase 초기화
+
+```swift
+import FirebaseCore
+
+func application(...) -> Bool {
+    FirebaseApp.configure()  // 반드시 첫 줄에 호출
+    return true
+}
+```
+
+미호출 시 시뮬레이터에서는 동작하지만 **실기기에서 크래시** 발생 (AdMob/Crashlytics/Messaging이 Firebase 초기화 전에 접근).
+
+### Capacitor WebView 에셋 경로
+
+`capacitor://localhost` 스킴에서 Pixi.js `Assets.load('/path')`가 `capacitor://path`로
+잘못 해석됨 (localhost 누락). 모든 에셋 URL에 `assetUrl()` 유틸 사용 필수:
+
+```ts
+import { assetUrl } from './assetUrl';
+Assets.load(assetUrl('/tiles/sprite.png')); // capacitor://localhost/tiles/sprite.png
+```
+
+### Spine 텍스처 WebP 비호환
+
+iOS WKWebView에서 WebP 이미지를 blob → dataURL로 변환 후 Pixi에 전달하면
+`makeImagePlus: ERROR 'WEBP' failed` 에러 발생. 네이티브에서는 PNG 사용:
+
+- `public/spine/` 디렉토리에 WebP + PNG 모두 보관
+- `IS_NATIVE` 플래그로 런타임 분기 (SpineCharacterLite.ts)
+- atlas.txt는 WebP 기준, 네이티브에서 `.webp` → `.png` 런타임 치환
+
+### IPHONEOS_DEPLOYMENT_TARGET 일치
+
+`project.pbxproj`의 `IPHONEOS_DEPLOYMENT_TARGET`과 `Podfile`의 `platform :ios`가
+불일치하면 "built for newer iOS-simulator version" 경고 대량 발생.
+현재 설정: **iOS 16.0** (Podfile + project.pbxproj 모두)
 
 ## OTA 업데이트 (@capgo/capacitor-updater)
 

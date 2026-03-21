@@ -7,6 +7,7 @@
  * - 드래그로 카메라 이동, 모바일 터치 지원
  */
 import { Container, Sprite, Texture, Rectangle, Assets, Text, TextStyle, FederatedPointerEvent, SCALE_MODES } from 'pixi.js';
+import { assetUrl } from './assetUrl';
 
 // ── 맵 데이터 타입 ──
 interface MapData {
@@ -56,13 +57,6 @@ export function centerCamera(worldX: number, worldY: number, layout: TileRoomLay
   world.y = Math.min(0, Math.max(targetY, viewportH - worldPxH));
 }
 
-function assetPath(path: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const base: string = (import.meta as any)?.env?.BASE_URL ?? '/';
-    return `${base}${path.replace(/^\//, '')}`;
-  } catch { return path; }
-}
 
 // ── 타일셋 → 개별 텍스처 lazy 캐시 ──
 function createTileCache(baseTex: Texture, tileDim: number, pxW: number): (idx: number) => Texture | undefined {
@@ -121,8 +115,8 @@ export async function drawTileScene(
 ): Promise<TileRoomLayout> {
   // ── 에셋 로드 ──
   const [tilesetTex, mapData] = await Promise.all([
-    Assets.load(assetPath('/tiles/gentle-obj.png')) as Promise<Texture>,
-    fetch(assetPath('/tiles/gentle-map.json')).then(r => r.json()) as Promise<MapData>,
+    Assets.load(assetUrl('/tiles/gentle-obj.png')) as Promise<Texture>,
+    fetch(assetUrl('/tiles/gentle-map.json')).then(r => r.json()) as Promise<MapData>,
   ]);
 
   const { tileDim, tilesetPxW, bgTiles, objTiles } = mapData;
