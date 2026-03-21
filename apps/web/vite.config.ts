@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => ({
       : []),
   ],
   resolve: {
-    dedupe: ['@aptos-labs/ts-sdk'],
+    dedupe: ['@aptos-labs/ts-sdk', '@telegram-apps/bridge'],
   },
   optimizeDeps: {
     include: [
