@@ -116,7 +116,8 @@ export async function postHeimi(
   const title = `헤르미 보고 🐾 — '${safeName}' 홍보 완료!`;
   const deduplicationKey = `${utcDateString(new Date())}_heimi_${safeName}_${channel}`;
   const fallback = `오늘도 헤르미가 열심히 뛰었어요 🐾 ${subjectLabel} '${safeName}'을 찾기 위해 ${safeContact}에게 ${channelLabel}로 직접 연락했답니다! 함께 찾아요 🎉`;
-  const sourceUrl = videoId ? `https://youtube.com/watch?v=${videoId}#comments` : undefined;
+  const YT_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+  const sourceUrl = videoId && YT_ID_RE.test(videoId) ? `https://youtube.com/watch?v=${videoId}#comments` : undefined;
 
   await runAgentPost('promotion', event, title, deduplicationKey, fallback, sourceUrl);
 }

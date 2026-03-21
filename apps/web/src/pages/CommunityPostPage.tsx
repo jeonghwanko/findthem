@@ -190,7 +190,7 @@ export default function CommunityPostPage() {
         <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
           {post.content}
         </div>
-        {post.sourceUrl && (
+        {post.sourceUrl && post.sourceUrl.startsWith('https://') && (
           <div className="mt-5 pt-4 border-t border-gray-100">
             <a
               href={post.sourceUrl}
