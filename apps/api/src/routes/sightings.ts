@@ -339,7 +339,20 @@ export function registerSightingRoutes(router: Router) {
 
     const skip = (page - 1) * limit;
     const sightings = await prisma.sighting.findMany({
-      include: {
+      select: {
+        id: true,
+        reportId: true,
+        userId: true,
+        description: true,
+        address: true,
+        lat: true,
+        lng: true,
+        sightedAt: true,
+        source: true,
+        status: true,
+        aiAnalysis: true,
+        createdAt: true,
+        updatedAt: true,
         photos: {
           select: { id: true, photoUrl: true, thumbnailUrl: true },
           take: 1,

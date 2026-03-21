@@ -67,8 +67,6 @@ interface RawReportRow {
   last_seen_address: string;
   last_seen_lat: number | null;
   last_seen_lng: number | null;
-  contact_phone: string;
-  contact_name: string;
   reward: string | null;
   created_at: Date;
   distance_km: number;
@@ -133,7 +131,7 @@ export function registerReportRoutes(router: Router) {
       );
 
       // 커뮤니티 게시 (fire-and-forget)
-      void postAli(report.name, report.subjectType as SubjectType, report.lastSeenAddress).catch((err) => log.warn({ err }, 'Ali community post failed'));
+      void postAli(report.name, report.subjectType as SubjectType, report.lastSeenAddress, report.id).catch((err) => log.warn({ err }, 'Ali community post failed'));
 
       res.status(201).json({ ...report, photos });
     },
@@ -160,7 +158,7 @@ export function registerReportRoutes(router: Router) {
       const baseQuery = Prisma.sql`
         SELECT r.id, r.subject_type, r.status, r.name, r.species, r.features,
                r.last_seen_at, r.last_seen_address, r.last_seen_lat, r.last_seen_lng,
-               r.contact_phone, r.contact_name, r.reward, r.created_at,
+               r.reward, r.created_at,
                (6371 * 2 * ASIN(SQRT(
                  POWER(SIN(RADIANS((${lat} - r.last_seen_lat) / 2)), 2) +
                  COS(RADIANS(${lat})) * COS(RADIANS(r.last_seen_lat)) *
@@ -200,8 +198,6 @@ export function registerReportRoutes(router: Router) {
         lastSeenAddress: r.last_seen_address,
         lastSeenLat: r.last_seen_lat,
         lastSeenLng: r.last_seen_lng,
-        contactPhone: r.contact_phone,
-        contactName: r.contact_name,
         reward: r.reward,
         createdAt: r.created_at,
         photos: [],
@@ -263,8 +259,6 @@ export function registerReportRoutes(router: Router) {
         lastSeenAddress: true,
         lastSeenLat: true,
         lastSeenLng: true,
-        contactPhone: true,
-        contactName: true,
         reward: true,
         createdAt: true,
         updatedAt: true,
@@ -332,7 +326,7 @@ export function registerReportRoutes(router: Router) {
   });
 
   // 실종 신고 상세
-  router.get('/reports/:id', async (req, res) => {
+  router.get('/reports/:id', optionalAuth, async (req, res) => {
     const id = req.params.id;
     const report = await prisma.report.findUnique({
       where: { id },
@@ -344,7 +338,11 @@ export function registerReportRoutes(router: Router) {
     });
 
     if (!report) throw new ApiError(404, ERROR_CODES.REPORT_NOT_FOUND);
-    res.json(report);
+
+    // 본인(신고자)만 연락처 정보 포함, 비인증/타인은 제거
+    const isOwner = req.user?.userId === report.userId;
+    const { contactPhone, contactName, ...publicReport } = report;
+    res.json(isOwner ? report : publicReport);
   });
 
   // 신고 상태 업데이트

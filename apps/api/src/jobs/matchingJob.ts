@@ -175,6 +175,7 @@ async function comparePairDirect(
           result.confidence,
           report.lastSeenAddress,
           report.subjectType as SubjectType,
+          report.id,
         ).catch((err) => log.warn({ err }, 'Claude community post failed'));
       }
     }

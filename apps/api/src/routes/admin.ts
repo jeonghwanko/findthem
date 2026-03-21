@@ -115,6 +115,10 @@ const agentChatSchema = z.object({
   sessionId: z.string().optional(),
 });
 
+const crawlTriggerSchema = z.object({
+  sources: z.array(z.string()).optional(),
+});
+
 export function registerAdminRoutes(router: Router) {
   // ── 통계 API ──
 
@@ -433,8 +437,8 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/crawl/trigger — 즉시 크롤 실행
-  router.post('/admin/crawl/trigger', requireAdmin, async (req, res) => {
-    const { sources } = req.body as { sources?: string[] };
+  router.post('/admin/crawl/trigger', requireAdmin, validateBody(crawlTriggerSchema), async (req, res) => {
+    const { sources } = req.body as z.infer<typeof crawlTriggerSchema>;
     const job = await crawlSchedulerQueue.add(
       'crawl-dispatch',
       { sources },
