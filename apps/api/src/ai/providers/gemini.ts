@@ -63,7 +63,11 @@ async function callGemini(
   const data = (await res.json()) as GeminiResponse;
 
   if (!res.ok || data.error) {
-    throw new Error(`GEMINI_API_ERROR: ${data.error?.message ?? res.statusText}`);
+    const msg = data.error?.message ?? res.statusText;
+    if (res.status === 429 || /quota|spending.cap|rate.limit|exceeded/i.test(msg)) {
+      throw new Error('AI_QUOTA_EXCEEDED');
+    }
+    throw new Error(`GEMINI_API_ERROR: ${msg}`);
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';

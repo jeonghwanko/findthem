@@ -38,6 +38,10 @@ function buildGhostJwt(): string {
   const id = apiKey.slice(0, colonIdx);
   const secret = apiKey.slice(colonIdx + 1);
 
+  if (secret.length !== 64 || !/^[0-9a-f]{64}$/.test(secret)) {
+    throw new Error(`GHOST_ADMIN_API_KEY secret is invalid (expected 64 hex chars, got ${secret.length}). Please re-copy the full key from Ghost integrations.`);
+  }
+
   const now = Math.floor(Date.now() / 1000);
 
   return jwt.sign(
@@ -87,7 +91,9 @@ export async function createGhostPost(post: GhostPostInput): Promise<GhostPostRe
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, body: errorBody }, 'Ghost API 오류');
-    throw new Error(`Ghost API 오류: ${response.status}`);
+    throw new Error(response.status === 401
+      ? 'GHOST_AUTH_FAILED: Invalid API key. Re-copy the full Admin API Key from Ghost integrations.'
+      : `Ghost API error: ${response.status}`);
   }
 
   const data = (await response.json()) as { posts: GhostPostResult[] };
@@ -134,7 +140,9 @@ export async function listGhostPosts(page = 1, limit = 15): Promise<GhostPostLis
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, body: errorBody }, 'Ghost 포스트 목록 조회 오류');
-    throw new Error(`Ghost API 오류: ${response.status}`);
+    throw new Error(response.status === 401
+      ? 'GHOST_AUTH_FAILED: Invalid API key. Re-copy the full Admin API Key from Ghost integrations.'
+      : `Ghost API error: ${response.status}`);
   }
 
   return (await response.json()) as GhostPostListResult;
@@ -152,7 +160,9 @@ export async function deleteGhostPost(postId: string): Promise<void> {
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, postId, body: errorBody }, 'Ghost 포스트 삭제 오류');
-    throw new Error(`Ghost API 오류: ${response.status}`);
+    throw new Error(response.status === 401
+      ? 'GHOST_AUTH_FAILED: Invalid API key. Re-copy the full Admin API Key from Ghost integrations.'
+      : `Ghost API error: ${response.status}`);
   }
 
   log.info({ postId }, 'Ghost 포스트 삭제 완료');
@@ -174,7 +184,9 @@ export async function updateGhostSettings(settings: GhostSettingInput[]): Promis
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, body: errorBody }, 'Ghost 설정 업데이트 오류');
-    throw new Error(`Ghost API 오류: ${response.status}`);
+    throw new Error(response.status === 401
+      ? 'GHOST_AUTH_FAILED: Invalid API key. Re-copy the full Admin API Key from Ghost integrations.'
+      : `Ghost API error: ${response.status}`);
   }
 
   log.info({ keys: settings.map((s) => s.key) }, 'Ghost 설정 업데이트 완료');
