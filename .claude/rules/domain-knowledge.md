@@ -193,6 +193,8 @@ GREETING → SUBJECT_TYPE → PHOTO → DESCRIPTION → LOCATION → TIME → CO
 **PERSON 크롤 토글**: 관리자 대시보드에서 `crawl:enable-person` 설정으로 사람 실종 정보 수집 on/off (기본 OFF).
 `AiSetting` 테이블 활용 (60초 캐시). `isPersonCrawlEnabled()` 함수로 체크.
 
+**safe182 수동 트리거**: 관리자 대시보드의 크롤 섹션에서 소스 선택 시 `safe182`는 기본 선택 해제 상태 (`sources` 초기값 `['animal-api']`만 포함). 실수로 대량 수집하지 않도록 수동으로 체크해야 활성화됨.
+
 **아키텍처: Fan-out 패턴**
 ```
 crawlSchedulerQueue (cron: 0 */6 * * *)
@@ -514,7 +516,7 @@ apps/web/
 ```
 
 - **EVM**: wagmi v2 + @rainbow-me/rainbowkit v2 + viem v2
-- **Aptos**: @aptos-labs/wallet-adapter-react v8 + @aptos-labs/ts-sdk v1
+- **Aptos**: @aptos-labs/wallet-adapter-react v8 + @aptos-labs/ts-sdk v6
 
 ### 라우트
 
