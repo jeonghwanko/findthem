@@ -10,6 +10,7 @@ import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
 import { api, type AgentId } from '../api/client';
 import Web3Provider from '../providers/Web3Provider';
 import InquiryModal from '../components/InquiryModal';
+import { getWebOrigin } from '../utils/webOrigin';
 
 // ── Constants ──
 
@@ -299,7 +300,8 @@ function SponsorPageInner() {
     try {
       const result = await api.post<{ orderId: string }>('/sponsors/prepare', { agentId: agentId ?? '' });
       const agentName = agent ? t(agent.nameKey) : (agentId ?? '');
-      const successUrl = new URL('/team/sponsor/success', window.location.origin);
+      const origin = getWebOrigin();
+      const successUrl = new URL('/team/sponsor/success', origin);
       successUrl.searchParams.set('agentId', agentId ?? '');
       successUrl.searchParams.set('displayName', displayName);
       successUrl.searchParams.set('message', message);
@@ -307,7 +309,7 @@ function SponsorPageInner() {
         orderId: result.orderId,
         orderName: `${agentName} ${t('sponsor.title', { name: '' }).trim()}`,
         successUrl: successUrl.toString(),
-        failUrl: `${window.location.origin}/team/sponsor/${agentId ?? ''}`,
+        failUrl: `${origin}/team/sponsor/${agentId ?? ''}`,
       });
     } catch (err) {
       const code = err instanceof Error ? err.message : '';

@@ -8,6 +8,7 @@ import type { SponsorXpStats, XpGrantResult } from '@findthem/shared';
 import XpHistoryModal from '../components/XpHistoryModal';
 import { useXpToast } from '../components/XpRewardToast';
 import MobileQuickLinks from '../components/MobileQuickLinks';
+import { getWebOrigin } from '../utils/webOrigin';
 
 interface ProfilePageProps {
   user: User;
@@ -115,7 +116,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     if (isSharingRef.current || !user.referralCode) return;
     isSharingRef.current = true;
     try {
-      const referralUrl = `${window.location.origin}?ref=${user.referralCode}`;
+      const referralUrl = `${getWebOrigin()}?ref=${user.referralCode}`;
       const shareTitle = t('profile.referralShareTitle');
       const shareDesc = t('profile.referralShareDesc');
 
@@ -145,7 +146,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             content: {
               title: shareTitle,
               description: shareDesc,
-              imageUrl: `${window.location.origin}/pwa-512x512.png`,
+              imageUrl: `${getWebOrigin()}/pwa-512x512.png`,
               link: { mobileWebUrl: referralUrl, webUrl: referralUrl },
             },
             buttons: [{ title: t('profile.referralJoin'), link: { mobileWebUrl: referralUrl, webUrl: referralUrl } }],

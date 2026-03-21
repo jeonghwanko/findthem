@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getWebOrigin } from '../utils/webOrigin';
 
 interface ShareButtonProps {
   title: string;
@@ -13,7 +14,7 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const shareUrl = url ?? window.location.href;
+  const shareUrl = url ?? `${getWebOrigin()}${window.location.pathname}`;
 
   // 외부 클릭 시 닫기
   useEffect(() => {
@@ -73,8 +74,8 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
         title,
         description,
         imageUrl: imageUrl
-          ? (imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`)
-          : `${window.location.origin}/pwa-512x512.png`,
+          ? (imageUrl.startsWith('http') ? imageUrl : `${getWebOrigin()}${imageUrl}`)
+          : `${getWebOrigin()}/pwa-512x512.png`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
       buttons: [{ title: t('share.kakaoButton'), link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],

@@ -180,7 +180,8 @@ export default function GamePage() {
   // iframe → GAME_OVER 메시지 수신 (deps: [] 고정 — savePlayRef로 최신 savePlay 호출)
   useEffect(() => {
     const handler = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return;
+      // 네이티브(capacitor://localhost)와 웹 모두 허용
+      if (e.origin !== window.location.origin && e.source !== iframeRef.current?.contentWindow) return;
       if (typeof e.data !== 'object' || !e.data) return;
       if (e.data.type === 'GAME_OVER' && typeof e.data.score === 'number') {
         setResultScore(e.data.score as number);

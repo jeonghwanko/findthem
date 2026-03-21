@@ -34,13 +34,8 @@ export default function AuthCallbackPage() {
     if (tgAuthResult) {
       try {
         const authData = JSON.parse(atob(tgAuthResult)) as Record<string, string>;
-        fetch('/api/auth/telegram/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(authData),
-        })
-          .then((res) => res.json())
-          .then((data: { token?: string }) => {
+        api.post<{ token?: string }>('/auth/telegram/callback', authData)
+          .then((data) => {
             if (data.token) {
               localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
               return applyPendingReferral();
