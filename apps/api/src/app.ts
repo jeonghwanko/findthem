@@ -9,7 +9,14 @@ import { createRouter } from './routes/index.js';
 const app = express();
 
 // 미들웨어
-app.use(cors({ origin: config.webOrigin, credentials: true }));
+app.use(cors({
+  origin: [
+    config.webOrigin,
+    'capacitor://localhost',   // iOS Capacitor
+    'http://localhost',        // Android Capacitor
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 
 // 정적 파일 (업로드)
