@@ -77,7 +77,7 @@ interface CrawlStats {
 
 function CrawlSection() {
   const { t } = useTranslation();
-  const [sources, setSources] = useState<string[]>(ALL_SOURCES);
+  const [sources, setSources] = useState<string[]>(['animal-api']);
   const [triggering, setTriggering] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
