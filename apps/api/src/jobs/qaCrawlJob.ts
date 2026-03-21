@@ -1,10 +1,10 @@
 import { QUEUE_NAMES } from '@findthem/shared';
 import type { ExternalQuestion } from '@findthem/shared';
-import { Prisma } from '@prisma/client';
 import { createWorker, qaCrawlQueue, type QaCrawlJobData } from './queues.js';
 import { qaFetchers } from './crawl/qa/qaFetcherRegistry.js';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
+import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 import { isCronEnabled, getCronIntervalHours } from '../ai/aiSettings.js';
 import { answerQuestionWithAgents } from '../services/qaAgentAnswerService.js';
 import { dispatchWebhookToAll } from '../services/webhookDispatcher.js';
@@ -35,7 +35,7 @@ export async function saveQuestion(q: ExternalQuestion): Promise<string | null> 
     });
     return post.id;
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    if (isPrismaUniqueError(err)) {
       log.info({ externalId: q.externalId }, 'Q&A post already exists, skipping');
       return null;
     }

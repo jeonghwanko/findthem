@@ -43,6 +43,7 @@ import type { AdminActionSource } from '@findthem/shared';
 import { getAiSettings, updateAiSetting, getApiKeyStatuses, saveApiKey, testApiKey } from '../services/aiConfigService.js';
 import { isCronEnabled, getCronIntervalHours, invalidateSettingsCache, type CronJobKey } from '../ai/aiSettings.js';
 import { createLogger } from '../logger.js';
+import { isPrismaNotFoundError } from '../utils/prismaErrors.js';
 
 const log = createLogger('adminRoutes');
 
@@ -1441,7 +1442,7 @@ export function registerAdminRoutes(router: Router) {
           },
         });
       } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+        if (isPrismaNotFoundError(err)) {
           throw new ApiError(404, ERROR_CODES.INQUIRY_NOT_FOUND);
         }
         throw err;

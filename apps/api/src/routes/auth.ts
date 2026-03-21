@@ -18,6 +18,7 @@ import { grantXp } from '../services/xpService.js';
 import { createLogger } from '../logger.js';
 import { imageService } from '../services/imageService.js';
 import { storageService } from '../services/storageService.js';
+import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 
 // Apple JWKS — 모듈 로드 시 1회 생성 (내부적으로 캐시)
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
@@ -151,7 +152,7 @@ export function registerAuthRoutes(router: Router) {
         },
       });
     } catch (err) {
-      if ((err as { code?: string })?.code === 'P2002') {
+      if (isPrismaUniqueError(err)) {
         throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
       throw err;

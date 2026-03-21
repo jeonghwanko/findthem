@@ -8,6 +8,7 @@ import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, VALID_AGENT_IDS, SUPPORT
 import { rateLimit } from '../middlewares/rateLimit.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { createLogger } from '../logger.js';
+import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 import { grantXp } from '../services/xpService.js';
 import { XP_PER_USD_CENT, XP_PER_KRW_100 } from '@findthem/shared';
 import { randomUUID } from 'node:crypto';
@@ -173,7 +174,7 @@ export function registerSponsorRoutes(router: Router) {
         data: { agentId, amount, orderId, paymentKey, displayName, message },
       });
     } catch (err) {
-      if ((err as { code?: string })?.code === 'P2002') {
+      if (isPrismaUniqueError(err)) {
         // RACE-05: 동시 요청으로 이미 저장된 경우 — P2002(unique)로 중복 방지
         log.warn({ orderId }, 'Toss sponsor already saved (duplicate request)');
         throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
@@ -435,7 +436,7 @@ export function registerSponsorRoutes(router: Router) {
         },
       });
     } catch (err) {
-      if ((err as { code?: string })?.code === 'P2002') {
+      if (isPrismaUniqueError(err)) {
         // txHash 또는 orderId unique 위반 — 이미 처리된 TX
         // 선점한 verifiedAt 롤백 → quote 재사용 가능하게 복원
         await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });

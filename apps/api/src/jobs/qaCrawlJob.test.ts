@@ -46,34 +46,7 @@ vi.mock('../logger.js', () => ({
   }),
 }));
 
-// @prisma/client mock — PrismaClientKnownRequestError
-vi.mock('@prisma/client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@prisma/client')>();
-
-  class PrismaClientKnownRequestError extends Error {
-    code: string;
-    clientVersion: string;
-    meta?: Record<string, unknown>;
-
-    constructor(message: string, { code, clientVersion }: { code: string; clientVersion: string }) {
-      super(message);
-      this.name = 'PrismaClientKnownRequestError';
-      this.code = code;
-      this.clientVersion = clientVersion;
-    }
-  }
-
-  return {
-    ...actual,
-    Prisma: {
-      ...(actual.Prisma ?? {}),
-      PrismaClientKnownRequestError,
-    },
-  };
-});
-
 import { prisma } from '../db/client.js';
-import { Prisma } from '@prisma/client';
 import { saveQuestion } from './qaCrawlJob.js';
 import type { ExternalQuestion } from '@findthem/shared';
 
@@ -139,10 +112,10 @@ describe('qaCrawlJob — saveQuestion', () => {
   });
 
   describe('P2002 처리 — 레이스 컨디션', () => {
-    it('PrismaClientKnownRequestError(P2002) 시 null 반환 (throw 없음)', async () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError(
-        'Unique constraint failed on the fields: (`deduplicationKey`)',
-        { code: 'P2002', clientVersion: '5.0.0' },
+    it('code=P2002 에러 시 null 반환 (throw 없음)', async () => {
+      const p2002 = Object.assign(
+        new Error('Unique constraint failed on the fields: (`deduplicationKey`)'),
+        { code: 'P2002' },
       );
       prismaMock.communityPost.create.mockRejectedValue(p2002);
 
@@ -152,10 +125,7 @@ describe('qaCrawlJob — saveQuestion', () => {
     });
 
     it('P2002 시 에러 throw 없이 완료', async () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-        code: 'P2002',
-        clientVersion: '5.0.0',
-      });
+      const p2002 = Object.assign(new Error('Unique constraint'), { code: 'P2002' });
       prismaMock.communityPost.create.mockRejectedValue(p2002);
 
       await expect(saveQuestion(makeQuestion())).resolves.toBeNull();

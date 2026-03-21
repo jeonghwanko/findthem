@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../../../db/client.js';
 import { createLogger } from '../../../logger.js';
 import type { SubjectType, Gender } from '@findthem/shared';
+import { isPrismaUniqueError } from '../../../utils/prismaErrors.js';
 
 const log = createLogger('crawlAgent:storeReport');
 
@@ -71,11 +72,7 @@ export async function storeReport(input: unknown): Promise<StoreReportResult> {
     return { reportId: report.id, created: true };
   } catch (err) {
     // Prisma unique constraint violation (P2002) — duplicate
-    if (
-      err instanceof Error &&
-      'code' in err &&
-      (err as { code: string }).code === 'P2002'
-    ) {
+    if (isPrismaUniqueError(err)) {
       log.warn({ externalId: data.externalId, externalSource: data.externalSource }, 'store_report: duplicate, skipping');
       return { reportId: null, created: false, reason: 'duplicate' };
     }

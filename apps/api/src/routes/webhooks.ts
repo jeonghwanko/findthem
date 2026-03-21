@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import { createHmac } from 'node:crypto';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 import { config } from '../config.js';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
@@ -100,10 +100,7 @@ export function registerWebhookRoutes(router: Router) {
             });
           } catch (createErr) {
             // P2002: 동시 요청이 먼저 생성한 세션 사용
-            if (
-              createErr instanceof Prisma.PrismaClientKnownRequestError &&
-              createErr.code === 'P2002'
-            ) {
+            if (isPrismaUniqueError(createErr)) {
               const existing = await prisma.chatSession.findFirst({
                 where: { platformUserId: kakaoUserId, platform: 'KAKAO', status: 'ACTIVE' },
                 select: SESSION_SELECT,
