@@ -7,9 +7,10 @@ const config: CapacitorConfig = {
   appName: 'FindThem',
   webDir: 'dist',
   ios: {
-    // iOS 16.0+ — AdMob, Firebase, NativeNavigation 포함
+    // iOS 16.0+ — AdMob, Firebase 포함
     // @capacitor-firebase/analytics는 Podfile에서 직접 /Analytics subspec으로 고정
     // (cap sync가 subspec을 제거하는 문제 방지)
+    // capacitor-native-navigation은 현재 크래시 유발하여 제외 — 웹 BrowserRouter 폴백 사용
     includePlugins: [
       '@capacitor/app',
       '@capacitor/browser',
@@ -19,7 +20,6 @@ const config: CapacitorConfig = {
       '@capacitor-community/admob',
       '@capacitor-firebase/crashlytics',
       '@capacitor-firebase/messaging',
-      'capacitor-native-navigation',
     ],
   },
   server: {
