@@ -285,6 +285,35 @@ iOS WKWebView에서 WebP 이미지를 blob → dataURL로 변환 후 Pixi에 전
 불일치하면 "built for newer iOS-simulator version" 경고 대량 발생.
 현재 설정: **iOS 16.0** (Podfile + project.pbxproj 모두)
 
+## Universal Link (iOS OAuth 콜백)
+
+네이티브 앱에서 OAuth 로그인(카카오/네이버/애플/텔레그램) 후 외부 브라우저에서 앱으로 자동 복귀하기 위해 Universal Link 사용.
+
+**동작 흐름**:
+```
+앱에서 OAuth 시작 → 외부 브라우저/SFSafariViewController 열림
+  → 카카오/네이버 인증 → 백엔드 콜백 → redirectWithToken()
+  → https://union.pryzm.gg/auth/callback#token=...
+  → iOS가 Universal Link 인터셉트 → 앱으로 복귀
+  → bootstrapNative의 appUrlOpen 리스너 → AuthCallbackPage 라우팅
+```
+
+**구성 요소**:
+
+| 파일 | 역할 |
+|------|------|
+| `apps/web/public/.well-known/apple-app-site-association` | AASA 파일 — `/auth/callback` 경로를 앱으로 연결 |
+| `apps/web/ios/App/App/App.entitlements` | Associated Domains: `applinks:union.pryzm.gg` |
+| `deploy/union.pryzm.gg.conf` | Nginx에서 `.well-known` 경로를 JSON으로 서빙 |
+| `packages/capacitor-native/src/bootstrapNative.tsx` | `@capacitor/app`의 `appUrlOpen` 이벤트 수신 → 라우터 전달 |
+
+**배포 체크리스트**:
+1. Apple Developer Console → App ID (`gg.pryzm.union`) → Associated Domains capability 활성화
+2. 서버에 AASA 파일 배포 (`/var/www/union/.well-known/apple-app-site-association`)
+3. Nginx 설정 반영 + reload
+4. 검증: `curl https://union.pryzm.gg/.well-known/apple-app-site-association`
+5. Apple CDN 캐싱 최대 24시간 딜레이 가능 — 개발 중에는 entitlements에 `?mode=developer` 추가로 우회
+
 ## OTA 업데이트 (@capgo/capacitor-updater)
 
 로컬 번들 모드에서 앱스토어 재배포 없이 웹 번들 업데이트:

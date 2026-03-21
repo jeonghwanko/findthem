@@ -35,6 +35,17 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
 
   const nn = initReact({ plugin: NativeNavigation });
 
+  // Universal Link 수신 — OAuth 콜백을 앱 내 라우터로 전달
+  const { App: CapApp } = await import('@capacitor/app');
+  void CapApp.addListener('appUrlOpen', (data: { url: string }) => {
+    try {
+      const url = new URL(data.url);
+      if (url.pathname === '/auth/callback') {
+        window.location.href = url.pathname + url.search + url.hash;
+      }
+    } catch { /* invalid URL — ignore */ }
+  });
+
   await NativeNavigation.present({
     component: {
       type: 'tabs',
