@@ -1,10 +1,36 @@
-import { defineConfig } from 'vite';
+import fs from 'node:fs';
+import path from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+
+// 네이티브 빌드 시 웹 전용 이미지를 dist/에서 제거 (APK 용량 절감)
+function nativeAssetCleanupPlugin(mode: string): Plugin {
+  return {
+    name: 'native-asset-cleanup',
+    apply: 'build',
+    closeBundle() {
+      if (mode !== 'native') return;
+      const targets = [
+        'dist/spine/human_type.webp',
+        'dist/spine/human_type_2.webp',
+        'dist/spine/human_type_3.webp',
+        'dist/pwa-192x192.png',
+        'dist/pwa-512x512.png',
+        'dist/og-hero.png',
+      ];
+      for (const f of targets) {
+        const full = path.resolve(f);
+        if (fs.existsSync(full)) fs.unlinkSync(full);
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    nativeAssetCleanupPlugin(mode),
     ...(mode !== 'native'
       ? [
           VitePWA({
