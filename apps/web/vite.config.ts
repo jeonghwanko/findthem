@@ -51,6 +51,9 @@ export default defineConfig(({ mode }) => ({
         ]
       : []),
   ],
+  resolve: {
+    dedupe: ['@aptos-labs/ts-sdk'],
+  },
   optimizeDeps: {
     include: [
       'pixi.js',
