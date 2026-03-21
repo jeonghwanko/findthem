@@ -39,7 +39,8 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
   }
 
   function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram' | 'apple') {
-    window.location.href = `/api/auth/${provider}`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api';
+    window.location.href = `${apiBase}/auth/${provider}`;
   }
 
   return (
