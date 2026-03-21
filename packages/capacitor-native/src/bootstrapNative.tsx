@@ -35,13 +35,18 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
 
   const nn = initReact({ plugin: NativeNavigation });
 
-  // Universal Link 수신 — OAuth 콜백을 앱 내 라우터로 전달
+  // URL 스킴 / Universal Link 수신 — OAuth 콜백을 앱 내 라우터로 전달
   const { App: CapApp } = await import('@capacitor/app');
-  void CapApp.addListener('appUrlOpen', (data: { url: string }) => {
+  void CapApp.addListener('appUrlOpen', async (data: { url: string }) => {
     try {
       const url = new URL(data.url);
       if (url.pathname === '/auth/callback') {
-        window.location.href = url.pathname + url.search + url.hash;
+        // SFSafariViewController 닫기
+        try {
+          const { Browser } = await import('@capacitor/browser');
+          void Browser.close();
+        } catch { /* Browser 플러그인 없으면 무시 */ }
+        window.location.href = '/auth/callback' + url.search + url.hash;
       }
     } catch { /* invalid URL — ignore */ }
   });

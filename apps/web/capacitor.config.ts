@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
     // @capacitor-firebase/analytics는 Podfile에서 직접 /Analytics subspec으로 고정
     // (cap sync가 subspec을 제거하는 문제 방지)
     includePlugins: [
+      '@capacitor/app',
+      '@capacitor/browser',
       '@capacitor/keyboard',
       '@capacitor/splash-screen',
       '@capacitor/status-bar',

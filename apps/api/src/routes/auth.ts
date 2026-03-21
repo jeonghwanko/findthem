@@ -123,7 +123,21 @@ async function findOrCreateSocialUser(params: {
 
 /** 프론트엔드로 리다이렉트 시 토큰을 hash fragment로 전달 (query string 대비 보안 강화) */
 function redirectWithToken(res: import('express').Response, token: string) {
+  // 네이티브 앱: 커스텀 URL 스킴으로 리다이렉트 → SFSafariViewController가 앱으로 복귀
+  const isNative = parseCookieValue(res.req.headers.cookie, 'ft_native') === '1';
+  if (isNative) {
+    res.clearCookie('ft_native');
+    res.redirect(`findthem://auth/callback#token=${encodeURIComponent(token)}`);
+    return;
+  }
   res.redirect(`${config.webOrigin}/auth/callback#token=${encodeURIComponent(token)}`);
+}
+
+/** 네이티브 앱에서 OAuth 시작 시 쿠키로 플래그 설정 (콜백에서 커스텀 URL 스킴 사용) */
+function setNativeCookie(req: import('express').Request, res: import('express').Response) {
+  if (req.query['native'] === '1') {
+    res.cookie('ft_native', '1', { httpOnly: true, maxAge: 5 * 60 * 1000, sameSite: 'lax' });
+  }
 }
 
 export function registerAuthRoutes(router: Router) {
@@ -319,7 +333,8 @@ export function registerAuthRoutes(router: Router) {
   // ── Kakao OAuth ───────────────────────────────────────────────────────────
 
   // 카카오 로그인 진입 (브라우저 리다이렉트)
-  router.get('/auth/kakao', (_req, res) => {
+  router.get('/auth/kakao', (req, res) => {
+    setNativeCookie(req, res);
     const params = new URLSearchParams({
       client_id: config.kakaoRestApiKey,
       redirect_uri: config.kakaoRedirectUri,
@@ -404,6 +419,7 @@ export function registerAuthRoutes(router: Router) {
 
   // 네이버 로그인 진입 (CSRF state를 쿠키에 저장)
   router.get('/auth/naver', (req, res) => {
+    setNativeCookie(req, res);
     const state = crypto.randomBytes(16).toString('hex');
     res.cookie('naver_oauth_state', state, {
       httpOnly: true,
@@ -516,6 +532,7 @@ export function registerAuthRoutes(router: Router) {
 
   // 텔레그램 로그인 진입 (Telegram Login Widget 방식)
   router.get('/auth/telegram', (req, res) => {
+    setNativeCookie(req, res);
     const botId = config.telegramBotToken.split(':')[0] ?? '';
     // return_to: 인증 완료 후 리다이렉트될 콜백 URL
     // return_to를 프론트 콜백 페이지로 지정 (텔레그램은 fragment로 데이터 전달)
@@ -532,7 +549,8 @@ export function registerAuthRoutes(router: Router) {
   // ── Apple Sign in with Apple ──────────────────────────────────────────────
 
   // Apple 로그인 진입 (CSRF state를 쿠키에 저장)
-  router.get('/auth/apple', (_req, res) => {
+  router.get('/auth/apple', (req, res) => {
+    setNativeCookie(req, res);
     const state = crypto.randomBytes(16).toString('hex');
     res.cookie('apple_oauth_state', state, {
       httpOnly: true,
