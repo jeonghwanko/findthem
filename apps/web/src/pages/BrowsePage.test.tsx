@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BrowsePage from './BrowsePage';
 import type { Report, ReportListResponse, Sighting, SightingListResponse } from '../api/client';
@@ -73,12 +73,16 @@ function mockBothResponses(reports: Report[], sightings: Sighting[]) {
   });
 }
 
-function renderBrowsePage() {
-  return render(
-    <MemoryRouter>
-      <BrowsePage />
-    </MemoryRouter>,
-  );
+async function renderBrowsePage() {
+  let result: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(
+      <MemoryRouter>
+        <BrowsePage />
+      </MemoryRouter>,
+    );
+  });
+  return result!;
 }
 
 describe('BrowsePage', () => {
@@ -92,7 +96,7 @@ describe('BrowsePage', () => {
         [createMockReport()],
         [createMockSighting()],
       );
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => {
         expect(screen.getByText('초코')).toBeInTheDocument();
@@ -102,7 +106,7 @@ describe('BrowsePage', () => {
 
     it('데이터 없으면 "검색 결과 없음" 표시', async () => {
       mockBothResponses([], []);
-      renderBrowsePage();
+      await renderBrowsePage();
       await waitFor(() => {
         expect(screen.queryByText(/결과/)).toBeInTheDocument();
       });
@@ -110,7 +114,7 @@ describe('BrowsePage', () => {
 
     it('API 에러 시 에러 메시지 표시', async () => {
       mockApiGet.mockRejectedValue(new Error('Network error'));
-      renderBrowsePage();
+      await renderBrowsePage();
       await waitFor(() => {
         expect(screen.getByText(/실패/)).toBeInTheDocument();
       });
@@ -120,7 +124,7 @@ describe('BrowsePage', () => {
   describe('보기 필터', () => {
     it('신고 탭 클릭 시 신고만 표시 (제보 API 미호출)', async () => {
       mockBothResponses([createMockReport()], [createMockSighting()]);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
 
@@ -138,7 +142,7 @@ describe('BrowsePage', () => {
 
     it('제보 탭 클릭 시 제보만 표시', async () => {
       mockBothResponses([createMockReport()], [createMockSighting()]);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
 
@@ -155,7 +159,7 @@ describe('BrowsePage', () => {
 
     it('제보 탭에서는 종류/상태 필터가 숨겨진다', async () => {
       mockBothResponses([], []);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
 
@@ -173,7 +177,7 @@ describe('BrowsePage', () => {
   describe('필터', () => {
     it('종류 필터 — 고양이 클릭 시 type=CAT으로 요청', async () => {
       mockBothResponses([], []);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
 
@@ -194,7 +198,7 @@ describe('BrowsePage', () => {
 
     it('상태 필터 — 찾았어요 클릭 시 phase=found로 요청', async () => {
       mockBothResponses([], []);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
 
@@ -214,7 +218,7 @@ describe('BrowsePage', () => {
     it('검색 입력 시 300ms debounce 후 API 요청', async () => {
       vi.useFakeTimers();
       mockBothResponses([], []);
-      renderBrowsePage();
+      await renderBrowsePage();
 
       await vi.waitFor(() => expect(mockApiGet).toHaveBeenCalled());
       const callCountBefore = mockApiGet.mock.calls.length;
@@ -247,7 +251,7 @@ describe('BrowsePage', () => {
         }
         return Promise.resolve({ sightings: [], total: 0, page: 1, totalPages: 1 });
       });
-      renderBrowsePage();
+      await renderBrowsePage();
       await waitFor(() => {
         expect(screen.getByText('초코')).toBeInTheDocument();
       });

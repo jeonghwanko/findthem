@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // ── Mocks must be declared before component import ──
@@ -77,15 +77,19 @@ const mockApiPost = vi.mocked(api.post);
 const mockUseAccount = vi.mocked(useAccount);
 const mockUseWallet = vi.mocked(useWallet);
 
-function renderSponsorPage(agentId = 'image-matching') {
-  return render(
-    <MemoryRouter initialEntries={[`/team/sponsor/${agentId}`]}>
-      <Routes>
-        <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
-        <Route path="/team" element={<div>팀 페이지</div>} />
-      </Routes>
-    </MemoryRouter>,
-  );
+async function renderSponsorPage(agentId = 'image-matching') {
+  let result: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(
+      <MemoryRouter initialEntries={[`/team/sponsor/${agentId}`]}>
+        <Routes>
+          <Route path="/team/sponsor/:agentId" element={<SponsorPage />} />
+          <Route path="/team" element={<div>팀 페이지</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  });
+  return result!;
 }
 
 /** Helper: open chain dropdown and select a chain by label */
@@ -132,26 +136,26 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('기본 렌더링', () => {
     it('유효한 agentId로 에이전트 정보를 표시한다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
       // 에이전트 이름이 title에 포함됨 (i18n 키로 렌더됨)
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
       });
     });
 
-    it('잘못된 agentId → "찾을 수 없음" 메시지 표시', () => {
-      renderSponsorPage('unknown-agent-xyz');
+    it('잘못된 agentId → "찾을 수 없음" 메시지 표시', async () => {
+      await renderSponsorPage('unknown-agent-xyz');
       expect(screen.getByText(/detail\.notFound|찾을 수 없|Not found/i)).toBeInTheDocument();
     });
 
-    it('잘못된 agentId → 팀 페이지 링크 표시', () => {
-      renderSponsorPage('unknown-agent-xyz');
+    it('잘못된 agentId → 팀 페이지 링크 표시', async () => {
+      await renderSponsorPage('unknown-agent-xyz');
       const link = screen.getByRole('link', { name: /backToTeam|팀 페이지|team/i });
       expect(link).toBeInTheDocument();
     });
 
     it('payment-status API 호출 — agent 있을 때', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
       await waitFor(() => {
         expect(mockApiGet).toHaveBeenCalledWith('/sponsors/payment-status');
       });
@@ -159,7 +163,7 @@ describe('SponsorPage', () => {
 
     it('payment-status API 실패 시 안전하게 처리 (crash 없음)', async () => {
       mockApiGet.mockRejectedValue(new Error('Network error'));
-      expect(() => renderSponsorPage('image-matching')).not.toThrow();
+      await renderSponsorPage('image-matching');
     });
   });
 
@@ -168,7 +172,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('탭 전환', () => {
     it('기본 탭은 크립토 탭이다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
       await waitFor(() => {
         const cryptoTab = screen.getByRole('tab', { name: /tabCrypto|크립토/i });
         expect(cryptoTab).toHaveAttribute('aria-selected', 'true');
@@ -176,7 +180,7 @@ describe('SponsorPage', () => {
     });
 
     it('카드 탭 클릭 시 카드 결제 패널이 표시된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       const cardTab = screen.getByRole('tab', { name: /tabCard|카드/i });
       fireEvent.click(cardTab);
@@ -189,7 +193,7 @@ describe('SponsorPage', () => {
     });
 
     it('크립토 탭 클릭 시 크립토 결제 패널이 표시된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       // 먼저 카드로 전환
       fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
@@ -209,7 +213,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('체인 선택', () => {
     it('기본 선택은 Ethereum이다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         // 드롭다운 트리거에 Ethereum 표시
@@ -218,7 +222,7 @@ describe('SponsorPage', () => {
     });
 
     it('드롭다운에서 Aptos 선택 가능', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('Aptos');
 
@@ -230,7 +234,7 @@ describe('SponsorPage', () => {
     });
 
     it('드롭다운 열면 체인 4개 표시 (Ethereum, BSC, Base, Aptos)', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       // 드롭다운 트리거 클릭
       fireEvent.click(screen.getByText('Ethereum').closest('button')!);
@@ -242,7 +246,7 @@ describe('SponsorPage', () => {
     });
 
     it('EVM 체인 — 토큰 선택 버튼 표시 (Ethereum 기본: USDC, USDt, ETH)', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'USDC' })).toBeInTheDocument();
@@ -252,7 +256,7 @@ describe('SponsorPage', () => {
     });
 
     it('Aptos 선택 — 토큰 선택 숨김', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('Aptos');
 
@@ -268,7 +272,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('크립토 금액 프리셋', () => {
     it('$1, $5, $10, $25 프리셋 버튼이 표시된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '$1' })).toBeInTheDocument();
@@ -279,7 +283,7 @@ describe('SponsorPage', () => {
     });
 
     it('기본 선택 금액은 $5 (500 cents)', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         const fiveBtn = screen.getByRole('button', { name: '$5' });
@@ -289,7 +293,7 @@ describe('SponsorPage', () => {
     });
 
     it('$10 클릭 → $10 버튼이 활성화된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '$10' })).toBeInTheDocument();
@@ -311,7 +315,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('EVM 체인 선택 시 토큰 목록 변경', () => {
     it('BSC 체인 선택 → BNB 토큰이 나타난다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('BSC');
 
@@ -321,7 +325,7 @@ describe('SponsorPage', () => {
     });
 
     it('BSC 선택 → ETH 버튼은 미표시 (BSC는 ETH 없음)', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('BSC');
 
@@ -331,7 +335,7 @@ describe('SponsorPage', () => {
     });
 
     it('Base 체인 선택 → USDt 버튼 미표시 (Base에서 지원 안 함)', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('Base');
 
@@ -346,7 +350,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('지갑 미연결 상태', () => {
     it('EVM 지갑 미연결 — 결제 버튼이 disabled 상태', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         const payBtn = screen.getByRole('button', {
@@ -357,7 +361,7 @@ describe('SponsorPage', () => {
     });
 
     it('EVM 미연결 — 지갑 연결 버튼 표시', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         expect(
@@ -375,7 +379,7 @@ describe('SponsorPage', () => {
         wallets: [],
       } as unknown as ReturnType<typeof useWallet>);
 
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await selectChain('Aptos');
 
@@ -402,7 +406,7 @@ describe('SponsorPage', () => {
     });
 
     it('지갑 연결 시 결제 버튼이 활성화된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         const allButtons = screen.getAllByRole('button');
@@ -413,7 +417,7 @@ describe('SponsorPage', () => {
     });
 
     it('결제 버튼에 선택 금액과 토큰 심볼이 표시된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       // Pay button contains both amount and token symbol (from payBtn i18n key)
       await waitFor(() => {
@@ -444,7 +448,7 @@ describe('SponsorPage', () => {
     });
 
     it('Aptos 모드에서 지갑 연결 시 주소 앞뒤 일부 표시', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
       await selectChain('Aptos');
 
       await waitFor(() => {
@@ -459,7 +463,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('닉네임 / 메시지 입력', () => {
     it('닉네임 입력 가능', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       const nicknameInput = screen.getByPlaceholderText(/nicknamePlaceholder|익명으로 표시/i);
       fireEvent.change(nicknameInput, { target: { value: '테스터' } });
@@ -468,7 +472,7 @@ describe('SponsorPage', () => {
     });
 
     it('메시지 입력 가능', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       const messageInput = screen.getByPlaceholderText(/messagePlaceholder|응원 한마디/i);
       fireEvent.change(messageInput, { target: { value: '파이팅!' } });
@@ -502,7 +506,7 @@ describe('SponsorPage', () => {
         quoteExpiresAt: new Date(Date.now() + 300_000).toISOString(),
       });
 
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       // Wait for enabled pay button then click
       await waitFor(() => {
@@ -540,7 +544,7 @@ describe('SponsorPage', () => {
         quoteExpiresAt: '2020-01-01T00:00:00.000Z', // definitely expired
       });
 
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       // Wait for enabled pay button
       let payBtn: HTMLElement | undefined;
@@ -566,7 +570,7 @@ describe('SponsorPage', () => {
     it('API quote 호출 실패 시 일반 에러 메시지 표시', async () => {
       mockApiPost.mockRejectedValue(new Error('Network error'));
 
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       await waitFor(() => {
         const allButtons = screen.getAllByRole('button');
@@ -594,7 +598,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('카드 결제 탭 — 금액 프리셋', () => {
     it('Toss 프리셋 금액 버튼 4개 표시', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
@@ -608,7 +612,7 @@ describe('SponsorPage', () => {
     });
 
     it('프리셋 버튼 클릭 시 해당 금액이 선택된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
 
       fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
@@ -625,7 +629,7 @@ describe('SponsorPage', () => {
     });
 
     it('직접 입력 시 숫자만 허용된다', async () => {
-      renderSponsorPage('image-matching');
+      await renderSponsorPage('image-matching');
       fireEvent.click(screen.getByRole('tab', { name: /tabCard|카드/i }));
 
       await waitFor(() => {
@@ -647,7 +651,7 @@ describe('SponsorPage', () => {
   // ────────────────────────────────────────────────────────
   describe('에이전트 목록', () => {
     it('promotion 에이전트 렌더링', async () => {
-      renderSponsorPage('promotion');
+      await renderSponsorPage('promotion');
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
       });
@@ -655,7 +659,7 @@ describe('SponsorPage', () => {
     });
 
     it('chatbot-alert 에이전트 렌더링', async () => {
-      renderSponsorPage('chatbot-alert');
+      await renderSponsorPage('chatbot-alert');
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
       });
@@ -666,8 +670,8 @@ describe('SponsorPage', () => {
   // 네비게이션
   // ────────────────────────────────────────────────────────
   describe('네비게이션', () => {
-    it('잘못된 agentId 시 팀 페이지 링크가 표시된다', () => {
-      renderSponsorPage('unknown-agent-xyz');
+    it('잘못된 agentId 시 팀 페이지 링크가 표시된다', async () => {
+      await renderSponsorPage('unknown-agent-xyz');
       const link = screen.getByRole('link', { name: /backToTeam|팀 페이지|team/i });
       expect(link).toHaveAttribute('href', '/team');
     });

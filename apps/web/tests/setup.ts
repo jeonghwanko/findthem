@@ -2,6 +2,9 @@ import { expect, vi, afterEach, beforeAll } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
 expect.extend(matchers);
+
+// React act() 경고 억제 — 테스트 환경임을 React에 알림
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 import { cleanup } from '@testing-library/react';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
