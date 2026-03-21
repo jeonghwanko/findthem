@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["38BX8JVKDM.gg.pryzm.union"],
+        "components": [
+          {
+            "/": "/auth/callback",
+            "comment": "OAuth callback — Kakao, Naver, Apple, Telegram"
+          }
+        ]
+      }
+    ]
+  }
+}

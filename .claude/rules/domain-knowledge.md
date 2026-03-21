@@ -312,6 +312,7 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE'
 - 소셜 로그인 시 프로필 이미지 저장: 카카오(`profile_image_url`), 네이버(`profile_image`), 텔레그램(`photo_url`) — 없으면 null
 - 재로그인 시 `name`, `profileImage` 최신값으로 갱신 (upsert update)
 - 프론트 콜백 페이지: `/auth/callback` (`AuthCallbackPage.tsx`) — `#token` 또는 `#tgAuthResult` 처리
+- **네이티브 앱 (iOS)**: Universal Link로 OAuth 콜백을 앱으로 인터셉트. `@capacitor/app`의 `appUrlOpen` 이벤트 → `AuthCallbackPage` 라우팅. AASA 파일: `public/.well-known/apple-app-site-association`
 
 **라우트**
 ```
