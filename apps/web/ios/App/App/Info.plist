@@ -56,6 +56,10 @@
 			<string>gg.pryzm.union</string>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>실종 동물/사람 제보를 위해 사진을 촬영합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>실종 동물/사람 제보를 위해 사진을 선택합니다.</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3320768302064088~1876982270</string>
 	<key>NSAppTransportSecurity</key>

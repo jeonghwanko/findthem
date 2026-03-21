@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
 import type { Sighting } from '../api/client';
 import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
+import { assetSrc } from '../utils/webOrigin';
 
 interface SightingCardProps {
   sighting: Sighting;
@@ -29,7 +30,7 @@ export default function SightingCard({ sighting }: SightingCardProps) {
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
-              src={photo.thumbnailUrl || photo.photoUrl}
+              src={assetSrc(photo.thumbnailUrl || photo.photoUrl)}
               alt=""
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
               onLoad={() => setImgLoaded(true)}

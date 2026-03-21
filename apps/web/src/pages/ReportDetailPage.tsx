@@ -7,6 +7,7 @@ import ShareButton from '../components/ShareButton';
 import KakaoMap from '../components/KakaoMap';
 import { ReportDetailSkeleton } from '../components/Skeleton';
 import BoostButton from '../components/BoostButton';
+import { assetSrc } from '../utils/webOrigin';
 
 const STATUS_MAP: Record<string, string> = {
   ACTIVE: 'statusActive',
@@ -83,7 +84,7 @@ export default function ReportDetailPage() {
         <div className="mb-6">
           <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden mb-3 relative">
             <img
-              src={report.photos[selectedPhoto]?.photoUrl}
+              src={assetSrc(report.photos[selectedPhoto]?.photoUrl)}
               alt={report.name}
               className="w-full h-full object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement?.querySelector('.img-fallback')?.classList.remove('hidden'); }}
@@ -103,7 +104,7 @@ export default function ReportDetailPage() {
                   }`}
                 >
                   <img
-                    src={photo.thumbnailUrl || photo.photoUrl}
+                    src={assetSrc(photo.thumbnailUrl || photo.photoUrl)}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -246,7 +247,7 @@ export default function ReportDetailPage() {
                 <div className="flex gap-3">
                   {s.photos[0] && (
                     <img
-                      src={s.photos[0].thumbnailUrl || s.photos[0].photoUrl}
+                      src={assetSrc(s.photos[0].thumbnailUrl || s.photos[0].photoUrl)}
                       alt=""
                       className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                     />

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
 import type { Report } from '../api/client';
 import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE, type SubjectType } from '@findthem/shared';
+import { assetSrc } from '../utils/webOrigin';
 
 const TYPE_BADGE: Record<SubjectType, { bg: string; text: string; dot: string }> = {
   PERSON: { bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-400' },
@@ -39,7 +40,7 @@ export default function ReportCard({ report }: ReportCardProps) {
           <>
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
-              src={primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl}
+              src={assetSrc(primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl)}
               alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
               onLoad={() => setImgLoaded(true)}

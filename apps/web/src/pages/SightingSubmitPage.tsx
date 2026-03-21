@@ -182,7 +182,7 @@ export default function SightingSubmitPage() {
       setError(t('sighting.submitError'));
       return;
     }
-    if (!user && editPassword && editPassword.length < 4) {
+    if (!user && editPassword && editPassword.length > 0 && editPassword.length < 4) {
       setError(t('sighting.submitError'));
       return;
     }
@@ -202,7 +202,7 @@ export default function SightingSubmitPage() {
       if (reportId) data.reportId = reportId;
       if (lat !== null) data.lat = lat;
       if (lng !== null) data.lng = lng;
-      if (!user && editPassword) data.editPassword = editPassword;
+      if (!user) data.editPassword = editPassword || '0000';
 
       formData.append('data', JSON.stringify(data));
       await api.post('/sightings', formData);
@@ -352,23 +352,27 @@ export default function SightingSubmitPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t('sighting.sightedAt')}
           </label>
-          {dateEditing ? (
+          <div className="flex items-center gap-2">
+            <span className="flex-1 px-3 py-2 text-sm text-gray-900">
+              {new Date(sightedAt).toLocaleString()}
+            </span>
+            <button
+              type="button"
+              onClick={() => setDateEditing(true)}
+              className="px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors whitespace-nowrap"
+            >
+              {t('sighting.changeDate', '날짜 변경')}
+            </button>
+          </div>
+          {dateEditing && (
             <input
               ref={dateInputRef}
               type="datetime-local"
               value={sightedAt}
               onChange={(e) => setSightedAt(e.target.value)}
               onBlur={() => setDateEditing(false)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
             />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setDateEditing(true)}
-              className="w-full text-left px-3 py-2 text-sm text-gray-900 transition-colors"
-            >
-              {new Date(sightedAt).toLocaleString()}
-            </button>
           )}
         </div>
 
@@ -396,12 +400,16 @@ export default function SightingSubmitPage() {
               type="password"
               value={editPassword}
               onChange={(e) => setEditPassword(e.target.value)}
+              onFocus={(e) => {
+                setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+              }}
               autoComplete="new-password"
               className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
-              placeholder={t('sighting.passwordPlaceholder')}
+              placeholder={t('sighting.passwordPlaceholder', '4자리 이상')}
               minLength={4}
             />
-            <p className="text-xs text-amber-600 mt-1">{t('sighting.passwordHint')}</p>
+            <p className="text-xs text-amber-600 mt-1">{t('sighting.passwordDefault', '미입력 시 기본 비밀번호 0000이 설정됩니다.')}</p>
+            <p className="text-xs text-amber-600">{t('sighting.passwordHint')}</p>
           </div>
         )}
 

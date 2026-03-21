@@ -38,19 +38,9 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     }
   }
 
-  async function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram' | 'apple') {
+  function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram' | 'apple') {
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api';
-    const isNative = window.location.protocol === 'capacitor:';
-    const url = `${apiBase}/auth/${provider}${isNative ? '?native=1' : ''}`;
-
-    // 네이티브: SFSafariViewController로 열기 → 커스텀 URL 스킴으로 복귀
-    if (isNative) {
-      const { Browser } = await import('@capacitor/browser');
-      await Browser.open({ url, presentationStyle: 'popover' });
-      return;
-    }
-
-    window.location.href = url;
+    window.location.href = `${apiBase}/auth/${provider}`;
   }
 
   return (

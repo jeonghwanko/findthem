@@ -7,6 +7,7 @@ import { formatTimeAgo, type Locale } from '@findthem/shared';
 import { api } from '../api/client';
 import ShareButton from '../components/ShareButton';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
+import { assetSrc } from '../utils/webOrigin';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -107,7 +108,7 @@ export default function SightingDetailPage() {
         <div className="mb-6">
           <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden mb-3 relative">
             <img
-              src={sighting.photos[selectedPhoto]?.photoUrl}
+              src={assetSrc(sighting.photos[selectedPhoto]?.photoUrl)}
               alt=""
               className="w-full h-full object-contain"
               onError={(e) => {
@@ -131,7 +132,7 @@ export default function SightingDetailPage() {
                   }`}
                 >
                   <img
-                    src={photo.thumbnailUrl || photo.photoUrl}
+                    src={assetSrc(photo.thumbnailUrl || photo.photoUrl)}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -297,7 +298,7 @@ export default function SightingDetailPage() {
             className="flex items-center gap-3 bg-white rounded-lg p-3 border border-primary-200 hover:border-primary-400 transition-colors"
           >
             {report.photos?.[0]?.thumbnailUrl ? (
-              <img src={report.photos[0].thumbnailUrl} alt="" className="w-12 h-12 rounded-lg object-cover" />
+              <img src={assetSrc(report.photos[0].thumbnailUrl)} alt="" className="w-12 h-12 rounded-lg object-cover" />
             ) : (
               <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
                 <Camera className="w-5 h-5 text-gray-300" />

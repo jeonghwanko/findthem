@@ -27,6 +27,17 @@ const config: CapacitorConfig = {
       cleartext: false,
     },
   }),
+  server: {
+    // OAuth 리다이렉트를 WebView 내에서 처리 (외부 브라우저로 이탈 방지)
+    allowNavigation: [
+      'union.pryzm.gg',
+      'kauth.kakao.com',
+      'accounts.kakao.com',
+      'nid.naver.com',
+      'oauth.telegram.org',
+      'appleid.apple.com',
+    ],
+  },
   plugins: {
     SplashScreen: {
       launchAutoHide: false, // 코드에서 수동 숨김 (렌더 완료 후)

@@ -205,6 +205,16 @@ export default function CommunityPage() {
             </button>
           </div>
         )}
+
+        {/* 유기견 입양 바로가기 */}
+        <div className="mt-8 pb-28">
+          <Link
+            to="/browse"
+            className="block w-full text-center py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors"
+          >
+            {t('community.adoptionLink', '유기견 입양하기')}
+          </Link>
+        </div>
       </div>
     </div>
   );

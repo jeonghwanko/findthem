@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pencil, Trash2, CheckCircle, MapPin, Camera, Eye } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type ReportStatus, type Sighting, type SightingListResponse } from '../api/client';
 import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
+import { assetSrc } from '../utils/webOrigin';
 
 function StatusBadge({ status }: { status: ReportStatus }) {
   const { t } = useTranslation();
@@ -222,7 +223,7 @@ export default function MyReportsPage() {
                   >
                     <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
                       {photo ? (
-                        <img src={photo.thumbnailUrl ?? photo.photoUrl} alt="" className="w-full h-full object-cover" />
+                        <img src={assetSrc(photo.thumbnailUrl ?? photo.photoUrl)} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera className="w-5 h-5" /></div>
                       )}
@@ -273,7 +274,7 @@ export default function MyReportsPage() {
                 >
                   <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
                     {photo ? (
-                      <img src={photo.thumbnailUrl ?? photo.photoUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={assetSrc(photo.thumbnailUrl ?? photo.photoUrl)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera className="w-5 h-5" /></div>
                     )}

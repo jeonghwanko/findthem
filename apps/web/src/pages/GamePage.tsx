@@ -409,7 +409,7 @@ export default function GamePage() {
         )}
 
         <button
-          onClick={() => navigate('/')}
+          onClick={() => { window.location.href = '/'; }}
           className="text-sm text-gray-400 hover:text-gray-600 transition py-3 px-8 -mb-2"
         >
           {t('game.result.goHome')}

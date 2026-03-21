@@ -35,39 +35,6 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
 
   const nn = initReact({ plugin: NativeNavigation });
 
-  // URL 스킴 수신 — OAuth 콜백 토큰 저장
-  const { App: CapApp } = await import('@capacitor/app');
-  let oauthHandled = false;
-  void CapApp.addListener('appUrlOpen', (data: { url: string }) => {
-    if (oauthHandled) return;
-    try {
-      const url = new URL(data.url);
-      if (url.pathname !== '/auth/callback') return;
-      const token = new URLSearchParams(url.hash.slice(1)).get('token');
-      if (!token) return;
-
-      oauthHandled = true;
-      console.warn('[OAuth] Token received, saving to localStorage');
-      localStorage.setItem('ft_token', token);
-
-      // SFSafariViewController 닫기
-      setTimeout(async () => {
-        try {
-          const { Browser: B } = await import('@capacitor/browser');
-          await B.close();
-        } catch { /* ignore */ }
-        oauthHandled = false;
-      }, 300);
-    } catch { /* invalid URL — ignore */ }
-  });
-
-  // SFSafariViewController 닫힘 감지 → 토큰 있으면 앱 리로드
-  const { Browser } = await import('@capacitor/browser');
-  void Browser.addListener('browserFinished', () => {
-    console.warn('[OAuth] browserFinished fired, token exists:', !!localStorage.getItem('ft_token'));
-    window.location.reload();
-  });
-
   await NativeNavigation.present({
     component: {
       type: 'tabs',
