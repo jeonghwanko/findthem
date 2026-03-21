@@ -14,8 +14,7 @@ module.exports = {
     },
     {
       name: 'ghost',
-      script: 'ghost',
-      args: 'run',
+      script: 'current/index.js',
       cwd: '/var/www/ghost',
       instances: 1,
       exec_mode: 'fork',
