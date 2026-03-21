@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   appName: 'FindThem',
   webDir: 'dist',
   ios: {
-    // iOS 16.0+ — AdMob, Firebase 포함
+    // iOS 16.0+ — AdMob, Firebase, NativeNavigation 포함
     // @capacitor-firebase/analytics는 Podfile에서 직접 /Analytics subspec으로 고정
     // (cap sync가 subspec을 제거하는 문제 방지)
     includePlugins: [
@@ -19,15 +19,15 @@ const config: CapacitorConfig = {
       '@capacitor-community/admob',
       '@capacitor-firebase/crashlytics',
       '@capacitor-firebase/messaging',
+      'capacitor-native-navigation',
     ],
   },
-  ...(useRemoteServer && {
-    server: {
+  server: {
+    // 네이티브 빌드가 아닌 경우 원격 서버 사용 (개발/웹 모드)
+    ...(useRemoteServer && {
       url: process.env['CAPACITOR_SERVER_URL'] ?? 'https://union.pryzm.gg',
       cleartext: false,
-    },
-  }),
-  server: {
+    }),
     // OAuth 리다이렉트를 WebView 내에서 처리 (외부 브라우저로 이탈 방지)
     allowNavigation: [
       'union.pryzm.gg',
