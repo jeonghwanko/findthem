@@ -352,7 +352,6 @@ export function registerSightingRoutes(router: Router) {
         status: true,
         aiAnalysis: true,
         createdAt: true,
-        updatedAt: true,
         photos: {
           select: { id: true, photoUrl: true, thumbnailUrl: true },
           take: 1,

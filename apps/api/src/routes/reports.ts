@@ -327,7 +327,7 @@ export function registerReportRoutes(router: Router) {
 
   // 실종 신고 상세
   router.get('/reports/:id', optionalAuth, async (req, res) => {
-    const id = req.params.id;
+    const id = req.params.id as string;
     const report = await prisma.report.findUnique({
       where: { id },
       include: {
