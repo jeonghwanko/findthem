@@ -78,6 +78,8 @@ cd apps/web/android
 
 ## 배포 Flow
 
+### 웹 + API (GitHub Actions)
+
 ```
 git push origin master
       ↓
@@ -99,6 +101,27 @@ GitHub Actions (.github/workflows/ci.yml)
 | `SSH_USER` | ubuntu |
 | `SSH_PRIVATE_KEY` | SSH 개인키 |
 | `SSH_PORT` | SSH 포트 (기본 22) |
+
+### 모바일 앱 (Jenkins)
+
+```
+virgm-devops/jenkins/findthem/Jenkinsfile_findthem_mobile_app
+  - Jenkins 빌드 서버: svl-mac-01 (macOS)
+  - 소스: GitHub (jeonghwanko/findthem) checkout
+  - 빌드 설정: devops repo (virgm-devops)에서 exportOptions, keystore 복사
+  - 웹 번들: BUILD_TARGET=native + VITE_API_BASE_URL=https://union.pryzm.gg/api
+  - iOS: Archive → TestFlight 자동 업로드
+  - Android: Gradle → APK/AAB → Webfile/Google Play
+```
+
+**주의**: `.env.native`는 `.gitignore` 대상 — Jenkins에서 `VITE_API_BASE_URL` 환경변수로 직접 주입
+
+### 도메인
+
+- **프로덕션 URL**: `https://union.pryzm.gg` (findthem.app 아님)
+- **API**: `https://union.pryzm.gg/api`
+- **DevLog**: `https://union.pryzm.gg/devlog` (Ghost CMS)
+- **Twitter**: [@yoooonion](https://x.com/yoooonion)
 
 ## 상세 문서
 
