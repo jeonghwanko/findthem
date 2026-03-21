@@ -45,6 +45,17 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>findthem</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>gg.pryzm.union</string>
+		</dict>
+	</array>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3320768302064088~1876982270</string>
 	<key>NSAppTransportSecurity</key>

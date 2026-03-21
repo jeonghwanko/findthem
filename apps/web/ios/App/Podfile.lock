@@ -1,6 +1,10 @@
 PODS:
   - Capacitor (7.6.0):
     - CapacitorCordova
+  - CapacitorApp (8.0.1):
+    - Capacitor
+  - CapacitorBrowser (8.0.2):
+    - Capacitor
   - CapacitorCommunityAdmob (8.0.0):
     - Capacitor
     - Google-Mobile-Ads-SDK (~> 12.14)
@@ -138,6 +142,8 @@ PODS:
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../../../node_modules/@capacitor/app`)"
+  - "CapacitorBrowser (from `../../../../node_modules/@capacitor/browser`)"
   - "CapacitorCommunityAdmob (from `../../../../node_modules/@capacitor-community/admob`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFirebaseAnalytics/Analytics (from `../../../../node_modules/@capacitor-firebase/analytics`)"
@@ -170,6 +176,10 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../../../node_modules/@capacitor/app"
+  CapacitorBrowser:
+    :path: "../../../../node_modules/@capacitor/browser"
   CapacitorCommunityAdmob:
     :path: "../../../../node_modules/@capacitor-community/admob"
   CapacitorCordova:
@@ -189,6 +199,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Capacitor: 6e644e9e3369368ac601c77a0fad57f34b78aaa6
+  CapacitorApp: 942306cd1acf7774a00e89a3986af3a67c8cad7a
+  CapacitorBrowser: 76847841b74c11ccac0a1afae18cf06e3bd59044
   CapacitorCommunityAdmob: 9c36b466f46da413e5c105f7484e7603178c6223
   CapacitorCordova: f163aa2e84b79efc54d6a75b305bc7e05fb80c5d
   CapacitorFirebaseAnalytics: 42347d81f9b5d2f4b32916626fa9e8af2be3ac46
@@ -215,6 +227,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
 
-PODFILE CHECKSUM: 316220ae6726c053f0f23122d3a491ff7b458137
+PODFILE CHECKSUM: 661080fe1227d5a356277a4c5b7a684467b5aea7
 
 COCOAPODS: 1.16.2

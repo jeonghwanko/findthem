@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:union.pryzm.gg</string>
+		<string>applinks:union.pryzm.gg?mode=developer</string>
 	</array>
 </dict>
 </plist>
