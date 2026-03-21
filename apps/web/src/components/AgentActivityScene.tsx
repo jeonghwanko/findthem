@@ -200,6 +200,7 @@ export default function AgentActivityScene() {
 
     void (async () => {
       try {
+
         const W = container.clientWidth || 800;
         const H = SCENE_H;
         const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
@@ -213,9 +214,10 @@ export default function AgentActivityScene() {
           autoDensity: true,
           resolution: dpr,
           roundPixels: true,
-          preference: 'webgl',
+          preferWebGLVersion: 2,
           autoStart: false,
         });
+
         if (destroyed) return;
 
         // ── 배경 (타일맵 우선, 실패 시 Graphics fallback) ──
@@ -225,13 +227,16 @@ export default function AgentActivityScene() {
         let scene: SceneLayout;
         let worldContainer: Container | null = null;
         try {
+
           const tl = await drawTiledScene(roomLayer, W, H);
           scene = tiledLayout(tl);
           worldContainer = tl.world;
           const heimiCenter = tiledRoomCenter('heimi', tl);
           centerTiledCamera(heimiCenter.x, heimiCenter.y, tl);
           setupTiledDrag(tl.world, tl, app.stage);
-        } catch {
+
+        } catch (tileErr) {
+
           const gl = computeLayout(W, H);
           drawScene(roomLayer, gl);
           scene = graphicsLayout(gl);
@@ -251,13 +256,16 @@ export default function AgentActivityScene() {
         app.ticker.stop();
 
         // ── Folk 캐릭터 로드 (32px, ai-town 스타일) ──
+
         const { FolkCharacter } = await import('@findthem/pixi-scenes/game');
         if (destroyed) return;
+
 
         const [chars, npcChars] = await Promise.all([
           Promise.all(AGENT_CONFIGS.map((c) => FolkCharacter.create(c.folkId))),
           Promise.all(NPC_CONFIGS.map((n) => FolkCharacter.create(n.folkId))),
         ]);
+
         if (destroyed) return;
 
         // 캐릭터/UI를 world 컨테이너 안에 배치 (카메라 이동 시 함께 움직임)
@@ -740,7 +748,9 @@ export default function AgentActivityScene() {
 
         app.ticker.start();
         if (!destroyed) setPhase('ready');
-      } catch {
+      } catch (err: unknown) {
+        const e = err as Error;
+        console.error('[AgentScene] Fatal error:', e?.message ?? String(err), e?.stack ?? '');
         if (!destroyed) setPhase('ready');
       }
     })();

@@ -11,6 +11,7 @@
  * → 단순화: 처음 6프레임(앞방향) + flipX로 좌우 처리
  */
 import { Container, Sprite, Texture, Rectangle, Assets } from 'pixi.js';
+import { assetUrl } from './assetUrl';
 
 const FRAME_W = 16;
 const FRAME_H = 32;
@@ -24,16 +25,6 @@ export type CharacterName = 'Adam' | 'Alex' | 'Amelia' | 'Bob';
 interface AnimDef {
   frames: Texture[];
   speed: number; // frames per second
-}
-
-function assetPath(path: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const base: string = (import.meta as any)?.env?.BASE_URL ?? '/';
-    return `${base}${path.replace(/^\//, '')}`;
-  } catch {
-    return path;
-  }
 }
 
 /** 스프라이트시트에서 프레임 추출 (16×32 프레임) */
@@ -85,10 +76,10 @@ export class PixelCharacter {
 
     // 에셋 로드 (idle_anim은 필수, 나머지는 선택)
     const [idleTex, runTex, sitTex, phoneTex] = await Promise.all([
-      Assets.load(assetPath(`${basePath}_idle_anim.png`)) as Promise<Texture>,
-      Assets.load(assetPath(`${basePath}_run.png`)).catch(() => null) as Promise<Texture | null>,
-      Assets.load(assetPath(`${basePath}_sit.png`)).catch(() => null) as Promise<Texture | null>,
-      Assets.load(assetPath(`${basePath}_phone.png`)).catch(() => null) as Promise<Texture | null>,
+      Assets.load(assetUrl(`${basePath}_idle_anim.png`)) as Promise<Texture>,
+      Assets.load(assetUrl(`${basePath}_run.png`)).catch(() => null) as Promise<Texture | null>,
+      Assets.load(assetUrl(`${basePath}_sit.png`)).catch(() => null) as Promise<Texture | null>,
+      Assets.load(assetUrl(`${basePath}_phone.png`)).catch(() => null) as Promise<Texture | null>,
     ]);
 
     // idle: 처음 6프레임 (앞방향)

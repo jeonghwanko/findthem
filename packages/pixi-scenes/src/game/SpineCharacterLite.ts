@@ -8,9 +8,11 @@ import {
   type SkeletonData,
 } from '@esotericsoftware/spine-pixi-v8';
 import { Assets, type Texture } from 'pixi.js';
+import { assetUrl, IS_NATIVE } from './assetUrl';
 
-const SPINE_BASE = '/spine/';
-const ATLAS_PAGES = ['human_type.webp', 'human_type_2.webp', 'human_type_3.webp'];
+const SPINE_BASE = assetUrl('/spine/');
+const IMG_EXT = IS_NATIVE ? 'png' : 'webp';
+const ATLAS_PAGES = [`human_type.${IMG_EXT}`, `human_type_2.${IMG_EXT}`, `human_type_3.${IMG_EXT}`];
 const SKELETON_URL = `${SPINE_BASE}human_type.skel.bytes`;
 const ATLAS_URL = `${SPINE_BASE}human_type.atlas.txt`;
 
@@ -57,20 +59,24 @@ async function ensureTexture(file: string): Promise<void> {
     loadPromise = (async () => {
       const url = `${SPINE_BASE}${file}`;
 
-      // Fetch as blob
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Failed to fetch texture ${file}: ${resp.status}`);
-      const blob = await resp.blob();
+      let pixiTexture: Texture;
+      if (IS_NATIVE) {
+        // Native: 로컬 파일을 직접 URL로 로드 (blob 변환 시 iOS 이미지 디코더 오류 방지)
+        pixiTexture = await Assets.load<Texture>(url);
+      } else {
+        // Web: blob → dataURL 변환으로 MIME type 감지 보장
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Failed to fetch texture ${file}: ${resp.status}`);
+        const blob = await resp.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        pixiTexture = await Assets.load<Texture>(dataUrl);
+      }
 
-      // Convert blob → dataURL so Pixi detects MIME type
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      const pixiTexture = await Assets.load<Texture>(dataUrl);
       atlasTextureCache.set(file, SpineTexture.from(pixiTexture.source));
       _notifyStep(); // step 1 / 2 / 3
     })().finally(() => {
@@ -86,8 +92,12 @@ async function loadAtlas(): Promise<TextureAtlas> {
 
   const response = await fetch(ATLAS_URL);
   if (!response.ok) throw new Error(`Failed to fetch atlas: ${response.status}`);
-  const atlasText = await response.text();
+  let atlasText = await response.text();
   if (!atlasText) throw new Error('Empty atlas text');
+  // Native(Capacitor)에서는 WebP 대신 PNG 사용 — 페이지 이름만 정확히 치환
+  if (IS_NATIVE) {
+    atlasText = atlasText.replace(/^(human_type(?:_\d+)?)\.webp$/gm, '$1.png');
+  }
   _notifyStep(); // step 4
 
   const atlas = new TextureAtlas(atlasText);
