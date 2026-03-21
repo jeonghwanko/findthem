@@ -123,11 +123,19 @@ async function findOrCreateSocialUser(params: {
 
 /** 프론트엔드로 리다이렉트 시 토큰을 hash fragment로 전달 (query string 대비 보안 강화) */
 function redirectWithToken(res: import('express').Response, token: string) {
-  // 네이티브 앱: 커스텀 URL 스킴으로 리다이렉트 → SFSafariViewController가 앱으로 복귀
+  // 네이티브 앱: 웹 페이지 경유 → JavaScript로 커스텀 URL 스킴 호출 → 앱 복귀
   const isNative = parseCookieValue(res.req.headers.cookie, 'ft_native') === '1';
   if (isNative) {
     res.clearCookie('ft_native');
-    res.redirect(`findthem://auth/callback#token=${encodeURIComponent(token)}`);
+    const encodedToken = encodeURIComponent(token).replace(/"/g, '%22');
+    res.send([
+      '<!DOCTYPE html><html><head><meta charset="utf-8">',
+      '<meta name="viewport" content="width=device-width,initial-scale=1"></head>',
+      '<body><p style="text-align:center;margin-top:40vh;font-family:sans-serif;color:#666">',
+      '앱으로 돌아가는 중...</p>',
+      `<script>location.href="findthem://auth/callback#token=${encodedToken}";</script>`,
+      '</body></html>',
+    ].join(''));
     return;
   }
   res.redirect(`${config.webOrigin}/auth/callback#token=${encodeURIComponent(token)}`);

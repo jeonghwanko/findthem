@@ -35,19 +35,33 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
 
   const nn = initReact({ plugin: NativeNavigation });
 
-  // URL 스킴 / Universal Link 수신 — OAuth 콜백을 앱 내 라우터로 전달
+  // URL 스킴 수신 — OAuth 콜백 토큰 처리 + SFSafariViewController 닫기
   const { App: CapApp } = await import('@capacitor/app');
+  let oauthHandled = false;
   void CapApp.addListener('appUrlOpen', async (data: { url: string }) => {
+    if (oauthHandled) return;
     try {
       const url = new URL(data.url);
-      if (url.pathname === '/auth/callback') {
-        // SFSafariViewController 닫기
-        try {
-          const { Browser } = await import('@capacitor/browser');
-          void Browser.close();
-        } catch { /* Browser 플러그인 없으면 무시 */ }
-        window.location.href = '/auth/callback' + url.search + url.hash;
-      }
+      if (url.pathname !== '/auth/callback') return;
+      const token = new URLSearchParams(url.hash.slice(1)).get('token');
+      if (!token) return;
+
+      oauthHandled = true;
+
+      // 토큰 저장
+      localStorage.setItem('ft_token', token);
+
+      // SFSafariViewController 닫기
+      try {
+        const { Browser } = await import('@capacitor/browser');
+        await Browser.close();
+      } catch { /* ignore */ }
+
+      // 플래그 리셋 (재로그인 대비)
+      setTimeout(() => { oauthHandled = false; }, 1000);
+
+      // 홈으로 이동
+      window.location.replace('/');
     } catch { /* invalid URL — ignore */ }
   });
 
