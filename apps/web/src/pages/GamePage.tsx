@@ -338,7 +338,7 @@ export default function GamePage() {
     const ch = CHARACTERS.find((c) => c.id === selected);
     return (
       <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#87ceeb' }}>
-        <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-sm" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
           <span className="text-white text-sm font-semibold">
             {ch ? t(ch.nameKey) : ''}
           </span>
