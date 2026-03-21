@@ -27,4 +27,22 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+
+  # [CP] script phase 경고 해소: 빈 output 파일 추가
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |phase|
+      next unless phase.respond_to?(:name)
+      next unless phase.name&.start_with?('[CP]')
+      if phase.output_paths.nil? || phase.output_paths.empty?
+        phase.output_paths = ['$(DERIVED_FILE_DIR)/$(TARGET_NAME)-$(SCRIPT_INPUT_FILE_COUNT).txt']
+      end
+    end
+
+    # CapacitorKeyboard auto property synthesis 경고 억제
+    if target.name == 'CapacitorKeyboard'
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_WARN_OBJC_MISSING_PROPERTY_SYNTHESIS'] = 'NO'
+      end
+    end
+  end
 end
