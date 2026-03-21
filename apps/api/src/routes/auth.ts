@@ -131,9 +131,13 @@ function redirectWithToken(res: import('express').Response, token: string) {
     res.send([
       '<!DOCTYPE html><html><head><meta charset="utf-8">',
       '<meta name="viewport" content="width=device-width,initial-scale=1"></head>',
-      '<body><p style="text-align:center;margin-top:40vh;font-family:sans-serif;color:#666">',
+      '<body><p id="msg" style="text-align:center;margin-top:40vh;font-family:sans-serif;color:#666">',
       '앱으로 돌아가는 중...</p>',
-      `<script>location.href="findthem://auth/callback#token=${encodedToken}";</script>`,
+      '<script>',
+      `location.href="findthem://auth/callback#token=${encodedToken}";`,
+      'setTimeout(function(){try{window.close()}catch(e){}},500);',
+      'setTimeout(function(){document.getElementById("msg").textContent="로그인 완료! 이 창을 닫아주세요."},1500);',
+      '</script>',
       '</body></html>',
     ].join(''));
     return;

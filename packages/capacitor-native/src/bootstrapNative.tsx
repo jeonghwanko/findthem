@@ -35,10 +35,10 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
 
   const nn = initReact({ plugin: NativeNavigation });
 
-  // URL 스킴 수신 — OAuth 콜백 토큰 처리 + SFSafariViewController 닫기
+  // URL 스킴 수신 — OAuth 콜백 토큰 저장
   const { App: CapApp } = await import('@capacitor/app');
   let oauthHandled = false;
-  void CapApp.addListener('appUrlOpen', async (data: { url: string }) => {
+  void CapApp.addListener('appUrlOpen', (data: { url: string }) => {
     if (oauthHandled) return;
     try {
       const url = new URL(data.url);
@@ -47,22 +47,25 @@ export async function bootstrapNative(options: BootstrapOptions): Promise<void> 
       if (!token) return;
 
       oauthHandled = true;
-
-      // 토큰 저장
+      console.warn('[OAuth] Token received, saving to localStorage');
       localStorage.setItem('ft_token', token);
 
       // SFSafariViewController 닫기
-      try {
-        const { Browser } = await import('@capacitor/browser');
-        await Browser.close();
-      } catch { /* ignore */ }
-
-      // 플래그 리셋 (재로그인 대비)
-      setTimeout(() => { oauthHandled = false; }, 1000);
-
-      // 홈으로 이동
-      window.location.replace('/');
+      setTimeout(async () => {
+        try {
+          const { Browser: B } = await import('@capacitor/browser');
+          await B.close();
+        } catch { /* ignore */ }
+        oauthHandled = false;
+      }, 300);
     } catch { /* invalid URL — ignore */ }
+  });
+
+  // SFSafariViewController 닫힘 감지 → 토큰 있으면 앱 리로드
+  const { Browser } = await import('@capacitor/browser');
+  void Browser.addListener('browserFinished', () => {
+    console.warn('[OAuth] browserFinished fired, token exists:', !!localStorage.getItem('ft_token'));
+    window.location.reload();
   });
 
   await NativeNavigation.present({
