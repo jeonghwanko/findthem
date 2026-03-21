@@ -195,6 +195,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
 
   try {
     let externalId: string | null = null;
+    let resolvedVideoId: string | undefined;
 
     if (channel === 'EMAIL') {
       if (!request.contact.email) {
@@ -237,6 +238,7 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       }
 
       externalId = await youtubeAdapter.postComment(targetVideoId, request.draftContent);
+      resolvedVideoId = targetVideoId;
     } else {
       throw new Error(`Unsupported channel: ${channel}`);
     }
@@ -263,6 +265,8 @@ async function handleSendOutreach(outreachRequestId: string): Promise<void> {
       request.contact.name,
       channel,
       request.report.subjectType as SubjectType,
+      undefined,
+      resolvedVideoId,
     ).catch((err) => log.warn({ err }, 'Heimi community post failed'));
 
     log.info({ outreachRequestId, channel, externalId }, 'Outreach sent successfully');

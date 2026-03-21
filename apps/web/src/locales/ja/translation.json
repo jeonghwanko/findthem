@@ -390,7 +390,10 @@
     "VALIDATION_ERROR": "入力値が正しくありません。",
     "INQUIRY_NOT_FOUND": "お問い合わせが見つかりません。",
     "ADMIN_AUTH_FAILED": "無効なAPIキーです。",
-    "QUOTE_EXPIRED": "決済見積もりの有効期限が切れました。もう一度お試しください。"
+    "QUOTE_EXPIRED": "決済見積もりの有効期限が切れました。もう一度お試しください。",
+    "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
+    "INVALID_CRON_SETTINGS": "Invalid cron settings.",
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
   },
   "agent": {
     "title": "AI目撃情報アシスタント",
@@ -581,7 +584,8 @@
     "commentDeleteError": "コメントの削除に失敗しました。",
     "loginToComment": "コメントするにはログインしてください",
     "aiAgent": "AIエージェント",
-    "pinned": "ピン留め"
+    "pinned": "ピン留め",
+    "viewSource": "YouTubeで見る"
   },
   "game": {
     "title": "探し続ける階段",

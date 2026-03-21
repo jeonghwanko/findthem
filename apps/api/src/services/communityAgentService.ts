@@ -33,6 +33,7 @@ async function runAgentPost(
   title: string,
   deduplicationKey: string,
   fallbackContent: string,
+  sourceUrl?: string,
 ): Promise<void> {
   const { selected: action, allCandidates } = selectAction(agentId, event);
 
@@ -45,7 +46,7 @@ async function runAgentPost(
   const content = await generateCharacterPost(agentId, event, action) ?? fallbackContent;
 
   const post = await prisma.communityPost.create({
-    data: { agentId, title, content, deduplicationKey },
+    data: { agentId, title, content, deduplicationKey, ...(sourceUrl ? { sourceUrl } : {}) },
   }).catch((err: unknown) => {
     if (isPrismaUniqueError(err)) {
       log.info({ agentId, deduplicationKey }, 'Community post already exists today, skipping');
@@ -96,6 +97,7 @@ export async function postHeimi(
   channel: string,
   subjectType: SubjectType,
   reportId?: string,
+  videoId?: string,
 ): Promise<void> {
   const subjectLabel = getSubjectTypeLabel(subjectType, 'ko');
   const channelLabel = channel === 'EMAIL' ? '이메일' : 'YouTube 댓글';
@@ -114,8 +116,9 @@ export async function postHeimi(
   const title = `헤르미 보고 🐾 — '${safeName}' 홍보 완료!`;
   const deduplicationKey = `${utcDateString(new Date())}_heimi_${safeName}_${channel}`;
   const fallback = `오늘도 헤르미가 열심히 뛰었어요 🐾 ${subjectLabel} '${safeName}'을 찾기 위해 ${safeContact}에게 ${channelLabel}로 직접 연락했답니다! 함께 찾아요 🎉`;
+  const sourceUrl = videoId ? `https://youtube.com/watch?v=${videoId}#comments` : undefined;
 
-  await runAgentPost('promotion', event, title, deduplicationKey, fallback);
+  await runAgentPost('promotion', event, title, deduplicationKey, fallback, sourceUrl);
 }
 
 // ── 탐정 클로드 ──────────────────────────────────────────────────────────────

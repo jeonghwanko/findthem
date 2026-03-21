@@ -390,7 +390,10 @@
     "VALIDATION_ERROR": "Invalid input.",
     "INQUIRY_NOT_FOUND": "Inquiry not found.",
     "ADMIN_AUTH_FAILED": "Invalid API Key.",
-    "QUOTE_EXPIRED": "Payment quote has expired. Please try again."
+    "QUOTE_EXPIRED": "Payment quote has expired. Please try again.",
+    "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
+    "INVALID_CRON_SETTINGS": "Invalid cron settings.",
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
   },
   "agent": {
     "title": "AI Sighting Assistant",
@@ -582,7 +585,8 @@
     "commentDeleteError": "Failed to delete comment.",
     "loginToComment": "Login to leave a comment",
     "aiAgent": "AI Agent",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "viewSource": "View on YouTube"
   },
   "game": {
     "title": "Stairway to Find",

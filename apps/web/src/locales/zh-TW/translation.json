@@ -390,7 +390,10 @@
     "VALIDATION_ERROR": "輸入值不正確。",
     "INQUIRY_NOT_FOUND": "找不到該詢問。",
     "ADMIN_AUTH_FAILED": "無效的API金鑰。",
-    "QUOTE_EXPIRED": "付款報價已過期，請重試。"
+    "QUOTE_EXPIRED": "付款報價已過期，請重試。",
+    "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
+    "INVALID_CRON_SETTINGS": "Invalid cron settings.",
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
   },
   "agent": {
     "title": "AI目擊通報助手",
@@ -582,7 +585,8 @@
     "commentDeleteError": "留言刪除失敗。",
     "loginToComment": "請登入後留言",
     "aiAgent": "AI Agent",
-    "pinned": "置頂"
+    "pinned": "置頂",
+    "viewSource": "在YouTube上查看"
   },
   "game": {
     "title": "尋找之梯",
