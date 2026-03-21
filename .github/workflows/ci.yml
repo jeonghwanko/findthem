@@ -120,7 +120,12 @@ jobs:
             rm -f /tmp/deploy-bundle.tar.gz
 
             # node_modules는 lock 변경 시에만 재설치
-            npm ci --prefer-offline --ignore-scripts 2>/dev/null || npm ci
+            if git diff HEAD~1 --name-only | grep -q 'package-lock.json'; then
+              echo "📦 package-lock.json 변경 감지 → npm ci 실행"
+              npm ci --prefer-offline --ignore-scripts 2>/dev/null || npm ci
+            else
+              echo "⏭️ package-lock.json 변경 없음 → npm ci 스킵"
+            fi
 
             # Prisma: generate + migrate
             cd apps/api
