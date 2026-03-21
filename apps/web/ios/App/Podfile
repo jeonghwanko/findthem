@@ -15,7 +15,7 @@ def capacitor_pods
   pod 'CapacitorSplashScreen', :path => '../../../../node_modules/@capacitor/splash-screen'
   pod 'CapacitorStatusBar', :path => '../../../../node_modules/@capacitor/status-bar'
   pod 'CapacitorCommunityAdmob', :path => '../../../../node_modules/@capacitor-community/admob'
-  pod 'CapacitorFirebaseAnalytics', :path => '../../../../node_modules/@capacitor-firebase/analytics'
+  pod 'CapacitorFirebaseAnalytics/Analytics', :path => '../../../../node_modules/@capacitor-firebase/analytics'
   pod 'CapacitorFirebaseCrashlytics', :path => '../../../../node_modules/@capacitor-firebase/crashlytics'
   pod 'CapacitorFirebaseMessaging', :path => '../../../../node_modules/@capacitor-firebase/messaging'
 end
