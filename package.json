@@ -40,10 +40,15 @@
     "@csstools/css-parser-algorithms": "^4.0.0",
     "@wallet-standard/core": "^1.1.1",
     "firebase": "^12.10.0",
-    "firebase-admin": "^13.7.0"
+    "firebase-admin": "^13.7.0",
+    "serialize-javascript": "^7.0.4"
   },
   "overrides": {
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@tootallnate/once": ">=3.0.1",
+    "http-proxy-agent": ">=7.0.0",
+    "fast-xml-parser": ">=5.5.7",
+    "h3": ">=1.15.9"
   }
 }
