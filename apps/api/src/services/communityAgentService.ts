@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { createLogger } from '../logger.js';
 import { selectAction, generateCharacterPost } from '../ai/agentDecision.js';
@@ -47,7 +46,7 @@ async function runAgentPost(
   const post = await prisma.communityPost.create({
     data: { agentId, title, content, deduplicationKey },
   }).catch((err: unknown) => {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    if ((err as { code?: string })?.code === 'P2002') {
       log.info({ agentId, deduplicationKey }, 'Community post already exists today, skipping');
       return null;
     }

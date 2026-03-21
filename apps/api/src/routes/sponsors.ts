@@ -1,6 +1,5 @@
 import type { Router } from 'express';
 import { z } from 'zod';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
@@ -174,10 +173,7 @@ export function registerSponsorRoutes(router: Router) {
         data: { agentId, amount, orderId, paymentKey, displayName, message },
       });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if ((err as { code?: string })?.code === 'P2002') {
         // RACE-05: 동시 요청으로 이미 저장된 경우 — P2002(unique)로 중복 방지
         log.warn({ orderId }, 'Toss sponsor already saved (duplicate request)');
         throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
@@ -439,10 +435,7 @@ export function registerSponsorRoutes(router: Router) {
         },
       });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if ((err as { code?: string })?.code === 'P2002') {
         // txHash 또는 orderId unique 위반 — 이미 처리된 TX
         // 선점한 verifiedAt 롤백 → quote 재사용 가능하게 복원
         await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });

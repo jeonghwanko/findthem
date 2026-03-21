@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestApp, authHeader } from '../helpers.js';
 import { prisma } from '../../src/db/client.js';
-import { Prisma } from '@prisma/client';
 import { clearRateLimitStore } from '../../src/middlewares/rateLimit.js';
 
 
@@ -96,10 +95,7 @@ describe('Sponsors E2E — POST /api/sponsors/verify (RACE-05)', () => {
 
   describe('중복 요청 (RACE-05 P2002)', () => {
     it('create가 P2002 던지면 → 400 ALREADY_VERIFIED', async () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-        code: 'P2002',
-        clientVersion: '5.0.0',
-      });
+      const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
       prismaMock.sponsor.create.mockRejectedValue(p2002);
 
       const res = await app

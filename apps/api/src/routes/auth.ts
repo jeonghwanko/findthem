@@ -151,7 +151,7 @@ export function registerAuthRoutes(router: Router) {
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if ((err as { code?: string })?.code === 'P2002') {
         throw new ApiError(409, ERROR_CODES.PHONE_ALREADY_EXISTS);
       }
       throw err;
