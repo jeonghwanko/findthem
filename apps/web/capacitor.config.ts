@@ -29,8 +29,8 @@ const config: CapacitorConfig = {
   }),
   plugins: {
     SplashScreen: {
-      launchAutoHide: true,
-      launchShowDuration: 1000,
+      launchAutoHide: false, // 코드에서 수동 숨김 (렌더 완료 후)
+      backgroundColor: '#ffffff',
     },
     StatusBar: {
       style: 'Default',

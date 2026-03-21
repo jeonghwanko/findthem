@@ -12,10 +12,13 @@
 
   html {
     scrollbar-gutter: stable;
+    -webkit-tap-highlight-color: transparent; /* 탭 파란 반짝임 제거 */
+    touch-action: manipulation; /* 300ms 터치 딜레이 제거 */
   }
 
   body {
     font-family: 'Noto Sans KR', sans-serif;
+    overscroll-behavior-y: none; /* 당김 새로고침(흰 화면) 방지 */
   }
 }
 
@@ -35,5 +38,19 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  /* iOS 관성 스크롤 + 내부 바운스만 허용 */
+  .scrollable {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  /* 터치 누름 피드백 */
+  .pressable {
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+  .pressable:active {
+    transform: scale(0.97);
+    opacity: 0.85;
   }
 }
