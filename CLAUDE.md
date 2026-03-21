@@ -142,3 +142,4 @@ virgm-devops/jenkins/findthem/Jenkinsfile_findthem_mobile_app
 - [BullMQ 큐](.claude/references/queues.md) — 큐, 잡, cron, 파이프라인
 - [환경변수](.claude/references/env.md) — 백엔드/프론트 전체 환경변수
 - [프론트 라우트](.claude/references/routes.md) — URL → 컴포넌트, 인증 요구사항
+- [모바일 배포](.claude/references/deployment-mobile.md) — Jenkins 파이프라인, iOS/Android 서명, 트러블슈팅
