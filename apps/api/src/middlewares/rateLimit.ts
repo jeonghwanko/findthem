@@ -1,16 +1,16 @@
 import type { Request, Response, NextFunction } from 'express';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 import { config } from '../config.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('rateLimit');
 
 // ── Redis 연결 (실패 시 메모리 폴백, 재연결 루프 방지) ──
-let redis: InstanceType<typeof IORedis> | null = null;
+let redis: Redis | null = null;
 let useRedis = false;
 
 try {
-  redis = new IORedis(config.redisUrl, {
+  redis = new Redis(config.redisUrl, {
     maxRetriesPerRequest: 1,
     enableReadyCheck: false,
     lazyConnect: true,
