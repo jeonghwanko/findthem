@@ -46,7 +46,7 @@ export default function SightingDetailPage() {
     api
       .get<SightingDetail>(`/sightings/${id}`)
       .then((s) => setSighting(s))
-      .catch(() => setLoading(false))
+      .catch(() => { /* errorHandler: finally에서 loading 처리 */ })
       .finally(() => setLoading(false));
   }, [id, refreshKey]);
 
@@ -67,10 +67,11 @@ export default function SightingDetailPage() {
     return <div className="text-center py-20 text-gray-400">제보를 찾을 수 없습니다</div>;
   }
 
-  // 삭제 권한: 본인 제보(로그인) 또는 비회원 제보(비밀번호)
+  // 삭제 권한: 본인 제보(로그인) 또는 비회원 본인(비밀번호)
   const isOwner = user && sighting.userId === user.id;
   const isGuestSighting = !sighting.userId;
-  const canDelete = isOwner || isGuestSighting;
+  // 로그인 사용자가 남의 제보를 볼 때는 삭제 버튼 숨김
+  const canDelete = isOwner || (isGuestSighting && !user);
 
   const handleDelete = async () => {
     if (deletingRef.current) return;
@@ -393,7 +394,7 @@ export default function SightingDetailPage() {
 
       {/* 삭제 확인 모달 */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={() => setShowDeleteModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={() => { if (!deleting) setShowDeleteModal(false); }}>
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {t('sighting.deleteTitle', { defaultValue: '제보 삭제' })}

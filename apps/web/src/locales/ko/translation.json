@@ -106,7 +106,7 @@
     "orDivider": "또는"
   },
   "browse": {
-    "title": "실종 신고 목록",
+    "title": "찾기",
     "all": "전체",
     "viewAll": "전체",
     "viewReports": "신고",
@@ -115,15 +115,24 @@
     "filterType": "종류",
     "filterStatus": "상태",
     "filterRegion": "지역",
+    "typeAll": "전체",
+    "typeDog": "강아지",
+    "typeCat": "고양이",
+    "phaseAll": "전체",
     "phaseSearching": "찾는 중",
     "phaseSightingReceived": "제보 접수",
     "phaseAnalysisDone": "분석 완료",
     "phaseFound": "찾았어요",
+    "regionAll": "전체",
     "searchPlaceholder": "이름, 특징, 장소로 검색...",
     "noResults": "검색 결과가 없습니다",
     "loadError": "목록을 불러오는 데 실패했습니다",
     "prev": "이전",
-    "next": "다음"
+    "next": "다음",
+    "gameButton": "게임하고 후원하기",
+    "sightingCount": "제보 {{count}}건",
+    "found": "찾았습니다!",
+    "noPhoto": "사진 없음"
   },
   "myReports": {
     "title": "내 활동",
@@ -259,7 +268,23 @@
     "sectionDiscovery": "발견 정보",
     "sectionExtra": "추가 정보",
     "changeDate": "날짜 변경",
-    "passwordDefault": "미입력 시 기본 비밀번호 0000이 설정됩니다."
+    "passwordDefault": "미입력 시 기본 비밀번호 0000이 설정됩니다.",
+    "delete": "삭제",
+    "deleteTitle": "제보 삭제",
+    "deleteConfirm": "이 제보를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.",
+    "editPasswordPlaceholder": "제보 시 입력한 비밀번호",
+    "status": {
+      "PENDING": "분석 대기",
+      "ANALYZED": "분석 완료",
+      "CONFIRMED": "확인됨",
+      "REJECTED": "거부됨"
+    },
+    "matchStatus": {
+      "PENDING": "대기",
+      "CONFIRMED": "확인됨",
+      "REJECTED": "거부됨",
+      "NOTIFIED": "알림 발송"
+    }
   },
   "chat": {
     "title": "목격 제보 챗봇",
@@ -660,7 +685,10 @@
     "error": "문의 접수에 실패했습니다"
   },
   "common": {
-    "back": "이전 페이지"
+    "back": "이전 페이지",
+    "cancel": "취소",
+    "delete": "삭제",
+    "processing": "처리 중..."
   },
   "agentScene": {
     "loading": "에이전트 사무실 로딩 중...",
