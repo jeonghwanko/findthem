@@ -532,6 +532,8 @@
     "provider_local": "電話番号 / パスワード",
     "provider_kakao": "カカオ",
     "provider_naver": "Naver",
+    "provider_apple": "Apple",
+    "provider_telegram": "Telegram",
     "save": "保存",
     "saving": "保存中...",
     "saved": "保存しました",
@@ -552,7 +554,12 @@
     "pushOff": "オフ",
     "referralShareTitle": "FindThem — AI行方不明者マッチングプラットフォーム",
     "referralShareDesc": "行方不明の家族を見つける手助けをしてください。一緒ならもっと早く見つかります。",
-    "referralJoin": "今すぐ参加"
+    "referralJoin": "今すぐ参加",
+    "sectionInfo": "基本情報",
+    "sectionAccount": "アカウント",
+    "sectionReferral": "友達招待",
+    "errorImageOnly": "画像ファイルのみアップロードできます",
+    "errorFileTooLarge": "ファイルが大きすぎます（最大10MB）"
   },
   "xp": {
     "history": "XP履歴",

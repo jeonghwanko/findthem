@@ -19,8 +19,6 @@ export default function InviteLandingPage() {
   const [showComingSoon, setShowComingSoon] = useState(false);
 
   useEffect(() => {
-    // App.tsx에서 ?ref= → sessionStorage 저장 후 URL 제거됨
-    // 직접 URL에서도 읽기 (App.tsx보다 먼저 실행될 수 있음)
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     if (ref && /^[A-Z2-9]{8}$/.test(ref)) {
@@ -30,6 +28,14 @@ export default function InviteLandingPage() {
       if (stored) setReferralCode(stored);
     }
   }, []);
+
+  // 모달 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (showComingSoon) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [showComingSoon]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-pink-50">

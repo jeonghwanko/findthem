@@ -533,6 +533,8 @@
     "provider_local": "電話 / 密碼",
     "provider_kakao": "Kakao",
     "provider_naver": "Naver",
+    "provider_apple": "Apple",
+    "provider_telegram": "Telegram",
     "save": "儲存",
     "saving": "儲存中...",
     "saved": "已儲存",
@@ -553,7 +555,12 @@
     "pushOff": "關閉",
     "referralShareTitle": "FindThem — AI失蹤人員配對平台",
     "referralShareDesc": "幫助尋找失蹤的家人。一起能更快找到他們。",
-    "referralJoin": "立即加入"
+    "referralJoin": "立即加入",
+    "sectionInfo": "基本資料",
+    "sectionAccount": "帳號",
+    "sectionReferral": "邀請好友",
+    "errorImageOnly": "請上傳圖片格式的檔案",
+    "errorFileTooLarge": "檔案過大（最大 10MB）"
   },
   "xp": {
     "history": "XP 記錄",

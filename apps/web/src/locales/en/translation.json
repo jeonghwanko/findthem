@@ -533,6 +533,8 @@
     "provider_local": "Phone / Password",
     "provider_kakao": "Kakao",
     "provider_naver": "Naver",
+    "provider_apple": "Apple",
+    "provider_telegram": "Telegram",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Changes saved",
@@ -553,7 +555,12 @@
     "pushOff": "Disable",
     "referralShareTitle": "FindThem — AI-based missing person matching",
     "referralShareDesc": "Help find missing loved ones. Together we can find them faster.",
-    "referralJoin": "Join Now"
+    "referralJoin": "Join Now",
+    "sectionInfo": "My Info",
+    "sectionAccount": "Account",
+    "sectionReferral": "Invite Friends",
+    "errorImageOnly": "Please upload an image file only",
+    "errorFileTooLarge": "File is too large (max 10MB)"
   },
   "xp": {
     "history": "XP History",
