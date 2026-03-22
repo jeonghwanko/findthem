@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { Camera, MapPin, Clock, User, FileText, ArrowRight, Bot, Loader2 } from 'lucide-react';
+import { Camera, MapPin, Clock, User, FileText, ArrowRight, Bot, Loader2, Trash2 } from 'lucide-react';
 import type { SightingDetail, SightingPhotoAnalysis } from '@findthem/shared';
 import { formatTimeAgo } from '@findthem/shared';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
+import { useAuth } from '../hooks/useAuth';
 import ShareButton from '../components/ShareButton';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
 import { assetSrc } from '../utils/webOrigin';
@@ -26,10 +27,17 @@ function esc(str: string): string {
 export default function SightingDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [sighting, setSighting] = useState<SightingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const deletingRef = useRef(false);
 
   usePullToRefresh(() => { setRefreshKey((k) => k + 1); });
 
@@ -58,6 +66,29 @@ export default function SightingDetailPage() {
   if (!sighting) {
     return <div className="text-center py-20 text-gray-400">제보를 찾을 수 없습니다</div>;
   }
+
+  // 삭제 권한: 본인 제보(로그인) 또는 비회원 제보(비밀번호)
+  const isOwner = user && sighting.userId === user.id;
+  const isGuestSighting = !sighting.userId;
+  const canDelete = isOwner || isGuestSighting;
+
+  const handleDelete = async () => {
+    if (deletingRef.current) return;
+    deletingRef.current = true;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const body = isGuestSighting ? { editPassword: deletePassword } : undefined;
+      await api.delete(`/sightings/${id}`, body);
+      navigate('/browse', { replace: true });
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setDeleteError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
+    } finally {
+      setDeleting(false);
+      deletingRef.current = false;
+    }
+  };
 
   const report = sighting.report;
   const matches = sighting.matches ?? [];
@@ -96,11 +127,23 @@ export default function SightingDetailPage() {
             </span>
           )}
         </div>
-        <ShareButton
-          title={`[FindThem] 목격 제보`}
-          description={sighting.description || sighting.address}
-          imageUrl={sighting.photos[0]?.photoUrl}
-        />
+        <div className="flex items-center gap-2">
+          <ShareButton
+            title={`[FindThem] 목격 제보`}
+            description={sighting.description || sighting.address}
+            imageUrl={sighting.photos[0]?.photoUrl}
+          />
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => { setShowDeleteModal(true); setDeleteError(''); setDeletePassword(''); }}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+              title={t('sighting.delete', { defaultValue: '삭제' })}
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 제목 */}
@@ -344,6 +387,53 @@ export default function SightingDetailPage() {
                 <p className="text-xs text-gray-500 line-clamp-2">{m.aiReasoning}</p>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {t('sighting.deleteTitle', { defaultValue: '제보 삭제' })}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {t('sighting.deleteConfirm', { defaultValue: '이 제보를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.' })}
+            </p>
+
+            {isGuestSighting && (
+              <input
+                type="password"
+                placeholder={t('sighting.editPasswordPlaceholder', { defaultValue: '제보 시 입력한 비밀번호' })}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                autoFocus
+              />
+            )}
+
+            {deleteError && (
+              <p className="text-sm text-red-500 mb-3">{deleteError}</p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {t('common.cancel', { defaultValue: '취소' })}
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || (isGuestSighting && !deletePassword)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {deleting ? t('common.processing', { defaultValue: '처리 중...' }) : t('common.delete', { defaultValue: '삭제' })}
+              </button>
+            </div>
           </div>
         </div>
       )}
