@@ -25,15 +25,12 @@ vi.mock('@findthem/web3-payment', () => ({
   fromUsdToTokenAmount: vi.fn().mockReturnValue(1),
   EVM_TOKENS: {},
   SOL_TOKENS: {},
-  APT_NATIVE_COIN_TYPE: '0x1::aptos_coin::AptosCoin',
-  APT_DECIMALS: 8,
   QUOTE_TTL_SECS: 300,
   SOLANA_USDC_MINT: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
   isSupportedChainId: vi.fn().mockReturnValue(false),
   toSupportedChainId: vi.fn().mockReturnValue(1),
   verifyEvmTransfer: vi.fn(),
   verifySolanaTransfer: vi.fn(),
-  verifyAptosTransfer: vi.fn(),
 }));
 
 const VALID_VERIFY_BODY = {

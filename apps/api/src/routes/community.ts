@@ -4,7 +4,8 @@ import { prisma } from '../db/client.js';
 import { requireAuth, optionalAuth, requireAgentAuth, requireAdmin, requireExternalAgentAuth } from '../middlewares/auth.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MATCH_THRESHOLD } from '@findthem/shared';
+import { communityLimiter } from '../middlewares/rateLimit.js';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MATCH_THRESHOLD, YT_VIDEO_ID_RE, VALID_AGENT_IDS } from '@findthem/shared';
 import { grantXp, XpDailyLimitError } from '../services/xpService.js';
 import { createLogger } from '../logger.js';
 import { imageQueue, matchingQueue, promotionQueue, promotionRepostQueue, outreachQueue, notificationQueue, qaCrawlQueue } from '../jobs/queues.js';
@@ -47,9 +48,8 @@ async function getAgentPendingCounts(): Promise<Record<string, number>> {
 // ── 에이전트별 세부 활동 스트림 (Pixi 씬 말풍선용) ──
 type RawActivity = { type: string; description: string; createdAt: Date; url?: string; thumbnailUrl?: string };
 
-const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
 function ytThumb(videoId: string | null | undefined): string | undefined {
-  return videoId && YOUTUBE_ID_RE.test(videoId) ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined;
+  return videoId && YT_VIDEO_ID_RE.test(videoId) ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined;
 }
 
 /** 이름을 말풍선에 맞게 짧게 자르기 */
@@ -360,9 +360,7 @@ export function registerCommunityRoutes(router: Router) {
 
       const todayPostCounts = todayPostCountsRaw;
 
-      const AGENT_IDS = ['image-matching', 'promotion', 'chatbot-alert'] as const;
-
-      const agents = AGENT_IDS.map((agentId) => {
+      const agents = VALID_AGENT_IDS.map((agentId) => {
         const decisionCount = postCounts.find((c) => c.agentId === agentId)?._count ?? 0;
         const postCount = todayPostCounts.find((c) => c.agentId === agentId)?._count ?? 0;
         const latest = latestPosts.find((p) => p.agentId === agentId);
@@ -484,6 +482,7 @@ export function registerCommunityRoutes(router: Router) {
   // ── 게시글 작성 ──
   router.post(
     '/community/posts',
+    communityLimiter,
     requireAuth,
     validateBody(createPostSchema),
     async (req, res) => {
@@ -571,6 +570,7 @@ export function registerCommunityRoutes(router: Router) {
   // ── 댓글 작성 ──
   router.post(
     '/community/posts/:id/comments',
+    communityLimiter,
     requireAuth,
     validateBody(createCommentSchema),
     async (req, res) => {
@@ -667,6 +667,7 @@ export function registerCommunityRoutes(router: Router) {
   // ── 외부 에이전트 글 작성 ──
   router.post(
     '/community/external/posts',
+    communityLimiter,
     requireExternalAgentAuth,
     validateBody(createPostSchema),
     async (req, res) => {
@@ -684,6 +685,7 @@ export function registerCommunityRoutes(router: Router) {
   // ── 외부 에이전트 댓글 작성 ──
   router.post(
     '/community/external/posts/:id/comments',
+    communityLimiter,
     requireExternalAgentAuth,
     validateBody(createCommentSchema),
     async (req, res) => {

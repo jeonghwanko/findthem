@@ -2,7 +2,6 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Zap, X, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, forwardRef, useMemo, createContext, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   calculateXPAnimationSteps,
   animateValue,
@@ -36,6 +35,19 @@ const XpToastContext = createContext<XpToastContextValue>({
 export function useXpToast() {
   return useContext(XpToastContext);
 }
+
+// ── XP 액션 한국어 라벨 ──
+
+const XP_ACTION_LABELS: Record<string, string> = {
+  AD_WATCH: '광고 시청',
+  SIGHTING: '목격 제보',
+  COMMUNITY_POST: '커뮤니티 글 작성',
+  COMMUNITY_COMMENT: '커뮤니티 댓글',
+  SHARE: '공유',
+  REFERRAL: '추천인',
+  SPONSOR: '후원',
+  GAME: '게임',
+};
 
 // ── Global toast state (pryzm 패턴: React Portal + 글로벌 상태) ──
 
@@ -116,8 +128,6 @@ const COMPRESS_THRESHOLD = 3;
 
 const ToastXPClaimAnimated = forwardRef<HTMLDivElement, ToastXPClaimAnimatedProps>(
   function ToastXPClaimAnimated({ toast, onRemove }, ref) {
-    const { t } = useTranslation();
-
     const [animationSteps] = useState(() =>
       calculateXPAnimationSteps(toast.userLevel, toast.userCurrentXP, toast.xp),
     );
@@ -281,8 +291,8 @@ const ToastXPClaimAnimated = forwardRef<HTMLDivElement, ToastXPClaimAnimatedProp
                   <span className="text-white font-semibold">
                     {isLevelingUp ? (
                       totalLevelUps >= COMPRESS_THRESHOLD
-                        ? <>{t('xp.levelUp', { level: `${toast.userLevel} → ${finalLevel}` })}</>
-                        : <>{t('xp.levelUp', { level: displayLevel })}</>
+                        ? <>{`레벨 ${toast.userLevel} → ${finalLevel} 달성!`}</>
+                        : <>{`레벨 ${displayLevel} 달성!`}</>
                     ) : (
                       <>+{formatInt(toast.xp)} XP</>
                     )}
@@ -400,10 +410,8 @@ export function showXPClaimToast(
 // ── Provider (기존 인터페이스 호환) ──
 
 export function XpToastProvider({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
-
   const showXpToast = (payload: XpToastPayload) => {
-    const description = t(`xp.${payload.action}`, { defaultValue: payload.action });
+    const description = XP_ACTION_LABELS[payload.action] ?? payload.action;
     void showXPClaimToast(
       payload.xpGained,
       description,

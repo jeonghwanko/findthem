@@ -1,4 +1,13 @@
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const apiRoot = resolve(__dirname, '..');
+
+// .env 로드 후 .env.local로 오버라이드 (로컬 개발용, gitignore 대상)
+dotenvConfig({ path: resolve(apiRoot, '.env') });
+dotenvConfig({ path: resolve(apiRoot, '.env.local'), override: true });
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -72,10 +81,7 @@ export const config = {
   tossSecretKey: process.env.TOSS_SECRET_KEY || '',
 
   merchantWalletEvm:    process.env.MERCHANT_WALLET_EVM    || '',
-  merchantWalletAptos:  process.env.MERCHANT_WALLET_APTOS  || '',
   merchantWalletSolana: process.env.MERCHANT_WALLET_SOLANA || '',
-  aptosRpcUrl:          process.env.APTOS_RPC_URL     || 'https://api.mainnet.aptoslabs.com/v1',
-  aptosRpcApiKey:       process.env.APTOS_RPC_API_KEY || '',
   solanaRpcUrl:         process.env.SOLANA_RPC_URL    || 'https://api.mainnet-beta.solana.com',
 
   googleClientId:     process.env.GOOGLE_CLIENT_ID || '',
@@ -90,8 +96,6 @@ export const config = {
   naverClientSecret: process.env.NAVER_CLIENT_SECRET || '',
   naverRedirectUri:  process.env.NAVER_REDIRECT_URI || '',
 
-  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
-
   appleClientId:   process.env.APPLE_CLIENT_ID   || '',
   appleKeyId:      process.env.APPLE_KEY_ID       || '',
   appleTeamId:     process.env.APPLE_TEAM_ID      || '',
@@ -99,4 +103,14 @@ export const config = {
   appleRedirectUri: process.env.APPLE_REDIRECT_URI || '',
 
   firebaseServiceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? '',
+
+  // Apple IAP (App Store Server API — ES256 JWT)
+  appleIapKeyId:      process.env.APPLE_IAP_KEY_ID      || '',
+  appleIapIssuerId:   process.env.APPLE_IAP_ISSUER_ID   || '',
+  appleIapPrivateKey: (process.env.APPLE_IAP_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  appleIapBundleId:   process.env.APPLE_IAP_BUNDLE_ID   || 'gg.pryzm.union',
+
+  // Google Play IAP (Play Developer API — 서비스 계정 RS256 JWT)
+  googlePlayPackageName:      process.env.GOOGLE_PLAY_PACKAGE_NAME       || 'com.findthem.app',
+  googlePlayServiceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || '',
 } as const;

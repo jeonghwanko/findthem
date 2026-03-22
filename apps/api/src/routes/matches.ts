@@ -4,7 +4,7 @@ import { prisma } from '../db/client.js';
 import { validateQuery } from '../middlewares/validate.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MATCH_STATUS_SETTABLE_VALUES } from '@findthem/shared';
 
 const matchesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -54,7 +54,7 @@ export function registerMatchRoutes(router: Router) {
   router.patch('/matches/:id', requireAuth, async (req, res) => {
     const id = req.params.id as string;
     const { status } = z
-      .object({ status: z.enum(['CONFIRMED', 'REJECTED']) })
+      .object({ status: z.enum(MATCH_STATUS_SETTABLE_VALUES) })
       .parse(req.body);
 
     const match = await prisma.match.findUnique({

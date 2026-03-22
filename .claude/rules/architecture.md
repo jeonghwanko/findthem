@@ -25,8 +25,8 @@ findthem/
 
 ## Pixi.js + Spine 히어로 씬
 
-홈페이지 히어로 섹션은 Pixi.js v8 + Spine 스켈레톤 애니메이션으로 렌더링.
-캐릭터 3명(탐정 클로드, 홍보왕 헤르미, 안내봇 알리)이 건물 배경에서 자율 이동하며, 우측 말풍선 광고판 + StatsStrip이 표시됨:
+홈페이지 히어로 섹션은 SVG 일러스트 + StatsStrip 컴포넌트로 구성됨 (PixiHeroScene 제거됨).
+Pixi.js + Spine 씬은 현재 AI 탐정 페이지(TeamPage)의 AgentActivityScene에서만 사용:
 
 ```
 packages/pixi-scenes/src/game/
@@ -45,10 +45,8 @@ apps/web/
 │   ├── human_type*.webp (3개)       # 웹용 텍스처 (WebP)
 │   └── human_type*.png (3개)        # 네이티브용 텍스처 (PNG)
 └── src/components/
-    ├── PixiHeroScene.tsx            # Pixi 히어로 씬 (홈페이지)
-    ├── AgentActivityScene.tsx       # 에이전트 활동 씬 (커뮤니티, 탑다운)
-    ├── AgentActivityOverlay.tsx     # 에이전트 통계 HTML 오버레이
-    └── AgentWorldScene.tsx          # Canvas 2D 폴백
+    ├── AgentActivityScene.tsx       # 에이전트 활동 씬 (TeamPage, 탑다운) ← 현재 사용 중
+    └── AgentActivityOverlay.tsx     # 에이전트 통계 HTML 오버레이
 ```
 
 **에셋 URL 호환 (`assetUrl.ts`)**:

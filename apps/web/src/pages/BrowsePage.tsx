@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { Search, Gamepad2 } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type Sighting, type SightingListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
@@ -12,6 +13,26 @@ const BROWSE_PAGE_SIZE = 12;
 const REGIONS = [
   '', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종',
   '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+];
+
+const VIEW_FILTERS = [
+  { value: 'all' as ViewMode, label: '전체' },
+  { value: 'reports' as ViewMode, label: '신고' },
+  { value: 'sightings' as ViewMode, label: '제보' },
+];
+
+const TYPE_FILTERS = [
+  { value: '', label: '전체' },
+  { value: 'DOG', label: '강아지' },
+  { value: 'CAT', label: '고양이' },
+];
+
+const PHASE_FILTERS = [
+  { value: '', label: '전체' },
+  { value: 'searching', label: '찾는 중' },
+  { value: 'sighting_received', label: '제보 접수' },
+  { value: 'analysis_done', label: '분석 완료' },
+  { value: 'found', label: '찾았어요' },
 ];
 
 type ViewMode = 'all' | 'reports' | 'sightings';
@@ -30,27 +51,10 @@ export default function BrowsePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
-  const abortRef = useRef<AbortController>();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const abortRef = useRef<AbortController>(undefined);
 
-  const VIEW_FILTERS = useMemo(() => [
-    { value: 'all' as ViewMode, label: t('browse.viewAll') },
-    { value: 'reports' as ViewMode, label: t('browse.viewReports') },
-    { value: 'sightings' as ViewMode, label: t('browse.viewSightings') },
-  ], [t]);
-
-  const TYPE_FILTERS = useMemo(() => [
-    { value: '', label: t('browse.all') },
-    { value: 'DOG', label: t('subjectType.DOG') },
-    { value: 'CAT', label: t('subjectType.CAT') },
-  ], [t]);
-
-  const PHASE_FILTERS = useMemo(() => [
-    { value: '', label: t('browse.all') },
-    { value: 'searching', label: t('browse.phaseSearching') },
-    { value: 'sighting_received', label: t('browse.phaseSightingReceived') },
-    { value: 'analysis_done', label: t('browse.phaseAnalysisDone') },
-    { value: 'found', label: t('browse.phaseFound') },
-  ], [t]);
+  usePullToRefresh(() => { setPage(1); setRefreshKey((k) => k + 1); });
 
   // 검색 debounce (300ms)
   useEffect(() => {
@@ -90,13 +94,14 @@ export default function BrowsePage() {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setReports([]);
       setSightings([]);
-      setError(t('browse.loadError'));
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
     };
 
     if (viewMode === 'reports') {
       fetchReports()
         .then((data) => {
-          setReports(data.items ?? data.reports ?? []);
+          setReports(data.items ?? []);
           setSightings([]);
           setTotalPages(data.totalPages);
         })
@@ -105,7 +110,7 @@ export default function BrowsePage() {
     } else if (viewMode === 'sightings') {
       fetchSightings()
         .then((data) => {
-          setSightings(data.sightings ?? []);
+          setSightings(data.items ?? []);
           setReports([]);
           setTotalPages(data.totalPages);
         })
@@ -115,8 +120,8 @@ export default function BrowsePage() {
       // all — 신고 + 제보 병렬 로드
       Promise.all([fetchReports(), fetchSightings()])
         .then(([rData, sData]) => {
-          setReports(rData.items ?? rData.reports ?? []);
-          setSightings(sData.sightings ?? []);
+          setReports(rData.items ?? []);
+          setSightings(sData.items ?? []);
           setTotalPages(Math.max(rData.totalPages, sData.totalPages));
         })
         .catch(handleError)
@@ -124,7 +129,7 @@ export default function BrowsePage() {
     }
 
     return () => controller.abort();
-  }, [viewMode, type, phase, region, page, debouncedSearch, t]);
+  }, [viewMode, type, phase, region, page, debouncedSearch, refreshKey]);
 
   const setFilter = useCallback((setter: (v: string) => void, value: string) => {
     setter(value);
@@ -164,13 +169,13 @@ export default function BrowsePage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{t('browse.title')}</h1>
+        <h1 className="text-2xl font-bold">찾기</h1>
         <Link
           to="/game"
           className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
         >
           <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
-          <span className="text-xs">{t('home.playToSponsor')}</span>
+          <span className="text-xs">게임하고 후원하기</span>
         </Link>
       </div>
 
@@ -196,7 +201,7 @@ export default function BrowsePage() {
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             {showTypeFilters && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterType')}</span>
+                <span className="text-xs font-medium text-gray-500 shrink-0">종류</span>
                 <div className="flex gap-1">
                   {TYPE_FILTERS.map((item) => (
                     <button
@@ -214,7 +219,7 @@ export default function BrowsePage() {
             )}
             {showPhaseFilters && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterStatus')}</span>
+                <span className="text-xs font-medium text-gray-500 shrink-0">상태</span>
                 <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                   {PHASE_FILTERS.map((item) => (
                     <button
@@ -235,7 +240,7 @@ export default function BrowsePage() {
 
         {/* 지역 필터 */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500 shrink-0">{t('browse.filterRegion')}</span>
+          <span className="text-xs font-medium text-gray-500 shrink-0">지역</span>
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {REGIONS.map((r) => (
               <button
@@ -245,7 +250,7 @@ export default function BrowsePage() {
                   region === r ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {r || t('browse.all')}
+                {r || '전체'}
               </button>
             ))}
           </div>
@@ -257,7 +262,7 @@ export default function BrowsePage() {
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={t('browse.searchPlaceholder')}
+            placeholder="이름, 특징으로 검색..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
           />
         </form>
@@ -274,7 +279,7 @@ export default function BrowsePage() {
         </div>
       ) : isEmpty ? (
         <div className="text-center py-20 text-gray-400">
-          {t('browse.noResults')}
+          검색 결과가 없습니다
         </div>
       ) : (
         <>
@@ -299,7 +304,7 @@ export default function BrowsePage() {
                 disabled={page === 1}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
               >
-                {t('browse.prev')}
+                이전
               </button>
               <span className="text-sm text-gray-600">{page} / {totalPages}</span>
               <button
@@ -307,7 +312,7 @@ export default function BrowsePage() {
                 disabled={page === totalPages}
                 className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
               >
-                {t('browse.next')}
+                다음
               </button>
             </div>
           )}

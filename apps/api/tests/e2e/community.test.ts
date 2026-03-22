@@ -44,7 +44,7 @@ describe('Community E2E', () => {
       findMany: vi.fn().mockResolvedValue([]),
     };
     prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
-    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ xp: 0 }]);
     prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       return callback(prismaMock);
     });
@@ -538,7 +538,7 @@ describe('Community E2E', () => {
       prismaMock.communityPost.create.mockResolvedValue(testPost);
       // COMMUNITY_POST dailyLimit:3 → $executeRaw 사용
       prismaMock.$executeRaw.mockResolvedValue(1);
-      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValue([{ xp: 0 }]);
       prismaMock.user.update.mockResolvedValue({});
 
       const res = await app
@@ -592,7 +592,7 @@ describe('Community E2E', () => {
       prismaMock.communityComment.create.mockResolvedValue(testComment);
       // COMMUNITY_COMMENT dailyLimit:10 → $executeRaw 사용
       prismaMock.$executeRaw.mockResolvedValue(1);
-      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValue([{ xp: 0 }]);
       prismaMock.user.update.mockResolvedValue({});
 
       const res = await app

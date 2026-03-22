@@ -43,6 +43,8 @@ export interface TiledSceneLayout {
   viewportW: number;
   viewportH: number;
   rooms: Record<string, { x: number; y: number; w: number; h: number }>;
+  /** 실제 렌더링된 픽셀 범위 — 카메라/드래그 제한 기준 */
+  renderBounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
 /** 렌더링할 레이어 (시각 레이어만) */
@@ -133,6 +135,18 @@ export async function drawTiledScene(
   const world = new Container();
   parent.addChild(world);
 
+  // 모바일 최적화: 렌더링 영역을 뷰포트 기준으로 제한
+  // 140×100 맵 전체 렌더 시 ~70,000 스프라이트 → Android WebGL OOM 유발
+  const BUFFER_TILES = 8; // 뷰포트 주변 여유 타일
+  const maxVisibleX = Math.ceil(viewportW / td) + BUFFER_TILES * 2;
+  const maxVisibleY = Math.ceil(viewportH / td) + BUFFER_TILES * 2;
+  const renderCX = Math.floor(cols / 2);
+  const renderCY = Math.floor(rows / 2);
+  const minRX = Math.max(0, renderCX - Math.floor(maxVisibleX / 2));
+  const maxRX = Math.min(cols, renderCX + Math.ceil(maxVisibleX / 2));
+  const minRY = Math.max(0, renderCY - Math.floor(maxVisibleY / 2));
+  const maxRY = Math.min(rows, renderCY + Math.ceil(maxVisibleY / 2));
+
   // 시각 레이어 렌더링
   for (const layer of map.layers) {
     if (layer.type !== 'tilelayer') continue;
@@ -142,14 +156,17 @@ export async function drawTiledScene(
     const layerContainer = new Container();
 
     for (let i = 0; i < layer.data.length; i++) {
+      const tx = i % cols;
+      const ty = Math.floor(i / cols);
+
+      // 뷰포트 밖 타일 스킵 (렌더 성능 최적화)
+      if (tx < minRX || tx >= maxRX || ty < minRY || ty >= maxRY) continue;
+
       const gid = layer.data[i];
       if (gid === 0) continue;
 
       const tex = getTileTexture(gid);
       if (!tex) continue;
-
-      const tx = i % cols;
-      const ty = Math.floor(i / cols);
 
       const sprite = new Sprite(tex);
       sprite.position.set(tx * td, ty * td);
@@ -178,6 +195,12 @@ export async function drawTiledScene(
     viewportW,
     viewportH,
     rooms,
+    renderBounds: {
+      minX: minRX * td,
+      maxX: maxRX * td,
+      minY: minRY * td,
+      maxY: maxRY * td,
+    },
   };
 }
 
@@ -205,12 +228,11 @@ export function centerTiledCamera(
   y: number,
   layout: TiledSceneLayout,
 ): void {
-  const worldPxW = layout.mapW * layout.tileDim;
-  const worldPxH = layout.mapH * layout.tileDim;
-  const targetX = layout.viewportW / 2 - x;
-  const targetY = layout.viewportH / 2 - y;
-  layout.world.x = Math.min(0, Math.max(targetX, layout.viewportW - worldPxW));
-  layout.world.y = Math.min(0, Math.max(targetY, layout.viewportH - worldPxH));
+  const { renderBounds, viewportW, viewportH } = layout;
+  const targetX = viewportW / 2 - x;
+  const targetY = viewportH / 2 - y;
+  layout.world.x = Math.min(-renderBounds.minX, Math.max(targetX, viewportW - renderBounds.maxX));
+  layout.world.y = Math.min(-renderBounds.minY, Math.max(targetY, viewportH - renderBounds.maxY));
 }
 
 /** 드래그 이동 설정 */
@@ -219,8 +241,7 @@ export function setupTiledDrag(
   layout: TiledSceneLayout,
   stage: Container,
 ): void {
-  const worldPxW = layout.mapW * layout.tileDim;
-  const worldPxH = layout.mapH * layout.tileDim;
+  const { renderBounds, viewportW, viewportH } = layout;
   let dragging = false;
   let lastX = 0;
   let lastY = 0;
@@ -240,8 +261,8 @@ export function setupTiledDrag(
     const dy = e.global.y - lastY;
     lastX = e.global.x;
     lastY = e.global.y;
-    world.x = Math.min(0, Math.max(world.x + dx, layout.viewportW - worldPxW));
-    world.y = Math.min(0, Math.max(world.y + dy, layout.viewportH - worldPxH));
+    world.x = Math.min(-renderBounds.minX, Math.max(world.x + dx, viewportW - renderBounds.maxX));
+    world.y = Math.min(-renderBounds.minY, Math.max(world.y + dy, viewportH - renderBounds.maxY));
   });
   stage.on('pointerup', () => { dragging = false; stage.cursor = 'grab'; });
   stage.on('pointerupoutside', () => { dragging = false; stage.cursor = 'grab'; });

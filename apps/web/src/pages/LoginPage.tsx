@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { IS_NATIVE } from '../utils/webOrigin';
 import MobileQuickLinks from '../components/MobileQuickLinks';
 
 interface LoginPageProps {
@@ -9,8 +10,8 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,21 +39,39 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     }
   }
 
-  function handleSocialLogin(provider: 'kakao' | 'naver' | 'telegram' | 'apple') {
+  function handleSocialLogin(provider: 'kakao' | 'naver' | 'apple') {
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api';
-    window.location.href = `${apiBase}/auth/${provider}`;
+    const url = `${apiBase}/auth/${provider}`;
+    if (IS_NATIVE) {
+      // 네이티브: SFSafariViewController / Chrome Custom Tabs (인앱 모달)
+      // → Universal Link(iOS) / App Links(Android) 콜백 → useNativeOAuth에서 처리
+      void import('@capacitor/browser')
+        .then(({ Browser }) => Browser.open({ url, presentationStyle: 'popover' }))
+        .catch(() => {
+          // Browser 플러그인 실패 시 WebView 내비게이션으로 폴백
+          window.location.href = url;
+        });
+    } else {
+      window.location.href = url;
+    }
   }
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4 pt-12">
+    <div
+      className="flex items-start justify-center px-4 pb-4 min-h-[60vh]"
+      style={{
+        // 네이티브는 Header가 없으므로 노치 높이만큼 추가 패딩 필요
+        paddingTop: IS_NATIVE ? 'calc(env(safe-area-inset-top) + 1.5rem)' : '2rem',
+      }}
+    >
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-8">
+        <h1 className="text-xl font-bold text-center mb-5">
           {isRegister ? t('auth.register') : t('auth.login')}
         </h1>
 
         {!isRegister && (
           <>
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2.5 mb-5">
               {/* Kakao */}
               <button
                 type="button"
@@ -85,23 +104,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                 {t('auth.naverLogin')}
               </button>
 
-              {/* Telegram */}
-              <button
-                type="button"
-                onClick={() => handleSocialLogin('telegram')}
-                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-medium transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#0088CC', color: '#FFFFFF' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="M2.19 9.63 16.54 4.07c.69-.25 1.3.17 1.07.86l-2.37 11.17c-.17.8-.66 1-1.34.62l-3.72-2.74-1.8 1.73c-.2.2-.37.36-.75.36l.27-3.8 6.9-6.23c.3-.27-.07-.42-.46-.15L5.02 12.09l-3.64-1.14c-.79-.25-.81-.79.17-1.12z"
-                    fill="currentColor"
-                  />
-                </svg>
-                {t('auth.telegramLogin')}
-              </button>
-
-              {/* Apple — Apple Human Interface Guidelines 준수: 검정 배경 + 흰색 로고 */}
+              {/* Apple HIG: black background + white logo */}
               <button
                 type="button"
                 onClick={() => handleSocialLogin('apple')}
@@ -119,7 +122,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
             </div>
 
             {/* Divider */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <div className="flex-1 h-px bg-gray-200" />
               <span className="text-sm text-gray-400">{t('auth.orDivider')}</span>
               <div className="flex-1 h-px bg-gray-200" />
@@ -127,7 +130,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
           </>
         )}
 
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-3">
           {isRegister && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -152,7 +155,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="01012345678"
-              autoComplete="tel"
+              autoComplete="off"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               required
             />
@@ -166,7 +169,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete="off"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               minLength={6}
               required
@@ -186,7 +189,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm text-gray-500 mt-3">
           {isRegister ? t('auth.hasAccount') : t('auth.noAccount')}
           <button
             onClick={() => {

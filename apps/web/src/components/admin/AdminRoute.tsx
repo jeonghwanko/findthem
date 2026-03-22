@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAdminAuth } from '../../hooks/useAdminApi.js';
 
+const ERROR_MESSAGES: Record<string, string> = {
+  UNAUTHORIZED: '인증에 실패했습니다',
+  INVALID_API_KEY: '올바르지 않은 API 키입니다',
+  FORBIDDEN: '권한이 없습니다',
+};
+
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
   const { authenticated, loading, login } = useAdminAuth();
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
@@ -30,7 +34,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
                   await login(key);
                 } catch (err: unknown) {
                   const code = err instanceof Error ? err.message : '';
-                  setError(t(`errors.${code}`, { defaultValue: t('admin.authFailed') }));
+                  setError(ERROR_MESSAGES[code] ?? '인증에 실패했습니다');
                 }
               })();
             }}

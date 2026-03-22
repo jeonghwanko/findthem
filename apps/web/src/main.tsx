@@ -3,11 +3,20 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import App from './App';
+import './i18n';
 import './index.css';
 import { initCapacitorPlugins, notifyOtaReady } from './bootstrap/initCapacitorPlugins';
+import { NativeSplashOverlay } from './components/NativeSplashOverlay';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const root = ReactDOM.createRoot(document.getElementById('root')!);
+
+// 네이티브: auth/routing 이전에 스플래시 오버레이 즉시 마운트
+if (Capacitor.isNativePlatform()) {
+  const splashDiv = document.createElement('div');
+  document.body.appendChild(splashDiv);
+  ReactDOM.createRoot(splashDiv).render(<NativeSplashOverlay />);
+}
 
 async function bootstrap() {
   await initCapacitorPlugins().catch(() => {});

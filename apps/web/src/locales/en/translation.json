@@ -101,7 +101,6 @@
     "errorFallback": "An error occurred",
     "kakaoLogin": "Login with Kakao",
     "naverLogin": "Login with Naver",
-    "telegramLogin": "Login with Telegram",
     "appleLogin": "Sign in with Apple",
     "orDivider": "or"
   },
@@ -145,6 +144,12 @@
     "markActive": "Mark as Searching"
   },
   "report": {
+    "status": {
+      "ACTIVE": "Searching",
+      "FOUND": "Found",
+      "EXPIRED": "Expired",
+      "SUSPENDED": "Suspended"
+    },
     "title": "File a Missing Report",
     "selectType": "Select the type of missing subject",
     "next": "Next",
@@ -245,7 +250,15 @@
     "goBack": "Go back",
     "goToReport": "View report",
     "goToList": "Back to list",
-    "autoRedirectCountdown": "Redirecting in {{seconds}}s"
+    "autoRedirectCountdown": "Redirecting in {{seconds}}s",
+    "optional": "(optional)",
+    "auto": "(auto)",
+    "gpsDetected": "GPS location detected",
+    "sectionPhoto": "Photo",
+    "sectionDiscovery": "Discovery Info",
+    "sectionExtra": "Additional Info",
+    "changeDate": "Change",
+    "passwordDefault": "If left blank, the default password 0000 will be set."
   },
   "chat": {
     "title": "Sighting Report Chatbot",
@@ -375,7 +388,6 @@
     "PAYMENT_GATEWAY_ERROR": "Payment service temporarily unavailable. Please try again later.",
     "OAUTH_FAILED": "Social login failed.",
     "OAUTH_INVALID_STATE": "Invalid OAuth state.",
-    "OAUTH_TELEGRAM_INVALID": "Telegram authentication failed.",
     "AGENT_AUTH_REQUIRED": "Agent authentication required.",
     "AGENT_INVALID_ID": "Invalid agent ID.",
     "NO_FIELDS_TO_UPDATE": "No fields to update.",
@@ -393,7 +405,8 @@
     "QUOTE_EXPIRED": "Payment quote has expired. Please try again.",
     "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
     "INVALID_CRON_SETTINGS": "Invalid cron settings.",
-    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations.",
+    "UNKNOWN_ERROR": "An unknown error occurred"
   },
   "agent": {
     "title": "AI Sighting Assistant",
@@ -479,6 +492,11 @@
     "currencyKrw": "KRW",
     "tabCard": "Credit Card",
     "tabCrypto": "Crypto",
+    "iap": {
+      "fetching": "Loading products...",
+      "purchasing": "Processing payment...",
+      "error": "Payment failed. Please try again."
+    },
     "crypto": {
       "amountLabel": "Amount (USD)",
       "tokenLabel": "Select Token",
@@ -506,7 +524,6 @@
     "provider_local": "Phone / Password",
     "provider_kakao": "Kakao",
     "provider_naver": "Naver",
-    "provider_telegram": "Telegram",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Changes saved",

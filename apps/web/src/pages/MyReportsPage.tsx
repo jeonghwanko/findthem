@@ -1,42 +1,41 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { Pencil, Trash2, CheckCircle, MapPin, Camera, Eye } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type ReportStatus, type Sighting, type SightingListResponse } from '../api/client';
-import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
+import { formatTimeAgo, SUBJECT_TYPE_LABELS } from '@findthem/shared';
+import { useTranslation } from 'react-i18next';
 import { assetSrc } from '../utils/webOrigin';
+
+const STATUS_STYLES: Record<ReportStatus, string> = {
+  ACTIVE: 'bg-green-100 text-green-700',
+  FOUND: 'bg-blue-100 text-blue-700',
+  EXPIRED: 'bg-gray-100 text-gray-500',
+  SUSPENDED: 'bg-red-100 text-red-600',
+};
+
+// SUBJECT_TYPE_LABELS는 @findthem/shared에서 가져옴 (ko 로케일 사용)
+const SUBJECT_LABELS = SUBJECT_TYPE_LABELS['ko'];
+
+const SUBJECT_TYPE_STYLES: Record<string, string> = {
+  PERSON: 'bg-purple-100 text-purple-700',
+  DOG: 'bg-yellow-100 text-yellow-700',
+  CAT: 'bg-orange-100 text-orange-700',
+};
 
 function StatusBadge({ status }: { status: ReportStatus }) {
   const { t } = useTranslation();
-  const styles: Record<ReportStatus, string> = {
-    ACTIVE: 'bg-green-100 text-green-700',
-    FOUND: 'bg-blue-100 text-blue-700',
-    EXPIRED: 'bg-gray-100 text-gray-500',
-    SUSPENDED: 'bg-red-100 text-red-600',
-  };
-  const labels: Record<ReportStatus, string> = {
-    ACTIVE: t('detail.statusActive'),
-    FOUND: t('detail.statusFound'),
-    EXPIRED: t('detail.statusExpired'),
-    SUSPENDED: t('detail.statusSuspended'),
-  };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
-      {labels[status]}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status]}`}>
+      {t(`report.status.${status}`, { defaultValue: status })}
     </span>
   );
 }
 
 function SubjectBadge({ type }: { type: Report['subjectType'] }) {
-  const { t } = useTranslation();
-  const styles = {
-    PERSON: 'bg-purple-100 text-purple-700',
-    DOG: 'bg-yellow-100 text-yellow-700',
-    CAT: 'bg-orange-100 text-orange-700',
-  };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${styles[type]}`}>
-      {t(`subjectType.${type}`)}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${SUBJECT_TYPE_STYLES[type] ?? 'bg-gray-100 text-gray-600'}`}>
+      {SUBJECT_LABELS[type] ?? type}
     </span>
   );
 }
@@ -50,9 +49,7 @@ type Filter = 'all' | 'report' | 'sighting';
 const PAGE_SIZE = 12;
 
 export default function MyReportsPage() {
-  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l}-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
 
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
@@ -67,12 +64,12 @@ export default function MyReportsPage() {
         api.get<ReportListResponse>('/reports/mine?page=1&limit=100'),
         api.get<SightingListResponse>('/sightings/mine?page=1&limit=100'),
       ]);
-      const reports: ActivityItem[] = (reportsRes.items ?? reportsRes.reports ?? []).map((r) => ({
+      const reports: ActivityItem[] = (reportsRes.items ?? []).map((r) => ({
         kind: 'report' as const,
         data: r,
         createdAt: r.createdAt,
       }));
-      const sightings: ActivityItem[] = (sightingsRes.sightings ?? []).map((s) => ({
+      const sightings: ActivityItem[] = (sightingsRes.items ?? []).map((s) => ({
         kind: 'sighting' as const,
         data: s,
         createdAt: s.createdAt,
@@ -89,6 +86,8 @@ export default function MyReportsPage() {
   }, []);
 
   useEffect(() => { void fetchAll(); }, [fetchAll]);
+
+  usePullToRefresh(fetchAll);
 
   // Reset page when filter changes
   useEffect(() => { setPage(1); }, [filter]);
@@ -113,13 +112,13 @@ export default function MyReportsPage() {
   const paged = filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE);
 
   const handleDelete = async (report: Report) => {
-    if (!confirm(t('myReports.deleteConfirm', { name: report.name }))) return;
+    if (!confirm(`"${report.name}" 신고를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
     setActionLoading(report.id);
     try {
       await api.delete(`/reports/${report.id}`);
       setAllItems((prev) => prev.filter((item) => !(item.kind === 'report' && item.data.id === report.id)));
     } catch {
-      alert(t('myReports.deleteError'));
+      alert('삭제에 실패했습니다');
     } finally {
       setActionLoading(null);
     }
@@ -138,7 +137,7 @@ export default function MyReportsPage() {
         )
       );
     } catch {
-      alert(t('myReports.statusError'));
+      alert('상태 변경에 실패했습니다');
     } finally {
       setActionLoading(null);
     }
@@ -148,21 +147,20 @@ export default function MyReportsPage() {
     report.photos.find((p) => p.isPrimary) ?? report.photos[0] ?? null;
 
   const filterButtons: { key: Filter; label: string }[] = [
-    { key: 'all', label: t('myReports.filterAll') },
-    { key: 'report', label: t('myReports.filterReports') },
-    { key: 'sighting', label: t('myReports.filterSightings') },
+    { key: 'all', label: '전체' },
+    { key: 'report', label: '내 신고' },
+    { key: 'sighting', label: '내 제보' },
   ];
-
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{t('myReports.title')}</h1>
+        <h1 className="text-2xl font-bold">내 활동</h1>
         <Link
           to="/sightings/new"
           className="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_3px_0_0_#c2410c] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#c2410c] active:translate-y-[3px] active:shadow-none transition-all"
         >
-          {t('nav.newSighting')}
+          목격 제보하기
         </Link>
       </div>
 
@@ -195,13 +193,13 @@ export default function MyReportsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-400 mb-4">
-            {filter === 'sighting' ? t('myReports.emptySightings') : filter === 'report' ? t('myReports.empty') : t('myReports.emptyAll')}
+            {filter === 'sighting' ? '제보 내역이 없습니다' : filter === 'report' ? '신고 내역이 없습니다' : '아직 활동 내역이 없습니다'}
           </p>
           <Link
             to={filter === 'sighting' ? '/sightings/new' : '/reports/new'}
             className="inline-block bg-gradient-to-r from-orange-500 to-rose-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
-            {filter === 'sighting' ? t('nav.newSighting') : t('nav.newReport')}
+            {filter === 'sighting' ? '목격 제보하기' : '신고 등록하기'}
           </Link>
         </div>
       ) : (
@@ -231,7 +229,7 @@ export default function MyReportsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-600">
-                          {t('myReports.labelReport')}
+                          신고
                         </span>
                         <span className="font-semibold text-gray-900 truncate">{report.name}</span>
                         <SubjectBadge type={report.subjectType} />
@@ -239,23 +237,23 @@ export default function MyReportsPage() {
                       </div>
                       <p className="text-xs text-gray-400 truncate">
                         {report.lastSeenAddress}
-                        <span className="ml-2">{formatTimeAgo(report.createdAt, locale)}</span>
+                        <span className="ml-2">{formatTimeAgo(report.createdAt, 'ko')}</span>
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       {(report.status === 'ACTIVE' || report.status === 'FOUND') && (
                         <button type="button" onClick={() => { void handleToggleStatus(report); }} disabled={isBusy}
-                          title={report.status === 'ACTIVE' ? t('myReports.markFound') : t('myReports.markActive')}
+                          title={report.status === 'ACTIVE' ? '찾았어요 표시' : '찾는 중으로 변경'}
                           className={`p-2 rounded-lg transition-colors disabled:opacity-40 ${report.status === 'FOUND' ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}>
                           <CheckCircle className="w-4 h-4" />
                         </button>
                       )}
                       <button type="button" onClick={() => { void navigate(`/reports/${report.id}/edit`); }} disabled={isBusy}
-                        title={t('myReports.edit')} className="p-2 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors disabled:opacity-40">
+                        title="수정" className="p-2 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors disabled:opacity-40">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button type="button" onClick={() => { void handleDelete(report); }} disabled={isBusy}
-                        title={t('myReports.delete')} className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
+                        title="삭제" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40">
                         {isDeleting ? <span className="w-4 h-4 block border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </div>
@@ -282,16 +280,16 @@ export default function MyReportsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-600">
-                        {t('myReports.labelSighting')}
+                        제보
                       </span>
                       <span className="font-semibold text-gray-900 truncate">
-                        {sighting.description || t('myReports.sightingNoDesc')}
+                        {sighting.description || '(설명 없음)'}
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 truncate flex items-center gap-1">
                       <MapPin className="w-3 h-3 shrink-0" />
                       {sighting.address}
-                      <span className="ml-2">{formatTimeAgo(sighting.createdAt, locale)}</span>
+                      <span className="ml-2">{formatTimeAgo(sighting.createdAt, 'ko')}</span>
                     </p>
                   </div>
                   {sighting.reportId && (
@@ -307,10 +305,10 @@ export default function MyReportsPage() {
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8">
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">{t('browse.prev')}</button>
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">이전</button>
               <span className="text-sm text-gray-600">{page} / {totalPages}</span>
               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">{t('browse.next')}</button>
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50">다음</button>
             </div>
           )}
         </>

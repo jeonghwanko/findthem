@@ -13,10 +13,12 @@ import {
   MAX_PAGE_SIZE,
 } from '@findthem/shared';
 import { computeSponsorLevel } from '@findthem/shared';
-import type { SponsorXpStats } from '@findthem/shared';
+import type { XpStats } from '@findthem/shared';
 import { grantXp, XpDailyLimitError } from '../services/xpService.js';
 
 const log = createLogger('usersRoute');
+
+const adRewardLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'RATE_LIMIT_EXCEEDED' });
 
 export function registerUserRoutes(router: Router) {
   // GET /users/me/xp-stats — 내 후원XP & 레벨 조회
@@ -25,15 +27,15 @@ export function registerUserRoutes(router: Router) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { sponsorXp: true, userLevel: true },
+      select: { xp: true, level: true },
     });
     if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
 
-    const snap = computeSponsorLevel(user.sponsorXp);
+    const snap = computeSponsorLevel(user.xp);
 
-    const stats: SponsorXpStats = {
-      sponsorXp: user.sponsorXp,
-      userLevel: snap.level,
+    const stats: XpStats = {
+      xp: user.xp,
+      level: snap.level,
       currentXP: snap.currentXP,
       xpToNextLevel: snap.xpToNextLevel,
       xpRequiredForLevel: snap.currentXP + snap.xpToNextLevel,
@@ -43,7 +45,7 @@ export function registerUserRoutes(router: Router) {
   });
 
   // POST /users/me/ad-reward — 광고 시청 후 후원XP 지급
-  router.post('/users/me/ad-reward', requireAuth, async (req, res) => {
+  router.post('/users/me/ad-reward', requireAuth, adRewardLimiter, async (req, res) => {
     const { userId } = req.user!;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -51,11 +53,11 @@ export function registerUserRoutes(router: Router) {
       const cooldownCutoff = new Date(Date.now() - AD_REWARD_COOLDOWN_SECS * 1000);
       const claimed = await tx.$executeRaw`
         UPDATE "user"
-        SET "sponsorXpLastAt" = NOW()
+        SET "xpLastAt" = NOW()
         WHERE id = ${userId}
           AND (
-            "sponsorXpLastAt" IS NULL
-            OR "sponsorXpLastAt" < ${cooldownCutoff}
+            "xpLastAt" IS NULL
+            OR "xpLastAt" < ${cooldownCutoff}
           )
       `;
       if (claimed === 0) throw new ApiError(429, ERROR_CODES.AD_REWARD_COOLDOWN);

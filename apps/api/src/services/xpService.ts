@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, RewardType } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../db/client.js';
 import {
@@ -71,10 +71,10 @@ export async function grantXp(
     //    SELECT FOR UPDATE로 현재값을 잠금 읽기 후 갱신
     //    → 동시 요청 시 XP 손실 및 레벨업 누락 방지
     //    ⚠️ 테이블명 "user"는 schema.prisma의 User @@map("user")과 동기 필수
-    const [locked] = await tx.$queryRaw<[{ sponsorXp: number }]>`
-      SELECT "sponsorXp" FROM "user" WHERE id = ${userId} FOR UPDATE
+    const [locked] = await tx.$queryRaw<[{ xp: number }]>`
+      SELECT "xp" FROM "user" WHERE id = ${userId} FOR UPDATE
     `;
-    const prevXp = locked.sponsorXp;
+    const prevXp = locked.xp;
     const newXp = prevXp + xpAmount;
     const prevSnap = computeSponsorLevel(prevXp);
     const newSnap = computeSponsorLevel(newXp);
@@ -83,8 +83,8 @@ export async function grantXp(
     await tx.user.update({
       where: { id: userId },
       data: {
-        sponsorXp: newXp,
-        ...(leveledUp ? { userLevel: newSnap.level } : {}),
+        xp: newXp,
+        ...(leveledUp ? { level: newSnap.level } : {}),
       },
     });
 
@@ -98,7 +98,7 @@ export async function grantXp(
         create: {
           userId,
           level: newSnap.level,
-          rewardType: reward.type,
+          rewardType: reward.type as RewardType,
           rewardValue: reward.value,
         },
       });

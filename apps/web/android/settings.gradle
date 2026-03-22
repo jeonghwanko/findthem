@@ -5,4 +5,8 @@ include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 
+// 직접 구현 IAP 플러그인 (Google Play Billing 7.x)
+include ':capacitor-iap'
+project(':capacitor-iap').projectDir = new File('../../../packages/capacitor-iap/android')
+
 apply from: 'capacitor.settings.gradle'

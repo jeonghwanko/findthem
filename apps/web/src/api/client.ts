@@ -3,12 +3,11 @@ import { TOKEN_STORAGE_KEY } from '@findthem/shared';
 // Re-export shared types for convenience
 export type {
   UserPublic as User,
-  ReportPhoto,
+  Photo,
   ReportSummary as Report,
   ReportDetail,
   ReportListResponse,
   SightingListResponse,
-  SightingPhoto,
   Sighting,
   Match,
   SubjectType,
@@ -17,6 +16,9 @@ export type {
   BotResponse,
   SponsorPublic,
   AgentId,
+  XpStats,
+  XpGrantResult,
+  XpLogEntry,
 } from '@findthem/shared';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';

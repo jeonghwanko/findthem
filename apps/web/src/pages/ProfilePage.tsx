@@ -1,14 +1,26 @@
-import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Users, Bell, BellOff } from 'lucide-react';
 import { usePushNotification } from '../hooks/usePushNotification';
 import { api, type User } from '../api/client';
 import { MAX_FILE_SIZE } from '@findthem/shared';
-import type { SponsorXpStats, XpGrantResult } from '@findthem/shared';
+import type { XpStats, XpGrantResult } from '@findthem/shared';
 import XpHistoryModal from '../components/XpHistoryModal';
 import { useXpToast } from '../components/XpRewardToast';
 import MobileQuickLinks from '../components/MobileQuickLinks';
 import { getWebOrigin } from '../utils/webOrigin';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  local: '이메일/비밀번호',
+  kakao: '카카오',
+  naver: '네이버',
+  apple: '애플',
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  IMAGE_ONLY: '이미지 파일만 업로드할 수 있습니다',
+  FILE_TOO_LARGE: '파일 크기가 너무 큽니다 (최대 10MB)',
+};
 
 interface ProfilePageProps {
   user: User;
@@ -16,7 +28,6 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
-  const { t } = useTranslation();
   const { subscribed, loading: pushLoading, isSupported, subscribe, unsubscribe } = usePushNotification();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email ?? '');
@@ -24,7 +35,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [xpStats, setXpStats] = useState<SponsorXpStats | null>(null);
+  const [xpStats, setXpStats] = useState<XpStats | null>(null);
   const [xpHistoryOpen, setXpHistoryOpen] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
   const { showXpToast } = useXpToast();
@@ -38,10 +49,15 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     };
   }, []);
 
+  const fetchXpStats = useCallback(async () => {
+    const data = await api.get<XpStats>('/users/me/xp-stats').catch(() => null);
+    if (data) setXpStats(data);
+  }, []);
+
+  usePullToRefresh(fetchXpStats);
+
   useEffect(() => {
-    void api.get<SponsorXpStats>('/users/me/xp-stats')
-      .then((data) => setXpStats(data))
-      .catch(() => {/* 무시 */});
+    void fetchXpStats();
 
     // 기존 사용자 중 referralCode가 없는 경우 자동 발급
     if (!user.referralCode) {
@@ -49,6 +65,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         .then((data) => onUserUpdate({ ...user, referralCode: data.referralCode }))
         .catch(() => {/* 무시 */});
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
@@ -66,9 +83,9 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       onUserUpdate(updated);
       setName(updated.name);
       setEmail(updated.email ?? '');
-      setMessage({ type: 'success', text: t('profile.saved') });
+      setMessage({ type: 'success', text: '저장되었습니다' });
     } catch {
-      setMessage({ type: 'error', text: t('profile.saveFailed') });
+      setMessage({ type: 'error', text: '저장에 실패했습니다' });
     } finally {
       setSaving(false);
     }
@@ -79,7 +96,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     try {
       await navigator.clipboard.writeText(user.referralCode);
     } catch {
-      window.prompt(t('profile.referralCode'), user.referralCode);
+      window.prompt('추천 코드', user.referralCode);
     }
     setReferralCopied(true);
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -95,7 +112,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         leveledUp: result.leveledUp,
         newLevel: result.newLevel,
         reward: result.reward,
-        userLevel: xpStats?.userLevel,
+        userLevel: xpStats?.level,
         userCurrentXP: xpStats?.currentXP,
       });
       if (result.leveledUp) {
@@ -103,8 +120,8 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           prev
             ? {
                 ...prev,
-                sponsorXp: result.newXp,
-                userLevel: result.newLevel,
+                xp: result.newXp,
+                level: result.newLevel,
               }
             : prev,
         );
@@ -117,8 +134,8 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     isSharingRef.current = true;
     try {
       const referralUrl = `${getWebOrigin()}?ref=${user.referralCode}`;
-      const shareTitle = t('profile.referralShareTitle');
-      const shareDesc = t('profile.referralShareDesc');
+      const shareTitle = '찾아줘 — 함께 찾아요';
+      const shareDesc = '실종된 반려동물/사람을 AI로 찾는 서비스에 함께해요!';
 
       if (navigator.share) {
         try {
@@ -149,7 +166,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
               imageUrl: `${getWebOrigin()}/pwa-512x512.png`,
               link: { mobileWebUrl: referralUrl, webUrl: referralUrl },
             },
-            buttons: [{ title: t('profile.referralJoin'), link: { mobileWebUrl: referralUrl, webUrl: referralUrl } }],
+            buttons: [{ title: '가입하기', link: { mobileWebUrl: referralUrl, webUrl: referralUrl } }],
           });
           await claimShareReward();
           return;
@@ -162,7 +179,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       try {
         await navigator.clipboard.writeText(referralUrl);
       } catch {
-        window.prompt(t('profile.referralCode'), referralUrl);
+        window.prompt('추천 링크', referralUrl);
       }
       await claimShareReward();
     } finally {
@@ -174,11 +191,11 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: t('errors.IMAGE_ONLY') });
+      setMessage({ type: 'error', text: '이미지 파일만 업로드할 수 있습니다' });
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setMessage({ type: 'error', text: t('upload.limit', { max: 1 }) });
+      setMessage({ type: 'error', text: '최대 1장, 장당 10MB 이하' });
       return;
     }
     setUploading(true);
@@ -188,10 +205,10 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       form.append('photo', file);
       const updated = await api.post<User>('/auth/me/photo', form);
       onUserUpdate(updated);
-      setMessage({ type: 'success', text: t('profile.photoSaved') });
+      setMessage({ type: 'success', text: '프로필 사진이 저장되었습니다' });
     } catch (err) {
       const code = err instanceof Error ? err.message : '';
-      setMessage({ type: 'error', text: t(`errors.${code}`, { defaultValue: t('profile.photoFailed') }) });
+      setMessage({ type: 'error', text: ERROR_MESSAGES[code] ?? '사진 업로드에 실패했습니다' });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -200,7 +217,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-12 pb-8">
-      <h1 className="text-2xl font-bold mb-8">{t('profile.title')}</h1>
+      <h1 className="text-2xl font-bold mb-8">내 정보</h1>
 
       {/* 프로필 이미지 — hover 시 카메라 오버레이 */}
       <div className="flex justify-center mb-8">
@@ -247,7 +264,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         <div className="mb-6 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-xl px-4 py-3 flex items-center gap-3">
           <Star className="w-4 h-4 fill-pink-400 text-pink-400 flex-shrink-0" />
           <span className="text-sm font-semibold text-pink-600 whitespace-nowrap">
-            {t('profile.sponsorLevel', { level: xpStats.userLevel })}
+            레벨 {xpStats.level}
           </span>
           <div className="flex-1 h-2.5 bg-pink-100 rounded-full overflow-hidden">
             <div
@@ -257,8 +274,8 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           </div>
           <span className="text-xs text-pink-400 whitespace-nowrap flex-shrink-0">
             {xpStats.xpToNextLevel === 0
-              ? t('profile.xpMaxLevel')
-              : t('profile.xpProgress', { current: xpStats.currentXP.toLocaleString(), total: xpStats.xpRequiredForLevel.toLocaleString() })}
+              ? '최고 레벨'
+              : `${xpStats.currentXP.toLocaleString()} / ${xpStats.xpRequiredForLevel.toLocaleString()} XP`}
           </span>
         </div>
       )}
@@ -269,7 +286,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         <div>
           <label htmlFor="profile-name" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
             <UserIcon className="w-4 h-4" />
-            {t('profile.name')}
+            이름
           </label>
           <input
             id="profile-name"
@@ -284,14 +301,14 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         <div>
           <label htmlFor="profile-email" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
             <Mail className="w-4 h-4" />
-            {t('profile.email')}
+            이메일
           </label>
           <input
             id="profile-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('profile.emailPlaceholder')}
+            placeholder="이메일을 입력하세요 (선택)"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
@@ -300,10 +317,10 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
         <div>
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
             <Shield className="w-4 h-4" />
-            {t('profile.provider')}
+            로그인 방식
           </div>
           <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
-            {t(`profile.provider_${(user.provider ?? 'LOCAL').toLowerCase()}`)}
+            {PROVIDER_LABELS[(user.provider ?? 'LOCAL').toLowerCase()] ?? (user.provider ?? 'LOCAL')}
           </div>
         </div>
 
@@ -312,7 +329,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           <div>
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
               <Calendar className="w-4 h-4" />
-              {t('profile.joinDate')}
+              가입일
             </div>
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
               {new Date(user.createdAt).toLocaleDateString()}
@@ -325,7 +342,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           <div>
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
               <Gift className="w-4 h-4" />
-              {t('profile.referralCode')}
+              추천 코드
             </div>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 text-sm font-mono tracking-widest">
@@ -336,7 +353,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
                 onClick={() => void handleCopyReferral()}
                 className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
               >
-                {referralCopied ? t('profile.referralCopied') : t('profile.referralCopy')}
+                {referralCopied ? '복사됨!' : '복사'}
               </button>
             </div>
           </div>
@@ -350,7 +367,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          {saving ? t('profile.saving') : t('profile.save')}
+          {saving ? '저장 중...' : '저장'}
         </button>
 
         {/* 레퍼럴 초대 버튼 */}
@@ -361,7 +378,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-700 py-2.5 rounded-lg font-medium transition-colors text-sm"
           >
             <Users className="w-4 h-4" />
-            {t('profile.referralInvite')}
+            친구 초대하기
           </button>
         )}
 
@@ -370,7 +387,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
           <div className="flex items-center justify-between py-3 border-t border-gray-100 mt-4">
             <div className="flex items-center gap-2 text-sm text-gray-700">
               {subscribed ? <Bell className="w-4 h-4 text-primary-600" /> : <BellOff className="w-4 h-4 text-gray-400" />}
-              {t('profile.pushNotification')}
+              푸시 알림
             </div>
             <button
               type="button"
@@ -382,7 +399,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
                   : 'bg-primary-600 text-white hover:bg-primary-700'
               }`}
             >
-              {subscribed ? t('profile.pushOff') : t('profile.pushOn')}
+              {subscribed ? '알림 끄기' : '알림 켜기'}
             </button>
           </div>
         )}
@@ -403,7 +420,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             className="w-full flex items-center justify-center gap-2 border border-pink-200 text-pink-600 hover:bg-pink-50 py-2.5 rounded-lg font-medium transition-colors text-sm"
           >
             <Star className="w-4 h-4" />
-            {t('xp.history')}
+            XP 이력 보기
           </button>
         </div>
       )}

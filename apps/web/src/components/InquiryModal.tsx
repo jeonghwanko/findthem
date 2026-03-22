@@ -9,17 +9,22 @@ interface InquiryModalProps {
   onSuccess?: () => void;
   /** Pre-select category & hide selector (e.g. PARTNERSHIP from footer) */
   fixedCategory?: InquiryCategory;
-  /** Override modal title */
+  /** Override modal title (unused, kept for API compatibility) */
   titleKey?: string;
 }
 
 const CATEGORIES: InquiryCategory[] = ['PAYMENT', 'REPORT', 'GENERAL'];
 
-const CATEGORY_KEYS: Record<InquiryCategory, string> = {
-  PAYMENT: 'inquiry.categoryPayment',
-  REPORT: 'inquiry.categoryReport',
-  GENERAL: 'inquiry.categoryGeneral',
-  PARTNERSHIP: 'inquiry.categoryPartnership',
+const CATEGORY_LABELS: Record<InquiryCategory, string> = {
+  PAYMENT: '결제 문의',
+  REPORT: '신고 문의',
+  GENERAL: '기타',
+  PARTNERSHIP: '제휴 문의',
+};
+
+const TITLE_LABELS: Record<string, string> = {
+  'inquiry.partnershipTitle': '제휴하기',
+  'inquiry.title': '문의하기',
 };
 
 export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, titleKey }: InquiryModalProps) {
@@ -31,12 +36,13 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
-  // Close on Escape key
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
   };
 
   if (!open) return null;
+
+  const modalTitle = titleKey ? (TITLE_LABELS[titleKey] ?? '문의하기') : '문의하기';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,8 +57,9 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
       if (!fixedCategory) setCategory('PAYMENT');
       onSuccess?.();
       onClose();
-    } catch {
-      setError(t('inquiry.error'));
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -67,12 +74,12 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">{t(titleKey ?? 'inquiry.title')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{modalTitle}</h2>
           <button
             type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-            aria-label={t('common.close', '닫기')}
+            aria-label="닫기"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -84,7 +91,7 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
           {!fixedCategory && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('inquiry.categoryLabel')}
+                문의 유형
               </label>
               <select
                 value={category}
@@ -93,7 +100,7 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
-                    {t(CATEGORY_KEYS[cat])}
+                    {CATEGORY_LABELS[cat]}
                   </option>
                 ))}
               </select>
@@ -102,7 +109,7 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('inquiry.titleLabel')}
+              제목
             </label>
             <input
               type="text"
@@ -110,14 +117,14 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               required
-              placeholder={t('inquiry.titlePlaceholder')}
+              placeholder="문의 제목을 입력하세요"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('inquiry.contentLabel')}
+              내용
             </label>
             <textarea
               value={content}
@@ -125,7 +132,7 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
               maxLength={5000}
               required
               rows={5}
-              placeholder={t('inquiry.contentPlaceholder')}
+              placeholder="문의 내용을 자세히 작성해주세요"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
           </div>
@@ -137,7 +144,7 @@ export default function InquiryModal({ open, onClose, onSuccess, fixedCategory, 
             disabled={submitting || !title.trim() || !content.trim()}
             className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors text-sm"
           >
-            {submitting ? t('auth.processing') : t('inquiry.submit')}
+            {submitting ? '처리 중...' : '문의 접수'}
           </button>
         </form>
       </div>

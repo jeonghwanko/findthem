@@ -77,8 +77,8 @@ async function fetchActivityStats(): Promise<AgentActivityStats> {
     prisma.match.count(),
     prisma.match.findFirst({ orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
 
-    // image-matching: analyzed images proxy (ReportPhoto today)
-    prisma.reportPhoto.count({ where: { createdAt: { gte: today } } }),
+    // image-matching: analyzed images proxy (Photo today)
+    prisma.photo.count({ where: { createdAt: { gte: today } } }),
 
     // promotion: Promotion posted counts
     prisma.promotion.count({ where: { status: 'POSTED', createdAt: { gte: today } } }),

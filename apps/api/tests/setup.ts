@@ -24,9 +24,8 @@ vi.mock('../src/db/client.js', () => {
   const mock = {
     user: createModelMock(),
     report: createModelMock(),
-    reportPhoto: createModelMock(),
+    photo: createModelMock(),
     sighting: createModelMock(),
-    sightingPhoto: createModelMock(),
     match: createModelMock(),
     promotion: createModelMock(),
     promotionLog: createModelMock(),
@@ -41,6 +40,10 @@ vi.mock('../src/db/client.js', () => {
     userReward: createModelMock(),
     sponsor: createModelMock(),
     sponsorCryptoQuote: createModelMock(),
+    inquiry: createModelMock(),
+    gamePlay: createModelMock(),
+    pushSubscription: createModelMock(),
+    outreachRequest: createModelMock(),
     $connect: vi.fn(),
     $executeRaw: vi.fn(),
     $disconnect: vi.fn(),
@@ -157,6 +160,20 @@ vi.mock('../src/jobs/queues.js', () => ({
   qaCrawlQueue: mockQueue(),
   createWorker: vi.fn(),
 }));
+
+// ── Rate Limiter Mock ──
+// 각 테스트 전 rate limit store를 초기화하여 테스트 간 간섭 방지
+vi.mock('../src/middlewares/rateLimit.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../src/middlewares/rateLimit.js')>();
+  return {
+    ...original,
+  };
+});
+
+beforeEach(async () => {
+  const { clearRateLimitStore } = await import('../src/middlewares/rateLimit.js');
+  clearRateLimitStore();
+});
 
 // ── 각 테스트 전 모든 mock 초기화 ──
 // 각 테스트 파일에서 `import { prisma } from '../src/db/client.js'`로 mock 접근

@@ -59,7 +59,7 @@ describe('Reports E2E', () => {
 
     it('인증 + 사진 → 201 + 리포트 생성', async () => {
       prismaMock.report.create.mockResolvedValue(testReport);
-      prismaMock.reportPhoto.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
 
       // 1px 투명 PNG
       const tinyPng = Buffer.from(
@@ -96,7 +96,7 @@ describe('Reports E2E', () => {
       const res = await app.get('/api/reports');
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('reports');
+      expect(res.body).toHaveProperty('items');
       expect(res.body).toHaveProperty('total');
       expect(res.body).toHaveProperty('page');
       expect(res.body).toHaveProperty('totalPages');
@@ -348,9 +348,9 @@ describe('Reports E2E', () => {
     it('사진 추가 성공 → 201', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       // 트랜잭션 안에서 reportPhoto.count → 현재 3장
-      prismaMock.reportPhoto.count.mockResolvedValue(3);
-      prismaMock.reportPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.reportPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.count.mockResolvedValue(3);
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'new-photo-id',
         reportId: testReport.id,
         photoUrl: '/uploads/reports/new-photo.jpg',
@@ -373,7 +373,7 @@ describe('Reports E2E', () => {
     it('현재 사진 수 + 업로드 수가 MAX_REPORT_PHOTOS 초과 → 400', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       // 현재 사진 5장 (MAX_REPORT_PHOTOS = 5)
-      prismaMock.reportPhoto.count.mockResolvedValue(5);
+      prismaMock.photo.count.mockResolvedValue(5);
 
       const res = await app
         .post(`/api/reports/${testReport.id}/photos`)
@@ -386,8 +386,8 @@ describe('Reports E2E', () => {
     it('현재 4장 + 1장 업로드 = 5장(정확히 MAX) → 201 허용', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       // 현재 4장, 1장 추가 → 총 5장으로 MAX와 같음 (초과 아님)
-      prismaMock.reportPhoto.count.mockResolvedValue(4);
-      prismaMock.reportPhoto.create.mockResolvedValue({
+      prismaMock.photo.count.mockResolvedValue(4);
+      prismaMock.photo.create.mockResolvedValue({
         id: 'new-photo-id',
         reportId: testReport.id,
         photoUrl: '/uploads/reports/new-photo.jpg',
@@ -451,8 +451,8 @@ describe('Reports E2E', () => {
         .set('Authorization', authHeader());
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('reports');
-      expect(Array.isArray(res.body.reports)).toBe(true);
+      expect(res.body).toHaveProperty('items');
+      expect(Array.isArray(res.body.items)).toBe(true);
       expect(res.body).toHaveProperty('total', 25);
       expect(res.body).toHaveProperty('page', 2);
       expect(res.body).toHaveProperty('totalPages', 3); // ceil(25/10)

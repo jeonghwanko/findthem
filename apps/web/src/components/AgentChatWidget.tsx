@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { useAgentChat } from '../hooks/useAgentChat';
 
+const AGENT_ERROR_LABELS: Record<string, string> = {
+  SESSION_NOT_FOUND: '세션을 찾을 수 없습니다',
+  UNAUTHORIZED: '인증이 필요합니다',
+  SERVER_ERROR: '서버 오류가 발생했습니다',
+};
+
 export default function AgentChatWidget() {
-  const { t } = useTranslation();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -44,21 +48,21 @@ export default function AgentChatWidget() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  const isMainPage = pathname === '/';
+  const isProfilePage = pathname === '/profile';
 
-  // 메인 이외 페이지로 이동하면 채팅 자동 닫기
+  // 프로필 이외 페이지로 이동하면 채팅 자동 닫기
   useEffect(() => {
-    if (!isMainPage && open) setOpen(false);
-  }, [isMainPage]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isProfilePage && open) setOpen(false);
+  }, [isProfilePage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!isMainPage) return null;
+  if (!isProfilePage) return null;
 
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-24 md:bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
-        aria-label={t('agent.openChat')}
+        aria-label="AI 탐정 열기"
       >
         🤖
       </button>
@@ -70,8 +74,8 @@ export default function AgentChatWidget() {
       {/* 헤더 */}
       <div className="bg-primary-600 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
         <div>
-          <div className="font-semibold">{t('agent.title')}</div>
-          <div className="text-xs text-primary-200">{t('agent.subtitle')}</div>
+          <div className="font-semibold">AI 탐정 클로드</div>
+          <div className="text-xs text-primary-200">실종 신고 AI 도우미</div>
         </div>
         <button
           onClick={() => setOpen(false)}
@@ -87,17 +91,17 @@ export default function AgentChatWidget() {
         {chat.messages.map((msg) => (
           <div
             key={`${msg.createdAt}-${msg.role}`}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[85%] px-3 py-2 rounded-xl text-sm whitespace-pre-wrap ${
-                msg.role === 'user'
+                msg.role === 'USER'
                   ? 'bg-primary-600 text-white rounded-br-sm'
                   : 'bg-gray-100 text-gray-800 rounded-bl-sm'
               }`}
             >
               {/* 사용자 사진 미리보기 */}
-              {msg.photoUrl && msg.role === 'user' && (
+              {msg.photoUrl && msg.role === 'USER' && (
                 <img
                   src={msg.photoUrl}
                   alt="첨부 사진"
@@ -124,7 +128,7 @@ export default function AgentChatWidget() {
               {/* 사진 분석 결과 */}
               {msg.photoAnalysis && (
                 <div className="mt-2 bg-blue-50 rounded p-2 text-xs border border-blue-100">
-                  <span className="font-medium">📸 {t('agent.photoLabel')}</span>{' '}
+                  <span className="font-medium">📸 사진 분석</span>{' '}
                   {msg.photoAnalysis.description}
                   {msg.photoAnalysis.features.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -141,7 +145,7 @@ export default function AgentChatWidget() {
               {/* 유사 신고 카드 */}
               {msg.similarReports && msg.similarReports.length > 0 && (
                 <div className="mt-2 bg-amber-50 rounded p-2 text-xs border border-amber-100">
-                  <span className="font-medium">🔍 {t('agent.similarReports')}</span>
+                  <span className="font-medium">🔍 유사 신고</span>
                   {msg.similarReports.map((r) => (
                     <div key={r.id} className="mt-1 flex items-center gap-2">
                       {r.photoUrl && (
@@ -161,7 +165,7 @@ export default function AgentChatWidget() {
                           {r.name}
                         </a>
                         <div className="text-gray-600">{r.features}</div>
-                        <div className="text-amber-600">{t('agent.similarity')} {r.similarity}</div>
+                        <div className="text-amber-600">유사도 {r.similarity}</div>
                       </div>
                     </div>
                   ))}
@@ -174,7 +178,7 @@ export default function AgentChatWidget() {
         {chat.loading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-xl rounded-bl-sm text-sm">
-              {t('agent.analyzing')}
+              분석 중...
             </div>
           </div>
         )}
@@ -182,12 +186,12 @@ export default function AgentChatWidget() {
         {chat.error && !chat.loading && (
           <div className="flex justify-start">
             <div className="bg-red-50 text-red-600 px-3 py-2 rounded-xl rounded-bl-sm text-sm flex items-center gap-2">
-              <span>{t(`agent.${chat.error}`)}</span>
+              <span>{AGENT_ERROR_LABELS[chat.error] ?? '오류가 발생했습니다'}</span>
               <button
                 onClick={() => void chat.startSession()}
                 className="underline text-red-700 hover:text-red-800 font-medium"
               >
-                {t('agent.retry')}
+                다시 시도
               </button>
             </div>
           </div>
@@ -196,7 +200,7 @@ export default function AgentChatWidget() {
         {chat.completed && (
           <div className="text-center py-2">
             <span className="inline-block bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full">
-              {t('agent.completed')}
+              대화가 완료되었습니다
             </span>
           </div>
         )}
@@ -210,7 +214,7 @@ export default function AgentChatWidget() {
           <button
             onClick={() => fileInputRef.current?.click()}
             className="text-gray-400 hover:text-primary-600 text-xl flex-shrink-0"
-            title={t('agent.photoAttach')}
+            title="사진 첨부"
             disabled={chat.loading}
           >
             📷
@@ -226,7 +230,7 @@ export default function AgentChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t('agent.placeholder')}
+            placeholder="메시지를 입력하세요..."
             className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
             disabled={chat.loading || !chat.sessionId}
           />
@@ -235,7 +239,7 @@ export default function AgentChatWidget() {
             disabled={!input.trim() || chat.loading || !chat.sessionId}
             className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors flex-shrink-0"
           >
-            {t('agent.send')}
+            전송
           </button>
         </div>
       )}

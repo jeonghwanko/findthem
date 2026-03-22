@@ -169,7 +169,7 @@ describe('Auth E2E', () => {
         .mockResolvedValueOnce({
           id: 'kakao-user-id',
           name: '카카오유저',
-          phone: 'social_kakao_12345678',
+          phone: null,
           email: null,
           profileImage: 'https://k.kakaocdn.net/dn/profile.jpg',
           provider: 'KAKAO',

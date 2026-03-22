@@ -23,7 +23,7 @@ describe('Auth Referral XP E2E', () => {
       findMany: vi.fn().mockResolvedValue([]),
     };
     prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
-    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ xp: 0 }]);
     prismaMock.user.update.mockResolvedValue({});
   });
 
@@ -42,7 +42,7 @@ describe('Auth Referral XP E2E', () => {
       });
       // grantXp(referrerId, 'REFERRAL') — dailyLimit:10 → $executeRaw
       prismaMock.$executeRaw.mockResolvedValue(1);
-      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValue([{ xp: 0 }]);
 
       const res = await app
         .post('/api/auth/register')
@@ -104,7 +104,7 @@ describe('Auth Referral XP E2E', () => {
       prismaMock.user.updateMany.mockResolvedValue({ count: 1 }); // 원자적 업데이트 성공
       // grantXp(referrerId, 'REFERRAL') — dailyLimit:10 → $executeRaw
       prismaMock.$executeRaw.mockResolvedValue(1);
-      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValue([{ xp: 0 }]);
 
       const res = await app
         .post('/api/auth/me/apply-referral')

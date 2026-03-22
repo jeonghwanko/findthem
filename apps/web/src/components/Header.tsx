@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Search, LogIn, List, Users, MessageSquare, User as UserIcon, FileText, LogOut, ChevronDown } from 'lucide-react';
+import { Search, LogIn, List, Users, MessageSquare, User as UserIcon, UserCircle, FileText, LogOut, ChevronDown } from 'lucide-react';
 import type { User } from '../api/client';
-import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
   user: User | null;
@@ -13,7 +11,6 @@ interface HeaderProps {
 function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -70,7 +67,7 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
             className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <UserIcon className="w-4 h-4" />
-            {t('nav.profile')}
+            내 정보
           </Link>
           <Link
             to="/my-reports"
@@ -79,7 +76,7 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
             className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <FileText className="w-4 h-4" />
-            {t('nav.myReports')}
+            내 신고
           </Link>
           <div className="border-t border-gray-100 my-1" />
           <button
@@ -89,7 +86,7 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
             className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            {t('nav.logout')}
+            로그아웃
           </button>
         </div>
       )}
@@ -98,7 +95,6 @@ function ProfileDropdown({ user, onLogout }: { user: User; onLogout: () => void 
 }
 
 export default function Header({ user, onLogout }: HeaderProps) {
-  const { t } = useTranslation();
   const { pathname } = useLocation();
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
@@ -120,23 +116,23 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center shrink-0">
             <Search className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
-          <span className="text-lg font-bold text-gray-900 whitespace-nowrap">{t('brand')}</span>
-          <span className="hidden md:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">{t('home.heroBadge')}</span>
+          <span className="text-lg font-bold text-gray-900 whitespace-nowrap">찾아줘</span>
+          <span className="hidden md:inline-block bg-primary-50 text-primary-600 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">단서를 잇다, AI 탐정</span>
         </Link>
 
         {/* 데스크톱 nav (md 이상에서만 표시) */}
         <nav className="hidden md:flex items-center gap-1 text-sm">
           <Link to="/browse" className={navLinkClass('/browse')}>
             <List className="w-4 h-4" aria-hidden="true" />
-            {t('nav.browse')}
+            전체 목록
           </Link>
           <Link to="/team" className={navLinkClass('/team')}>
             <Users className="w-4 h-4" aria-hidden="true" />
-            {t('nav.team')}
+            AI 탐정
           </Link>
           <Link to="/community" className={navLinkClass('/community')}>
             <MessageSquare className="w-4 h-4" aria-hidden="true" />
-            {t('nav.community')}
+            커뮤니티
           </Link>
           {user ? (
             <>
@@ -144,7 +140,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 to="/sightings/new"
                 className="ml-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-4 py-2 rounded-lg font-medium shadow-[0_3px_0_0_#c2410c] hover:translate-y-[1px] hover:shadow-[0_2px_0_0_#c2410c] active:translate-y-[3px] active:shadow-none transition-all"
               >
-                {t('nav.newSighting')}
+                제보하기
               </Link>
               <ProfileDropdown user={user} onLogout={onLogout} />
             </>
@@ -154,23 +150,22 @@ export default function Header({ user, onLogout }: HeaderProps) {
               className="flex items-center gap-1.5 ml-2 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors"
             >
               <LogIn className="w-4 h-4" aria-hidden="true" />
-              {t('nav.login')}
+              로그인
             </Link>
           )}
-          <LanguageSwitcher />
         </nav>
 
         {/* 모바일 우측 (md 미만에서만 표시) */}
         <div className="flex md:hidden items-center gap-2">
-          <LanguageSwitcher />
           {user ? (
             <ProfileDropdown user={user} onLogout={onLogout} />
           ) : (
             <Link
               to="/login"
-              className="border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
             >
-              {t('nav.login')}
+              <UserCircle className="w-4 h-4" aria-hidden="true" />
+              로그인
             </Link>
           )}
         </div>

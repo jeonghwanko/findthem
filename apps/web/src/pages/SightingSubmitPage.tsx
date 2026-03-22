@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, MapPin, Loader2, CheckCircle, ChevronDown } from 'lucide-react';
+import { Camera, MapPin, Loader2, CheckCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import PhotoUpload from '../components/PhotoUpload';
 import type { PhotoExifData } from '../components/PhotoUpload';
 import { reverseGeocode } from '../hooks/useKakaoMap';
+import sightingBg from '../assets/sighting-bg.svg';
 
 function toLocalISO(date: Date): string {
   const d = new Date(date);
@@ -28,6 +30,9 @@ export default function SightingSubmitPage() {
   const [searchParams] = useSearchParams();
   const reportId = searchParams.get('reportId') || '';
 
+  // Pull-to-refresh — 페이지 새로고침
+  usePullToRefresh(() => { window.location.reload(); });
+
   // Form state
   const [photos, setPhotos] = useState<File[]>([]);
   const [description, setDescription] = useState('');
@@ -41,7 +46,7 @@ export default function SightingSubmitPage() {
   const exifAppliedRef = useRef(false);
   const exifSessionRef = useRef(0); // 사진 전체 삭제 시 증가 → stale 응답 차단
   const [exifMessage, setExifMessage] = useState('');
-  const exifTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const exifTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Multi-address options from photo EXIF
   const [addressOptions, setAddressOptions] = useState<AddressOption[]>([]);
@@ -259,170 +264,213 @@ export default function SightingSubmitPage() {
   const isAddrFromOptions = hasMultiAddr && addressOptions.some((o) => o.address === address);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-2">{t('sighting.title')}</h1>
-      <p className="text-gray-500 text-sm mb-6">{t('sighting.subtitle')}</p>
+    <div className="bg-gray-50 min-h-screen pb-24 md:pb-8">
+      {/* 상단 히어로 배너 */}
+      <div className="relative h-[120px] bg-gradient-to-b from-amber-50/80 via-indigo-50/40 to-gray-50 border-b border-amber-100/40 overflow-hidden">
+        {/* 따뜻한 삽화 배경 */}
+        <img
+          src={sightingBg}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-right-bottom pointer-events-none select-none"
+        />
+        <div className="relative max-w-2xl mx-auto px-4 py-8 pb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+              <Camera className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('sighting.title')}</h1>
+          </div>
+          <p className="text-gray-500 text-sm ml-[52px]">{t('sighting.subtitle')}</p>
+        </div>
+      </div>
 
-      <form onSubmit={(e) => { void handleSubmit(e); }} autoComplete="off" className="space-y-5">
-        {/* 1. 사진 (필수, 최상단) */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-            <Camera className="w-4 h-4" />
-            {t('sighting.photoLabel')} <span className="text-red-500">*</span>
-          </label>
+      <div className="max-w-2xl mx-auto px-4 pt-5">
+      <form onSubmit={(e) => { void handleSubmit(e); }} autoComplete="off" className="space-y-4">
+
+        {/* 카드 1: 사진 */}
+        <div className="bg-primary-50/30 rounded-xl shadow-sm border border-gray-100 p-4 lg:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <Camera className="w-4 h-4 text-primary-500" />
+            {t('sighting.sectionPhoto')}
+            <span className="text-red-500 ml-0.5">*</span>
+          </h2>
           <PhotoUpload
             maxFiles={5}
             onChange={handlePhotosChange}
             onExifExtracted={handleExifExtracted}
             onEachExif={handleEachExif}
           />
-          <p className="text-xs text-gray-400 mt-1">{t('sighting.photoHint')}</p>
-
+          <p className="text-xs text-gray-400 mt-2">{t('sighting.photoHint')}</p>
           {exifMessage && (
-            <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+            <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1">
               {exifMessage}
             </p>
           )}
         </div>
 
-        {/* 2. 위치 */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-            <MapPin className="w-4 h-4" />
-            {t('sighting.sightedPlace')}
-          </label>
-          {hasMultiAddr && (
-            <div className="relative mb-2">
-              <select
-                value={isAddrFromOptions ? address : '__manual__'}
-                onChange={(e) => handleAddressSelect(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm appearance-none bg-white"
-              >
-                {addressOptions.map((o, i) => (
-                  <option key={i} value={o.address}>
-                    {t('sighting.photoN', { n: o.photoIndex + 1 })}: {o.address}
-                  </option>
-                ))}
-                <option value="__manual__">{t('sighting.manualInput')}</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            </div>
-          )}
-          {(!hasMultiAddr || !isAddrFromOptions) && (
-            <div className="flex gap-2">
-              {addressEditing ? (
-                <input
-                  ref={addressInputRef}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  onBlur={() => setAddressEditing(false)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                  placeholder={t('sighting.sightedPlacePlaceholder')}
-                />
-              ) : (
+        {/* 카드 2: 발견 정보 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:p-5 divide-y divide-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            {t('sighting.sectionDiscovery')}
+          </h2>
+
+          {/* 2-1. 위치 */}
+          <div className="py-3 first:pt-0">
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+              <MapPin className="w-4 h-4" />
+              {t('sighting.sightedPlace')}
+              <span className="text-xs text-gray-400 ml-1">{t('sighting.optional')}</span>
+            </label>
+            {hasMultiAddr && (
+              <div className="relative mb-2">
+                <select
+                  value={isAddrFromOptions ? address : '__manual__'}
+                  onChange={(e) => handleAddressSelect(e.target.value)}
+                  className="w-full min-h-[44px] px-3 py-2 pr-8 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm appearance-none bg-white"
+                >
+                  {addressOptions.map((o, i) => (
+                    <option key={i} value={o.address}>
+                      {t('sighting.photoN', { n: o.photoIndex + 1 })}: {o.address}
+                    </option>
+                  ))}
+                  <option value="__manual__">{t('sighting.manualInput')}</option>
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+            {(!hasMultiAddr || !isAddrFromOptions) && (
+              <div className="flex gap-2">
+                {addressEditing ? (
+                  <input
+                    ref={addressInputRef}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    onBlur={() => setAddressEditing(false)}
+                    className="flex-1 min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                    placeholder={t('sighting.sightedPlacePlaceholder')}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddressEditing(true)}
+                    className={`flex-1 min-h-[44px] text-left px-3 py-2 text-sm border border-gray-200 rounded-lg transition-colors ${address ? 'text-gray-900' : 'text-gray-400'}`}
+                  >
+                    {address || t('sighting.sightedPlacePlaceholder')}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setAddressEditing(true)}
-                  className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${address ? 'text-gray-900' : 'text-gray-400'}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleLocate}
+                  disabled={locating}
+                  className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 border border-primary-200 rounded-lg text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  {address || t('sighting.sightedPlacePlaceholder')}
+                  {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                  {t('sighting.useMyLocation')}
                 </button>
-              )}
+              </div>
+            )}
+            {lat !== null && lng !== null && (
+              <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                {t('sighting.gpsDetected')}
+              </p>
+            )}
+          </div>
+
+          {/* 2-2. 날짜/시간 */}
+          <div className="py-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('sighting.sightedAt')}
+              <span className="text-xs text-gray-400 ml-1">{t('sighting.auto')}</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 px-3 py-2 text-sm text-gray-900 border border-gray-200 rounded-lg bg-gray-50">
+                {new Date(sightedAt).toLocaleString()}
+              </span>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleLocate}
-                disabled={locating}
-                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0"
+                onClick={() => setDateEditing(true)}
+                className="min-h-[44px] px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors whitespace-nowrap"
               >
-                {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-                {t('sighting.useMyLocation')}
+                {t('sighting.changeDate')}
               </button>
             </div>
-          )}
-          {lat !== null && lng !== null && (
-            <p className="text-xs text-green-600 mt-1">
-              GPS: {lat.toFixed(5)}, {lng.toFixed(5)}
-            </p>
-          )}
-        </div>
-
-        {/* 3. 날짜/시간 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('sighting.sightedAt')}
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="flex-1 px-3 py-2 text-sm text-gray-900">
-              {new Date(sightedAt).toLocaleString()}
-            </span>
-            <button
-              type="button"
-              onClick={() => setDateEditing(true)}
-              className="px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors whitespace-nowrap"
-            >
-              {t('sighting.changeDate', '날짜 변경')}
-            </button>
+            {dateEditing && (
+              <input
+                ref={dateInputRef}
+                type="datetime-local"
+                value={sightedAt}
+                onChange={(e) => setSightedAt(e.target.value)}
+                onBlur={() => setDateEditing(false)}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+              />
+            )}
           </div>
-          {dateEditing && (
-            <input
-              ref={dateInputRef}
-              type="datetime-local"
-              value={sightedAt}
-              onChange={(e) => setSightedAt(e.target.value)}
-              onBlur={() => setDateEditing(false)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-            />
-          )}
         </div>
 
-        {/* 4. 설명 (선택) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('sighting.description')}
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none resize-none text-sm"
-            placeholder={t('sighting.descriptionPlaceholder')}
-          />
-        </div>
+        {/* 카드 3: 추가 정보 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:p-5">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            {t('sighting.sectionExtra')}
+          </h2>
 
-        {/* 5. 비회원 비밀번호 */}
-        {!user && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <label className="block text-sm font-medium text-amber-800 mb-1">
-              {t('sighting.passwordLabel')}
+          {/* 설명 */}
+          <div className="mb-0">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('sighting.description')}
+              <span className="text-xs text-gray-400 ml-1">{t('sighting.optional')}</span>
             </label>
-            <input
-              type="password"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              onFocus={(e) => {
-                setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-              }}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
-              placeholder={t('sighting.passwordPlaceholder', '4자리 이상')}
-              minLength={4}
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none resize-none text-sm"
+              placeholder={t('sighting.descriptionPlaceholder')}
             />
-            <p className="text-xs text-amber-600 mt-1">{t('sighting.passwordDefault', '미입력 시 기본 비밀번호 0000이 설정됩니다.')}</p>
-            <p className="text-xs text-amber-600">{t('sighting.passwordHint')}</p>
           </div>
-        )}
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+          {/* 비회원 비밀번호 */}
+          {!user && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <label className="block text-sm font-medium text-amber-800 mb-1">
+                {t('sighting.passwordLabel')}
+              </label>
+              <input
+                type="password"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                onFocus={(e) => {
+                  setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }}
+                autoComplete="new-password"
+                className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                placeholder={t('sighting.passwordPlaceholder')}
+                minLength={4}
+              />
+              <p className="text-xs text-amber-600 mt-1">{t('sighting.passwordDefault')}</p>
+              <p className="text-xs text-amber-600">{t('sighting.passwordHint')}</p>
+            </div>
+          )}
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading || photos.length === 0}
-          className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+        {/* 제출 버튼 — 모바일: 하단 고정, 데스크톱: 인라인 */}
+        <div
+          className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-100 z-30 md:static md:bg-transparent md:border-0 md:p-0 md:backdrop-blur-none"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          {loading ? t('sighting.submitting') : t('sighting.submit')}
-        </button>
+          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading || photos.length === 0}
+            className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+          >
+            {loading ? t('sighting.submitting') : t('sighting.submit')}
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 }

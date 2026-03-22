@@ -161,7 +161,7 @@ describe('Apple Auth E2E', () => {
       prismaMock.user.upsert.mockResolvedValue({
         id: 'new-apple-user-id',
         name: 'AppleUser',
-        phone: 'social_apple_apple-user-12345',
+        phone: null,
         provider: 'APPLE',
         profileImage: null,
       });
@@ -193,7 +193,7 @@ describe('Apple Auth E2E', () => {
       prismaMock.user.upsert.mockResolvedValue({
         id: 'apple-named-user-id',
         name: 'John Doe',
-        phone: 'social_apple_apple-user-99999',
+        phone: null,
         provider: 'APPLE',
         profileImage: null,
       });

@@ -6,7 +6,11 @@ import { loadPaymentWidget, type PaymentWidgetInstance } from '@tosspayments/pay
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useSendTransaction, useWriteContract, useSwitchChain } from 'wagmi';
 import { parseAbi } from 'viem';
-import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
+import { Capacitor } from '@capacitor/core';
+import { PaymentRouter } from '@findthem/payments/react';
+import type { IAPRenderProps, PurchaseResult, PaymentProduct } from '@findthem/payments/react';
+import { IAP_PRODUCT_IDS, TOSS_PRESET_AMOUNTS } from '@findthem/shared';
+import { getChainTokenSymbols, getTokenContract, type SupportedChainId } from '@findthem/web3-payment/ui';
 import { api, type AgentId } from '../api/client';
 import Web3Provider from '../providers/Web3Provider';
 import InquiryModal from '../components/InquiryModal';
@@ -28,14 +32,10 @@ const AGENTS: AgentConfig[] = [
   { id: 'chatbot-alert', nameKey: 'team.agentChatbotAlert.name', icon: MessageSquare, iconBg: 'bg-green-50', iconColor: 'text-green-500' },
 ];
 
-const TOSS_PRESET_AMOUNTS = [1000, 3000, 5000, 10000];
+// IAP는 @findthem/capacitor-iap가 직접 StoreKit/Play Billing 호출 — 별도 config 불필요
 
 /** USD cents: $1 / $5 / $10 / $25 */
 const CRYPTO_PRESETS_CENTS = [100, 500, 1000, 2500] as const;
-
-type CryptoMode = 'evm' | 'aptos';
-type EvmTokenSymbol = 'ETH' | 'USDC' | 'USDt' | 'BNB';
-type TokenSymbol = EvmTokenSymbol | 'APT';
 
 /** Token symbol → icon path mapping */
 const TOKEN_ICONS: Record<string, string> = {
@@ -43,7 +43,6 @@ const TOKEN_ICONS: Record<string, string> = {
   USDC: '/icon/usdc.svg',
   USDt: '/icon/usdt.svg',
   BNB: '/icon/bnb.png',
-  APT: '/icon/apt.svg',
   SOL: '/icon/sol.svg',
 };
 
@@ -55,27 +54,13 @@ const EVM_CHAINS: ChainOption[] = [
   { id: 8453, label: 'Base', icon: '/icon/base.svg' },
 ];
 
-const ALL_CHAINS: { value: string; label: string; icon: string }[] = [
+const CHAIN_OPTIONS: { value: string; label: string; icon: string }[] = [
   ...EVM_CHAINS.map((c) => ({ value: `evm-${c.id}`, label: c.label, icon: c.icon })),
-  { value: 'aptos', label: 'Aptos', icon: '/icon/apt.svg' },
 ];
-
-const EVM_TOKENS_BY_CHAIN: Record<number, EvmTokenSymbol[]> = {
-  1: ['USDC', 'USDt', 'ETH'],
-  56: ['USDC', 'USDt', 'BNB'],
-  8453: ['USDC', 'ETH'],
-};
-
-const EVM_TOKEN_CONTRACTS: Record<number, Record<string, `0x${string}` | null>> = {
-  1: { ETH: null, USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', USDt: '0xdac17f958d2ee523a2206206994597c13d831ec7' },
-  56: { BNB: null, USDC: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', USDt: '0x55d398326f99059fF775485246999027B3197955' },
-  8453: { ETH: null, USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
-};
 
 const ERC20_ABI = parseAbi(['function transfer(address to, uint256 amount) returns (bool)']);
 
 const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
-const APTOS_ADDRESS_RE = /^0x[0-9a-fA-F]{1,64}$/;
 
 interface CryptoQuote {
   quoteId: string;
@@ -119,12 +104,172 @@ async function verifyWithRetry(
   }
 }
 
+// ── IAP Sponsor Content (iOS / Android 전용) ──
+
+function IAPSponsorContent({ agentId }: { agentId: string }) {
+  const { t } = useTranslation();
+  const agent = AGENTS.find((a) => a.id === agentId);
+  const [displayName, setDisplayName] = useState('');
+  const [message, setMessage] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<PaymentProduct | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [inquiryOpen, setInquiryOpen] = useState(false);
+  const displayNameRef = useRef(displayName);
+  const messageRef = useRef(message);
+
+  useEffect(() => { displayNameRef.current = displayName; }, [displayName]);
+  useEffect(() => { messageRef.current = message; }, [message]);
+
+  const handleSuccess = useCallback(async (result: PurchaseResult) => {
+    try {
+      await api.post('/sponsors/iap/verify', {
+        agentId,
+        productId: result.productId,
+        transactionId: result.transactionId,
+        platform: result.platform,
+        purchaseToken: result.purchaseToken,
+        displayName: displayNameRef.current || undefined,
+        message: messageRef.current || undefined,
+      });
+      setSuccess(true);
+    } catch (err) {
+      const code = err instanceof Error ? err.message : '';
+      throw new Error(code || 'IAP_VERIFY_FAILED');
+    }
+  }, [agentId]);
+
+  if (!agent) return null;
+
+  const AgentIcon = agent.icon;
+
+  if (success) {
+    return (
+      <main className="max-w-md mx-auto px-4 py-8">
+        <div className="flex flex-col items-center gap-4 py-12 text-center">
+          <CheckCircle className="w-16 h-16 text-green-500" />
+          <h2 className="text-xl font-bold text-gray-900">{t('sponsor.successTitle')}</h2>
+          <p className="text-gray-500">{t('sponsor.successDesc', { name: t(agent.nameKey) })}</p>
+          <Link to="/team" className="mt-4 text-primary-600 hover:underline text-sm">{t('sponsor.backToTeam')}</Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="max-w-md mx-auto px-4 py-6">
+      {/* Agent header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${agent.iconBg}`}>
+          <AgentIcon className={`w-5 h-5 ${agent.iconColor}`} />
+        </div>
+        <h1 className="text-lg font-bold text-gray-900">{t('sponsor.title', { name: t(agent.nameKey) })}</h1>
+      </div>
+
+      <PaymentRouter
+        productIds={[...IAP_PRODUCT_IDS]}
+        onSuccess={handleSuccess}
+        renderIAP={({ products, purchase, loading, purchasing, error }: IAPRenderProps) => (
+          <div className="space-y-6">
+            {/* 제품 목록 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">{t('sponsor.amountLabel')}</label>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                  <span className="ml-2 text-sm text-gray-500">{t('sponsor.iap.fetching')}</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {products.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => setSelectedProduct(product)}
+                      className={`py-3 px-4 rounded-xl text-sm font-semibold border transition-all ${
+                        selectedProduct?.id === product.id
+                          ? 'bg-primary-50/60 text-primary-700 border-primary-400 ring-1 ring-primary-400'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="text-base font-bold">{product.localizedPrice}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{product.title}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 닉네임 / 메시지 */}
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={t('sponsor.nicknamePlaceholder')}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <textarea
+                rows={2}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t('sponsor.messagePlaceholder')}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              />
+            </div>
+
+            {/* 에러 */}
+            {error && (
+              <p className="text-sm text-red-500">
+                {t(`errors.${error}`, { defaultValue: t('sponsor.iap.error') })}
+              </p>
+            )}
+
+            {/* 결제 버튼 */}
+            <button
+              type="button"
+              onClick={() => { if (selectedProduct) void purchase(selectedProduct); }}
+              disabled={purchasing || loading || !selectedProduct}
+              className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {purchasing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <span>{t('sponsor.iap.purchasing')}</span>
+                </>
+              ) : (
+                <span>
+                  {selectedProduct
+                    ? `${selectedProduct.localizedPrice} ${t('sponsor.submit')}`
+                    : t('sponsor.submit')}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+        renderWeb={() => null}
+      />
+
+      {/* Footer links */}
+      <div className="flex items-center justify-between mt-6 text-xs text-gray-400">
+        <button type="button" onClick={() => window.history.back()} className="hover:text-gray-600 transition-colors">
+          &larr; {t('common.back')}
+        </button>
+        <button type="button" onClick={() => setInquiryOpen(true)} className="hover:text-gray-600 transition-colors">
+          {t('inquiry.contactAdmin')}
+        </button>
+      </div>
+
+      <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} onSuccess={() => {}} />
+    </main>
+  );
+}
+
 // ── Chain Select (custom dropdown with icons) ──
 
 function ChainSelect({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const selected = ALL_CHAINS.find((c) => c.value === value) ?? ALL_CHAINS[0];
+  const selected = CHAIN_OPTIONS.find((c) => c.value === value) ?? CHAIN_OPTIONS[0];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -150,7 +295,7 @@ function ChainSelect({ value, onChange, label }: { value: string; onChange: (v: 
         </button>
         {open && (
           <ul role="listbox" className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-            {ALL_CHAINS.map((c) => (
+            {CHAIN_OPTIONS.map((c) => (
               <li key={c.value} role="option" aria-selected={c.value === value}>
                 <button type="button"
                   onClick={() => { onChange(c.value); setOpen(false); }}
@@ -170,6 +315,14 @@ function ChainSelect({ value, onChange, label }: { value: string; onChange: (v: 
 // ── Component ──
 
 export default function SponsorPage() {
+  const { agentId } = useParams<{ agentId: string }>();
+
+  // 네이티브 앱(iOS / Android) → IAP
+  // 웹 / PWA → 기존 Toss 카드 + Web3 지갑
+  if (Capacitor.isNativePlatform()) {
+    return <IAPSponsorContent agentId={agentId ?? ''} />;
+  }
+
   return (
     <Web3Provider>
       <SponsorPageInner />
@@ -193,9 +346,8 @@ function SponsorPageInner() {
   const widgetRef = useRef<PaymentWidgetInstance | null>(null);
 
   // ── Crypto state ──
-  const [cryptoMode, setCryptoMode] = useState<CryptoMode>('evm');
-  const [evmChainId, setEvmChainId] = useState<number>(1);
-  const [evmToken, setEvmToken] = useState<EvmTokenSymbol>('USDC');
+  const [evmChainId, setEvmChainId] = useState<SupportedChainId>(1);
+  const [evmToken, setEvmToken] = useState<string>('USDC');
   const [cryptoUsdCents, setCryptoUsdCents] = useState<number>(500);
   const [displayName, setDisplayName] = useState('');
   const [message, setMessage] = useState('');
@@ -214,7 +366,6 @@ function SponsorPageInner() {
   // Payment status
   const [tossEnabled, setTossEnabled] = useState<boolean | null>(null);
   const [evmEnabled, setEvmEnabled] = useState<boolean | null>(null);
-  const [aptosEnabled, setAptosEnabled] = useState<boolean | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -223,15 +374,6 @@ function SponsorPageInner() {
   const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
-
-  // ── Aptos ──
-  const {
-    account: aptosAccount,
-    connected: aptosConnected,
-    signAndSubmitTransaction,
-    connect: aptosConnect,
-    wallets: aptosWallets,
-  } = useAptosWallet();
 
   // Cleanup toast timer on unmount
   useEffect(() => {
@@ -242,9 +384,9 @@ function SponsorPageInner() {
 
   useEffect(() => {
     if (!agent) return;
-    api.get<{ tossEnabled: boolean; evmEnabled: boolean; aptosEnabled: boolean }>('/sponsors/payment-status')
-      .then((res) => { setTossEnabled(res.tossEnabled); setEvmEnabled(res.evmEnabled); setAptosEnabled(res.aptosEnabled); })
-      .catch(() => { setTossEnabled(false); setEvmEnabled(false); setAptosEnabled(false); });
+    api.get<{ tossEnabled: boolean; evmEnabled: boolean }>('/sponsors/payment-status')
+      .then((res) => { setTossEnabled(res.tossEnabled); setEvmEnabled(res.evmEnabled); })
+      .catch(() => { setTossEnabled(false); setEvmEnabled(false); });
   }, [agent]);
 
   const showToast = useCallback((msg: string) => {
@@ -253,12 +395,9 @@ function SponsorPageInner() {
     toastTimerRef.current = setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Clear error on mode switch
-  useEffect(() => { setCryptoError(null); }, [cryptoMode]);
-
   // Reset token when chain changes
   useEffect(() => {
-    const available = EVM_TOKENS_BY_CHAIN[evmChainId] ?? [];
+    const available = getChainTokenSymbols(evmChainId);
     if (!available.includes(evmToken)) {
       setEvmToken(available[0] ?? 'ETH');
     }
@@ -365,7 +504,7 @@ function SponsorPageInner() {
 
       const amountBigInt = BigInt(quote.amountAtomic);
       const merchantWallet = quote.merchantWallet as `0x${string}`;
-      const tokenContract = EVM_TOKEN_CONTRACTS[evmChainId]?.[tokenSymbol] ?? null;
+      const tokenContract = getTokenContract(evmChainId, tokenSymbol);
 
       // 3. Send TX
       setPayStep('signing');
@@ -407,89 +546,6 @@ function SponsorPageInner() {
     }
   }, [evmConnected, evmAddress, evmChain, evmChainId, evmToken, cryptoUsdCents, agentId, evmEnabled, t, showToast, switchChainAsync, writeContractAsync, sendTransactionAsync]);
 
-  // ── Crypto Pay (Aptos) ──
-  const handleAptosPay = useCallback(async () => {
-    if (isPayingRef.current) return;
-    if (aptosEnabled === false) { showToast(t('sponsor.paymentNotReady')); return; }
-    if (!aptosConnected || !aptosAccount?.address) { setCryptoError(t('sponsor.crypto.connectFirst')); return; }
-
-    isPayingRef.current = true;
-    setCryptoLoading(true);
-    setCryptoError(null);
-    setPayStep('quoting');
-
-    try {
-      // 1. Get quote
-      const quote = await api.post<CryptoQuote>('/sponsors/crypto/quote', {
-        agentId: agentId ?? '',
-        amountUsdCents: cryptoUsdCents,
-        walletAddress: aptosAccount.address.toString(),
-        tokenSymbol: 'APT',
-      });
-
-      // Validate Aptos merchant wallet address
-      if (!APTOS_ADDRESS_RE.test(quote.merchantWallet)) {
-        throw new Error('Invalid merchant wallet address');
-      }
-
-      // Check quote expiration before signing
-      if (new Date(quote.quoteExpiresAt) <= new Date()) {
-        throw new Error('QUOTE_EXPIRED');
-      }
-
-      const amountBigInt = BigInt(quote.amountAtomic);
-
-      // 2. Send TX
-      setPayStep('signing');
-      const response = await signAndSubmitTransaction({
-        data: {
-          function: '0x1::coin::transfer',
-          typeArguments: ['0x1::aptos_coin::AptosCoin'],
-          functionArguments: [quote.merchantWallet, amountBigInt.toString()],
-        },
-      });
-
-      // Extract TX hash — handle both adapter-unwrapped and raw UserResponse formats
-      let txHash: string;
-      if (typeof response === 'object' && response !== null) {
-        if ('hash' in response) {
-          txHash = (response as { hash: string }).hash;
-        } else if ('status' in response && (response as { status: string }).status === 'Rejected') {
-          throw new Error('User rejected the request');
-        } else {
-          throw new Error('Unexpected transaction response format');
-        }
-      } else {
-        throw new Error('Unexpected transaction response format');
-      }
-
-      // 3. Verify on backend
-      setPayStep('verifying');
-      await verifyWithRetry(quote.quoteId, txHash, {
-        displayName: displayNameRef.current,
-        message: messageRef.current,
-      });
-
-      setCryptoSuccess(true);
-    } catch (err) {
-      if (isUserRejection(err)) {
-        setCryptoError(t('sponsor.crypto.rejected'));
-      } else {
-        const msg = err instanceof Error ? err.message : '';
-        setCryptoError(msg === 'QUOTE_EXPIRED' ? t('sponsor.crypto.quoteExpired') : t('sponsor.crypto.payError'));
-      }
-    } finally {
-      isPayingRef.current = false;
-      setCryptoLoading(false);
-      setPayStep('idle');
-    }
-  }, [aptosConnected, aptosAccount, cryptoUsdCents, agentId, aptosEnabled, t, showToast, signAndSubmitTransaction]);
-
-  const handleCryptoPay = cryptoMode === 'aptos' ? handleAptosPay : handleEvmPay;
-
-  const isWalletConnected = cryptoMode === 'aptos' ? aptosConnected : evmConnected;
-
-  const selectedTokenSymbol: TokenSymbol = cryptoMode === 'aptos' ? 'APT' : evmToken;
   const quoteDisplayAmount = `$${(cryptoUsdCents / 100).toFixed(0)}`;
 
   // Step labels for progress
@@ -508,13 +564,7 @@ function SponsorPageInner() {
   }
 
   const Icon = agent.icon;
-  const availableEvmTokens = EVM_TOKENS_BY_CHAIN[evmChainId] ?? [];
-
-  // Aptos Connect wallet detection (social login: Google, Apple, Petra Web generic)
-  const aptosConnectWallet =
-    aptosWallets?.find((w) => w.name === 'Continue with Google') ??
-    aptosWallets?.find((w) => w.name === 'Continue with Apple') ??
-    aptosWallets?.find((w) => w.name === 'Petra Web');
+  const availableEvmTokens = getChainTokenSymbols(evmChainId);
 
   return (
     <main className="max-w-lg mx-auto px-4 py-10">
@@ -584,7 +634,7 @@ function SponsorPageInner() {
         </div>
       )}
 
-      {/* ── Crypto ── */}
+      {/* ── Crypto (EVM) ── */}
       {tab === 'crypto' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           {cryptoSuccess ? (
@@ -599,70 +649,37 @@ function SponsorPageInner() {
               {/* Chain select + Wallet connect (single row) */}
               <div className="flex items-end gap-2">
                 <ChainSelect
-                  value={cryptoMode === 'aptos' ? 'aptos' : `evm-${evmChainId}`}
-                  onChange={(v) => {
-                    if (v === 'aptos') {
-                      setCryptoMode('aptos');
-                    } else {
-                      setCryptoMode('evm');
-                      setEvmChainId(Number(v.replace('evm-', '')));
-                    }
-                  }}
+                  value={`evm-${evmChainId}`}
+                  onChange={(v) => setEvmChainId(Number(v.replace('evm-', '')) as SupportedChainId)}
                   label={t('sponsor.crypto.chainLabel')}
                 />
                 <div className="shrink-0">
-                  {cryptoMode === 'evm' ? (
-                    <ConnectButton.Custom>
-                      {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
-                        if (!mounted) return null;
-                        if (rkAccount) {
-                          return (
-                            <button type="button" onClick={openAccountModal}
-                              className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
-                              <div className="w-2 h-2 rounded-full bg-green-400" />
-                              <span className="font-mono text-gray-700 truncate max-w-[140px]">{rkAccount.displayName}</span>
-                            </button>
-                          );
-                        }
+                  <ConnectButton.Custom>
+                    {({ openConnectModal, openAccountModal, account: rkAccount, mounted }) => {
+                      if (!mounted) return null;
+                      if (rkAccount) {
                         return (
-                          <button type="button" onClick={openConnectModal}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium whitespace-nowrap">
-                            <Wallet className="w-4 h-4" aria-hidden="true" />
-                            {t('sponsor.crypto.connectWallet')}
+                          <button type="button" onClick={openAccountModal}
+                            className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-sm">
+                            <div className="w-2 h-2 rounded-full bg-green-400" />
+                            <span className="font-mono text-gray-700 truncate max-w-[140px]">{rkAccount.displayName}</span>
                           </button>
                         );
-                      }}
-                    </ConnectButton.Custom>
-                  ) : aptosConnected ? (
-                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
-                      <span className="font-mono text-gray-700 truncate max-w-[140px]">
-                        {aptosAccount?.address?.toString().slice(0, 8)}...{aptosAccount?.address?.toString().slice(-6)}
-                      </span>
-                    </div>
-                  ) : aptosConnectWallet ? (
-                    <button type="button"
-                      onClick={() => aptosConnect(aptosConnectWallet.name)}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium whitespace-nowrap">
-                      <Wallet className="w-4 h-4" aria-hidden="true" />
-                      {t('sponsor.crypto.connectWallet')}
-                    </button>
-                  ) : (
-                    <a
-                      href="https://aptosconnect.app"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm font-medium whitespace-nowrap"
-                    >
-                      <Wallet className="w-4 h-4" aria-hidden="true" />
-                      {t('sponsor.crypto.connectWallet')}
-                    </a>
-                  )}
+                      }
+                      return (
+                        <button type="button" onClick={openConnectModal}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm font-medium whitespace-nowrap">
+                          <Wallet className="w-4 h-4" aria-hidden="true" />
+                          {t('sponsor.crypto.connectWallet')}
+                        </button>
+                      );
+                    }}
+                  </ConnectButton.Custom>
                 </div>
               </div>
 
-              {/* Token select (EVM only — Aptos is APT-only so hidden) */}
-              {cryptoMode === 'evm' && availableEvmTokens.length > 1 && (
+              {/* Token select */}
+              {availableEvmTokens.length > 1 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('sponsor.crypto.tokenLabel')}</label>
                   <div className="flex flex-wrap gap-2">
@@ -706,18 +723,18 @@ function SponsorPageInner() {
 
               {/* Pay button */}
               <button type="button"
-                onClick={() => { void handleCryptoPay(); }}
-                disabled={cryptoLoading || !isWalletConnected}
+                onClick={() => { void handleEvmPay(); }}
+                disabled={cryptoLoading || !evmConnected}
                 className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
                 {cryptoLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     <span>{stepLabel || t('sponsor.processing')}</span>
                   </>
-                ) : isWalletConnected ? (
+                ) : evmConnected ? (
                   <>
-                    <img src={TOKEN_ICONS[selectedTokenSymbol]} alt="" className="w-5 h-5 rounded-full" />
-                    <span>{t('sponsor.crypto.payBtn', { amount: quoteDisplayAmount, token: selectedTokenSymbol })}</span>
+                    <img src={TOKEN_ICONS[evmToken]} alt="" className="w-5 h-5 rounded-full" />
+                    <span>{t('sponsor.crypto.payBtn', { amount: quoteDisplayAmount, token: evmToken })}</span>
                   </>
                 ) : (
                   <span>{t('sponsor.crypto.connectFirst')}</span>

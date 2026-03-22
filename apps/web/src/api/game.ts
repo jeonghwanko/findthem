@@ -20,3 +20,14 @@ export async function recordGamePlay(
 ): Promise<{ ok: boolean; xpEarned: number }> {
   return api.post('/game/play', { character, score, usedAd });
 }
+
+interface AdRewardResult {
+  xpGained: number;
+  newXp: number;
+  newLevel: number;
+  leveledUp: boolean;
+}
+
+export async function claimAdReward(): Promise<AdRewardResult> {
+  return api.post<AdRewardResult>('/users/me/ad-reward');
+}

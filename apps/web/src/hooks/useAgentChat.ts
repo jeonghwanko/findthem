@@ -3,7 +3,7 @@ import { createAgentSession, sendAgentMessage, uploadAgentPhoto } from '../api/a
 import type { AgentResponse } from '@findthem/shared';
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'USER' | 'ASSISTANT';
   content: string;
   photoUrl?: string;
   photoAnalysis?: AgentResponse['photoAnalysis'];
@@ -22,7 +22,7 @@ export function useAgentChat(reportId?: string) {
   const addUserMessage = (content: string, photoUrl?: string) => {
     setMessages((prev) => [
       ...prev,
-      { role: 'user', content, photoUrl, createdAt: new Date().toISOString() },
+      { role: 'USER' as const, content, photoUrl, createdAt: new Date().toISOString() },
     ]);
   };
 
@@ -30,7 +30,7 @@ export function useAgentChat(reportId?: string) {
     setMessages((prev) => [
       ...prev,
       {
-        role: 'assistant',
+        role: 'ASSISTANT' as const,
         content: res.text,
         photoAnalysis: res.photoAnalysis,
         similarReports: res.similarReports,

@@ -12,12 +12,21 @@ export interface InitNativePluginsOptions {
 export async function initNativePlugins(opts?: InitNativePluginsOptions): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
-  const [{ StatusBar }] = await Promise.all([
-    import('@capacitor/status-bar'),
-  ]);
+  try {
+    const { StatusBar } = await import('@capacitor/status-bar');
+    await StatusBar.setOverlaysWebView({ overlay: true });
+  } catch {
+    // 무시
+  }
 
-  await StatusBar.setOverlaysWebView({ overlay: true });
-  // SplashScreen.hide()는 notifyOtaReady()에서 렌더 완료 후 호출
+  // React 오버레이(NativeSplashOverlay)가 이미 마운트된 시점이므로 즉시 숨김
+  // — bootstrap() 완료까지 기다리면 오버레이 타이머(1800ms)가 먼저 만료됨
+  try {
+    const { SplashScreen } = await import('@capacitor/splash-screen');
+    await SplashScreen.hide({ fadeOutDuration: 300 });
+  } catch {
+    // 무시
+  }
 
   try {
     const { AdMob } = await import('@capacitor-community/admob');
@@ -31,13 +40,7 @@ export async function initNativePlugins(opts?: InitNativePluginsOptions): Promis
 export async function notifyOtaReady(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
-  // 첫 프레임 페인트 후 스플래시 숨김 (흰 화면 깜빡임 방지)
-  try {
-    const { SplashScreen } = await import('@capacitor/splash-screen');
-    await SplashScreen.hide({ fadeOutDuration: 300 });
-  } catch {
-    // 무시
-  }
+  // SplashScreen.hide()는 initNativePlugins()에서 먼저 호출됨
 
   try {
     const { CapacitorUpdater } = await import('@capgo/capacitor-updater');

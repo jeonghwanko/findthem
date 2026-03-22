@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => ({
       : []),
   ],
   resolve: {
-    dedupe: ['@aptos-labs/ts-sdk', '@telegram-apps/bridge'],
+    dedupe: [],
   },
   optimizeDeps: {
     include: [
@@ -92,7 +92,6 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           'pixi-spine': ['pixi.js', '@esotericsoftware/spine-pixi-v8'],
           'web3': ['wagmi', 'viem', '@rainbow-me/rainbowkit', '@tanstack/react-query'],
-          'aptos': ['@aptos-labs/wallet-adapter-react', '@aptos-labs/ts-sdk'],
         },
       },
     },

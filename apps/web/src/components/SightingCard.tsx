@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
 import type { Sighting } from '../api/client';
-import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@findthem/shared';
+import { formatTimeAgo } from '@findthem/shared';
 import { assetSrc } from '../utils/webOrigin';
 
 interface SightingCardProps {
@@ -11,12 +10,10 @@ interface SightingCardProps {
 }
 
 export default function SightingCard({ sighting }: SightingCardProps) {
-  const { t, i18n } = useTranslation();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const photo = sighting.photos?.[0];
-  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l}-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
-  const timeAgo = formatTimeAgo(sighting.createdAt, locale);
+  const timeAgo = formatTimeAgo(sighting.createdAt, 'ko');
   const linkTo = `/sightings/${sighting.id}`;
 
   return (
@@ -32,7 +29,8 @@ export default function SightingCard({ sighting }: SightingCardProps) {
             <img
               src={assetSrc(photo.thumbnailUrl || photo.photoUrl)}
               alt=""
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0 scale-[1.02]'}`}
+              loading="lazy"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
             />
@@ -46,14 +44,14 @@ export default function SightingCard({ sighting }: SightingCardProps) {
         {/* 제보 배지 */}
         <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          {t('browse.labelSighting')}
+          제보
         </span>
       </div>
 
       {/* 텍스트 */}
       <div className="p-3.5">
         <h3 className="font-semibold text-gray-900 truncate text-sm">
-          {sighting.description || t('myReports.sightingNoDesc')}
+          {sighting.description || '(설명 없음)'}
         </h3>
         <p className="text-xs text-gray-400 mt-1 truncate flex items-center gap-1">
           <MapPin className="w-3 h-3 shrink-0" />

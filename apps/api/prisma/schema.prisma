@@ -7,12 +7,227 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ── User ──
+// ════════════════════════════════════════════════════════════════
+// Enums
+// ════════════════════════════════════════════════════════════════
+
+enum AuthProvider {
+  LOCAL
+  KAKAO
+  NAVER
+  TELEGRAM
+  APPLE
+
+  @@map("auth_provider")
+}
+
+enum SubjectType {
+  PERSON
+  DOG
+  CAT
+
+  @@map("subject_type")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+
+  @@map("gender")
+}
+
+enum ReportStatus {
+  ACTIVE
+  FOUND
+  EXPIRED
+  SUSPENDED
+
+  @@map("report_status")
+}
+
+enum SightingSource {
+  WEB
+  KAKAO_CHATBOT
+  ADMIN
+
+  @@map("sighting_source")
+}
+
+enum SightingStatus {
+  PENDING
+  ANALYZED
+  CONFIRMED
+  REJECTED
+
+  @@map("sighting_status")
+}
+
+enum MatchStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  NOTIFIED
+
+  @@map("match_status")
+}
+
+enum PromoPlatform {
+  KAKAO_CHANNEL
+  TWITTER
+  INSTAGRAM
+
+  @@map("promo_platform")
+}
+
+enum PromoStatus {
+  PENDING
+  POSTED
+  FAILED
+  DELETED
+
+  @@map("promo_status")
+}
+
+enum PromoUrgency {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("promo_urgency")
+}
+
+enum ChatPlatform {
+  WEB
+  KAKAO
+
+  @@map("chat_platform")
+}
+
+enum ChatStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+
+  @@map("chat_status")
+}
+
+enum AdminActionSource {
+  DASHBOARD
+  AGENT
+  API
+
+  @@map("admin_action_source")
+}
+
+enum InquiryCategory {
+  PAYMENT
+  REPORT
+  GENERAL
+  PARTNERSHIP
+
+  @@map("inquiry_category")
+}
+
+enum InquiryStatus {
+  OPEN
+  REPLIED
+  CLOSED
+
+  @@map("inquiry_status")
+}
+
+// ── P0: String → enum 전환 ──
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+
+  @@map("chat_role")
+}
+
+enum RewardType {
+  BADGE
+  TITLE
+  EFFECT
+
+  @@map("reward_type")
+}
+
+enum XpAction {
+  AD_WATCH
+  SIGHTING
+  COMMUNITY_POST
+  COMMUNITY_COMMENT
+  SHARE
+  REFERRAL
+  SPONSOR
+  GAME
+
+  @@map("xp_action")
+}
+
+enum SponsorCurrency {
+  KRW
+  USD_CENTS
+
+  @@map("sponsor_currency")
+}
+
+enum OutreachContactType {
+  JOURNALIST
+  YOUTUBER
+  VIDEO
+
+  @@map("outreach_contact_type")
+}
+
+enum OutreachSource {
+  GOOGLE_SEARCH
+  MANUAL
+  YOUTUBE_API
+  VIDEO_SEARCH
+
+  @@map("outreach_source")
+}
+
+enum OutreachRequestStatus {
+  PENDING_APPROVAL
+  APPROVED
+  SENDING
+  SENT
+  FAILED
+  REJECTED
+
+  @@map("outreach_request_status")
+}
+
+enum OutreachChannel {
+  EMAIL
+  YOUTUBE_COMMENT
+
+  @@map("outreach_channel")
+}
+
+enum NotificationType {
+  MATCH_FOUND
+  SIGHTING_RECEIVED
+  REPORT_ANALYZED
+  LEVEL_UP
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+// ════════════════════════════════════════════════════════════════
+// User & Auth
+// ════════════════════════════════════════════════════════════════
 
 model User {
   id           String       @id @default(cuid())
   name         String
-  phone        String       @unique
+  phone        String?      @unique // P0: nullable (소셜 로그인 시 null, fake phone 제거)
   email        String?
   passwordHash String?
   provider     AuthProvider @default(LOCAL)
@@ -26,11 +241,11 @@ model User {
   blockedAt   DateTime?
   blockReason String?
 
-  // 후원 XP & 레벨
-  sponsorXp        Int       @default(0)
-  userLevel        Int       @default(1)
-  sponsorXpLastAt  DateTime?
-  referralCode     String?   @unique
+  // XP & 레벨 (P2: sponsorXp → xp, userLevel → level, sponsorXpLastAt → xpLastAt)
+  xp           Int       @default(0)
+  level        Int       @default(1)
+  xpLastAt     DateTime? // 광고 쿨다운 체크용
+  referralCode String?   @unique
 
   // 레퍼럴
   referredByUserId String?
@@ -51,42 +266,34 @@ model User {
   gamePlays          GamePlay[]
   inquiries          Inquiry[]
   xpLogs             XpLog[]
-  referredBy         User?    @relation("Referrals", fields: [referredByUserId], references: [id])
-  referrals          User[]   @relation("Referrals")
+  notifications      Notification[] // P1: new
+  referredBy         User?          @relation("Referrals", fields: [referredByUserId], references: [id], onDelete: SetNull) // P1: onDelete
+  referrals          User[]         @relation("Referrals")
 
   @@unique([provider, providerId], name: "provider_providerId")
   @@index([referredByUserId])
   @@map("user")
 }
 
-enum AuthProvider {
-  LOCAL
-  KAKAO
-  NAVER
-  TELEGRAM
-  APPLE
-
-  @@map("auth_provider")
-}
-
 // ── User Reward (레벨업 선물) ──
 
 model UserReward {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   userId      String
   level       Int
-  rewardType  String   // 'BADGE' | 'TITLE' | 'EFFECT'
+  rewardType  RewardType // P0: String → enum
   rewardValue String?
-  claimedAt   DateTime @default(now())
+  claimedAt   DateTime   @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, level])
-  @@index([userId])
   @@map("user_reward")
 }
 
-// ── Report (실종 신고) ──
+// ════════════════════════════════════════════════════════════════
+// Report (실종 신고)
+// ════════════════════════════════════════════════════════════════
 
 model Report {
   id          String       @id @default(cuid())
@@ -110,6 +317,7 @@ model Report {
   lastSeenAddress String
   lastSeenLat     Float?
   lastSeenLng     Float?
+  location        Unsupported("geography(Point,4326)")? // PostGIS — trigger가 lat/lng에서 자동 생성
 
   // 연락처
   contactPhone String
@@ -127,8 +335,8 @@ model Report {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user              User?              @relation(fields: [userId], references: [id])
-  photos            ReportPhoto[]
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull) // P1: onDelete
+  photos            Photo[] // P1: unified Photo (ReportPhoto + SightingPhoto → Photo)
   sightings         Sighting[]
   matches           Match[]
   promotions        Promotion[]
@@ -141,54 +349,38 @@ model Report {
   @@index([status])
   @@index([subjectType, status])
   @@index([externalSource])
-  @@index([lastSeenLat, lastSeenLng])
+  // GiST index on location is created in optimize.sql (replaces B-tree lat/lng index)
   @@index([userId])
+  @@index([createdAt])
   @@map("report")
 }
 
-enum SubjectType {
-  PERSON
-  DOG
-  CAT
+// ════════════════════════════════════════════════════════════════
+// Photo (P1: ReportPhoto + SightingPhoto → 단일 Photo 모델)
+// ════════════════════════════════════════════════════════════════
 
-  @@map("subject_type")
-}
-
-enum ReportStatus {
-  ACTIVE
-  FOUND
-  EXPIRED
-  SUSPENDED
-
-  @@map("report_status")
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  UNKNOWN
-
-  @@map("gender")
-}
-
-// ── Report Photo ──
-
-model ReportPhoto {
+model Photo {
   id           String   @id @default(cuid())
-  reportId     String
+  reportId     String?
+  sightingId   String?
   photoUrl     String
   thumbnailUrl String?
   isPrimary    Boolean  @default(false)
   aiAnalysis   Json?
   createdAt    DateTime @default(now())
 
-  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  // exactly one of reportId/sightingId must be non-null (app-level constraint)
+  report   Report?   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  sighting Sighting? @relation(fields: [sightingId], references: [id], onDelete: Cascade)
 
-  @@index([reportId])
-  @@map("report_photo")
+  @@index([reportId, isPrimary])
+  @@index([sightingId])
+  @@map("photo")
 }
 
-// ── Sighting (목격 제보) ──
+// ════════════════════════════════════════════════════════════════
+// Sighting (목격 제보)
+// ════════════════════════════════════════════════════════════════
 
 model Sighting {
   id          String         @id @default(cuid())
@@ -202,59 +394,33 @@ model Sighting {
   address      String
   lat          Float?
   lng          Float?
+  location     Unsupported("geography(Point,4326)")? // PostGIS — trigger가 lat/lng에서 자동 생성
   tipsterPhone String?
   tipsterName  String?
-  editPassword String?   // bcrypt — 비회원 제보 수정/삭제용
+  editPassword String? // bcrypt — 비회원 제보 수정/삭제용
 
   aiAnalysis Json?
   status     SightingStatus @default(PENDING)
   createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt // P2: added
 
-  report  Report?         @relation(fields: [reportId], references: [id])
-  user    User?           @relation(fields: [userId], references: [id])
-  photos  SightingPhoto[]
+  report  Report?  @relation(fields: [reportId], references: [id], onDelete: SetNull) // P1: onDelete
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)   // P1: onDelete
+  photos  Photo[] // P1: unified Photo
   matches Match[]
 
   @@index([reportId])
   @@index([status])
   @@index([status, createdAt])
-  @@index([lat, lng])
+  // GiST index on location is created in optimize.sql (replaces B-tree lat/lng index)
   @@index([userId])
+  @@index([createdAt])
   @@map("sighting")
 }
 
-enum SightingSource {
-  WEB
-  KAKAO_CHATBOT
-  ADMIN
-
-  @@map("sighting_source")
-}
-
-enum SightingStatus {
-  PENDING
-  ANALYZED
-  CONFIRMED
-  REJECTED
-
-  @@map("sighting_status")
-}
-
-model SightingPhoto {
-  id           String   @id @default(cuid())
-  sightingId   String
-  photoUrl     String
-  thumbnailUrl String?
-  aiAnalysis   Json?
-  createdAt    DateTime @default(now())
-
-  sighting Sighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
-
-  @@index([sightingId])
-  @@map("sighting_photo")
-}
-
-// ── Match (AI 매칭 결과) ──
+// ════════════════════════════════════════════════════════════════
+// Match (AI 매칭 결과)
+// ════════════════════════════════════════════════════════════════
 
 model Match {
   id          String      @id @default(cuid())
@@ -263,7 +429,7 @@ model Match {
   confidence  Float
   aiReasoning String
   status      MatchStatus @default(PENDING)
-  reviewedBy  String?
+  reviewedBy  String? // admin identifier (not a User FK — admin uses API key, not user account)
   reviewedAt  DateTime?
   createdAt   DateTime    @default(now())
 
@@ -277,16 +443,9 @@ model Match {
   @@map("match")
 }
 
-enum MatchStatus {
-  PENDING
-  CONFIRMED
-  REJECTED
-  NOTIFIED
-
-  @@map("match_status")
-}
-
-// ── Promotion (SNS 게시 기록) ──
+// ════════════════════════════════════════════════════════════════
+// Promotion (SNS 게시 기록)
+// ════════════════════════════════════════════════════════════════
 
 model Promotion {
   id           String        @id @default(cuid())
@@ -300,93 +459,19 @@ model Promotion {
   errorMessage String?
   postedAt     DateTime?
 
-  // 재게시 지원
-  version   Int       @default(1)
-  parentId  String?
+  version   Int       @default(1) // repost count (이력은 PromotionLog에서 추적)
+  // P2: parentId/RepostChain 제거 — @@unique([reportId, platform]) 때문에 chain 불가, PromotionLog가 이력 담당
   metrics   Json?
   metricsAt DateTime?
 
   createdAt DateTime @default(now())
 
-  report  Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  parent  Promotion?  @relation("RepostChain", fields: [parentId], references: [id])
-  reposts Promotion[] @relation("RepostChain")
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, platform])
   @@index([status])
   @@index([reportId, status, postedAt])
   @@map("promotion")
-}
-
-enum PromoPlatform {
-  KAKAO_CHANNEL
-  TWITTER
-  INSTAGRAM
-
-  @@map("promo_platform")
-}
-
-enum PromoStatus {
-  PENDING
-  POSTED
-  FAILED
-  DELETED
-
-  @@map("promo_status")
-}
-
-// ── Chat Session ──
-
-model ChatSession {
-  id             String       @id @default(cuid())
-  userId         String?
-  reportId       String?
-  platform       ChatPlatform
-  platformUserId String?
-  state          Json
-  context        Json
-  status         ChatStatus   @default(ACTIVE)
-  locale         String       @default("ko")
-  engineVersion  String       @default("v1")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  user     User?         @relation(fields: [userId], references: [id])
-  report   Report?       @relation(fields: [reportId], references: [id])
-  messages ChatMessage[]
-
-  @@index([platformUserId, platform])
-  @@index([platformUserId, platform, status])
-  @@map("chat_session")
-}
-
-enum ChatPlatform {
-  WEB
-  KAKAO
-
-  @@map("chat_platform")
-}
-
-enum ChatStatus {
-  ACTIVE
-  COMPLETED
-  ABANDONED
-
-  @@map("chat_status")
-}
-
-model ChatMessage {
-  id        String   @id @default(cuid())
-  sessionId String
-  role      String
-  content   String
-  metadata  Json?
-  createdAt DateTime @default(now())
-
-  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId, createdAt])
-  @@map("chat_message")
 }
 
 // ── Promotion Strategy (홍보 전략) ──
@@ -409,18 +494,10 @@ model PromotionStrategy {
   @@map("promotion_strategy")
 }
 
-enum PromoUrgency {
-  HIGH
-  MEDIUM
-  LOW
-
-  @@map("promo_urgency")
-}
-
-// ── Promotion Log (홍보 행동 로그) ──
+// ── Promotion Log (홍보 행동 로그, action은 String 유지 — 값 집합 확장 가능) ──
 
 model PromotionLog {
-  id        String   @id @default(cuid())
+  id        String   @id @default(dbgenerated("uuid_generate_v7()"))
   reportId  String
   action    String
   detail    Json?
@@ -433,7 +510,369 @@ model PromotionLog {
   @@map("promotion_log")
 }
 
-// ── Push Subscription (웹 푸시 구독) ──
+// ════════════════════════════════════════════════════════════════
+// Chat Session
+// ════════════════════════════════════════════════════════════════
+
+model ChatSession {
+  id             String       @id @default(cuid())
+  userId         String?
+  reportId       String?
+  platform       ChatPlatform
+  platformUserId String?
+  state          Json
+  context        Json
+  status         ChatStatus   @default(ACTIVE)
+  locale         String       @default("ko")
+  engineVersion  String       @default("v1")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)   // P1: onDelete
+  report   Report?       @relation(fields: [reportId], references: [id], onDelete: SetNull) // P1: onDelete
+  messages ChatMessage[]
+
+  @@index([platformUserId, platform])
+  @@index([platformUserId, platform, status])
+  @@map("chat_session")
+}
+
+model ChatMessage {
+  id        String   @id @default(dbgenerated("uuid_generate_v7()"))
+  sessionId String
+  role      ChatRole // P0: String → enum
+  content   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("chat_message")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Community (커뮤니티 게시판)
+// ════════════════════════════════════════════════════════════════
+
+model ExternalAgent {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  avatarUrl   String?
+  apiKey      String    @unique
+  webhookUrl  String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+
+  posts    CommunityPost[]
+  comments CommunityComment[]
+
+  @@map("external_agent")
+}
+
+model CommunityPost {
+  id               String   @id @default(cuid())
+  userId           String?
+  agentId          String? // internal: 'image-matching' | 'promotion' | 'chatbot-alert'
+  externalAgentId  String?
+  title            String
+  content          String
+  isPinned         Boolean  @default(false)
+  viewCount        Int      @default(0)
+  sourceUrl        String?
+  deduplicationKey String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // exactly one of userId/agentId/externalAgentId must be non-null (app-level constraint)
+  user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull)       // P1: onDelete
+  externalAgent ExternalAgent?     @relation(fields: [externalAgentId], references: [id], onDelete: SetNull) // P1: onDelete
+  comments      CommunityComment[]
+
+  @@unique([agentId, deduplicationKey])
+  @@index([isPinned, createdAt])
+  @@index([userId])
+  @@index([agentId])
+  @@index([externalAgentId])
+  @@index([sourceUrl])
+  @@map("community_post")
+}
+
+model CommunityComment {
+  id              String   @id @default(cuid())
+  postId          String
+  userId          String?
+  agentId         String?
+  externalAgentId String?
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  post          CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)       // P1: onDelete
+  externalAgent ExternalAgent? @relation(fields: [externalAgentId], references: [id], onDelete: SetNull) // P1: onDelete
+
+  @@index([postId, createdAt])
+  @@index([userId])
+  @@index([externalAgentId])
+  @@map("community_comment")
+}
+
+// ════════════════════════════════════════════════════════════════
+// AI Settings (멀티 프로바이더 설정)
+// ════════════════════════════════════════════════════════════════
+
+model AiSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_setting")
+}
+
+// ── AI Usage Log (토큰/레이턴시 추적, String 유지 — 프로바이더/모델 값 자주 변경) ──
+
+model AiUsageLog {
+  id           String   @id @default(dbgenerated("uuid_generate_v7()"))
+  agentId      String
+  provider     String
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  latencyMs    Int
+  success      Boolean  @default(true)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([agentId, createdAt])
+  @@index([provider, createdAt])
+  @@map("ai_usage_log")
+}
+
+// ── Agent Decision Log (RL 데이터, String 유지 — 이벤트/액션 타입 확장 가능) ──
+
+model AgentDecisionLog {
+  id              String   @id @default(dbgenerated("uuid_generate_v7()"))
+  agentId         String
+  eventType       String
+  selectedAction  String
+  stayedSilent    Boolean  @default(false)
+  confidence      Float?
+  reportId        String?
+  postId          String?
+  candidateScores Json
+  createdAt       DateTime @default(now())
+
+  @@index([agentId, createdAt])
+  @@map("agent_decision_log")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Outreach (홍보왕 헤르미)
+// ════════════════════════════════════════════════════════════════
+
+model OutreachContact {
+  id                String              @id @default(cuid())
+  type              OutreachContactType // P0: String → enum
+  name              String
+  email             String?
+  youtubeChannelId  String?
+  youtubeChannelUrl String?
+  thumbnailUrl      String?
+  videoId           String?
+  videoTitle        String?
+  organization      String?
+  topics            String[]
+  subscriberCount   Int?
+  viewCount         Int?
+  isActive          Boolean             @default(true)
+  lastContactedAt   DateTime?
+  source            OutreachSource? // P0: String → enum (nullable for legacy)
+  createdAt         DateTime            @default(now())
+
+  outreachRequests OutreachRequest[]
+
+  @@unique([email])
+  @@unique([youtubeChannelId])
+  @@unique([videoId])
+  @@index([type, isActive])
+  @@map("outreach_contact")
+}
+
+model OutreachRequest {
+  id           String                @id @default(cuid())
+  reportId     String
+  contactId    String
+  channel      OutreachChannel       // P0: String → enum
+  status       OutreachRequestStatus @default(PENDING_APPROVAL) // P0: String → enum
+  draftSubject String?
+  draftContent String
+  approvedAt   DateTime?
+  sentAt       DateTime?
+  externalId   String?
+  errorMessage String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  report  Report          @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  contact OutreachContact @relation(fields: [contactId], references: [id], onDelete: Cascade) // P1: onDelete
+
+  @@unique([reportId, contactId, channel])
+  @@index([status])
+  @@index([reportId, status])
+  @@index([channel, sentAt])
+  @@map("outreach_request")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Sponsor (AI 팀원 후원)
+// ════════════════════════════════════════════════════════════════
+
+model Sponsor {
+  id            String          @id @default(cuid())
+  agentId       String // 'image-matching' | 'promotion' | 'chatbot-alert'
+  amount        Int // Toss: KRW 단위, Crypto: USD cents
+  currency      SponsorCurrency @default(KRW) // P0: String → enum
+
+  // Toss 결제
+  orderId    String? @unique // P1: nullable (크립토 결제는 orderId 없음)
+  paymentKey String?
+
+  // 크립토 결제
+  txHash        String? @unique
+  chainId       Int?
+  tokenSymbol   String?
+  walletAddress String?
+  quoteId       String? @unique // P1: SponsorCryptoQuote FK 추가
+
+  // 표시
+  displayName String?
+  message     String?
+  createdAt   DateTime @default(now())
+
+  quote SponsorCryptoQuote? @relation(fields: [quoteId], references: [id]) // P1: 견적 → 결제 추적
+
+  @@index([agentId, createdAt])
+  @@map("sponsor")
+}
+
+// ── 크립토 결제 견적 (5분 TTL) ──
+
+model SponsorCryptoQuote {
+  id             String    @id @default(cuid())
+  agentId        String
+  amountUsdCents Int
+  walletAddress  String
+  tokenSymbol    String
+  chainId        Int? // null = Solana or Aptos
+  amountAtomic   String // BigInt as string
+  merchantWallet String
+  expiresAt      DateTime
+  verifiedAt     DateTime? // 견적 사용 여부 체크 (선점 처리)
+  createdAt      DateTime  @default(now())
+
+  sponsor Sponsor? // P1: back relation
+
+  @@index([agentId])
+  @@index([expiresAt]) // P2: for cleanup jobs
+  @@map("sponsor_crypto_quote")
+}
+
+// ════════════════════════════════════════════════════════════════
+// XP & Game
+// ════════════════════════════════════════════════════════════════
+
+model XpLog {
+  id        String   @id @default(dbgenerated("uuid_generate_v7()"))
+  userId    String
+  action    XpAction // P0: String → enum
+  xpAmount  Int
+  sourceId  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, action, createdAt])
+  @@index([userId, createdAt])
+  @@map("xp_log")
+}
+
+model GamePlay {
+  id        String   @id @default(dbgenerated("uuid_generate_v7()"))
+  userId    String?
+  character String // agentId: 'image-matching' | 'promotion' | 'chatbot-alert'
+  score     Int
+  usedAd    Boolean  @default(false)
+  playedAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull) // P1: onDelete
+
+  @@index([userId, playedAt])
+  @@index([userId, usedAd, playedAt])
+  @@map("game_play")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Notification (P1: 신규 모델 — 알림 이력)
+// ════════════════════════════════════════════════════════════════
+
+model Notification {
+  id        String           @id @default(dbgenerated("uuid_generate_v7()"))
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json? // { matchId, reportId, sightingId, deepLink, etc. }
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
+  @@map("notification")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Admin
+// ════════════════════════════════════════════════════════════════
+
+// ── Admin Audit Log (action/targetType는 String 유지 — 값 집합 확장 가능) ──
+
+model AdminAuditLog {
+  id             String            @id @default(dbgenerated("uuid_generate_v7()"))
+  action         String
+  targetType     String
+  targetId       String
+  detail         Json?
+  source         AdminActionSource
+  agentSessionId String?
+  createdAt      DateTime          @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@index([source, createdAt])
+  @@map("admin_audit_log")
+}
+
+model AdminAgentSession {
+  id        String   @id @default(cuid())
+  messages  Json
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_agent_session")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Push & Inquiry
+// ════════════════════════════════════════════════════════════════
 
 model PushSubscription {
   id        String   @id @default(cuid())
@@ -450,291 +889,6 @@ model PushSubscription {
   @@map("push_subscription")
 }
 
-// ── Admin Audit Log (관리자 감사 로그) ──
-
-model AdminAuditLog {
-  id             String            @id @default(cuid())
-  action         String
-  targetType     String
-  targetId       String
-  detail         Json?
-  source         AdminActionSource
-  agentSessionId String?
-  createdAt      DateTime          @default(now())
-
-  @@index([targetType, targetId])
-  @@index([createdAt])
-  @@index([source, createdAt])
-  @@map("admin_audit_log")
-}
-
-enum AdminActionSource {
-  DASHBOARD
-  AGENT
-  API
-
-  @@map("admin_action_source")
-}
-
-// ── Admin Agent Session (운영 에이전트 세션) ──
-
-model AdminAgentSession {
-  id        String   @id @default(cuid())
-  messages  Json
-  summary   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("admin_agent_session")
-}
-
-// ── Sponsor (AI 팀원 후원) ──
-
-model Sponsor {
-  id            String   @id @default(cuid())
-  agentId       String // 'image-matching' | 'promotion' | 'chatbot-alert'
-  // Toss: KRW 단위, Crypto: USD cents
-  amount        Int
-  currency      String   @default("KRW") // "KRW" | "USD_CENTS"
-  // Toss 결제
-  orderId       String   @unique
-  paymentKey    String?
-  // 크립토 결제
-  txHash        String?  @unique
-  chainId       Int?
-  tokenSymbol   String?
-  walletAddress String?
-  displayName   String?
-  message       String?
-  createdAt     DateTime @default(now())
-
-  @@index([agentId])
-  @@map("sponsor")
-}
-
-// ── Outreach (홍보왕 헤르미) ──
-
-model OutreachContact {
-  id                String    @id @default(cuid())
-  type              String // 'JOURNALIST' | 'YOUTUBER' | 'VIDEO'
-  name              String
-  email             String?
-  youtubeChannelId  String?
-  youtubeChannelUrl String?
-  thumbnailUrl      String?   // 채널/영상 썸네일 URL
-  videoId           String?   // VIDEO 타입: 유튜브 영상 ID
-  videoTitle        String?   // VIDEO 타입: 영상 제목
-  organization      String?
-  topics            String[]
-  subscriberCount   Int?
-  viewCount         Int?      // VIDEO 타입: 영상 조회수
-  isActive          Boolean   @default(true)
-  lastContactedAt   DateTime?
-  source            String? // 'GOOGLE_SEARCH' | 'MANUAL' | 'YOUTUBE_API' | 'VIDEO_SEARCH'
-  createdAt         DateTime  @default(now())
-
-  outreachRequests OutreachRequest[]
-
-  @@unique([email])
-  @@unique([youtubeChannelId])
-  @@unique([videoId])
-  @@index([type, isActive])
-  @@map("outreach_contact")
-}
-
-model OutreachRequest {
-  id           String    @id @default(cuid())
-  reportId     String
-  contactId    String
-  channel      String // 'EMAIL' | 'YOUTUBE_COMMENT'
-  status       String    @default("PENDING_APPROVAL")
-  draftSubject String?
-  draftContent String
-  approvedAt   DateTime?
-  sentAt       DateTime?
-  externalId   String?
-  errorMessage String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  report  Report          @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  contact OutreachContact @relation(fields: [contactId], references: [id])
-
-  @@unique([reportId, contactId, channel])
-  @@index([status])
-  @@index([reportId, status])
-  @@index([channel, sentAt])
-  @@map("outreach_request")
-}
-
-// ── Community (커뮤니티 게시판) ──
-
-model ExternalAgent {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  avatarUrl   String?
-  apiKey      String   @unique
-  webhookUrl  String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  lastUsedAt  DateTime?
-
-  posts    CommunityPost[]
-  comments CommunityComment[]
-
-  @@map("external_agent")
-}
-
-model CommunityPost {
-  id               String   @id @default(cuid())
-  userId           String?
-  agentId          String?  // 'image-matching' | 'promotion' | 'chatbot-alert'
-  externalAgentId  String?
-  title            String
-  content          String
-  isPinned         Boolean  @default(false)
-  viewCount        Int      @default(0)
-  sourceUrl        String?
-  deduplicationKey String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  user          User?              @relation(fields: [userId], references: [id])
-  externalAgent ExternalAgent?     @relation(fields: [externalAgentId], references: [id])
-  comments      CommunityComment[]
-
-  @@unique([agentId, deduplicationKey])
-  @@index([isPinned, createdAt])
-  @@index([userId])
-  @@index([agentId])
-  @@index([externalAgentId])
-  @@index([deduplicationKey])
-  @@index([sourceUrl])
-  @@map("community_post")
-}
-
-model CommunityComment {
-  id              String   @id @default(cuid())
-  postId          String
-  userId          String?
-  agentId         String?
-  externalAgentId String?
-  content         String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  post          CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user          User?          @relation(fields: [userId], references: [id])
-  externalAgent ExternalAgent? @relation(fields: [externalAgentId], references: [id])
-
-  @@index([postId, createdAt])
-  @@index([userId])
-  @@index([externalAgentId])
-  @@map("community_comment")
-}
-
-// ── AI Settings (멀티 프로바이더 설정) ──
-
-model AiSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique // 'default_provider', 'default_model', 'agent:image-matching:provider', etc.
-  value     String
-  updatedAt DateTime @updatedAt
-
-  @@map("ai_setting")
-}
-
-// ── AI Usage Log (토큰/레이턴시 추적) ──
-
-model AiUsageLog {
-  id           String   @id @default(cuid())
-  agentId      String // 'image-matching', 'promotion', 'chatbot', 'outreach', 'crawl', 'admin', 'devlog'
-  provider     String // 'anthropic', 'gemini', 'openai'
-  model        String // 'claude-sonnet-4-20250514', 'gemini-2.0-flash', 'gpt-4o-mini'
-  inputTokens  Int
-  outputTokens Int
-  totalTokens  Int
-  latencyMs    Int
-  success      Boolean  @default(true)
-  errorMessage String?
-  createdAt    DateTime @default(now())
-
-  @@index([agentId, createdAt])
-  @@index([provider, createdAt])
-  @@map("ai_usage_log")
-}
-
-// 에이전트 의사결정 로그 (향후 RL 데이터 기반)
-model AgentDecisionLog {
-  id             String   @id @default(cuid())
-  agentId        String
-  eventType      String   // 'match_detected' | 'outreach_sent' | 'report_created' | 'case_resolved'
-  selectedAction String   // 선택된 행동 타입
-  stayedSilent   Boolean  @default(false)
-  confidence     Float?   // match_detected 이벤트 전용
-  reportId       String?
-  postId         String?  // 생성된 CommunityPost id
-  candidateScores Json    // 점수 기록 (RL 데이터용)
-  createdAt      DateTime @default(now())
-
-  @@index([agentId, createdAt])
-  @@map("agent_decision_log")
-}
-
-// ── XP Log (활동 XP 이력) ──
-
-model XpLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String   // 'AD_WATCH' | 'SIGHTING' | 'COMMUNITY_POST' | 'COMMUNITY_COMMENT' | 'SHARE' | 'REFERRAL' | 'SPONSOR' | 'GAME'
-  xpAmount  Int
-  sourceId  String?  // sightingId, postId, commentId, sponsorId 등
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, action, createdAt])
-  @@index([userId, createdAt])
-  @@map("xp_log")
-}
-
-// ── Game Play (게임 플레이 기록) ──
-
-model GamePlay {
-  id        String   @id @default(cuid())
-  userId    String?
-  character String   // 'image-matching' | 'promotion' | 'chatbot-alert'
-  score     Int
-  usedAd    Boolean  @default(false)
-  playedAt  DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
-
-  @@index([userId, playedAt])
-  @@index([userId, usedAd, playedAt])
-  @@map("game_play")
-}
-
-// ── Inquiry (문의) ──
-
-enum InquiryCategory {
-  PAYMENT
-  REPORT
-  GENERAL
-  PARTNERSHIP
-
-  @@map("inquiry_category")
-}
-
-enum InquiryStatus {
-  OPEN
-  REPLIED
-  CLOSED
-
-  @@map("inquiry_status")
-}
-
 model Inquiry {
   id           String          @id @default(cuid())
   userId       String?
@@ -747,27 +901,9 @@ model Inquiry {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  user User? @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull) // P1: onDelete
 
   @@index([userId])
   @@index([status])
   @@map("inquiry")
-}
-
-// 크립토 결제 견적 (5분 TTL)
-model SponsorCryptoQuote {
-  id             String    @id @default(cuid())
-  agentId        String
-  amountUsdCents Int
-  walletAddress  String
-  tokenSymbol    String
-  chainId        Int? // null = Solana or Aptos
-  amountAtomic   String // BigInt as string
-  merchantWallet String
-  expiresAt      DateTime
-  verifiedAt     DateTime? // 견적 사용 여부 체크 (선점 처리)
-  createdAt      DateTime  @default(now())
-
-  @@index([agentId])
-  @@map("sponsor_crypto_quote")
 }

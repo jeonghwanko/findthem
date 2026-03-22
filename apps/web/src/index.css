@@ -53,4 +53,12 @@
     transform: scale(0.97);
     opacity: 0.85;
   }
+  /* 페이지 전환 fade-in */
+  .animate-page-in {
+    animation: pageIn 150ms ease-out;
+  }
+  @keyframes pageIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }

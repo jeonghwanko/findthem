@@ -57,7 +57,7 @@ export async function storeReport(input: unknown): Promise<StoreReportResult> {
       });
 
       if (data.photoUrl) {
-        await tx.reportPhoto.create({
+        await tx.photo.create({
           data: {
             reportId: created.id,
             photoUrl: data.photoUrl,

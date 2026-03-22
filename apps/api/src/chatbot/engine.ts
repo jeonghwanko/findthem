@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, ChatRole } from '@prisma/client';
 import { askClaude } from '../ai/aiClient.js';
 import { prisma } from '../db/client.js';
 import { imageQueue } from '../jobs/queues.js';
@@ -165,7 +165,7 @@ export class ChatbotEngine {
       quickReplies: STEP_QUICK_REPLIES[locale]?.GREETING,
     };
 
-    await this.saveMessage(session.id, 'assistant', response.text);
+    await this.saveMessage(session.id, 'ASSISTANT', response.text);
 
     return { sessionId: session.id, response };
   }
@@ -193,7 +193,7 @@ export class ChatbotEngine {
     const context = session.context as unknown as CollectedInfo;
 
     // 사용자 메시지 저장
-    await this.saveMessage(sessionId, 'user', userMessage, photoUrl ? { photoUrl } : undefined);
+    await this.saveMessage(sessionId, 'USER', userMessage, photoUrl ? { photoUrl } : undefined);
 
     // 단계별 처리
     const response = await this.processStep(
@@ -207,7 +207,7 @@ export class ChatbotEngine {
     );
 
     // 봇 응답 저장
-    await this.saveMessage(sessionId, 'assistant', response.text);
+    await this.saveMessage(sessionId, 'ASSISTANT', response.text);
 
     return response;
   }
@@ -391,7 +391,7 @@ export class ChatbotEngine {
 
     // 챗봇에서 받은 사진이 있으면 연결 — createMany로 일괄 삽입
     if (context.photoUrls?.length) {
-      await prisma.sightingPhoto.createMany({
+      await prisma.photo.createMany({
         data: context.photoUrls.map((url) => ({ sightingId: sighting.id, photoUrl: url })),
       });
 
@@ -439,7 +439,7 @@ export class ChatbotEngine {
 
   private async saveMessage(
     sessionId: string,
-    role: string,
+    role: ChatRole,
     content: string,
     metadata?: Record<string, unknown>,
   ): Promise<void> {

@@ -37,6 +37,10 @@ npm run test                  # 전체 테스트
 npm run lint                  # ESLint 전체 검사
 npm run lint:fix              # ESLint 자동 수정
 npx prisma migrate dev        # DB 마이그레이션
+# DB 초기화 시 (서비스 전):
+npx prisma migrate reset      # 스키마 전체 재생성
+psql $DATABASE_URL -f apps/api/prisma/optimize.sql  # 성능 최적화 (UUIDv7, PostGIS, pg_trgm, partial index)
+psql $DATABASE_URL -f apps/api/prisma/optimize.sql  # 성능 최적화 (마이그레이션 후 1회 실행)
 
 # 모바일 (Capacitor)
 npm run build:native          # 네이티브 빌드 (Vite native 모드 + cap sync 통합)

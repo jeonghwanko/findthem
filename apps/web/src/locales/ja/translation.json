@@ -101,7 +101,6 @@
     "errorFallback": "エラーが発生しました",
     "kakaoLogin": "カカオでログイン",
     "naverLogin": "Naverでログイン",
-    "telegramLogin": "Telegramでログイン",
     "appleLogin": "Appleでサインイン",
     "orDivider": "または"
   },
@@ -145,6 +144,12 @@
     "markActive": "捜索中に戻す"
   },
   "report": {
+    "status": {
+      "ACTIVE": "捜索中",
+      "FOUND": "見つかりました",
+      "EXPIRED": "期限切れ",
+      "SUSPENDED": "停止"
+    },
     "title": "行方不明届の登録",
     "selectType": "対象の種類を選択してください",
     "next": "次へ",
@@ -245,7 +250,15 @@
     "goBack": "戻る",
     "goToReport": "届出の詳細を見る",
     "goToList": "一覧に戻る",
-    "autoRedirectCountdown": "{{seconds}}秒後に自動で移動します"
+    "autoRedirectCountdown": "{{seconds}}秒後に自動で移動します",
+    "optional": "（任意）",
+    "auto": "（自動）",
+    "gpsDetected": "GPS位置を検出しました",
+    "sectionPhoto": "写真",
+    "sectionDiscovery": "発見情報",
+    "sectionExtra": "追加情報",
+    "changeDate": "変更",
+    "passwordDefault": "未入力の場合、デフォルトパスワード0000が設定されます。"
   },
   "chat": {
     "title": "目撃情報チャットボット",
@@ -375,7 +388,6 @@
     "PAYMENT_GATEWAY_ERROR": "決済サービスに一時的な障害が発生しました。しばらくしてから再度お試しください。",
     "OAUTH_FAILED": "ソーシャルログインに失敗しました。",
     "OAUTH_INVALID_STATE": "無効なOAuth状態です。",
-    "OAUTH_TELEGRAM_INVALID": "Telegram認証に失敗しました。",
     "AGENT_AUTH_REQUIRED": "エージェント認証が必要です。",
     "AGENT_INVALID_ID": "無効なエージェントIDです。",
     "NO_FIELDS_TO_UPDATE": "更新するフィールドがありません。",
@@ -393,7 +405,8 @@
     "QUOTE_EXPIRED": "決済見積もりの有効期限が切れました。もう一度お試しください。",
     "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
     "INVALID_CRON_SETTINGS": "Invalid cron settings.",
-    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations.",
+    "UNKNOWN_ERROR": "不明なエラーが発生しました"
   },
   "agent": {
     "title": "AI目撃情報アシスタント",
@@ -478,6 +491,11 @@
     "currencyKrw": "ウォン",
     "tabCard": "クレジットカード",
     "tabCrypto": "暗号資産",
+    "iap": {
+      "fetching": "商品を読み込み中...",
+      "purchasing": "決済処理中...",
+      "error": "決済に失敗しました。もう一度お試しください。"
+    },
     "crypto": {
       "amountLabel": "金額 (USD)",
       "tokenLabel": "トークンを選択",
@@ -505,7 +523,6 @@
     "provider_local": "電話番号 / パスワード",
     "provider_kakao": "カカオ",
     "provider_naver": "Naver",
-    "provider_telegram": "Telegram",
     "save": "保存",
     "saving": "保存中...",
     "saved": "保存しました",

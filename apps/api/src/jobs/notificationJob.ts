@@ -42,7 +42,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
   const sightingUrl = `${config.webOrigin}/reports/${reportId}?matchId=${matchId}`;
 
   await Promise.all([
-    sendMatchNotification({
+    report.user.phone ? sendMatchNotification({
       recipientPhone: report.user.phone,
       recipientName: report.user.name,
       reportName: report.name,
@@ -51,7 +51,7 @@ async function processNotificationJob(job: Job<NotificationJobData>) {
       matchId,
       sightingUrl,
       userId: report.user.id,
-    }),
+    }) : Promise.resolve(),
     report.user.fcmToken
       ? sendPushNotification(
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

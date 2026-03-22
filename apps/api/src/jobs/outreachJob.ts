@@ -1,4 +1,5 @@
 import { QUEUE_NAMES, OUTREACH_EMAIL_DAILY_LIMIT, OUTREACH_COMMENT_DAILY_LIMIT, type SubjectType } from '@findthem/shared';
+import type { OutreachChannel } from '@prisma/client';
 import type { OutreachJobData } from './queues.js';
 import { createWorker, outreachQueue } from './queues.js';
 import { prisma } from '../db/client.js';
@@ -16,7 +17,7 @@ const OUTREACH_CRON_TZ = 'Asia/Seoul';
 
 // ── Daily limit check ──
 
-async function getTodaySentCount(channel: string): Promise<number> {
+async function getTodaySentCount(channel: OutreachChannel): Promise<number> {
   const now = new Date();
   const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 

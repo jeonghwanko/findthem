@@ -121,7 +121,7 @@ async function saveNewReport(item: ExternalReport, source: string): Promise<bool
       });
 
       if (localPhotoUrl) {
-        await tx.reportPhoto.create({
+        await tx.photo.create({
           data: {
             reportId: created.id,
             photoUrl: localPhotoUrl,

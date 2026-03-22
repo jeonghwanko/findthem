@@ -4,7 +4,7 @@ import { prisma } from '../db/client.js';
 import { config } from '../config.js';
 import { validateBody, validateQuery } from '../middlewares/validate.js';
 import { ApiError } from '../middlewares/errors.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, VALID_AGENT_IDS, SUPPORTED_PAY_TOKENS } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, VALID_AGENT_IDS, SUPPORTED_PAY_TOKENS, IAP_PRODUCTS, IAP_PRODUCT_IDS, IAP_PLATFORM_VALUES } from '@findthem/shared';
 import { rateLimit } from '../middlewares/rateLimit.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { createLogger } from '../logger.js';
@@ -12,21 +12,19 @@ import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 import { grantXp } from '../services/xpService.js';
 import { XP_PER_USD_CENT, XP_PER_KRW_100 } from '@findthem/shared';
 import { randomUUID } from 'node:crypto';
+import { verifyApplePurchase, verifyAndroidPurchase } from '../services/iapVerifyService.js';
 import {
   getUsdPerToken,
   toAtomic,
   fromUsdToTokenAmount,
   EVM_TOKENS,
   SOL_TOKENS,
-  APT_NATIVE_COIN_TYPE,
-  APT_DECIMALS,
   QUOTE_TTL_SECS,
   SOLANA_USDC_MINT,
   isSupportedChainId,
   toSupportedChainId,
   verifyEvmTransfer,
   verifySolanaTransfer,
-  verifyAptosTransfer,
 } from '@findthem/web3-payment';
 
 const log = createLogger('sponsors');
@@ -64,16 +62,15 @@ const verifySchema = z.object({
   message: z.string().max(100).optional(),
 });
 
-const sponsorLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'Too many payment requests' });
+const sponsorLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'RATE_LIMIT_EXCEEDED' });
 
 export function registerSponsorRoutes(router: Router) {
   // 후원자 목록 (최신순)
   router.get('/sponsors/payment-status', (_req, res): void => {
     res.json({
       tossEnabled: !!config.tossSecretKey,
-      cryptoEnabled: !!(config.merchantWalletEvm || config.merchantWalletAptos),
+      cryptoEnabled: !!config.merchantWalletEvm,
       evmEnabled: !!config.merchantWalletEvm,
-      aptosEnabled: !!config.merchantWalletAptos,
     });
   });
 
@@ -124,7 +121,7 @@ export function registerSponsorRoutes(router: Router) {
   });
 
   // orderId 생성
-  router.post('/sponsors/prepare', validateBody(prepareSchema), (req, res) => {
+  router.post('/sponsors/prepare', sponsorLimiter, validateBody(prepareSchema), (req, res) => {
     const { agentId } = req.body as z.infer<typeof prepareSchema>;
     const orderId = `${agentId}-${randomUUID()}`;
 
@@ -202,7 +199,6 @@ export function registerSponsorRoutes(router: Router) {
       req.body as z.infer<typeof cryptoQuoteSchema>;
 
     // 체인 판별
-    const isAptos = tokenSymbol === 'APT';
     const isSolana = tokenSymbol === 'SOL' || (
       (tokenSymbol === 'USDC' || tokenSymbol === 'USDt') &&
       (!chainId || !isSupportedChainId(chainId))
@@ -213,12 +209,7 @@ export function registerSponsorRoutes(router: Router) {
     let tokenContract: string | null;
     let decimals: number;
 
-    if (isAptos) {
-      merchantWallet = config.merchantWalletAptos;
-      resolvedChainId = null;
-      tokenContract = null;
-      decimals = APT_DECIMALS;
-    } else if (isSolana) {
+    if (isSolana) {
       merchantWallet = config.merchantWalletSolana;
       resolvedChainId = null;
       if (tokenSymbol === 'SOL') {
@@ -308,48 +299,16 @@ export function registerSponsorRoutes(router: Router) {
       throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
     }
 
-    // 3. TX 해시 중복 체크 (다른 quoteId로 같은 TX 재사용 방지)
-    if (txHash) {
-      const existingTxSponsor = await prisma.sponsor.findUnique({ where: { txHash } });
-      if (existingTxSponsor) {
-        // 선점 롤백
-        await prisma.sponsorCryptoQuote.update({ where: { id: quoteId }, data: { verifiedAt: null } });
-        throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
-      }
-    }
-
     const minAmountAtomic = BigInt(quote.amountAtomic);
     const { tokenSymbol, walletAddress, merchantWallet } = quote;
 
-    const isAptos = tokenSymbol === 'APT';
-    const isSolana = quote.chainId === null && tokenSymbol !== 'APT';
+    const isSolana = quote.chainId === null;
 
     let verified = false;
     let actualAmount = 0n;
     let pending = false;
 
-    if (isAptos) {
-      try {
-        const result = await verifyAptosTransfer({
-          txHash,
-          expectedFrom: walletAddress,
-          expectedTo: merchantWallet,
-          coinType: APT_NATIVE_COIN_TYPE,
-          minAmountAtomic,
-          rpcUrl: config.aptosRpcUrl,
-          apiKey: config.aptosRpcApiKey || undefined,
-        });
-        verified = result.verified;
-        actualAmount = result.actualAmount;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : '';
-        if (msg === 'TX_NOT_FOUND_ON_CHAIN') {
-          pending = true;
-        } else {
-          throw e;
-        }
-      }
-    } else if (isSolana) {
+    if (isSolana) {
       let tokenMint: string | null;
       if (tokenSymbol === 'SOL') {
         tokenMint = null;
@@ -454,6 +413,110 @@ export function registerSponsorRoutes(router: Router) {
       if (xpAmount > 0) {
         void grantXp(req.user.userId, 'SPONSOR', { sourceId: quoteId, xpOverride: xpAmount })
           .catch((err) => log.warn({ err, quoteId }, 'Crypto sponsor XP grant failed'));
+      }
+    }
+
+    res.json({ success: true });
+  });
+
+  // ── IAP 결제 검증 (iOS App Store / Android Google Play) ──
+
+  const iapVerifySchema = z.object({
+    agentId:       z.enum(VALID_AGENT_IDS),
+    productId:     z.enum(IAP_PRODUCT_IDS),
+    transactionId: z.string().min(1).max(500).regex(/^[\w\-.]+$/),
+    platform:      z.enum(IAP_PLATFORM_VALUES),
+    /** Android 전용: Google Play purchaseToken (서버 검증 필수) */
+    purchaseToken: z.string().max(2048).optional(),
+    displayName:   z.string().max(30).optional(),
+    message:       z.string().max(100).optional(),
+  });
+
+  router.post('/sponsors/iap/verify', sponsorLimiter, optionalAuth, validateBody(iapVerifySchema), async (req, res) => {
+    const { agentId, productId, transactionId, platform, purchaseToken, displayName, message } =
+      req.body as z.infer<typeof iapVerifySchema>;
+
+    // productId 유효성 확인
+    const amount = IAP_PRODUCTS[productId];
+    if (amount === undefined) {
+      throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+    }
+
+    // ── 영수증 검증 (Apple / Google 직접 호출) ──
+    const hasAppleConfig  = !!(config.appleIapKeyId && config.appleIapIssuerId && config.appleIapPrivateKey);
+    const hasGoogleConfig = !!config.googlePlayServiceAccountJson;
+
+    if (platform === 'ios') {
+      if (!hasAppleConfig) {
+        if (config.nodeEnv === 'production') {
+          throw new ApiError(503, ERROR_CODES.PAYMENT_GATEWAY_ERROR);
+        }
+        log.warn({ productId, transactionId }, 'Apple IAP verify skipped — APPLE_IAP_* env vars not set (dev mode)');
+      } else {
+        const result = await verifyApplePurchase({
+          transactionId,
+          productId,
+          keyId:      config.appleIapKeyId,
+          issuerId:   config.appleIapIssuerId,
+          privateKey: config.appleIapPrivateKey,
+          bundleId:   config.appleIapBundleId,
+        });
+        if (!result.valid) {
+          log.warn({ transactionId, productId, reason: result.reason }, 'Apple IAP verification failed');
+          throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+        }
+      }
+    } else {
+      // Android
+      if (!purchaseToken) {
+        throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+      }
+      if (!hasGoogleConfig) {
+        if (config.nodeEnv === 'production') {
+          throw new ApiError(503, ERROR_CODES.PAYMENT_GATEWAY_ERROR);
+        }
+        log.warn({ productId, transactionId }, 'Google Play IAP verify skipped — GOOGLE_PLAY_SERVICE_ACCOUNT_JSON not set (dev mode)');
+      } else {
+        const result = await verifyAndroidPurchase({
+          packageName:        config.googlePlayPackageName,
+          productId,
+          purchaseToken,
+          serviceAccountJson: config.googlePlayServiceAccountJson,
+        });
+        if (!result.valid) {
+          log.warn({ transactionId, productId, reason: result.reason }, 'Google Play IAP verification failed');
+          throw new ApiError(400, ERROR_CODES.PAYMENT_FAILED);
+        }
+      }
+    }
+
+    // Sponsor 레코드 저장 (transactionId를 orderId로 사용, unique 제약)
+    try {
+      await prisma.sponsor.create({
+        data: {
+          agentId,
+          amount,
+          currency: 'KRW',
+          orderId: transactionId,
+          displayName: displayName || null,
+          message: message || null,
+        },
+      });
+    } catch (err) {
+      if (isPrismaUniqueError(err)) {
+        throw new ApiError(400, ERROR_CODES.ALREADY_VERIFIED);
+      }
+      throw err;
+    }
+
+    log.info({ transactionId, productId, agentId, platform }, 'IAP sponsor payment saved');
+
+    // 로그인 유저에게 후원 XP 지급 (KRW: 100원 = 1XP)
+    if (req.user?.userId) {
+      const xpAmount = Math.floor(amount / 100) * XP_PER_KRW_100;
+      if (xpAmount > 0) {
+        void grantXp(req.user.userId, 'SPONSOR', { sourceId: transactionId, xpOverride: xpAmount })
+          .catch((err) => log.warn({ err, transactionId }, 'IAP sponsor XP grant failed'));
       }
     }
 

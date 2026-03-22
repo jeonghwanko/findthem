@@ -3,8 +3,6 @@ import {
   EVM_CHAIN_IDS,
   EVM_TOKENS,
   SOL_TOKENS,
-  APT_DECIMALS,
-  APT_NATIVE_COIN_TYPE,
   SUPPORTED_PAY_TOKENS,
   QUOTE_TTL_SECS,
   isSupportedChainId,
@@ -185,32 +183,19 @@ describe('SOL_TOKENS 구조', () => {
 });
 
 // ────────────────────────────────────────────────────────────
-// Aptos constants
-// ────────────────────────────────────────────────────────────
-describe('Aptos 상수', () => {
-  it('APT_DECIMALS = 8', () => {
-    expect(APT_DECIMALS).toBe(8);
-  });
-
-  it('APT_NATIVE_COIN_TYPE 올바른 형식', () => {
-    expect(APT_NATIVE_COIN_TYPE).toBe('0x1::aptos_coin::AptosCoin');
-  });
-});
-
-// ────────────────────────────────────────────────────────────
 // SUPPORTED_PAY_TOKENS & QUOTE_TTL_SECS
 // ────────────────────────────────────────────────────────────
 describe('SUPPORTED_PAY_TOKENS', () => {
-  it('APT를 포함한다', () => {
-    expect(SUPPORTED_PAY_TOKENS).toContain('APT');
-  });
-
   it('USDC, ETH, BNB, SOL, USDt를 포함한다', () => {
     expect(SUPPORTED_PAY_TOKENS).toContain('USDC');
     expect(SUPPORTED_PAY_TOKENS).toContain('ETH');
     expect(SUPPORTED_PAY_TOKENS).toContain('BNB');
     expect(SUPPORTED_PAY_TOKENS).toContain('SOL');
     expect(SUPPORTED_PAY_TOKENS).toContain('USDt');
+  });
+
+  it('APT를 포함하지 않는다', () => {
+    expect(SUPPORTED_PAY_TOKENS).not.toContain('APT');
   });
 });
 

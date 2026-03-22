@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Newspaper, MessageCircle } from 'lucide-react';
 import InquiryModal from './InquiryModal';
 
 export default function MobileQuickLinks() {
-  const { t } = useTranslation();
   const [inquiryOpen, setInquiryOpen] = useState(false);
 
   return (
@@ -12,7 +10,7 @@ export default function MobileQuickLinks() {
       <div className="md:hidden flex items-center justify-center gap-4 mt-10 mb-6 text-sm text-gray-400">
         <a href="/devlog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-gray-600 transition-colors">
           <Newspaper className="w-3.5 h-3.5" />
-          {t('nav.devlog')}
+          데브로그
         </a>
         <span className="text-gray-200">|</span>
         <a href="https://x.com/yoooonion" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-gray-600 transition-colors">
@@ -23,7 +21,7 @@ export default function MobileQuickLinks() {
         <span className="text-gray-200">|</span>
         <button type="button" onClick={() => setInquiryOpen(true)} className="flex items-center gap-1 hover:text-gray-600 transition-colors">
           <MessageCircle className="w-3.5 h-3.5" />
-          {t('inquiry.partnership')}
+          제휴 문의
         </button>
       </div>
       <InquiryModal open={inquiryOpen} onClose={() => setInquiryOpen(false)} fixedCategory="PARTNERSHIP" />

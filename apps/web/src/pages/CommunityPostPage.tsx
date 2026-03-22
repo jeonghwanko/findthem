@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { ArrowLeft, Bot, Trash2, Edit2, Eye, MessageSquare } from 'lucide-react';
 import { type ExternalAgentPublic } from '@findthem/shared';
 import { api } from '../api/client';
@@ -45,6 +46,9 @@ export default function CommunityPostPage() {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  usePullToRefresh(() => { setRefreshKey((k) => k + 1); });
 
   useEffect(() => {
     if (!id) return;
@@ -54,19 +58,20 @@ export default function CommunityPostPage() {
       .then(setPost)
       .catch(() => navigate('/community'))
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  }, [id, navigate, refreshKey]);
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString();
 
   const isMyPost = user && post?.userId === user.id;
 
   const handleDelete = async () => {
-    if (!post || !confirm(t('community.deleteConfirm'))) return;
+    if (!post || !confirm('게시글을 삭제하시겠습니까?')) return;
     try {
       await api.delete(`/community/posts/${post.id}`);
       navigate('/community');
-    } catch {
-      setError(t('community.deleteError'));
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
     }
   };
 
@@ -86,8 +91,9 @@ export default function CommunityPostPage() {
         _count: { comments: post._count.comments + 1 },
       });
       setComment('');
-    } catch {
-      setError(t('community.commentError'));
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
     } finally {
       setSubmitting(false);
     }
@@ -102,8 +108,9 @@ export default function CommunityPostPage() {
         comments: post.comments.filter((c) => c.id !== commentId),
         _count: { comments: post._count.comments - 1 },
       });
-    } catch {
-      setError(t('community.commentDeleteError'));
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
     }
   };
 
@@ -129,7 +136,7 @@ export default function CommunityPostPage() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t('community.title')}
+        커뮤니티
       </Link>
 
       {/* Error banner */}
@@ -158,7 +165,7 @@ export default function CommunityPostPage() {
               <Bot className="w-4 h-4 text-primary-500" />
             ) : null}
             <span className={(post.agentId || post.externalAgent) ? 'text-primary-600 font-medium' : ''}>
-              {getAuthorName(post, t)}
+              {getAuthorName(post)}
             </span>
           </span>
           <span>{formatDate(post.createdAt)}</span>
@@ -172,7 +179,7 @@ export default function CommunityPostPage() {
                 type="button"
                 onClick={() => navigate(`/community/${post.id}/edit`)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
-                title={t('community.edit')}
+                title="수정"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
@@ -180,7 +187,7 @@ export default function CommunityPostPage() {
                 type="button"
                 onClick={() => void handleDelete()}
                 className="text-gray-400 hover:text-red-500 transition-colors"
-                title={t('community.delete')}
+                title="삭제"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -201,7 +208,7 @@ export default function CommunityPostPage() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
-              {t('community.viewSource')}
+              원문 보기
             </a>
           </div>
         )}
@@ -211,11 +218,11 @@ export default function CommunityPostPage() {
       <section>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
           <MessageSquare className="w-5 h-5" />
-          {t('community.comments')} ({post._count.comments})
+          댓글 ({post._count.comments})
         </h2>
 
         {post.comments.length === 0 && (
-          <p className="text-sm text-gray-400 mb-6">{t('community.noComments')}</p>
+          <p className="text-sm text-gray-400 mb-6">아직 댓글이 없습니다</p>
         )}
 
         <div className="space-y-3 mb-6">
@@ -239,7 +246,7 @@ export default function CommunityPostPage() {
                   <Bot className="w-3.5 h-3.5 text-primary-500" />
                 ) : null}
                 <span className={`font-medium ${(c.agentId || c.externalAgent) ? 'text-primary-600' : 'text-gray-700'}`}>
-                  {getAuthorName(c, t)}
+                  {getAuthorName(c)}
                 </span>
                 <span className="text-gray-400 text-xs">{formatDate(c.createdAt)}</span>
                 {user && c.userId === user.id && (
@@ -264,7 +271,7 @@ export default function CommunityPostPage() {
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder={t('community.commentPlaceholder')}
+              placeholder="댓글을 입력하세요..."
               className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <button
@@ -272,13 +279,13 @@ export default function CommunityPostPage() {
               disabled={!comment.trim() || submitting}
               className="bg-primary-600 hover:bg-primary-700 disabled:opacity-40 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
             >
-              {t('community.commentSubmit')}
+              댓글 작성
             </button>
           </form>
         ) : (
           <p className="text-sm text-gray-400 text-center">
             <Link to="/login" className="text-primary-600 hover:underline">
-              {t('community.loginToComment')}
+              로그인하고 댓글 달기
             </Link>
           </p>
         )}

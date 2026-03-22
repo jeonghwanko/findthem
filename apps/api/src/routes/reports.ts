@@ -109,7 +109,7 @@ export function registerReportRoutes(router: Router) {
           data: { userId, ...body },
         });
 
-        await tx.reportPhoto.createMany({
+        await tx.photo.createMany({
           data: processedPhotos.map((p) => ({
             reportId: report.id,
             photoUrl: p.photoUrl,
@@ -117,7 +117,7 @@ export function registerReportRoutes(router: Router) {
             isPrimary: p.isPrimary,
           })),
         });
-        const photos = await tx.reportPhoto.findMany({ where: { reportId: report.id } });
+        const photos = await tx.photo.findMany({ where: { reportId: report.id } });
 
         return { report, photos };
       });
@@ -204,7 +204,7 @@ export function registerReportRoutes(router: Router) {
         distanceKm: Math.round(r.distance_km * 10) / 10,
       }));
 
-      return res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
+      return res.json({ items: reports, total, page, totalPages: Math.ceil(total / limit) });
     }
 
     const where: Prisma.ReportWhereInput = {};
@@ -275,7 +275,7 @@ export function registerReportRoutes(router: Router) {
       ? skip + reports.length
       : await prisma.report.count({ where });
 
-    res.json({ items: reports, reports, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: reports, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 내 신고 목록 (⚠️ /reports/:id 보다 먼저 등록)
@@ -322,7 +322,7 @@ export function registerReportRoutes(router: Router) {
       prisma.report.count({ where }),
     ]);
 
-    res.json({ items: reports, reports, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: reports, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 실종 신고 상세
@@ -507,18 +507,18 @@ export function registerReportRoutes(router: Router) {
 
       // RACE-01: 현재 사진 수 조회와 사진 생성을 트랜잭션으로 묶어 원자적으로 체크
       const photos = await prisma.$transaction(async (tx) => {
-        const currentCount = await tx.reportPhoto.count({ where: { reportId: id } });
+        const currentCount = await tx.photo.count({ where: { reportId: id } });
         if (currentCount + files.length > MAX_REPORT_PHOTOS) {
           throw new ApiError(400, ERROR_CODES.REPORT_PHOTO_LIMIT);
         }
-        await tx.reportPhoto.createMany({
+        await tx.photo.createMany({
           data: processedPhotos.map((p) => ({
             reportId: id,
             photoUrl: p.photoUrl,
             thumbnailUrl: p.thumbnailUrl,
           })),
         });
-        return tx.reportPhoto.findMany({
+        return tx.photo.findMany({
           where: { reportId: id },
           orderBy: { createdAt: 'desc' },
           take: files.length,

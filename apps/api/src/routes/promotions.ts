@@ -5,11 +5,11 @@ import { requireAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { validateBody } from '../middlewares/validate.js';
 import { promotionQueue } from '../jobs/queues.js';
-import { ERROR_CODES, MAX_BOOSTS_PER_DAY, type PromoPlatform } from '@findthem/shared';
+import { ERROR_CODES, MAX_BOOSTS_PER_DAY, PROMO_PLATFORM_REPOST_VALUES, type PromoPlatform } from '@findthem/shared';
 import { utcDayStart } from '@findthem/shared';
 
 const repostBodySchema = z.object({
-  platforms: z.array(z.enum(['TWITTER', 'KAKAO_CHANNEL'])).optional(),
+  platforms: z.array(z.enum(PROMO_PLATFORM_REPOST_VALUES)).optional(),
   regenerateContent: z.boolean().optional().default(true),
 });
 

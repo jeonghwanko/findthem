@@ -1,11 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import type { BotResponse } from '@findthem/shared';
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'USER' | 'ASSISTANT';
   content: string;
   photoUrl?: string;
 }
@@ -19,7 +18,6 @@ interface ChatSession {
 }
 
 export function useChat(reportId?: string) {
-  const { t } = useTranslation();
   const [session, setSession] = useState<ChatSession>({
     sessionId: '',
     messages: [],
@@ -43,7 +41,7 @@ export function useChat(reportId?: string) {
       setSession({
         sessionId: res.sessionId,
         messages: [
-          { id: nextId(), role: 'assistant', content: res.text },
+          { id: nextId(), role: 'ASSISTANT', content: res.text },
         ],
         loading: false,
         completed: false,
@@ -55,7 +53,7 @@ export function useChat(reportId?: string) {
         loading: false,
         messages: [
           ...s.messages,
-          { id: nextId(), role: 'assistant', content: t('chat.connectionError') },
+          { id: nextId(), role: 'ASSISTANT' as const, content: '연결에 실패했습니다. 다시 시도해주세요.' },
         ],
       }));
     }
@@ -72,7 +70,7 @@ export function useChat(reportId?: string) {
         quickReplies: [],
         messages: [
           ...s.messages,
-          { id: nextId(), role: 'user', content: message },
+          { id: nextId(), role: 'USER' as const, content: message },
         ],
       }));
 
@@ -89,7 +87,7 @@ export function useChat(reportId?: string) {
           quickReplies: res.quickReplies || [],
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: res.text },
+            { id: nextId(), role: 'ASSISTANT' as const, content: res.text },
           ],
         }));
       } catch {
@@ -98,7 +96,7 @@ export function useChat(reportId?: string) {
           loading: false,
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: t('chat.messageError') },
+            { id: nextId(), role: 'ASSISTANT' as const, content: '메시지 전송에 실패했습니다' },
           ],
         }));
       }
@@ -119,7 +117,7 @@ export function useChat(reportId?: string) {
         quickReplies: [],
         messages: [
           ...s.messages,
-          { id: nextId(), role: 'user', content: '📷 사진 전송' },
+          { id: nextId(), role: 'USER' as const, content: '📷 사진 전송' },
         ],
       }));
 
@@ -136,7 +134,7 @@ export function useChat(reportId?: string) {
           quickReplies: res.quickReplies || [],
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: res.text },
+            { id: nextId(), role: 'ASSISTANT' as const, content: res.text },
           ],
         }));
       } catch {
@@ -145,7 +143,7 @@ export function useChat(reportId?: string) {
           loading: false,
           messages: [
             ...s.messages,
-            { id: nextId(), role: 'assistant', content: t('chat.uploadError') },
+            { id: nextId(), role: 'ASSISTANT' as const, content: '사진 전송에 실패했습니다' },
           ],
         }));
       }

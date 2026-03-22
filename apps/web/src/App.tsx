@@ -1,39 +1,58 @@
-import './i18n';
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import Header from './components/Header';
-import LanguageSwitcher from './components/LanguageSwitcher';
 import BottomTab from './components/BottomTab';
 import AgentChatWidget from './components/AgentChatWidget';
 import InquiryModal from './components/InquiryModal';
 import AdminRoute from './components/AdminRoute';
 import { XpToastProvider } from './components/XpRewardToast';
+import { PullToRefreshProvider } from './context/PullToRefreshContext';
+import PullToRefreshContainer from './components/PullToRefreshContainer';
+// AdminLayout은 admin 경로 내 공통 쉘이므로 즉시 로드
 import AdminLayout from './pages/admin/AdminLayout';
-import AdminLoginPage from './pages/admin/AdminLoginPage';
-import DashboardPage from './pages/admin/DashboardPage';
-import ReportsManagePage from './pages/admin/ReportsManagePage';
-import MatchesManagePage from './pages/admin/MatchesManagePage';
-import UsersManagePage from './pages/admin/UsersManagePage';
-import QueuesPage from './pages/admin/QueuesPage';
-import AuditLogPage from './pages/admin/AuditLogPage';
-import AgentChatPage from './pages/admin/AgentChatPage';
-import DevlogPage from './pages/admin/DevlogPage';
-import OutreachPage from './pages/admin/OutreachPage';
-import AiSettingsPage from './pages/admin/AiSettingsPage';
-import ExternalAgentsPage from './pages/admin/ExternalAgentsPage';
-import InquiriesPage from './pages/admin/InquiriesPage';
-import CapturePortraitsPage from './pages/CapturePortraitsPage';
-import CaptureHeimiPage from './pages/CaptureHeimiPage';
 import { userRoutes } from './routes/userRoutes';
+import { useNativeOAuth } from './hooks/useNativeOAuth';
+
+// 관리자 페이지 — lazy 로드 (일반 사용자에게는 불필요)
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
+const ReportsManagePage = lazy(() => import('./pages/admin/ReportsManagePage'));
+const MatchesManagePage = lazy(() => import('./pages/admin/MatchesManagePage'));
+const UsersManagePage = lazy(() => import('./pages/admin/UsersManagePage'));
+const QueuesPage = lazy(() => import('./pages/admin/QueuesPage'));
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
+const AgentChatPage = lazy(() => import('./pages/admin/AgentChatPage'));
+const DevlogPage = lazy(() => import('./pages/admin/DevlogPage'));
+const OutreachPage = lazy(() => import('./pages/admin/OutreachPage'));
+const AiSettingsPage = lazy(() => import('./pages/admin/AiSettingsPage'));
+const ExternalAgentsPage = lazy(() => import('./pages/admin/ExternalAgentsPage'));
+const InquiriesPage = lazy(() => import('./pages/admin/InquiriesPage'));
+// 웹 전용 개발 페이지 — lazy 로드
+const CapturePortraitsPage = lazy(() => import('./pages/CapturePortraitsPage'));
+const CaptureHeimiPage = lazy(() => import('./pages/CaptureHeimiPage'));
+
+function PageSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function App() {
-  const { user, loading, login, register, logout, updateUser } = useAuth();
   const { t } = useTranslation();
+  const { user, loading, login, register, logout, updateUser } = useAuth();
+  useNativeOAuth(updateUser);
   const [partnershipOpen, setPartnershipOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const location = useLocation();
+
+  // 페이지 전환 시 스크롤 초기화
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // ?ref= 파라미터를 sessionStorage에 저장하고 URL에서 제거
   useEffect(() => {
@@ -60,6 +79,8 @@ export default function App() {
 
   return (
     <XpToastProvider>
+    <PullToRefreshProvider>
+    <Suspense fallback={<PageSpinner />}>
     <Routes>
       {/* 관리자 전용 라우트 — 별도 레이아웃 */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -91,7 +112,10 @@ export default function App() {
         element={
           <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header user={user} onLogout={logout} />
-            <main className="flex-1 pb-20 md:pb-0">
+            <PullToRefreshContainer
+              key={location.pathname}
+              className="flex-1 pb-20 md:pb-0 animate-page-in"
+            >
               <Routes>
                 {userRoutes({ user, login, register, updateUser }).map(({ path, element }) => (
                   <Route key={path} path={path} element={element} />
@@ -100,7 +124,7 @@ export default function App() {
                 <Route path="/dev/portraits" element={<CapturePortraitsPage />} />
                 <Route path="/dev/capture-heimi" element={<CaptureHeimiPage />} />
               </Routes>
-            </main>
+            </PullToRefreshContainer>
             <footer className="hidden md:block bg-gray-100 border-t border-gray-200 py-6 mt-12">
               <div className="max-w-5xl mx-auto px-4 space-y-2">
                 <div className="flex items-center justify-between">
@@ -129,7 +153,6 @@ export default function App() {
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
                     </a>
-                    <LanguageSwitcher variant="light" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-400">
@@ -163,12 +186,14 @@ export default function App() {
                 setTimeout(() => setToast(null), 3500);
               }}
             />
-            <BottomTab user={user} />
+            <BottomTab />
             <AgentChatWidget />
           </div>
         }
       />
     </Routes>
+    </Suspense>
+    </PullToRefreshProvider>
     </XpToastProvider>
   );
 }

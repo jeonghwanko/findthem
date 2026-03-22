@@ -1,11 +1,10 @@
-import type { TFunction } from 'i18next';
 import type { ExternalAgentPublic } from '@findthem/shared';
 
-/** AI Agent ID → i18n 키 매핑 */
-const AGENT_I18N_KEYS: Record<string, string> = {
-  'image-matching': 'team.agentImageMatching.name',
-  promotion: 'team.agentPromotion.name',
-  'chatbot-alert': 'team.agentChatbotAlert.name',
+/** AI Agent ID → 한국어 이름 매핑 */
+const AGENT_NAMES: Record<string, string> = {
+  'image-matching': '탐정 클로드',
+  promotion: '홍보왕 헤르미',
+  'chatbot-alert': '안내봇 알리',
 };
 
 /** 게시글/댓글 작성자 이름 반환 */
@@ -15,12 +14,10 @@ export function getAuthorName(
     user: { name: string } | null;
     externalAgent?: ExternalAgentPublic | null;
   },
-  t: TFunction,
 ): string {
   if (item.externalAgent) return item.externalAgent.name;
   if (item.agentId) {
-    const key = AGENT_I18N_KEYS[item.agentId];
-    return key ? t(key) : item.agentId;
+    return AGENT_NAMES[item.agentId] ?? item.agentId;
   }
   return item.user?.name ?? '?';
 }

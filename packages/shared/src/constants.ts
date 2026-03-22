@@ -161,7 +161,6 @@ export const ERROR_CODES = {
   PAYMENT_PENDING: 'PAYMENT_PENDING',
   OAUTH_FAILED: 'OAUTH_FAILED',
   OAUTH_INVALID_STATE: 'OAUTH_INVALID_STATE',
-  OAUTH_TELEGRAM_INVALID: 'OAUTH_TELEGRAM_INVALID',
   AGENT_AUTH_REQUIRED: 'AGENT_AUTH_REQUIRED',
   AGENT_INVALID_ID: 'AGENT_INVALID_ID',
   COMMUNITY_POST_NOT_FOUND: 'COMMUNITY_POST_NOT_FOUND',
@@ -305,12 +304,14 @@ export const SUBJECT_TYPE_VALUES = ['PERSON', 'DOG', 'CAT'] as const;
 export const GENDER_VALUES = ['MALE', 'FEMALE', 'UNKNOWN'] as const;
 export const REPORT_STATUS_VALUES = ['ACTIVE', 'FOUND', 'EXPIRED', 'SUSPENDED'] as const;
 export const MATCH_STATUS_VALUES = ['PENDING', 'CONFIRMED', 'REJECTED', 'NOTIFIED'] as const;
+/** 사용자/관리자가 직접 설정 가능한 매칭 상태 (PENDING·NOTIFIED는 시스템 전용) */
+export const MATCH_STATUS_SETTABLE_VALUES = ['CONFIRMED', 'REJECTED'] as const;
 export const REPORT_PHASE_VALUES = ['searching', 'sighting_received', 'analysis_done', 'found'] as const;
 export const ADMIN_ACTION_SOURCE_VALUES = ['DASHBOARD', 'AGENT', 'API'] as const;
 export const LOCALE_VALUES = ['ko', 'ja', 'zh-TW', 'en'] as const;
 export const INQUIRY_CATEGORY_VALUES = ['PAYMENT', 'REPORT', 'GENERAL', 'PARTNERSHIP'] as const;
 export const INQUIRY_STATUS_VALUES = ['OPEN', 'REPLIED', 'CLOSED'] as const;
-export const SUPPORTED_PAY_TOKENS = ['APT', 'USDC', 'USDt', 'ETH', 'BNB', 'SOL'] as const;
+export const SUPPORTED_PAY_TOKENS = ['USDC', 'USDt', 'ETH', 'BNB', 'SOL'] as const;
 export type SupportedPayToken = (typeof SUPPORTED_PAY_TOKENS)[number];
 
 // ── 운영 에이전트 ──
@@ -333,6 +334,8 @@ export const ADMIN_AGENT_IDS = [
 export const CHAT_PLATFORM_VALUES = ['WEB', 'KAKAO'] as const;
 export const SIGHTING_SOURCE_VALUES = ['WEB', 'KAKAO_CHATBOT', 'ADMIN'] as const;
 export const PROMO_PLATFORM_VALUES = ['KAKAO_CHANNEL', 'TWITTER', 'INSTAGRAM'] as const;
+/** 재게시/수동 홍보 시 지원하는 플랫폼 (INSTAGRAM은 미지원) */
+export const PROMO_PLATFORM_REPOST_VALUES = ['TWITTER', 'KAKAO_CHANNEL'] as const;
 export const OUTREACH_REQUEST_STATUS_VALUES = ['PENDING_APPROVAL', 'APPROVED', 'SENDING', 'SENT', 'REJECTED', 'FAILED'] as const;
 export const OUTREACH_CONTACT_TYPE_VALUES = ['JOURNALIST', 'YOUTUBER', 'VIDEO'] as const;
 export const AI_PROVIDER_VALUES = ['anthropic', 'gemini', 'openai'] as const;
@@ -340,3 +343,23 @@ export const AI_PROVIDER_VALUES = ['anthropic', 'gemini', 'openai'] as const;
 // ── YouTube ──
 
 export const YT_VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+// ── IAP (In-App Purchase) ──
+
+/** IAP 플랫폼 (ios / android) */
+export const IAP_PLATFORM_VALUES = ['ios', 'android'] as const;
+export type IapPlatform = typeof IAP_PLATFORM_VALUES[number];
+
+/** IAP 제품 티어: productId → KRW 금액 매핑 (App Store / Google Play에 등록된 제품 기준) */
+export const IAP_PRODUCTS = {
+  sponsor_tier_1: 1000,
+  sponsor_tier_2: 3000,
+  sponsor_tier_3: 5000,
+  sponsor_tier_4: 10000,
+} as const;
+
+/** IAP 제품 ID 목록 (Zod enum, 프론트 제품 조회용) */
+export const IAP_PRODUCT_IDS = Object.keys(IAP_PRODUCTS) as [keyof typeof IAP_PRODUCTS, ...Array<keyof typeof IAP_PRODUCTS>];
+
+/** Toss 카드 결제 금액 프리셋 (KRW) */
+export const TOSS_PRESET_AMOUNTS = [1000, 3000, 5000, 10000] as const;

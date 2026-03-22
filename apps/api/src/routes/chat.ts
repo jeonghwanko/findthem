@@ -5,7 +5,7 @@ import { chatbotEngine } from '../chatbot/engine.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
-import { rateLimit } from '../middlewares/rateLimit.js';
+import { rateLimit, chatMessageLimiter } from '../middlewares/rateLimit.js';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, LOCALE_VALUES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
 
 const upload = multer({
@@ -74,7 +74,7 @@ export function registerChatRoutes(router: Router) {
   });
 
   // 메시지 전송
-  router.post('/chat/sessions/:id/messages', optionalAuth, async (req, res) => {
+  router.post('/chat/sessions/:id/messages', chatMessageLimiter, optionalAuth, async (req, res) => {
     const sessionId = req.params.id as string;
     const { message, locale: bodyLocale } = sendMessageSchema.parse(req.body);
     const locale = resolveLocale(
@@ -90,6 +90,7 @@ export function registerChatRoutes(router: Router) {
   // 사진 업로드 (채팅 중)
   router.post(
     '/chat/sessions/:id/upload',
+    chatMessageLimiter,
     optionalAuth,
     upload.single('photo'),
     async (req, res) => {

@@ -1,0 +1,27 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.findthem.capacitoriap"
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+        targetSdk 36
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+    // Google Play Billing Library 7.x
+    implementation 'com.android.billingclient:billing-ktx:7.1.1'
+    // AppCompatActivity는 capacitor-android가 api로 노출하지만 AGP 9에서 명시 필요
+    compileOnly "androidx.appcompat:appcompat:1.7.0"
+}

@@ -85,9 +85,8 @@ export default function HomePage() {
     let ignore = false;
     setLoading(true);
     api.get<ReportListResponse>(`/reports?limit=8&type=${filter}`)
-      // data.reports는 deprecated — items로 마이그레이션 완료 후 제거
       .then((data) => {
-        if (!ignore) setReports(data.items ?? (data as { reports: Report[] }).reports ?? []);
+        if (!ignore) setReports(data.items ?? []);
       })
       .catch(() => { if (!ignore) setReports([]); })
       .finally(() => { if (!ignore) setLoading(false); });

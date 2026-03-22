@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Camera, ImagePlus, X, SwitchCamera } from 'lucide-react';
 import exifr from 'exifr';
 import { compressImage } from '../utils/compressImage';
@@ -19,7 +18,6 @@ interface PhotoUploadProps {
 }
 
 export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, onEachExif }: PhotoUploadProps) {
-  const { t } = useTranslation();
   const [previews, setPreviews] = useState<{ id: string; url: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const filesRef = useRef<File[]>([]);
@@ -63,10 +61,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
     })();
   }
 
-  /**
-   * 압축이 완료된 파일 배열을 상태에 추가한다.
-   * skipExif=true이면 EXIF 파싱을 건너뛴다 (handleFiles에서 원본 파일로 이미 처리했을 때).
-   */
   function addFiles(added: File[], skipExif = false) {
     if (added.length === 0) return;
 
@@ -79,7 +73,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
     setFiles(updated);
     onChange(updated);
 
-    // EXIF 파싱: skipExif=false일 때만 (카메라 캡처 경로)
     if (!skipExif) {
       const isFirstBatch = !exifDoneRef.current && prevFiles.length === 0;
       if (isFirstBatch) exifDoneRef.current = true;
@@ -90,7 +83,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
       });
     }
 
-    // createObjectURL: 압축된 파일에서 즉시 blob URL 생성 (readAsDataURL 대비 메모리 절약)
     const newPreviews = trimmed.map((file) => ({
       id: `${file.name}_${file.size}_${Date.now()}_${Math.random()}`,
       url: URL.createObjectURL(file),
@@ -104,7 +96,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
     if (rawArray.length === 0) return;
 
     void (async () => {
-      // 1) EXIF 파싱은 원본 파일에서 먼저 수행 (압축 전 메타데이터 보존)
       const prevFiles = filesRef.current;
       const trimmed = rawArray.slice(0, maxFiles - prevFiles.length);
       if (trimmed.length === 0) return;
@@ -117,10 +108,7 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
         parseExif(file, fileIndex, isFirstBatch && i === 0);
       });
 
-      // 2) Canvas로 압축/리사이즈 (병렬)
       const compressed = await Promise.all(trimmed.map((f) => compressImage(f)));
-
-      // 3) 압축된 파일로 addFiles 호출 (EXIF 파싱은 이미 완료됐으므로 건너뜀)
       addFiles(compressed, true);
     })();
   }
@@ -137,7 +125,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
     });
   }
 
-  // ── Camera modal ──
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
@@ -156,14 +143,12 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
       }
     } catch (err) {
       setCameraOpen(false);
-      // 권한 거부가 아닌 경우에만 파일 선택으로 폴백
       if (err instanceof Error && err.name !== 'NotAllowedError') {
         galleryRef.current?.click();
       }
     }
   }, [stopCamera]);
 
-  // FIX: 클린업에서 조건 제거 — 항상 스트림 종료
   useEffect(() => {
     if (cameraOpen) {
       void startCamera(facingMode);
@@ -172,7 +157,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
   }, [cameraOpen, facingMode, startCamera, stopCamera]);
 
   function handleCameraClick() {
-    // getUserMedia 지원 여부로 판별 (모바일에서도 카메라 모달 가능하나 네이티브가 UX 더 좋음)
     const hasMediaDevices = !!navigator.mediaDevices?.getUserMedia;
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -197,7 +181,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
     canvas.toBlob((blob) => {
       if (!blob) return;
       const raw = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      // 카메라 캡처는 EXIF orientation이 없으므로 orientation=1(보정 없음)으로 압축만 적용
       void compressImage(raw).then((compressed) => {
         addFiles([compressed]);
         setCameraOpen(false);
@@ -219,16 +202,16 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
 
   return (
     <div>
-      {/* 사진이 없을 때: 큰 버튼 두 개 */}
+      {/* 사진이 없을 때: 큰 버튼 두 개 (고정 높이로 CLS 방지) */}
       {!hasPhotos && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 min-h-[120px]">
           <button
             type="button"
             onClick={handleCameraClick}
             className="flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-primary-300 bg-primary-50 rounded-xl text-primary-600 hover:bg-primary-100 hover:border-primary-400 transition-colors"
           >
             <Camera className="w-8 h-8" />
-            <span className="text-sm font-medium">{t('upload.takePhoto')}</span>
+            <span className="text-sm font-medium">직접 촬영</span>
           </button>
           <button
             type="button"
@@ -236,14 +219,14 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
             className="flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl text-gray-600 hover:bg-gray-100 hover:border-gray-400 transition-colors"
           >
             <ImagePlus className="w-8 h-8" />
-            <span className="text-sm font-medium">{t('upload.fromGallery')}</span>
+            <span className="text-sm font-medium">갤러리에서 선택</span>
           </button>
         </div>
       )}
 
-      {/* 사진이 있을 때: 미리보기 + 추가 버튼 */}
+      {/* 사진이 있을 때: 미리보기 + 추가 버튼 (고정 높이로 CLS 방지) */}
       {hasPhotos && (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 min-h-[96px]">
           {previews.map((p, i) => (
             <div key={p.id} className="relative w-24 h-24 rounded-lg overflow-hidden">
               <img src={p.url} alt="" className="w-full h-full object-cover" />
@@ -265,7 +248,7 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
                 className="w-24 h-24 border-2 border-dashed border-primary-300 rounded-lg flex flex-col items-center justify-center text-primary-500 hover:bg-primary-50 transition-colors"
               >
                 <Camera className="w-5 h-5" />
-                <span className="text-[10px] mt-1">{t('upload.takePhoto')}</span>
+                <span className="text-[10px] mt-1">직접 촬영</span>
               </button>
               <button
                 type="button"
@@ -273,7 +256,7 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
                 className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
               >
                 <ImagePlus className="w-5 h-5" />
-                <span className="text-[10px] mt-1">{t('upload.fromGallery')}</span>
+                <span className="text-[10px] mt-1">갤러리에서 선택</span>
               </button>
             </div>
           )}
@@ -300,24 +283,22 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
       />
 
       <p className="text-xs text-gray-400 mt-2">
-        {t('upload.limit', { max: maxFiles })}
+        최대 {maxFiles}장, 장당 10MB 이하
       </p>
 
-      {/* ── Camera Modal (데스크톱) ── */}
+      {/* Camera Modal (데스크톱) */}
       {cameraOpen && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          {/* 상단 바 */}
           <div className="flex items-center justify-between px-4 py-3 bg-black/80">
             <button type="button" onClick={closeCameraModal} className="text-white p-1">
               <X className="w-6 h-6" />
             </button>
-            <span className="text-white text-sm font-medium">{t('upload.takePhoto')}</span>
+            <span className="text-white text-sm font-medium">직접 촬영</span>
             <button type="button" onClick={toggleFacing} className="text-white p-1">
               <SwitchCamera className="w-6 h-6" />
             </button>
           </div>
 
-          {/* 비디오 뷰파인더 */}
           <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
             <video
               ref={videoRef}
@@ -328,7 +309,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
             />
           </div>
 
-          {/* 셔터 버튼 */}
           <div className="flex items-center justify-center py-6 bg-black/80">
             <button
               type="button"
@@ -339,7 +319,6 @@ export default function PhotoUpload({ maxFiles = 5, onChange, onExifExtracted, o
             </button>
           </div>
 
-          {/* 캡처용 hidden canvas */}
           <canvas ref={canvasRef} className="hidden" />
         </div>
       )}

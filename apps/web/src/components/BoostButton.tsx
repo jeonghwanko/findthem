@@ -65,10 +65,10 @@ export default function BoostButton({ reportId }: BoostButtonProps) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Rocket className="w-5 h-5 text-amber-600" />
-          <span className="font-semibold text-amber-800">{t('boost.title')}</span>
+          <span className="font-semibold text-amber-800">신고 부스트</span>
         </div>
         <span className="text-sm text-amber-600">
-          {t('boost.remaining', { remaining, max: MAX_BOOSTS_PER_DAY })}
+          오늘 {remaining}/{MAX_BOOSTS_PER_DAY}회 남음
         </span>
       </div>
       <button

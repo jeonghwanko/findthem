@@ -18,7 +18,7 @@ describe('Users E2E', () => {
       findMany: vi.fn().mockResolvedValue([]),
     };
     // grantXp 내부: SELECT FOR UPDATE
-    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ xp: 0 }]);
     // grantXp 내부: 조건부 INSERT (dailyLimit 있는 액션) 또는 쿨다운 선점 (ad-reward)
     prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
     prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -31,15 +31,15 @@ describe('Users E2E', () => {
     it('로그인 시 XP 통계 반환 → 200', async () => {
       prismaMock.user.findUnique
         .mockResolvedValueOnce({ isBlocked: false })
-        .mockResolvedValueOnce({ sponsorXp: 1200, userLevel: 2 });
+        .mockResolvedValueOnce({ xp: 1200, level: 2 });
 
       const res = await app
         .get('/api/users/me/xp-stats')
         .set('Authorization', authHeader());
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('sponsorXp', 1200);
-      expect(res.body).toHaveProperty('userLevel');
+      expect(res.body).toHaveProperty('xp', 1200);
+      expect(res.body).toHaveProperty('level');
       expect(res.body).toHaveProperty('currentXP');
       expect(res.body).toHaveProperty('xpToNextLevel');
       expect(res.body).toHaveProperty('xpRequiredForLevel');
@@ -48,15 +48,15 @@ describe('Users E2E', () => {
     it('XP 0인 신규 유저 → level 1, currentXP 0', async () => {
       prismaMock.user.findUnique
         .mockResolvedValueOnce({ isBlocked: false })
-        .mockResolvedValueOnce({ sponsorXp: 0, userLevel: 1 });
+        .mockResolvedValueOnce({ xp: 0, level: 1 });
 
       const res = await app
         .get('/api/users/me/xp-stats')
         .set('Authorization', authHeader());
 
       expect(res.status).toBe(200);
-      expect(res.body.sponsorXp).toBe(0);
-      expect(res.body.userLevel).toBe(1);
+      expect(res.body.xp).toBe(0);
+      expect(res.body.level).toBe(1);
       expect(res.body.currentXP).toBe(0);
       expect(res.body.xpToNextLevel).toBeGreaterThan(0);
     });
@@ -89,7 +89,7 @@ describe('Users E2E', () => {
       prismaMock.user.findUnique.mockResolvedValueOnce({ isBlocked: false });
       // AD_WATCH dailyLimit=null → xpLog.create 사용
       // SELECT FOR UPDATE
-      prismaMock.$queryRaw.mockResolvedValueOnce([{ sponsorXp: prevXp }]);
+      prismaMock.$queryRaw.mockResolvedValueOnce([{ xp: prevXp }]);
       prismaMock.user.update.mockResolvedValueOnce({});
 
       const res = await app
@@ -123,7 +123,7 @@ describe('Users E2E', () => {
       const prevXp = 1000 - XP_PER_AD;
       prismaMock.$executeRaw.mockResolvedValueOnce(1); // 쿨다운 선점
       prismaMock.user.findUnique.mockResolvedValueOnce({ isBlocked: false });
-      prismaMock.$queryRaw.mockResolvedValueOnce([{ sponsorXp: prevXp }]);
+      prismaMock.$queryRaw.mockResolvedValueOnce([{ xp: prevXp }]);
       prismaMock.user.update.mockResolvedValueOnce({});
       prismaMock.userReward.upsert.mockResolvedValue({});
 
@@ -143,7 +143,7 @@ describe('Users E2E', () => {
     it('레벨업 없을 때 leveledUp: false + reward 없음', async () => {
       prismaMock.$executeRaw.mockResolvedValueOnce(1); // 쿨다운 선점
       prismaMock.user.findUnique.mockResolvedValueOnce({ isBlocked: false });
-      prismaMock.$queryRaw.mockResolvedValueOnce([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValueOnce([{ xp: 0 }]);
       prismaMock.user.update.mockResolvedValueOnce({});
 
       const res = await app
@@ -161,7 +161,7 @@ describe('Users E2E', () => {
       const prevXp = 3450 - XP_PER_AD;
       prismaMock.$executeRaw.mockResolvedValueOnce(1); // 쿨다운 선점
       prismaMock.user.findUnique.mockResolvedValueOnce({ isBlocked: false });
-      prismaMock.$queryRaw.mockResolvedValueOnce([{ sponsorXp: prevXp }]);
+      prismaMock.$queryRaw.mockResolvedValueOnce([{ xp: prevXp }]);
       prismaMock.user.update.mockResolvedValueOnce({});
 
       const res = await app
@@ -183,7 +183,7 @@ describe('Users E2E', () => {
       // SHARE dailyLimit=5 → 조건부 INSERT ($executeRaw) 성공
       prismaMock.$executeRaw.mockResolvedValueOnce(1);
       // SELECT FOR UPDATE
-      prismaMock.$queryRaw.mockResolvedValueOnce([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValueOnce([{ xp: 0 }]);
       prismaMock.user.update.mockResolvedValueOnce({});
 
       const res = await app

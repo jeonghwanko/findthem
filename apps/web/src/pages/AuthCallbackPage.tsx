@@ -29,30 +29,6 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    // 텔레그램 콜백: #tgAuthResult=<base64 JSON>
-    const tgAuthResult = params.get('tgAuthResult');
-    if (tgAuthResult) {
-      try {
-        const authData = JSON.parse(atob(tgAuthResult)) as Record<string, string>;
-        api.post<{ token?: string }>('/auth/telegram/callback', authData)
-          .then((data) => {
-            if (data.token) {
-              localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
-              return applyPendingReferral();
-            }
-          })
-          .then(() => {
-            window.location.replace('/');
-          })
-          .catch(() => {
-            window.location.replace('/login');
-          });
-      } catch {
-        window.location.replace('/login');
-      }
-      return;
-    }
-
     // 알 수 없는 콜백
     window.location.replace('/');
   }, []);

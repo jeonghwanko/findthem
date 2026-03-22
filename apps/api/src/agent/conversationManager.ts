@@ -30,7 +30,7 @@ export async function loadAsClaudeMessages(
   for (const msg of messages) {
     const meta = (msg.metadata ?? {}) as MessageMetadata;
 
-    if (msg.role === 'user') {
+    if (msg.role === 'USER') {
       if (meta.photoUrl) {
         // 이미지 content block 포함
         try {
@@ -52,7 +52,7 @@ export async function loadAsClaudeMessages(
       } else {
         result.push({ role: 'user', content: msg.content });
       }
-    } else if (msg.role === 'assistant') {
+    } else if (msg.role === 'ASSISTANT') {
       if (meta.toolCalls && meta.toolCalls.length > 0) {
         // tool_use blocks 복원 (assistant) + tool_result blocks (user)
         // tool_use_id는 복원 시 assistant/tool_result 쌍이 일치해야 함.
@@ -114,13 +114,13 @@ export async function saveRound(
     data: [
       {
         sessionId,
-        role: 'user',
+        role: 'USER',
         content: userMessage,
         metadata: userMeta,
       },
       {
         sessionId,
-        role: 'assistant',
+        role: 'ASSISTANT',
         content: assistantText,
         metadata: assistantMeta,
       },

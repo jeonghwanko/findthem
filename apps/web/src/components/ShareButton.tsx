@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { getWebOrigin } from '../utils/webOrigin';
 
 interface ShareButtonProps {
@@ -10,13 +9,11 @@ interface ShareButtonProps {
 }
 
 export default function ShareButton({ title, description, imageUrl, url }: ShareButtonProps) {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shareUrl = url ?? `${getWebOrigin()}${window.location.pathname}`;
 
-  // 외부 클릭 시 닫기
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
@@ -46,14 +43,12 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
   async function handleKakao() {
     const kakaoKey = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
     if (!kakaoKey) {
-      // 키 미설정 시 카카오링크 웹 fallback
       const fallbackUrl = `https://sharer.kakao.com/talk/friends/picker/link?app_key=&lang=ko&url=${encodeURIComponent(shareUrl)}`;
       window.open(fallbackUrl, '_blank', 'noopener,noreferrer,width=400,height=600');
       setOpen(false);
       return;
     }
 
-    // SDK 동적 로드
     if (!window.Kakao) {
       await new Promise<void>((resolve, reject) => {
         const s = document.createElement('script');
@@ -78,7 +73,7 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
           : `${getWebOrigin()}/pwa-512x512.png`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
-      buttons: [{ title: t('share.kakaoButton'), link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+      buttons: [{ title: '신고 보기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
     });
     setOpen(false);
   }
@@ -89,8 +84,7 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // clipboard API 미지원 (iOS Safari 일부) — prompt fallback
-      window.prompt(t('share.copyPrompt'), shareUrl);
+      window.prompt('링크를 복사하세요:', shareUrl);
     }
     setOpen(false);
   }
@@ -108,12 +102,12 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
           }
         }}
         className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 hover:border-gray-400 rounded-xl text-gray-700 hover:text-gray-900 font-medium text-sm transition-colors"
-        aria-label={t('share.button')}
+        aria-label="공유하기"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
         </svg>
-        {t('share.button')}
+        공유하기
       </button>
 
       {open && !canNativeShare && (
@@ -123,21 +117,21 @@ export default function ShareButton({ title, description, imageUrl, url }: Share
             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <span className="text-base font-bold text-black">𝕏</span>
-            {t('share.twitter')}
+            X (트위터)에 공유
           </button>
           <button
             onClick={() => void handleKakao()}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
           >
             <span className="text-base">💬</span>
-            {t('share.kakao')}
+            카카오톡에 공유
           </button>
           <button
             onClick={() => void handleCopy()}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
           >
             <span className="text-base">{copied ? '✅' : '🔗'}</span>
-            {copied ? t('share.copied') : t('share.copyLink')}
+            {copied ? '복사됨!' : '링크 복사'}
           </button>
         </div>
       )}

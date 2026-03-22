@@ -23,8 +23,9 @@ export default function CommunityNewPostPage() {
         content: content.trim(),
       });
       navigate(`/community/${post.id}`);
-    } catch {
-      setError(t('community.submitError'));
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : '';
+      setError(t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN_ERROR') }));
       setSubmitting(false);
     }
   };
@@ -36,10 +37,10 @@ export default function CommunityNewPostPage() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t('community.title')}
+        커뮤니티
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('community.newPost')}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">글쓰기</h1>
 
       {error && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
@@ -50,14 +51,14 @@ export default function CommunityNewPostPage() {
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            {t('community.writeTitle')}
+            제목
           </label>
           <input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={t('community.titlePlaceholder')}
+            placeholder="제목을 입력하세요"
             maxLength={200}
             className="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
@@ -65,13 +66,13 @@ export default function CommunityNewPostPage() {
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            {t('community.writeContent')}
+            내용
           </label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={t('community.contentPlaceholder')}
+            placeholder="내용을 입력하세요"
             rows={12}
             maxLength={10000}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-y"
@@ -84,14 +85,14 @@ export default function CommunityNewPostPage() {
             onClick={() => navigate('/community')}
             className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            {t('community.cancel')}
+            취소
           </button>
           <button
             type="submit"
             disabled={!title.trim() || !content.trim() || submitting}
             className="bg-primary-600 hover:bg-primary-700 disabled:opacity-40 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
           >
-            {submitting ? t('community.submitting') : t('community.submit')}
+            {submitting ? '등록 중...' : '등록'}
           </button>
         </div>
       </form>

@@ -38,7 +38,7 @@ import { resolve } from 'node:path';
 import { generateDevlogArticle, shareDevlogToTwitter } from '../services/devlogService.js';
 import { createGhostPost, listGhostPosts, deleteGhostPost, updateGhostSettings, type GhostSettingInput } from '../services/ghostService.js';
 import { config } from '../config.js';
-import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES, ADMIN_AGENT_IDS, OUTREACH_REQUEST_STATUS_VALUES, OUTREACH_CONTACT_TYPE_VALUES, AI_PROVIDER_VALUES } from '@findthem/shared';
+import { ERROR_CODES, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, REPORT_STATUS_VALUES, SUBJECT_TYPE_VALUES, MATCH_STATUS_VALUES, MATCH_STATUS_SETTABLE_VALUES, ADMIN_ACTION_SOURCE_VALUES, INQUIRY_STATUS_VALUES, ADMIN_AGENT_IDS, OUTREACH_REQUEST_STATUS_VALUES, OUTREACH_CONTACT_TYPE_VALUES, AI_PROVIDER_VALUES } from '@findthem/shared';
 import type { AdminActionSource } from '@findthem/shared';
 import { getAiSettings, updateAiSetting, getApiKeyStatuses, saveApiKey, testApiKey } from '../services/aiConfigService.js';
 import { isCronEnabled, getCronIntervalHours, invalidateSettingsCache, type CronJobKey } from '../ai/aiSettings.js';
@@ -82,7 +82,7 @@ const adminMatchQuerySchema = z.object({
 });
 
 const adminMatchStatusSchema = z.object({
-  status: z.enum(['CONFIRMED', 'REJECTED']),
+  status: z.enum(MATCH_STATUS_SETTABLE_VALUES),
   reason: z.string().optional(),
 });
 
@@ -437,7 +437,7 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/crawl/trigger — 즉시 크롤 실행
-  router.post('/admin/crawl/trigger', requireAdmin, validateBody(crawlTriggerSchema), async (req, res) => {
+  router.post('/admin/crawl/trigger', requireAdmin, adminLimiter, validateBody(crawlTriggerSchema), async (req, res) => {
     const { sources } = req.body as z.infer<typeof crawlTriggerSchema>;
     const job = await crawlSchedulerQueue.add(
       'crawl-dispatch',
@@ -506,7 +506,7 @@ export function registerAdminRoutes(router: Router) {
   }
 
   // POST /admin/devlog/preview — diff 추출 + AI 생성 (Ghost 포스팅 없이)
-  router.post('/admin/devlog/preview', requireAdmin, async (req, res) => {
+  router.post('/admin/devlog/preview', requireAdmin, adminLimiter, async (req, res) => {
     res.setTimeout(60000);
 
     const { context, commitCount } = parseDevlogBody(req.body as DevlogRequestBody);
@@ -525,7 +525,7 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/devlog/generate — preview + Ghost CMS 포스팅 (+ 선택적 Twitter)
-  router.post('/admin/devlog/generate', requireAdmin, async (req, res) => {
+  router.post('/admin/devlog/generate', requireAdmin, adminLimiter, async (req, res) => {
     res.setTimeout(60000);
 
     const { context, commitCount, publishStatus, tags, twitterShare } = parseDevlogBody(
@@ -579,7 +579,7 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/devlog/site-settings — Ghost 네비게이션/구독버튼 일괄 설정
-  router.post('/admin/devlog/site-settings', requireAdmin, async (_req, res) => {
+  router.post('/admin/devlog/site-settings', requireAdmin, adminLimiter, async (_req, res) => {
     const siteUrl = config.siteUrl;
     const navSettings: GhostSettingInput[] = [
       {
@@ -658,7 +658,7 @@ export function registerAdminRoutes(router: Router) {
   );
 
   // ── 깨진 사진 레코드 정리 (배치 처리) ──
-  router.post('/admin/cleanup-broken-photos', requireAdmin, async (_req, res) => {
+  router.post('/admin/cleanup-broken-photos', requireAdmin, adminLimiter, async (_req, res) => {
     const BATCH_SIZE = 500;
     let totalScanned = 0;
     let totalBroken = 0;
@@ -667,7 +667,7 @@ export function registerAdminRoutes(router: Router) {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const photos = await prisma.reportPhoto.findMany({
+      const photos = await prisma.photo.findMany({
         select: { id: true, photoUrl: true },
         take: BATCH_SIZE,
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -701,7 +701,7 @@ export function registerAdminRoutes(router: Router) {
       }
 
       if (brokenIds.length > 0) {
-        const result = await prisma.reportPhoto.deleteMany({
+        const result = await prisma.photo.deleteMany({
           where: { id: { in: brokenIds } },
         });
         totalBroken += brokenIds.length;
@@ -967,10 +967,10 @@ export function registerAdminRoutes(router: Router) {
 
   // ── Cron Settings ──
 
-  const CRON_JOB_KEYS: CronJobKey[] = ['crawl-scheduler', 'qa-crawl', 'promotion-repost'];
+  const CRON_JOB_KEYS = ['crawl-scheduler', 'qa-crawl', 'promotion-repost'] as const;
 
   const cronSettingUpdateSchema = z.object({
-    jobKey: z.enum(['crawl-scheduler', 'qa-crawl', 'promotion-repost']),
+    jobKey: z.enum(CRON_JOB_KEYS),
     enabled: z.boolean().optional(),
     interval: z.number().int().min(1).max(168).optional(), // 1~168시간 (최대 7일)
   });
@@ -1253,7 +1253,7 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/external-agents
-  router.post('/admin/external-agents', requireAdmin, validateBody(externalAgentCreateSchema), async (req, res) => {
+  router.post('/admin/external-agents', requireAdmin, adminLimiter, validateBody(externalAgentCreateSchema), async (req, res) => {
     const { name, description, avatarUrl, webhookUrl } = req.body as z.infer<typeof externalAgentCreateSchema>;
 
     const rawKey = randomBytes(32).toString('hex');
@@ -1358,7 +1358,7 @@ export function registerAdminRoutes(router: Router) {
   });
 
   // POST /admin/qa-crawl/trigger — Q&A 크롤 수동 실행
-  router.post('/admin/qa-crawl/trigger', requireAdmin, async (_req, res) => {
+  router.post('/admin/qa-crawl/trigger', requireAdmin, adminLimiter, async (_req, res) => {
     await qaCrawlQueue.add(
       'qa-crawl-run',
       { triggeredBy: 'manual' },

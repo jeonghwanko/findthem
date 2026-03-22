@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Gamepad2, X, Trophy, Play, Tv } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useRewardAd } from '../hooks/useRewardAd';
+import { useXpToast } from '../components/XpRewardToast';
 import { getGameStatus, recordGamePlay, type GameStatus } from '../api/game';
+import { claimAdReward } from '../api/game';
 import { MAX_FREE_PLAYS_PER_DAY, MAX_AD_PLAYS_PER_DAY } from '@findthem/shared';
 
 // ── 스토리지 키 (비로그인 로컬 한도 관리) ──
@@ -100,6 +103,7 @@ export default function GamePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showRewardAd, loading: adLoading, isNative } = useRewardAd();
+  const { showXpToast } = useXpToast();
 
   const [phase, setPhase] = useState<Phase>('select');
   const [selected, setSelected] = useState<CharacterId | null>('image-matching');
@@ -205,10 +209,25 @@ export default function GamePage() {
       if (!isNative) {
         // 웹: 광고 없이 바로 허용 (개발/테스트)
         setAdGranted(true);
+        // 웹에서도 로그인 시 XP 지급 시도
+        if (user) {
+          claimAdReward().then((r) => {
+            if (r) showXpToast({ xpGained: r.xpGained, action: 'AD_WATCH', leveledUp: r.leveledUp, newLevel: r.newLevel });
+          }).catch(() => { /* silent */ });
+        }
         return;
       }
-      const rewarded = await showRewardAd();
-      if (rewarded) setAdGranted(true);
+      const watched = await showRewardAd();
+      if (watched) {
+        setAdGranted(true);
+        // 전면 광고 시청 완료 → XP 지급
+        if (user) {
+          try {
+            const result = await claimAdReward();
+            if (result) showXpToast({ xpGained: result.xpGained, action: 'AD_WATCH', leveledUp: result.leveledUp, newLevel: result.newLevel });
+          } catch { /* cooldown or other error — silent */ }
+        }
+      }
     } finally {
       isWatchingAdRef.current = false;
     }
@@ -333,10 +352,10 @@ export default function GamePage() {
     );
   }
 
-  // ── 게임 중 ──
+  // ── 게임 중 (Portal로 body에 직접 렌더 — PullToRefreshContainer의 transform이 fixed를 깨는 문제 방지) ──
   if (phase === 'playing') {
     const ch = CHARACTERS.find((c) => c.id === selected);
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#87ceeb' }}>
         <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur-sm" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
           <span className="text-white text-sm font-semibold">
@@ -357,7 +376,8 @@ export default function GamePage() {
           allow="autoplay"
           title={t('game.title')}
         />
-      </div>
+      </div>,
+      document.body,
     );
   }
 

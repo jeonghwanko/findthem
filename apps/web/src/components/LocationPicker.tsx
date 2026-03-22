@@ -1,5 +1,4 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useKakaoMap } from '../hooks/useKakaoMap';
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
@@ -49,12 +48,10 @@ export default function LocationPicker({
   onAddressChange,
   onLocationChange,
 }: LocationPickerProps) {
-  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<kakao.maps.Marker | null>(null);
   const [geoError, setGeoError] = useState('');
 
-  // 항상 최신 콜백을 참조하는 stable ref — 이벤트 리스너 재등록 없이 최신 함수 사용
   const onLocationChangeRef = useRef(onLocationChange);
   useEffect(() => { onLocationChangeRef.current = onLocationChange; });
 
@@ -64,7 +61,6 @@ export default function LocationPicker({
     level: 5,
   });
 
-  // 지도 초기화 후 마커 생성 및 클릭 이벤트 등록
   useEffect(() => {
     if (!map) return;
 
@@ -86,11 +82,9 @@ export default function LocationPicker({
       window.kakao.maps.event.removeListener(map, 'click', handleClick);
       marker.setMap(null);
     };
-    // map이 초기화될 때 한 번만 등록. 콜백은 stable ref로 항상 최신 유지.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
-  // lat/lng prop 변경 시 지도 중심 및 마커 위치 동기화
   useEffect(() => {
     if (!map || lat === null || lng === null) return;
     const latlng = new window.kakao.maps.LatLng(lat, lng);
@@ -115,19 +109,18 @@ export default function LocationPicker({
             if (status === window.kakao.maps.services.Status.OK && results.length > 0) {
               onLocationChangeRef.current(parseFloat(results[0].y), parseFloat(results[0].x));
             } else {
-              setGeoError(t('report.geoError'));
+              setGeoError('주소의 좌표를 찾을 수 없습니다. 지도를 직접 클릭해 위치를 지정해주세요.');
             }
           });
         },
       }).open();
     });
-  }, [onAddressChange, t]);
+  }, [onAddressChange]);
 
   const hasMap = Boolean(KAKAO_JS_KEY);
 
   return (
     <div className="space-y-2">
-      {/* 클릭하면 주소 검색 팝업이 바로 열림 */}
       <button
         type="button"
         onClick={handleAddressSearch}
@@ -139,7 +132,7 @@ export default function LocationPicker({
         {address ? (
           <span className="text-gray-900 truncate">{address}</span>
         ) : (
-          <span className="text-gray-400">{t('report.addressSearchPlaceholder')}</span>
+          <span className="text-gray-400">클릭하여 주소를 검색하세요</span>
         )}
       </button>
 
@@ -155,12 +148,12 @@ export default function LocationPicker({
       )}
 
       {hasMap && map && (
-        <p className="text-xs text-gray-500">{t('report.mapClickHint')}</p>
+        <p className="text-xs text-gray-500">지도를 클릭하여 위치를 세밀하게 조정할 수 있습니다</p>
       )}
 
       {lat !== null && lng !== null && (
         <p className="text-xs text-gray-400">
-          {t('report.coordsLabel', { lat: lat.toFixed(5), lng: lng.toFixed(5) })}
+          위도 {lat.toFixed(5)}, 경도 {lng.toFixed(5)}
         </p>
       )}
     </div>

@@ -23,15 +23,12 @@ vi.mock('@findthem/web3-payment', () => ({
   fromUsdToTokenAmount: vi.fn().mockReturnValue(1),
   EVM_TOKENS: {},
   SOL_TOKENS: {},
-  APT_NATIVE_COIN_TYPE: '0x1::aptos_coin::AptosCoin',
-  APT_DECIMALS: 8,
   QUOTE_TTL_SECS: 300,
   SOLANA_USDC_MINT: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
   isSupportedChainId: vi.fn().mockReturnValue(false),
   toSupportedChainId: vi.fn().mockReturnValue(1),
   verifyEvmTransfer: vi.fn(),
   verifySolanaTransfer: vi.fn(),
-  verifyAptosTransfer: vi.fn(),
 }));
 
 const VALID_VERIFY_BODY = {
@@ -61,7 +58,7 @@ describe('Sponsors E2E — XP 지급 통합', () => {
       findMany: vi.fn().mockResolvedValue([]),
     };
     prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
-    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ xp: 0 }]);
     prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       return callback(prismaMock);
     });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Camera } from 'lucide-react';
@@ -28,6 +28,37 @@ export default function ReportDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
 
+  const mapCenter = useMemo(
+    () =>
+      report?.lastSeenLat != null && report?.lastSeenLng != null
+        ? { lat: report.lastSeenLat, lng: report.lastSeenLng }
+        : undefined,
+    [report?.lastSeenLat, report?.lastSeenLng],
+  );
+
+  const mapMarkers = useMemo(() => {
+    if (!report || report.lastSeenLat == null || report.lastSeenLng == null) return [];
+    return [
+      {
+        lat: report.lastSeenLat,
+        lng: report.lastSeenLng,
+        title: report.name,
+        infoContent: `<div style="padding:4px 8px;font-size:13px"><strong>${esc(report.name)}</strong><br/>${esc(report.lastSeenAddress)}</div>`,
+      },
+      ...sightings
+        .filter(
+          (s): s is Sighting & { lat: number; lng: number } =>
+            s.lat !== null && s.lat !== undefined && s.lng !== null && s.lng !== undefined,
+        )
+        .map((s) => ({
+          lat: s.lat,
+          lng: s.lng,
+          title: s.address,
+          infoContent: `<div style="padding:4px 8px;font-size:13px">${esc(s.description)}<br/><span style="color:#6b7280">${esc(s.address)}</span></div>`,
+        })),
+    ];
+  }, [report?.lastSeenLat, report?.lastSeenLng, report?.name, report?.lastSeenAddress, sightings]);
+
   useEffect(() => {
     if (!id) return;
     Promise.all([
@@ -36,7 +67,7 @@ export default function ReportDetailPage() {
     ])
       .then(([r, s]) => {
         setReport(r);
-        setSightings(s.sightings);
+        setSightings(s.items);
       })
       .catch(() => setLoading(false))
       .finally(() => setLoading(false));
@@ -175,25 +206,8 @@ export default function ReportDetailPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <h2 className="font-semibold text-lg mb-4">{t('detail.locationMap')}</h2>
           <KakaoMap
-            markers={[
-              {
-                lat: report.lastSeenLat,
-                lng: report.lastSeenLng,
-                title: report.name,
-                infoContent: `<div style="padding:4px 8px;font-size:13px"><strong>${esc(report.name)}</strong><br/>${esc(report.lastSeenAddress)}</div>`,
-              },
-              ...sightings
-                .filter((s): s is Sighting & { lat: number; lng: number } =>
-                  s.lat !== null && s.lat !== undefined && s.lng !== null && s.lng !== undefined,
-                )
-                .map((s) => ({
-                  lat: s.lat,
-                  lng: s.lng,
-                  title: s.address,
-                  infoContent: `<div style="padding:4px 8px;font-size:13px">${esc(s.description)}<br/><span style="color:#6b7280">${esc(s.address)}</span></div>`,
-                })),
-            ]}
-            center={{ lat: report.lastSeenLat, lng: report.lastSeenLng }}
+            markers={mapMarkers}
+            center={mapCenter}
             level={6}
             useCluster={false}
             className="w-full h-72 rounded-lg"

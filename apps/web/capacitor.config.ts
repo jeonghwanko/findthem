@@ -20,6 +20,7 @@ const config: CapacitorConfig = {
       '@capacitor-community/admob',
       '@capacitor-firebase/crashlytics',
       '@capacitor-firebase/messaging',
+      '@findthem/capacitor-iap',
     ],
   },
   server: {
@@ -34,7 +35,6 @@ const config: CapacitorConfig = {
       'kauth.kakao.com',
       'accounts.kakao.com',
       'nid.naver.com',
-      'oauth.telegram.org',
       'appleid.apple.com',
     ],
   },

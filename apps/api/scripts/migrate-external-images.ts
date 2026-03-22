@@ -30,8 +30,8 @@ const log = createLogger('migrate-external-images');
 async function main() {
   log.info('외부 이미지 마이그레이션 시작');
 
-  // http:// 또는 https://로 시작하는 ReportPhoto 전체 조회
-  const externalPhotos = await prisma.reportPhoto.findMany({
+  // http:// 또는 https://로 시작하는 Photo 전체 조회
+  const externalPhotos = await prisma.photo.findMany({
     where: {
       OR: [
         { photoUrl: { startsWith: 'http://' } },
@@ -71,7 +71,7 @@ async function main() {
         continue;
       }
 
-      await prisma.reportPhoto.update({
+      await prisma.photo.update({
         where: { id: photo.id },
         data: {
           photoUrl: result.photoUrl,

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { YT_VIDEO_ID_RE } from '@findthem/shared';
 import { api } from '../api/client';
 
@@ -35,7 +34,6 @@ function SkeletonCard({ fill }: { fill?: boolean }) {
 }
 
 export default function OutreachHighlights() {
-  const { t } = useTranslation();
   const [items, setItems] = useState<OutreachHighlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [setIndex, setSetIndex] = useState(0);
@@ -100,9 +98,9 @@ export default function OutreachHighlights() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
             <Link to="/team" className="text-pink-500 font-bold hover:underline">
-              {t('home.heroAgent.promo.name')}
+              홍보왕 헤르미
             </Link>
-            {t('home.outreachTitleSuffix')}
+            의 아웃리치
           </p>
 
           {!loading && totalSets > 1 && (

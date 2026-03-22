@@ -22,7 +22,7 @@ describe('Sightings E2E', () => {
       findMany: vi.fn().mockResolvedValue([]),
     };
     prismaMock.$executeRaw = vi.fn().mockResolvedValue(1);
-    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ sponsorXp: 0 }]);
+    prismaMock.$queryRaw = vi.fn().mockResolvedValue([{ xp: 0 }]);
   });
 
   // ── POST /api/sightings ──
@@ -35,8 +35,8 @@ describe('Sightings E2E', () => {
     it('제보 성공 → 201', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'sp-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
         thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
       }]);
@@ -59,8 +59,8 @@ describe('Sightings E2E', () => {
     it('사진 첨부 → 이미지 큐 작업 추가', async () => {
       prismaMock.report.findUnique.mockResolvedValue(testReport);
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'sighting-photo-1',
         sightingId: testSighting.id,
         photoUrl: '/uploads/sightings/photo.jpg',
@@ -132,14 +132,14 @@ describe('Sightings E2E', () => {
     it('로그인 유저의 제보 성공 시 SIGHTING XP가 fire-and-forget으로 지급된다', async () => {
       prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'sp-xp-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
         thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
       }]);
       // SIGHTING dailyLimit:5 → $executeRaw 조건부 INSERT
       prismaMock.$executeRaw.mockResolvedValue(1);
-      prismaMock.$queryRaw.mockResolvedValue([{ sponsorXp: 0 }]);
+      prismaMock.$queryRaw.mockResolvedValue([{ xp: 0 }]);
       prismaMock.user.update.mockResolvedValue({});
 
       const res = await app
@@ -162,8 +162,8 @@ describe('Sightings E2E', () => {
     it('비로그인 유저의 제보 시 XP 미지급', async () => {
       prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
       prismaMock.sighting.create.mockResolvedValue({ ...testSighting, userId: null });
-      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'sp-anon-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
         thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
       }]);
@@ -188,8 +188,8 @@ describe('Sightings E2E', () => {
     it('XP 지급 실패해도 제보는 성공한다 (fire-and-forget)', async () => {
       prismaMock.report.findUnique.mockResolvedValue({ ...testReport, status: 'ACTIVE' });
       prismaMock.sighting.create.mockResolvedValue(testSighting);
-      prismaMock.sightingPhoto.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.sightingPhoto.findMany.mockResolvedValue([{
+      prismaMock.photo.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.photo.findMany.mockResolvedValue([{
         id: 'sp-err-1', sightingId: testSighting.id, photoUrl: '/uploads/sightings/p.jpg',
         thumbnailUrl: '/uploads/thumbs/p.jpg', aiAnalysis: null, createdAt: new Date(),
       }]);
@@ -223,8 +223,8 @@ describe('Sightings E2E', () => {
       const res = await app.get(`/api/reports/${testReport.id}/sightings`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.sightings)).toBe(true);
-      expect(res.body.sightings).toHaveLength(1);
+      expect(Array.isArray(res.body.items)).toBe(true);
+      expect(res.body.items).toHaveLength(1);
       expect(res.body).toHaveProperty('total', 1);
       expect(res.body).toHaveProperty('page', 1);
       expect(res.body).toHaveProperty('totalPages', 1);
@@ -237,7 +237,7 @@ describe('Sightings E2E', () => {
       const res = await app.get('/api/reports/some-id/sightings');
 
       expect(res.status).toBe(200);
-      expect(res.body.sightings).toEqual([]);
+      expect(res.body.items).toEqual([]);
       expect(res.body).toHaveProperty('total', 0);
     });
   });

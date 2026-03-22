@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { formatTimeAgo } from '@findthem/shared';
 import type { XpLogEntry } from '@findthem/shared';
 import { api } from '../api/client';
+
+const XP_ACTION_LABELS: Record<string, string> = {
+  AD_WATCH: '광고 시청',
+  SIGHTING: '목격 제보',
+  COMMUNITY_POST: '커뮤니티 글 작성',
+  COMMUNITY_COMMENT: '커뮤니티 댓글',
+  SHARE: '공유',
+  REFERRAL: '추천인',
+  SPONSOR: '후원',
+  GAME: '게임',
+};
 
 interface XpHistoryResponse {
   items: XpLogEntry[];
@@ -17,7 +27,6 @@ interface XpHistoryModalProps {
 }
 
 export default function XpHistoryModal({ open, onClose }: XpHistoryModalProps) {
-  const { t } = useTranslation();
   const [items, setItems] = useState<XpLogEntry[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -65,12 +74,12 @@ export default function XpHistoryModal({ open, onClose }: XpHistoryModalProps) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">{t('xp.history')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">XP 이력</h2>
           <button
             type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-            aria-label={t('common.close', '닫기')}
+            aria-label="닫기"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -85,19 +94,19 @@ export default function XpHistoryModal({ open, onClose }: XpHistoryModalProps) {
               <div className="w-6 h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : items.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">{t('xp.noHistory')}</p>
+            <p className="text-sm text-gray-400 text-center py-10">XP 이력이 없습니다</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {items.map((entry) => (
                 <li key={entry.id} className="flex items-center justify-between py-3">
                   <span className="text-sm text-gray-700">
-                    {t(`xp.${entry.action}`, { defaultValue: entry.action })}
+                    {XP_ACTION_LABELS[entry.action] ?? entry.action}
                   </span>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-sm font-semibold text-pink-500">
-                      {t('xp.gained', { xp: entry.xpAmount })}
+                      +{entry.xpAmount} XP
                     </span>
-                    <span className="text-xs text-gray-400">{formatTimeAgo(entry.createdAt)}</span>
+                    <span className="text-xs text-gray-400">{formatTimeAgo(entry.createdAt, 'ko')}</span>
                   </div>
                 </li>
               ))}
@@ -116,10 +125,10 @@ export default function XpHistoryModal({ open, onClose }: XpHistoryModalProps) {
                 {loadingMore ? (
                   <span className="flex items-center gap-2">
                     <span className="w-3.5 h-3.5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin inline-block" />
-                    {t('loading')}
+                    로딩 중...
                   </span>
                 ) : (
-                  t('xp.loadMore', { defaultValue: '더 보기' })
+                  '더 보기'
                 )}
               </button>
             </div>

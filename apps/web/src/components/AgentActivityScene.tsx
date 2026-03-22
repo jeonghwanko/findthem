@@ -751,6 +751,8 @@ export default function AgentActivityScene() {
       } catch (err: unknown) {
         const e = err as Error;
         console.error('[AgentScene] Fatal error:', e?.message ?? String(err), e?.stack ?? '');
+        // ticker를 시작하지 않으면 캔버스가 검은 박스로 남음
+        try { if (!app.ticker.started) app.ticker.start(); } catch { /* ignore */ }
         if (!destroyed) setPhase('ready');
       }
     })();

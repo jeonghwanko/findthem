@@ -119,7 +119,7 @@ PromoUrgency:  'HIGH' | 'MEDIUM' | 'LOW'
 
 **Promotion** (게시 기록)
 - 신고 1건당 플랫폼별 1개 레코드 (`@@unique([reportId, platform])`)
-- 재게시 지원: `version`, `parentId` (RepostChain 관계)
+- `version` 필드로 재게시 횟수 추적 (이력은 PromotionLog에서 관리)
 
 **PromotionStrategy** (홍보 전략)
 - Report 1건당 1개 (`@@unique(reportId)`)
@@ -307,7 +307,7 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE'
 - JWT: HS256, 기본 7일 만료, payload: `{ userId: string }`
 - 프론트엔드 저장: `localStorage['ft_token']` (`TOKEN_STORAGE_KEY`)
 - 비인증 접근 가능: 신고 목록, 신고 상세, 챗봇 세션
-- 소셜 로그인 시 `phone` 필드는 `social_{provider}_{providerId}` 형식 placeholder (unique 제약 충족)
+- `User.phone`: `String? @unique` — 소셜 로그인 시 null (placeholder 불필요)
 - 소셜 fallback 닉네임: `KakaoUser`, `NaverUser`, `TelegramUser` (locale 중립)
 - 소셜 로그인 시 프로필 이미지 저장: 카카오(`profile_image_url`), 네이버(`profile_image`), 텔레그램(`photo_url`) — 없으면 null
 - 재로그인 시 `name`, `profileImage` 최신값으로 갱신 (upsert update)
@@ -791,9 +791,9 @@ LEVEL_REWARDS: {
 
 ### DB 모델
 
-- `User.sponsorXp` (Int, 기본 0) — 누적 XP
-- `User.userLevel` (Int, 기본 1) — 현재 레벨
-- `User.sponsorXpLastAt` (DateTime?) — 광고 쿨다운 체크용
+- `User.xp` (Int, 기본 0) — 누적 XP
+- `User.level` (Int, 기본 1) — 현재 레벨
+- `User.xpLastAt` (DateTime?) — 광고 쿨다운 체크용
 - `User.referredByUserId` (String?) — 추천인 유저 ID (self-relation)
 - `UserReward` — 레벨업 보상 기록 (`@@unique([userId, level])`)
 - `XpLog` — XP 획득 이력 (action, xpAmount, sourceId, createdAt)
@@ -1058,6 +1058,4 @@ GET    /api/community/agent-activity   에이전트 활동 (공개, optionalAuth
 
 ### TODO / 미완성 기능
 
-- `ReportListResponse.reports` → `items` 마이그레이션
-- PostGIS 반경 내 Sighting 필터링 (lat/lng 저장은 완료, 쿼리 미구현)
 - SNS 게시물 FOUND 시 삭제 (cleanupJob 구현됨, promotionJob 연동 완료)

@@ -58,7 +58,7 @@ export function registerAgentRoutes(router: Router) {
 
     // 인사말을 DB에 저장 (히스토리 유지)
     await prisma.chatMessage.create({
-      data: { sessionId: session.id, role: 'assistant', content: greetingText },
+      data: { sessionId: session.id, role: 'ASSISTANT', content: greetingText },
     });
 
     res.status(201).json({

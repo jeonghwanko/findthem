@@ -5,6 +5,7 @@ import { isPrismaUniqueError } from '../utils/prismaErrors.js';
 import { config } from '../config.js';
 import { chatbotEngine } from '../chatbot/engine.js';
 import { sightingAgent } from '../agent/sightingAgent.js';
+import { webhookLimiter } from '../middlewares/rateLimit.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('webhooks');
@@ -24,7 +25,7 @@ function verifyKakaoSignature(body: string, signature: string | undefined): bool
 
 export function registerWebhookRoutes(router: Router) {
   // 카카오톡 채널 웹훅 (HMAC-SHA256 서명 검증)
-  router.post('/webhooks/kakao', async (req, res) => {
+  router.post('/webhooks/kakao', webhookLimiter, async (req, res) => {
     // 서명 검증
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     const signature = req.headers['x-kakao-signature'] as string | undefined;

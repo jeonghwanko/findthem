@@ -34,17 +34,6 @@ vi.mock('@rainbow-me/rainbowkit', () => ({
   },
 }));
 
-vi.mock('@aptos-labs/wallet-adapter-react', () => ({
-  useWallet: vi.fn(() => ({
-    account: null,
-    connected: false,
-    signAndSubmitTransaction: vi.fn(),
-    connect: vi.fn(),
-    wallets: [],
-    notDetectedWallets: [],
-  })),
-}));
-
 vi.mock('../providers/Web3Provider', () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -70,12 +59,10 @@ vi.mock('viem', async (importOriginal) => {
 import SponsorPage from './SponsorPage';
 import { api } from '../api/client';
 import { useAccount } from 'wagmi';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 const mockApiGet = vi.mocked(api.get);
 const mockApiPost = vi.mocked(api.post);
 const mockUseAccount = vi.mocked(useAccount);
-const mockUseWallet = vi.mocked(useWallet);
 
 async function renderSponsorPage(agentId = 'image-matching') {
   let result: ReturnType<typeof render>;
@@ -98,8 +85,7 @@ async function selectChain(chainLabel: string) {
   // Find it by looking for a button inside the chain select area
   const dropdownTrigger = screen.getByText('Ethereum').closest('button')
     ?? screen.getByText('BSC').closest('button')
-    ?? screen.getByText('Base').closest('button')
-    ?? screen.getByText('Aptos').closest('button');
+    ?? screen.getByText('Base').closest('button');
   if (dropdownTrigger) fireEvent.click(dropdownTrigger);
   await waitFor(() => {
     // Dropdown list items
@@ -120,15 +106,6 @@ describe('SponsorPage', () => {
       isConnected: false,
       chain: undefined,
     } as ReturnType<typeof useAccount>);
-    // Default: aptos disconnected
-    mockUseWallet.mockReturnValue({
-      account: null,
-      connected: false,
-      signAndSubmitTransaction: vi.fn(),
-      connect: vi.fn(),
-      wallets: [],
-      notDetectedWallets: [],
-    } as ReturnType<typeof useWallet>);
   });
 
   // ────────────────────────────────────────────────────────
@@ -221,30 +198,6 @@ describe('SponsorPage', () => {
       });
     });
 
-    it('드롭다운에서 Aptos 선택 가능', async () => {
-      await renderSponsorPage('image-matching');
-
-      await selectChain('Aptos');
-
-      await waitFor(() => {
-        // 드롭다운 트리거가 Aptos로 변경됨
-        const trigger = screen.getByText('Aptos').closest('button');
-        expect(trigger).toBeInTheDocument();
-      });
-    });
-
-    it('드롭다운 열면 체인 4개 표시 (Ethereum, BSC, Base, Aptos)', async () => {
-      await renderSponsorPage('image-matching');
-
-      // 드롭다운 트리거 클릭
-      fireEvent.click(screen.getByText('Ethereum').closest('button')!);
-
-      await waitFor(() => {
-        const options = screen.getAllByRole('option');
-        expect(options).toHaveLength(4);
-      });
-    });
-
     it('EVM 체인 — 토큰 선택 버튼 표시 (Ethereum 기본: USDC, USDt, ETH)', async () => {
       await renderSponsorPage('image-matching');
 
@@ -255,16 +208,6 @@ describe('SponsorPage', () => {
       });
     });
 
-    it('Aptos 선택 — 토큰 선택 숨김', async () => {
-      await renderSponsorPage('image-matching');
-
-      await selectChain('Aptos');
-
-      await waitFor(() => {
-        expect(screen.queryByRole('button', { name: 'USDC' })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'USDt' })).not.toBeInTheDocument();
-      });
-    });
   });
 
   // ────────────────────────────────────────────────────────
@@ -370,27 +313,6 @@ describe('SponsorPage', () => {
       });
     });
 
-    it('Aptos 미연결 + 지갑 없음 — Aptos Connect 링크 표시', async () => {
-      mockUseWallet.mockReturnValue({
-        account: null,
-        connected: false,
-        signAndSubmitTransaction: vi.fn(),
-        connect: vi.fn(),
-        wallets: [],
-      } as unknown as ReturnType<typeof useWallet>);
-
-      await renderSponsorPage('image-matching');
-
-      await selectChain('Aptos');
-
-      await waitFor(() => {
-        const connectLink = screen.getByRole('link', {
-          name: /connectWallet|지갑 연결/i,
-        });
-        expect(connectLink).toBeInTheDocument();
-        expect(connectLink).toHaveAttribute('href', 'https://aptosconnect.app');
-      });
-    });
   });
 
   // ────────────────────────────────────────────────────────
@@ -424,36 +346,6 @@ describe('SponsorPage', () => {
         expect(
           screen.getByRole('button', { name: /\$5.*USDC|USDC.*결제/i }),
         ).toBeInTheDocument();
-      });
-    });
-  });
-
-  // ────────────────────────────────────────────────────────
-  // Aptos 지갑 연결 상태
-  // ────────────────────────────────────────────────────────
-  describe('Aptos 지갑 연결 상태', () => {
-    const aptosAddress = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
-
-    beforeEach(() => {
-      mockUseWallet.mockReturnValue({
-        account: {
-          address: { toString: () => aptosAddress },
-        },
-        connected: true,
-        signAndSubmitTransaction: vi.fn(),
-        connect: vi.fn(),
-        wallets: [{ name: 'Petra' }],
-        notDetectedWallets: [],
-      } as unknown as ReturnType<typeof useWallet>);
-    });
-
-    it('Aptos 모드에서 지갑 연결 시 주소 앞뒤 일부 표시', async () => {
-      await renderSponsorPage('image-matching');
-      await selectChain('Aptos');
-
-      await waitFor(() => {
-        const addressEl = screen.getByText(/0x123456.*abcdef/i);
-        expect(addressEl).toBeInTheDocument();
       });
     });
   });

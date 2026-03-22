@@ -33,11 +33,29 @@ export interface UserPublic {
   referralCode?: string | null;
 }
 
-export interface ReportPhoto {
+export interface SightingPhotoAnalysis {
+  species?: string;
+  color?: string;
+  size?: string;
+  distinctiveFeatures?: string[];
+  collarDetected?: boolean;
+  collarDescription?: string;
+  healthCondition?: string;
+  furCondition?: string;
+  estimatedAge?: string;
+  accessories?: string;
+  description?: string;
+}
+
+/** Unified photo record — reportId or sightingId is set (app-level constraint) */
+export interface Photo {
   id: string;
+  reportId?: string | null;
+  sightingId?: string | null;
   photoUrl: string;
   thumbnailUrl?: string | null;
   isPrimary: boolean;
+  aiAnalysis?: SightingPhotoAnalysis | null;
 }
 
 export interface ReportSummary {
@@ -54,7 +72,7 @@ export interface ReportSummary {
   contactPhone: string;
   contactName: string;
   reward?: string | null;
-  photos: ReportPhoto[];
+  photos: Photo[];
   createdAt: string;
   _count?: { sightings: number; matches: number };
 }
@@ -70,27 +88,6 @@ export interface ReportDetail extends ReportSummary {
   user?: { id: string; name: string };
 }
 
-export interface SightingPhotoAnalysis {
-  species?: string;
-  color?: string;
-  size?: string;
-  distinctiveFeatures?: string[];
-  collarDetected?: boolean;
-  collarDescription?: string;
-  healthCondition?: string;
-  furCondition?: string;
-  estimatedAge?: string;
-  accessories?: string;
-  description?: string;
-}
-
-export interface SightingPhoto {
-  id: string;
-  photoUrl: string;
-  thumbnailUrl?: string | null;
-  aiAnalysis?: SightingPhotoAnalysis | null;
-}
-
 export interface Sighting {
   id: string;
   reportId?: string | null;
@@ -99,7 +96,7 @@ export interface Sighting {
   address: string;
   lat?: number | null;
   lng?: number | null;
-  photos: SightingPhoto[];
+  photos: Photo[];
   createdAt: string;
 }
 
@@ -149,15 +146,9 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface ReportListResponse extends PaginatedResponse<ReportSummary> {
-  /** @deprecated reports 대신 items 사용 */
-  reports: ReportSummary[];
-}
+export type ReportListResponse = PaginatedResponse<ReportSummary>;
 
-export interface SightingListResponse extends PaginatedResponse<Sighting> {
-  /** @deprecated sightings 대신 items 사용 */
-  sightings: Sighting[];
-}
+export type SightingListResponse = PaginatedResponse<Sighting>;
 
 export interface AuthResponse {
   user: UserPublic;
@@ -476,13 +467,13 @@ export interface ExternalAgentAdmin extends ExternalAgentPublic {
   lastUsedAt: string | null;
 }
 
-// ── 후원 XP ──
+// ── XP & 레벨 ──
 
-export interface SponsorXpStats {
-  sponsorXp: number;
-  userLevel: number;
-  currentXP: number;         // 현재 레벨 내 XP
-  xpToNextLevel: number;     // 다음 레벨까지 필요 XP (0 = 최고 레벨)
+export interface XpStats {
+  xp: number;                 // 누적 XP (User.xp)
+  level: number;              // 현재 레벨 (User.level)
+  currentXP: number;          // 현재 레벨 내 XP
+  xpToNextLevel: number;      // 다음 레벨까지 필요 XP (0 = 최고 레벨)
   xpRequiredForLevel: number; // 현재 레벨 총 XP 요구량
 }
 
@@ -494,12 +485,20 @@ export interface XpGrantResult {
   reward?: { type: string; value: string; label: string };
 }
 
-/** @deprecated Use XpGrantResult instead */
-export type AdRewardResult = XpGrantResult;
+/** XP 획득 액션 (Prisma XpAction enum과 1:1 매핑) */
+export type XpAction =
+  | 'AD_WATCH'
+  | 'SIGHTING'
+  | 'COMMUNITY_POST'
+  | 'COMMUNITY_COMMENT'
+  | 'SHARE'
+  | 'REFERRAL'
+  | 'SPONSOR'
+  | 'GAME';
 
 export interface XpLogEntry {
   id: string;
-  action: string;
+  action: XpAction;
   xpAmount: number;
   sourceId?: string | null;
   createdAt: string;

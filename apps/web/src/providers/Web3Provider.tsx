@@ -4,7 +4,6 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getWagmiConfig } from '../config/wagmi';
-import AptosProvider from './AptosProvider';
 
 export default function Web3Provider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -17,9 +16,7 @@ export default function Web3Provider({ children }: { children: React.ReactNode }
           theme={lightTheme({ accentColor: '#7c3aed', borderRadius: 'medium' })}
           locale="ko"
         >
-          <AptosProvider>
-            {children}
-          </AptosProvider>
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

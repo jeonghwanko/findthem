@@ -73,7 +73,7 @@ jobs:
         with:
           name: deploy-bundle
           path: /tmp/deploy-bundle.tar.gz
-          retention-days: 1
+          retention-days: 7
 
   # ── CD: artifact 전송 → 서버 배포 (install/build 스킵) ──
   deploy:

@@ -3,7 +3,7 @@ import { prisma } from '../../db/client.js';
 import { createLogger } from '../../logger.js';
 import { YouTubeAdapter } from '../../platforms/youtube.js';
 import { generateVideoComment } from '../../ai/outreachContentAgent.js';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, OutreachSource } from '@prisma/client';
 
 const log = createLogger('contactDiscovery');
 
@@ -306,7 +306,7 @@ async function upsertContact(contact: DiscoveredContact): Promise<string | null>
       organization: contact.organization,
       topics: contact.topics,
       subscriberCount: contact.subscriberCount,
-      source: contact.source,
+      source: contact.source as OutreachSource,
       isActive: true,
     };
 

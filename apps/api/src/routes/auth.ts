@@ -95,13 +95,12 @@ function signToken(userId: string): string {
  * upsert 패턴으로 동시 요청 레이스 컨디션 방지.
  */
 async function findOrCreateSocialUser(params: {
-  provider: 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE';
+  provider: 'KAKAO' | 'NAVER' | 'APPLE';
   providerId: string;
   name: string;
   profileImage?: string | null;
 }) {
   const { provider, providerId, name, profileImage } = params;
-  const phone = `social_${provider.toLowerCase()}_${providerId}`;
 
   // 재로그인 시 name, profileImage 최신값으로 갱신
   return prisma.user.upsert({
@@ -112,7 +111,7 @@ async function findOrCreateSocialUser(params: {
     },
     create: {
       name,
-      phone,
+      phone: null,
       passwordHash: null,
       provider,
       providerId,
@@ -521,24 +520,6 @@ export function registerAuthRoutes(router: Router) {
     redirectWithToken(res, token);
   });
 
-  // ── Telegram OAuth ────────────────────────────────────────────────────────
-
-  // 텔레그램 로그인 진입 (Telegram Login Widget 방식)
-  router.get('/auth/telegram', (req, res) => {
-    setNativeCookie(req, res);
-    const botId = config.telegramBotToken.split(':')[0] ?? '';
-    // return_to: 인증 완료 후 리다이렉트될 콜백 URL
-    // return_to를 프론트 콜백 페이지로 지정 (텔레그램은 fragment로 데이터 전달)
-    const callbackUrl = `${config.siteUrl}/auth/callback`;
-    const params = new URLSearchParams({
-      bot_id: botId,
-      origin: config.siteUrl,
-      return_to: callbackUrl,
-      request_access: 'write',
-    });
-    res.redirect(`https://oauth.telegram.org/auth?${params.toString()}`);
-  });
-
   // ── Apple Sign in with Apple ──────────────────────────────────────────────
 
   // Apple 로그인 진입 (CSRF state를 쿠키에 저장)
@@ -639,72 +620,4 @@ export function registerAuthRoutes(router: Router) {
     },
   );
 
-  // 텔레그램 OAuth 콜백 — 프론트가 fragment를 파싱하여 POST로 전달
-  router.post('/auth/telegram/callback', async (req, res) => {
-    const body = req.body as Record<string, string>;
-    const { hash, ...authData } = body;
-
-    if (!hash) {
-      log.warn('Telegram callback: hash missing');
-      throw new ApiError(400, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
-    }
-
-    // Telegram 서명 검증
-    // https://core.telegram.org/widgets/login#checking-authorization
-    const dataCheckString = Object.keys(authData)
-      .sort()
-      .map((k) => `${k}=${authData[k]}`)
-      .join('\n');
-
-    const secretKey = crypto
-      .createHash('sha256')
-      .update(config.telegramBotToken)
-      .digest();
-
-    const expectedHash = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-
-    if (expectedHash !== hash) {
-      log.warn({ hash, expectedHash }, 'Telegram callback: hash mismatch');
-      throw new ApiError(401, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
-    }
-
-    // auth_date 만료 확인 (1시간)
-    // SEC-W2: parseInt NaN이면 만료 체크가 우회되므로 명시적으로 검증
-    const authDate = parseInt(authData['auth_date'] ?? '', 10);
-    if (isNaN(authDate)) {
-      log.warn('Telegram callback: auth_date is NaN or missing');
-      throw new ApiError(400, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
-    }
-    const nowSec = Math.floor(Date.now() / 1000);
-    if (nowSec - authDate > 3600) {
-      log.warn({ authDate, nowSec }, 'Telegram callback: auth_date expired');
-      throw new ApiError(401, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
-    }
-
-    const telegramId = String(authData['id'] ?? '');
-    if (!telegramId) {
-      log.warn('Telegram callback: id missing');
-      throw new ApiError(400, ERROR_CODES.OAUTH_TELEGRAM_INVALID);
-    }
-
-    const firstName = authData['first_name'] ?? '';
-    const lastName = authData['last_name'] ?? '';
-    const name = [firstName, lastName].filter(Boolean).join(' ') || 'TelegramUser';
-    const telegramPhoto = authData['photo_url'] ?? null;
-
-    // DB 유저 조회/생성
-    const user = await findOrCreateSocialUser({
-      provider: 'TELEGRAM',
-      providerId: telegramId,
-      name,
-      profileImage: telegramPhoto,
-    });
-    log.info({ userId: user.id, telegramId }, 'Telegram login success');
-
-    const token = signToken(user.id);
-    res.json({ token });
-  });
 }

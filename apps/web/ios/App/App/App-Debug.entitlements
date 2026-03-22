@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<!-- ?mode=developer: Apple CDN 우회, 서버에서 직접 AASA fetch (개발 전용) -->
+		<string>applinks:union.pryzm.gg?mode=developer</string>
+	</array>
+</dict>
+</plist>

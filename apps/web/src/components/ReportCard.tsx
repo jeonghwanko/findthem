@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Camera, MapPin } from 'lucide-react';
 import type { Report } from '../api/client';
-import { formatTimeAgo, SUPPORTED_LOCALES, DEFAULT_LOCALE, type SubjectType } from '@findthem/shared';
+import { formatTimeAgo, SUBJECT_TYPE_LABELS, type SubjectType } from '@findthem/shared';
 import { assetSrc } from '../utils/webOrigin';
 
 const TYPE_BADGE: Record<SubjectType, { bg: string; text: string; dot: string }> = {
@@ -12,22 +11,21 @@ const TYPE_BADGE: Record<SubjectType, { bg: string; text: string; dot: string }>
   CAT: { bg: 'bg-violet-50', text: 'text-violet-600', dot: 'bg-violet-400' },
 };
 
+const SUBJECT_LABELS = SUBJECT_TYPE_LABELS['ko'];
+
 interface ReportCardProps {
   report: Report;
 }
 
 export default function ReportCard({ report }: ReportCardProps) {
-  const { t, i18n } = useTranslation();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const primaryPhoto = report.photos?.[0];
-  const locale = SUPPORTED_LOCALES.find(l => i18n.language === l || i18n.language.startsWith(`${l  }-`) || (l === 'zh-TW' && i18n.language.startsWith('zh'))) ?? DEFAULT_LOCALE;
-  const timeAgo = formatTimeAgo(report.createdAt, locale);
+  const timeAgo = formatTimeAgo(report.createdAt, 'ko');
   const badge = TYPE_BADGE[report.subjectType] ?? TYPE_BADGE.PERSON;
+  const subjectLabel = SUBJECT_LABELS[report.subjectType] ?? report.subjectType;
   // 외부 수집 데이터는 name이 숫자 ID인 경우가 있음 — 대상 유형 라벨로 대체
-  const displayName = /^\d{8,}$/.test(report.name)
-    ? t(`subjectType.${report.subjectType}`)
-    : report.name;
+  const displayName = /^\d{8,}$/.test(report.name) ? subjectLabel : report.name;
 
   return (
     <Link
@@ -41,14 +39,15 @@ export default function ReportCard({ report }: ReportCardProps) {
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
               src={assetSrc(primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl)}
-              alt={t('card.photoAlt', { name: displayName, type: t(`subjectType.${report.subjectType}`) })}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imgLoaded ? '' : 'opacity-0'}`}
+              alt={`${displayName} - ${subjectLabel} 실종 사진`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0 scale-[1.02]'}`}
+              loading="lazy"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
             />
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label={t('card.noPhoto')}>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label="사진 없음">
             <Camera className="w-8 h-8" aria-hidden="true" />
           </div>
         )}
@@ -56,13 +55,13 @@ export default function ReportCard({ report }: ReportCardProps) {
         {/* 타입 배지 */}
         <span className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} aria-hidden="true" />
-          {t(`subjectType.${report.subjectType}`)}
+          {subjectLabel}
         </span>
 
         {/* 제보 수 뱃지 */}
         {report._count && report._count.sightings > 0 && (
           <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-primary-600 text-white shadow-sm">
-            {t('card.sightingCount', { count: report._count.sightings })}
+            제보 {report._count.sightings}건
           </span>
         )}
 
@@ -70,7 +69,7 @@ export default function ReportCard({ report }: ReportCardProps) {
         {report.status === 'FOUND' && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
             <span className="bg-white text-gray-900 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-              {t('card.found')}
+              찾았습니다!
             </span>
           </div>
         )}
@@ -93,4 +92,3 @@ export default function ReportCard({ report }: ReportCardProps) {
     </Link>
   );
 }
-

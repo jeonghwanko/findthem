@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { MessageSquare, Eye, Pin, Plus, Bot, Search } from 'lucide-react';
-import { formatTimeAgo, type Locale, type ExternalAgentPublic } from '@findthem/shared';
+import { formatTimeAgo, type ExternalAgentPublic } from '@findthem/shared';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { getAuthorName } from '../utils/community';
@@ -29,7 +29,6 @@ interface PostListResponse {
 }
 
 export default function CommunityPage() {
-  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<PostSummary[]>([]);
@@ -39,6 +38,9 @@ export default function CommunityPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  usePullToRefresh(() => { setPage(1); setRefreshKey((k) => k + 1); });
 
   useEffect(() => {
     setLoading(true);
@@ -53,7 +55,7 @@ export default function CommunityPage() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [page, search]);
+  }, [page, search, refreshKey]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +69,7 @@ export default function CommunityPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">{t('community.title')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">커뮤니티</h1>
           {user ? (
             <button
               type="button"
@@ -75,18 +77,18 @@ export default function CommunityPage() {
               className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
             >
               <Plus className="w-4 h-4" />
-              {t('community.newPost')}
+              글쓰기
             </button>
           ) : (
             <Link
               to="/login"
               className="text-sm text-primary-600 hover:text-primary-700"
             >
-              {t('community.loginToPost')}
+              로그인하고 글쓰기
             </Link>
           )}
         </div>
-        <p className="text-gray-500 text-sm mb-4">{t('community.desc')}</p>
+        <p className="text-gray-500 text-sm mb-4">AI 에이전트와 함께하는 실종 신고 커뮤니티</p>
 
         {/* Search */}
         <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -96,7 +98,7 @@ export default function CommunityPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={t('community.searchPlaceholder')}
+              placeholder="제목, 내용 검색..."
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
@@ -114,12 +116,12 @@ export default function CommunityPage() {
           </div>
         ) : error ? (
           <div className="text-center py-16 text-gray-400">
-            <p>{t('errors.SERVER_ERROR')}</p>
+            <p>오류가 발생했습니다</p>
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>{t('community.noPostsYet')}</p>
+            <p>아직 게시글이 없습니다</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -135,7 +137,7 @@ export default function CommunityPage() {
                       {post.isPinned && (
                         <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-medium">
                           <Pin className="w-3 h-3" />
-                          {t('community.pinned')}
+                          고정
                         </span>
                       )}
                       <h3 className="font-semibold text-gray-900 truncate">
@@ -161,10 +163,10 @@ export default function CommunityPage() {
                           <Bot className="w-3.5 h-3.5 text-primary-500" />
                         ) : null}
                         <span className={(post.agentId || post.externalAgent) ? 'text-primary-600 font-medium' : ''}>
-                          {getAuthorName(post, t)}
+                          {getAuthorName(post)}
                         </span>
                       </span>
-                      <span>{formatTimeAgo(post.createdAt, i18n.language as Locale)}</span>
+                      <span>{formatTimeAgo(post.createdAt, 'ko')}</span>
                       <span className="flex items-center gap-0.5">
                         <Eye className="w-3.5 h-3.5" />
                         {post.viewCount}
@@ -190,7 +192,7 @@ export default function CommunityPage() {
               disabled={page <= 1}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
-              {t('community.prev')}
+              이전
             </button>
             <span className="flex items-center px-3 text-sm text-gray-500">
               {page} / {totalPages}
@@ -201,7 +203,7 @@ export default function CommunityPage() {
               disabled={page >= totalPages}
               className="px-4 py-2 rounded-lg border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
-              {t('community.next')}
+              다음
             </button>
           </div>
         )}
@@ -212,7 +214,7 @@ export default function CommunityPage() {
             to="/browse"
             className="block w-full text-center py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors"
           >
-            {t('community.adoptionLink', '유기견 입양하기')}
+            유기견 입양하기
           </Link>
         </div>
       </div>

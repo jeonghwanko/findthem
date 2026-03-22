@@ -101,7 +101,6 @@
     "errorFallback": "發生錯誤",
     "kakaoLogin": "使用Kakao登入",
     "naverLogin": "使用Naver登入",
-    "telegramLogin": "使用Telegram登入",
     "appleLogin": "使用Apple登入",
     "orDivider": "或"
   },
@@ -145,6 +144,12 @@
     "markActive": "標記為搜尋中"
   },
   "report": {
+    "status": {
+      "ACTIVE": "搜尋中",
+      "FOUND": "已找到",
+      "EXPIRED": "已過期",
+      "SUSPENDED": "已暫停"
+    },
     "title": "失蹤報案登記",
     "selectType": "請選擇失蹤類型",
     "next": "下一步",
@@ -245,7 +250,15 @@
     "goBack": "返回",
     "goToReport": "查看報案詳情",
     "goToList": "返回列表",
-    "autoRedirectCountdown": "{{seconds}}秒後自動跳轉"
+    "autoRedirectCountdown": "{{seconds}}秒後自動跳轉",
+    "optional": "（選填）",
+    "auto": "（自動）",
+    "gpsDetected": "已偵測到 GPS 位置",
+    "sectionPhoto": "照片",
+    "sectionDiscovery": "發現資訊",
+    "sectionExtra": "其他資訊",
+    "changeDate": "變更",
+    "passwordDefault": "若未填寫，將使用預設密碼 0000。"
   },
   "chat": {
     "title": "目擊線索聊天機器人",
@@ -375,7 +388,6 @@
     "PAYMENT_GATEWAY_ERROR": "支付服務暫時出現錯誤，請稍後再試。",
     "OAUTH_FAILED": "社群登入失敗。",
     "OAUTH_INVALID_STATE": "無效的OAuth狀態。",
-    "OAUTH_TELEGRAM_INVALID": "Telegram驗證失敗。",
     "AGENT_AUTH_REQUIRED": "需要代理認證。",
     "AGENT_INVALID_ID": "無效的代理ID。",
     "NO_FIELDS_TO_UPDATE": "沒有要更新的欄位。",
@@ -393,7 +405,8 @@
     "QUOTE_EXPIRED": "付款報價已過期，請重試。",
     "AI_QUOTA_EXCEEDED": "AI API quota exceeded. Please check your billing settings or switch provider in AI Settings.",
     "INVALID_CRON_SETTINGS": "Invalid cron settings.",
-    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations."
+    "GHOST_AUTH_FAILED": "Ghost CMS API key is invalid. Please re-copy the full Admin API Key from Ghost integrations.",
+    "UNKNOWN_ERROR": "發生未知錯誤"
   },
   "agent": {
     "title": "AI目擊通報助手",
@@ -479,6 +492,11 @@
     "currencyKrw": "韓元",
     "tabCard": "信用卡贊助",
     "tabCrypto": "加密貨幣贊助",
+    "iap": {
+      "fetching": "載入商品中...",
+      "purchasing": "付款處理中...",
+      "error": "付款失敗，請再試一次。"
+    },
     "crypto": {
       "amountLabel": "金額 (USD)",
       "tokenLabel": "選擇代幣",
@@ -506,7 +524,6 @@
     "provider_local": "電話 / 密碼",
     "provider_kakao": "Kakao",
     "provider_naver": "Naver",
-    "provider_telegram": "Telegram",
     "save": "儲存",
     "saving": "儲存中...",
     "saved": "已儲存",

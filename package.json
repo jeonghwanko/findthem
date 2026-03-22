@@ -7,19 +7,20 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-android-gradle.js",
     "dev:api": "npm run dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
-    "build": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w apps/api && npm run build -w apps/web",
+    "build": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w packages/payments && npm run build -w apps/api && npm run build -w apps/web",
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
-    "build:native": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w packages/capacitor-native && npm run build:native -w apps/web",
+    "build:native": "npm run build -w packages/shared && npm run build -w packages/web3-payment && npm run build -w packages/capacitor-iap && npm run build -w packages/payments && npm run build -w packages/capacitor-native && npm run build:native -w apps/web",
     "test": "npm run test -w packages/shared && npm run test -w packages/web3-payment && npm run test -w apps/api && npm run test -w apps/web",
     "test:api": "npm run test -w apps/api",
     "test:web": "npm run test -w apps/web",
     "test:shared": "npm run test -w packages/shared",
     "test:e2e": "npm run test:e2e -w apps/api",
-    "lint": "eslint apps/api/src apps/web/src packages/shared/src packages/web3-payment/src",
-    "lint:fix": "eslint --fix apps/api/src apps/web/src packages/shared/src packages/web3-payment/src"
+    "lint": "eslint apps/api/src apps/web/src packages/shared/src packages/web3-payment/src packages/payments/src",
+    "lint:fix": "eslint --fix apps/api/src apps/web/src packages/shared/src packages/web3-payment/src packages/payments/src"
   },
   "engines": {
     "node": ">=20"
@@ -38,14 +39,14 @@
     "@capacitor-firebase/crashlytics": "^8.1.0",
     "@capacitor-firebase/messaging": "^8.1.0",
     "@csstools/css-parser-algorithms": "^4.0.0",
-    "@wallet-standard/core": "^1.1.1",
     "firebase": "^12.10.0",
-    "firebase-admin": "^13.7.0",
-    "serialize-javascript": "^7.0.4"
+    "firebase-admin": "^13.7.0"
   },
   "overrides": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
     "@tootallnate/once": ">=3.0.1",
     "http-proxy-agent": ">=7.0.0",
     "fast-xml-parser": ">=5.5.7",

@@ -1,26 +1,33 @@
 /**
- * NativeApp — capacitor-native-navigation 전용 라우트 정의
+ * NativeApp — 네이티브 앱 전용 라우트 정의.
  *
- * NativeNavigationRouter가 각 네이티브 뷰의 path에 매칭되는 Route를 찾아 렌더링.
+ * bootstrapNative() 성공 시 NativeNavigationRouter 안에서 렌더됨.
+ * 실패(capacitor-native-navigation 미지원) 시 main.tsx의 catch가 BrowserRouter + App으로 폴백.
  * 탭 바는 네이티브가 담당하므로 BottomTab/Footer 불필요.
- * React Router <Link>와 navigate()는 NativeNavigationRouter가 네이티브 push/pop으로 변환.
- *
- * NativeNavigationRouter 내부에서는 Route fragment만 반환해야 함.
- * loading 스피너는 각 페이지 컴포넌트 내부에서 처리.
  */
-import './i18n';
+import { Suspense } from 'react';
 import { Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { userRoutes } from './routes/userRoutes';
+import { useNativeOAuth } from './hooks/useNativeOAuth';
+
+function PageSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function NativeApp() {
   const { user, login, register, updateUser } = useAuth();
+  useNativeOAuth(updateUser);
 
   return (
-    <>
+    <Suspense fallback={<PageSpinner />}>
       {userRoutes({ user, login, register, updateUser }).map(({ path, element }) => (
         <Route key={path} path={path} element={element} />
       ))}
-    </>
+    </Suspense>
   );
 }

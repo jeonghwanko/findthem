@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.findthem.app",
+      "sha256_cert_fingerprints": [
+        "48:25:A3:4E:C3:F5:2B:A3:E9:31:1A:2B:53:79:05:4D:41:97:EA:DE:38:37:52:03:A8:C7:48:DD:BF:91:65:81",
+        "2B:8E:54:A9:49:95:60:A0:D5:2D:34:B9:BF:A1:2D:E8:A7:49:76:FD:31:42:E3:07:F5:31:45:44:1E:A8:E6:96"
+      ]
+    }
+  }
+]

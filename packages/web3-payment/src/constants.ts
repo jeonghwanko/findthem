@@ -30,9 +30,6 @@ export const SOL_TOKENS: Record<string, { mint: string; decimals: number }> = {
   'SOL':  { mint: 'SOL', decimals: 9 },
 }
 
-export const APT_NATIVE_COIN_TYPE = '0x1::aptos_coin::AptosCoin'
-export const APT_DECIMALS = 8
-
 export { SUPPORTED_PAY_TOKENS, type SupportedPayToken } from '@findthem/shared'
 
 export const QUOTE_TTL_SECS = 300
@@ -46,3 +43,23 @@ export function toSupportedChainId(id: number | undefined): SupportedChainId {
   if (id === 8453) return 8453
   return 1
 }
+
+/** 체인의 토큰 심볼 목록 */
+export function getChainTokenSymbols(chainId: SupportedChainId): string[] {
+  return Object.keys(EVM_TOKENS[chainId] ?? {})
+}
+
+/** 토큰 컨트랙트 주소. 네이티브 토큰('ETH','BNB')은 null 반환 */
+export function getTokenContract(chainId: SupportedChainId, symbol: string): `0x${string}` | null {
+  const token = EVM_TOKENS[chainId]?.[symbol]
+  if (!token) return null
+  if (!token.address.startsWith('0x')) return null // 네이티브 토큰 (ETH, BNB)
+  return token.address as `0x${string}`
+}
+
+/** 체인 표시 메타데이터 (이름, 네이티브 통화) */
+export const EVM_CHAIN_META: Record<SupportedChainId, { name: string; nativeCurrency: string }> = {
+  1: { name: 'Ethereum', nativeCurrency: 'ETH' },
+  56: { name: 'BNB Chain', nativeCurrency: 'BNB' },
+  8453: { name: 'Base', nativeCurrency: 'ETH' },
+} as const

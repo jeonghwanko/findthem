@@ -51,7 +51,7 @@ async function processReportPhotos(reportId: string) {
         ]);
         const analysis = await analyzeImage(base64, report.subjectType, undefined, meta);
 
-        return await prisma.reportPhoto.update({
+        return await prisma.photo.update({
           where: { id: photo.id },
           data: { aiAnalysis: analysis as object },
         });
@@ -120,7 +120,7 @@ async function processSightingPhotos(sightingId: string) {
         ]);
         const analysis = await analyzeImage(base64, subjectType, undefined, meta);
 
-        await prisma.sightingPhoto.update({
+        await prisma.photo.update({
           where: { id: photo.id },
           data: { aiAnalysis: analysis as object },
         });

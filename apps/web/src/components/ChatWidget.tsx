@@ -1,23 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useChat } from '../hooks/useChat';
 
 export default function ChatWidget() {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const chat = useChat();
 
-  // 채팅창 열 때 세션 시작
   useEffect(() => {
     if (open && !chat.sessionId && !chat.loading) {
       void chat.startSession();
     }
   }, [open, chat.sessionId, chat.loading, chat]);
 
-  // 새 메시지 시 스크롤
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -50,7 +46,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-50"
-        aria-label={t('chat.openChat')}
+        aria-label="채팅 열기"
       >
         💬
       </button>
@@ -62,8 +58,8 @@ export default function ChatWidget() {
       {/* 헤더 */}
       <div className="bg-primary-600 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
         <div>
-          <div className="font-semibold">{t('chat.title')}</div>
-          <div className="text-xs text-primary-200">{t('chat.subtitle')}</div>
+          <div className="font-semibold">목격 제보 챗봇</div>
+          <div className="text-xs text-primary-200">대화로 쉽게 제보하세요</div>
         </div>
         <button
           onClick={() => setOpen(false)}
@@ -78,11 +74,11 @@ export default function ChatWidget() {
         {chat.messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[80%] px-3 py-2 rounded-xl text-sm whitespace-pre-wrap ${
-                msg.role === 'user'
+                msg.role === 'USER'
                   ? 'bg-primary-600 text-white rounded-br-sm'
                   : 'bg-gray-100 text-gray-800 rounded-bl-sm'
               }`}
@@ -95,7 +91,7 @@ export default function ChatWidget() {
         {chat.loading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-xl rounded-bl-sm text-sm">
-              {t('chat.typing')}
+              입력 중...
             </div>
           </div>
         )}
@@ -122,7 +118,7 @@ export default function ChatWidget() {
           <button
             onClick={() => fileRef.current?.click()}
             className="text-gray-400 hover:text-primary-600 text-xl flex-shrink-0"
-            title={t('chat.photoAttach')}
+            title="사진 첨부"
           >
             📷
           </button>
@@ -137,7 +133,7 @@ export default function ChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t('chat.placeholder')}
+            placeholder="메시지를 입력하세요..."
             className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
             disabled={chat.loading}
           />
@@ -146,7 +142,7 @@ export default function ChatWidget() {
             disabled={!input.trim() || chat.loading}
             className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors flex-shrink-0"
           >
-            {t('chat.send')}
+            전송
           </button>
         </div>
       )}

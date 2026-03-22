@@ -8,7 +8,7 @@ vi.mock('../db/client.js', () => ({
       findMany: vi.fn(),
       create: vi.fn(),
     },
-    reportPhoto: {
+    photo: {
       create: vi.fn(),
     },
     $transaction: vi.fn(),
@@ -65,7 +65,7 @@ type CallableMock = ((...args: unknown[]) => unknown) & {
 };
 interface PrismaMockType {
   report: { findMany: CallableMock; create: CallableMock };
-  reportPhoto: { create: CallableMock };
+  photo: { create: CallableMock };
   $transaction: CallableMock;
 }
 const prismaMock = prisma as unknown as PrismaMockType;
@@ -132,7 +132,7 @@ async function saveNewReport(item: ExternalReport, source: string): Promise<bool
       })) as { id: string };
 
       if (item.photoUrl) {
-        await tx.reportPhoto.create({
+        await tx.photo.create({
           data: {
             reportId: created.id,
             photoUrl: item.photoUrl,
@@ -201,7 +201,7 @@ describe('crawlJob — saveNewReport', () => {
     const createdReport = makeCreatedReport();
 
     prismaMock.report.create.mockResolvedValue(createdReport);
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     const ok = await saveNewReport(item, 'animal-api');
 
@@ -218,16 +218,16 @@ describe('crawlJob — saveNewReport', () => {
     );
   });
 
-  it('photoUrl 있으면 reportPhoto.create 호출', async () => {
+  it('photoUrl 있으면 photo.create 호출', async () => {
     const item = makeExternalReport({ photoUrl: 'https://example.com/photo.jpg' });
     const createdReport = makeCreatedReport();
 
     prismaMock.report.create.mockResolvedValue(createdReport);
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     await saveNewReport(item, 'animal-api');
 
-    expect(prismaMock.reportPhoto.create).toHaveBeenCalledWith(
+    expect(prismaMock.photo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           reportId: createdReport.id,
@@ -238,7 +238,7 @@ describe('crawlJob — saveNewReport', () => {
     );
   });
 
-  it('photoUrl 없으면 reportPhoto.create 호출 안 함', async () => {
+  it('photoUrl 없으면 photo.create 호출 안 함', async () => {
     const item = makeExternalReport({ photoUrl: undefined });
     const createdReport = makeCreatedReport();
 
@@ -246,7 +246,7 @@ describe('crawlJob — saveNewReport', () => {
 
     await saveNewReport(item, 'animal-api');
 
-    expect(prismaMock.reportPhoto.create).not.toHaveBeenCalled();
+    expect(prismaMock.photo.create).not.toHaveBeenCalled();
   });
 
   it('photoUrl 있으면 imageQueue.add 호출', async () => {
@@ -254,7 +254,7 @@ describe('crawlJob — saveNewReport', () => {
     const createdReport = makeCreatedReport();
 
     prismaMock.report.create.mockResolvedValue(createdReport);
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     await saveNewReport(item, 'animal-api');
 
@@ -353,7 +353,7 @@ describe('crawlJob — 중복 방지 (dedup)', () => {
     // 기존 ID 없음
     prismaMock.report.findMany.mockResolvedValue([]);
     prismaMock.report.create.mockResolvedValue(createdReport);
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     const result = await runCrawlSource('animal-api', items);
 
@@ -374,7 +374,7 @@ describe('crawlJob — 중복 방지 (dedup)', () => {
     prismaMock.report.create
       .mockResolvedValueOnce(makeCreatedReport('EXT-002'))
       .mockResolvedValueOnce(makeCreatedReport('EXT-003'));
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     const result = await runCrawlSource('animal-api', items);
 
@@ -394,7 +394,7 @@ describe('crawlJob — 중복 방지 (dedup)', () => {
     prismaMock.report.create
       .mockResolvedValueOnce(makeCreatedReport('EXT-A'))
       .mockResolvedValueOnce(makeCreatedReport('EXT-B'));
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     await runCrawlSource('animal-api', items);
 
@@ -440,7 +440,7 @@ describe('crawlJob — 에러 격리', () => {
         async (...args: unknown[]) => (args[0] as (tx: PrismaMockType) => Promise<unknown>)(prismaMock),
       );
     prismaMock.report.create.mockResolvedValue(makeCreatedReport('EXT-OK'));
-    prismaMock.reportPhoto.create.mockResolvedValue({ id: 'photo-1' });
+    prismaMock.photo.create.mockResolvedValue({ id: 'photo-1' });
 
     const result = await runCrawlSource('animal-api', items);
 

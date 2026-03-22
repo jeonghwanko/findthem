@@ -75,7 +75,7 @@ interface RawSightingRow {
   lat: number | null;
   lng: number | null;
   created_at: Date;
-  distance_km: number;
+  distance_m: number;
 }
 
 /** 제보 수정/삭제 권한 확인 (회원: userId 비교, 비회원: editPassword bcrypt 비교) */
@@ -163,9 +163,9 @@ export function registerSightingRoutes(router: Router) {
         }),
       );
       if (photoData.length > 0) {
-        await prisma.sightingPhoto.createMany({ data: photoData });
+        await prisma.photo.createMany({ data: photoData });
       }
-      const photos = await prisma.sightingPhoto.findMany({ where: { sightingId: sighting.id } });
+      const photos = await prisma.photo.findMany({ where: { sightingId: sighting.id } });
 
       // 이미지 분석 + 매칭 작업 enqueue
       // RACE-08: jobId로 중복 job 방지
@@ -249,7 +249,7 @@ export function registerSightingRoutes(router: Router) {
       ? skip + sightings.length
       : await prisma.sighting.count({ where });
 
-    res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: sightings, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 제보 상세 조회
@@ -293,30 +293,24 @@ export function registerSightingRoutes(router: Router) {
     const { page, limit, lat, lng, radiusKm } = req.query as unknown as z.infer<typeof sightingListQuerySchema>;
 
     if (lat !== undefined && lng !== undefined) {
-      const radius = radiusKm ?? 50;
+      const radiusM = (radiusKm ?? 50) * 1000; // ST_DWithin은 미터 단위
       const skip = (page - 1) * limit;
 
-      const baseQuery = Prisma.sql`
-        SELECT s.id, s.report_id, s.description, s.sighted_at, s.address, s.lat, s.lng, s.created_at,
-               (6371 * 2 * ASIN(SQRT(
-                 POWER(SIN(RADIANS((${lat} - s.lat) / 2)), 2) +
-                 COS(RADIANS(${lat})) * COS(RADIANS(s.lat)) *
-                 POWER(SIN(RADIANS((${lng} - s.lng) / 2)), 2)
-               ))) AS distance_km
-        FROM sighting s
-        WHERE s.lat IS NOT NULL AND s.lng IS NOT NULL
-      `;
-
+      // PostGIS ST_DWithin — GiST 인덱스 활용 (geography 타입)
       const [rawRows, countRows] = await Promise.all([
         prisma.$queryRaw<RawSightingRow[]>`
-          SELECT * FROM (${baseQuery}) sub
-          WHERE sub.distance_km <= ${radius}
-          ORDER BY sub.distance_km ASC
+          SELECT s.id, s.report_id, s.description, s.sighted_at, s.address, s.lat, s.lng, s.created_at,
+                 ST_Distance(s."location", ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) AS distance_m
+          FROM sighting s
+          WHERE s."location" IS NOT NULL
+            AND ST_DWithin(s."location", ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radiusM})
+          ORDER BY distance_m ASC
           LIMIT ${limit} OFFSET ${skip}
         `,
         prisma.$queryRaw<[{ count: bigint }]>`
-          SELECT COUNT(*) FROM (${baseQuery}) sub
-          WHERE sub.distance_km <= ${radius}
+          SELECT COUNT(*) FROM sighting s
+          WHERE s."location" IS NOT NULL
+            AND ST_DWithin(s."location", ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radiusM})
         `,
       ]);
 
@@ -331,10 +325,10 @@ export function registerSightingRoutes(router: Router) {
         lng: s.lng,
         createdAt: s.created_at,
         photos: [],
-        distanceKm: Math.round(s.distance_km * 10) / 10,
+        distanceKm: Math.round(Number(s.distance_m) / 100) / 10, // m → km (소수 1자리)
       }));
 
-      return res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+      return res.json({ items: sightings, total, page, totalPages: Math.ceil(total / limit) });
     }
 
     const skip = (page - 1) * limit;
@@ -366,7 +360,7 @@ export function registerSightingRoutes(router: Router) {
       ? skip + sightings.length
       : await prisma.sighting.count();
 
-    res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ items: sightings, total, page, totalPages: Math.ceil(total / limit) });
   });
 
   // 특정 신고에 대한 제보 목록 (페이지네이션 적용)
@@ -388,7 +382,7 @@ export function registerSightingRoutes(router: Router) {
         prisma.sighting.count({ where: { reportId: id } }),
       ]);
 
-      res.json({ sightings, total, page, totalPages: Math.ceil(total / limit) });
+      res.json({ items: sightings, total, page, totalPages: Math.ceil(total / limit) });
     },
   );
 }

@@ -2,28 +2,34 @@
  * 공통 사용자 라우트 정의 — App.tsx(웹)과 NativeApp.tsx(네이티브) 모두에서 사용.
  * 라우트 추가 시 이 파일만 수정하면 양쪽에 반영됨.
  */
-import type { ReactNode } from 'react';
+import { lazy, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import type { User } from '../api/client';
+// HomePage는 첫 진입 페이지이므로 즉시 로드
 import HomePage from '../pages/HomePage';
-import LoginPage from '../pages/LoginPage';
-import BrowsePage from '../pages/BrowsePage';
-import RegisterReportPage from '../pages/RegisterReportPage';
-import ReportDetailPage from '../pages/ReportDetailPage';
-import SightingSubmitPage from '../pages/SightingSubmitPage';
-import SightingDetailPage from '../pages/SightingDetailPage';
-import TeamPage from '../pages/TeamPage';
-import SponsorPage from '../pages/SponsorPage';
-import SponsorSuccessPage from '../pages/SponsorSuccessPage';
-import MyReportsPage from '../pages/MyReportsPage';
-import AuthCallbackPage from '../pages/AuthCallbackPage';
-import CommunityPage from '../pages/CommunityPage';
-import CommunityPostPage from '../pages/CommunityPostPage';
-import CommunityNewPostPage from '../pages/CommunityNewPostPage';
-import CommunityEditPostPage from '../pages/CommunityEditPostPage';
-import ProfilePage from '../pages/ProfilePage';
-import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
-import GamePage from '../pages/GamePage';
+
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const BrowsePage = lazy(() => import('../pages/BrowsePage'));
+const RegisterReportPage = lazy(() => import('../pages/RegisterReportPage'));
+const ReportDetailPage = lazy(() => import('../pages/ReportDetailPage'));
+const SightingSubmitPage = lazy(() => import('../pages/SightingSubmitPage'));
+const SightingDetailPage = lazy(() => import('../pages/SightingDetailPage'));
+// TeamPage: Pixi.js 씬 포함으로 무거움
+const TeamPage = lazy(() => import('../pages/TeamPage'));
+// SponsorPage: wagmi/viem 포함으로 무거움
+const SponsorPage = lazy(() => import('../pages/SponsorPage'));
+const SponsorSuccessPage = lazy(() => import('../pages/SponsorSuccessPage'));
+const MyReportsPage = lazy(() => import('../pages/MyReportsPage'));
+const AuthCallbackPage = lazy(() => import('../pages/AuthCallbackPage'));
+const CommunityPage = lazy(() => import('../pages/CommunityPage'));
+const CommunityPostPage = lazy(() => import('../pages/CommunityPostPage'));
+const CommunityNewPostPage = lazy(() => import('../pages/CommunityNewPostPage'));
+const CommunityEditPostPage = lazy(() => import('../pages/CommunityEditPostPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
+// GamePage: 게임 로직 포함으로 무거움
+const GamePage = lazy(() => import('../pages/GamePage'));
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
 
 interface RouteEntry {
   path: string;
@@ -73,6 +79,7 @@ export function userRoutes(ctx: UserRoutesContext): RouteEntry[] {
       path: '/community/:id/edit',
       element: user ? <CommunityEditPostPage /> : <Navigate to="/login" />,
     },
+    { path: '/notifications', element: <NotificationsPage /> },
     { path: '/privacy', element: <PrivacyPolicyPage /> },
     { path: '/game', element: <GamePage /> },
     { path: '/team', element: <TeamPage /> },

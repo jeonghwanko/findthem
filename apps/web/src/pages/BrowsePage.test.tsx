@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { PullToRefreshProvider } from '../context/PullToRefreshContext';
 import BrowsePage from './BrowsePage';
 import type { Report, ReportListResponse, Sighting, SightingListResponse } from '../api/client';
 
@@ -78,7 +79,9 @@ async function renderBrowsePage() {
   await act(async () => {
     result = render(
       <MemoryRouter>
-        <BrowsePage />
+        <PullToRefreshProvider>
+          <BrowsePage />
+        </PullToRefreshProvider>
       </MemoryRouter>,
     );
   });
@@ -116,7 +119,7 @@ describe('BrowsePage', () => {
       mockApiGet.mockRejectedValue(new Error('Network error'));
       await renderBrowsePage();
       await waitFor(() => {
-        expect(screen.getByText(/실패/)).toBeInTheDocument();
+        expect(screen.getByText(/오류/)).toBeInTheDocument();
       });
     });
   });

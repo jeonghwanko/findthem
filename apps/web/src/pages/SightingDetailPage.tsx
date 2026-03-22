@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { Camera, MapPin, Clock, User, FileText, ArrowRight, Bot, Loader2 } from 'lucide-react';
 import type { SightingDetail, SightingPhotoAnalysis } from '@findthem/shared';
-import { formatTimeAgo, type Locale } from '@findthem/shared';
+import { formatTimeAgo } from '@findthem/shared';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import ShareButton from '../components/ShareButton';
 import KakaoMap, { type MapMarker } from '../components/KakaoMap';
@@ -16,17 +17,21 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: 'bg-gray-100 text-gray-500',
 };
 
+// STATUS_LABELS, MATCH_STATUS_LABELS → t('sighting.status.*') / t('sighting.matchStatus.*') 사용
+
 function esc(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export default function SightingDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language as Locale;
   const [sighting, setSighting] = useState<SightingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  usePullToRefresh(() => { setRefreshKey((k) => k + 1); });
 
   useEffect(() => {
     if (!id) return;
@@ -35,7 +40,7 @@ export default function SightingDetailPage() {
       .then((s) => setSighting(s))
       .catch(() => setLoading(false))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (loading) {
     return (
@@ -51,7 +56,7 @@ export default function SightingDetailPage() {
   }
 
   if (!sighting) {
-    return <div className="text-center py-20 text-gray-400">{t('sightingDetail.notFound')}</div>;
+    return <div className="text-center py-20 text-gray-400">제보를 찾을 수 없습니다</div>;
   }
 
   const report = sighting.report;
@@ -64,8 +69,8 @@ export default function SightingDetailPage() {
     mapMarkers.push({
       lat: sighting.lat!,
       lng: sighting.lng!,
-      title: t('sightingDetail.sightingLocation'),
-      infoContent: `<div style="padding:4px 8px;font-size:12px;white-space:nowrap">📍 ${esc(t('sightingDetail.sightingLocation'))}</div>`,
+      title: '목격 위치',
+      infoContent: `<div style="padding:4px 8px;font-size:12px;white-space:nowrap">📍 ${esc('목격 위치')}</div>`,
     });
   }
   if (report?.lastSeenLat != null && report.lastSeenLng != null) {
@@ -83,16 +88,16 @@ export default function SightingDetailPage() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-            {t('sightingDetail.badge')}
+            목격 제보
           </span>
           {sighting.status && (
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[sighting.status] ?? 'bg-gray-100 text-gray-600'}`}>
-              {t(`sightingDetail.status.${sighting.status}`)}
+              {t(`sighting.status.${sighting.status}`, { defaultValue: sighting.status })}
             </span>
           )}
         </div>
         <ShareButton
-          title={`[FindThem] ${t('sightingDetail.badge')}`}
+          title={`[FindThem] 목격 제보`}
           description={sighting.description || sighting.address}
           imageUrl={sighting.photos[0]?.photoUrl}
         />
@@ -100,7 +105,7 @@ export default function SightingDetailPage() {
 
       {/* 제목 */}
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        {sighting.description || t('sightingDetail.noDescription')}
+        {sighting.description || '(설명 없음)'}
       </h1>
 
       {/* 사진 갤러리 */}
@@ -149,9 +154,9 @@ export default function SightingDetailPage() {
         <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6 mb-6">
           <div className="flex items-center gap-2 text-yellow-700">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="font-semibold">{t('sightingDetail.analysis.analyzing')}</span>
+            <span className="font-semibold">AI 분석 중...</span>
           </div>
-          <p className="text-sm text-yellow-600 mt-2">{t('sightingDetail.analysis.analyzingDesc')}</p>
+          <p className="text-sm text-yellow-600 mt-2">사진을 분석하고 있습니다. 잠시만 기다려 주세요.</p>
         </div>
       ) : (() => {
         const analysis = sighting.photos.find((p) => p.aiAnalysis)?.aiAnalysis as SightingPhotoAnalysis | undefined;
@@ -160,7 +165,7 @@ export default function SightingDetailPage() {
           <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Bot className="w-5 h-5 text-blue-600" />
-              <h2 className="font-semibold text-lg text-blue-900">{t('sightingDetail.analysis.title')}</h2>
+              <h2 className="font-semibold text-lg text-blue-900">AI 분석 결과</h2>
             </div>
             {analysis.description && (
               <p className="text-sm text-blue-800 mb-4">{analysis.description}</p>
@@ -168,60 +173,60 @@ export default function SightingDetailPage() {
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {analysis.species && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.species')}</dt>
+                  <dt className="text-blue-600">품종</dt>
                   <dd className="text-blue-900">{analysis.species}</dd>
                 </>
               )}
               {analysis.color && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.color')}</dt>
+                  <dt className="text-blue-600">색상</dt>
                   <dd className="text-blue-900">{analysis.color}</dd>
                 </>
               )}
               {analysis.size && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.size')}</dt>
+                  <dt className="text-blue-600">크기</dt>
                   <dd className="text-blue-900">{analysis.size}</dd>
                 </>
               )}
               {analysis.estimatedAge && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.age')}</dt>
+                  <dt className="text-blue-600">추정 나이</dt>
                   <dd className="text-blue-900">{analysis.estimatedAge}</dd>
                 </>
               )}
               {analysis.collarDetected != null && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.collar')}</dt>
+                  <dt className="text-blue-600">목줄</dt>
                   <dd className="text-blue-900">
                     {analysis.collarDetected
-                      ? analysis.collarDescription || t('sightingDetail.analysis.collarYes')
-                      : t('sightingDetail.analysis.collarNo')}
+                      ? analysis.collarDescription || '있음'
+                      : '없음'}
                   </dd>
                 </>
               )}
               {analysis.healthCondition && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.health')}</dt>
+                  <dt className="text-blue-600">건강 상태</dt>
                   <dd className="text-blue-900">{analysis.healthCondition}</dd>
                 </>
               )}
               {analysis.furCondition && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.fur')}</dt>
+                  <dt className="text-blue-600">털 상태</dt>
                   <dd className="text-blue-900">{analysis.furCondition}</dd>
                 </>
               )}
               {analysis.accessories && (
                 <>
-                  <dt className="text-blue-600">{t('sightingDetail.analysis.accessories')}</dt>
+                  <dt className="text-blue-600">액세서리</dt>
                   <dd className="text-blue-900">{analysis.accessories}</dd>
                 </>
               )}
             </dl>
             {analysis.distinctiveFeatures && analysis.distinctiveFeatures.length > 0 && (
               <div className="mt-3">
-                <dt className="text-sm text-blue-600 mb-1">{t('sightingDetail.analysis.features')}</dt>
+                <dt className="text-sm text-blue-600 mb-1">특징</dt>
                 <div className="flex flex-wrap gap-1.5">
                   {analysis.distinctiveFeatures.map((f, i) => (
                     <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">{f}</span>
@@ -235,29 +240,29 @@ export default function SightingDetailPage() {
 
       {/* 제보 정보 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="font-semibold text-lg mb-4">{t('sightingDetail.info')}</h2>
+        <h2 className="font-semibold text-lg mb-4">제보 정보</h2>
         <dl className="grid grid-cols-2 gap-4 text-sm">
           <dt className="text-gray-500 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5" />{t('sightingDetail.address')}
+            <MapPin className="w-3.5 h-3.5" />목격 장소
           </dt>
           <dd className="text-gray-900">{sighting.address}</dd>
 
           <dt className="text-gray-500 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />{t('sightingDetail.sightedAt')}
+            <Clock className="w-3.5 h-3.5" />목격 시각
           </dt>
           <dd className="text-gray-900">
-            {new Date(sighting.sightedAt).toLocaleString(i18n.language)}
+            {new Date(sighting.sightedAt).toLocaleString('ko-KR')}
           </dd>
 
           <dt className="text-gray-500 flex items-center gap-1">
-            <FileText className="w-3.5 h-3.5" />{t('sightingDetail.createdAt')}
+            <FileText className="w-3.5 h-3.5" />제보 시각
           </dt>
-          <dd className="text-gray-900">{formatTimeAgo(sighting.createdAt, locale)}</dd>
+          <dd className="text-gray-900">{formatTimeAgo(sighting.createdAt, 'ko')}</dd>
 
           {sighting.tipsterName && (
             <>
               <dt className="text-gray-500 flex items-center gap-1">
-                <User className="w-3.5 h-3.5" />{t('sightingDetail.tipster')}
+                <User className="w-3.5 h-3.5" />제보자
               </dt>
               <dd className="text-gray-900">{sighting.tipsterName}</dd>
             </>
@@ -265,7 +270,7 @@ export default function SightingDetailPage() {
 
           {sighting.tipsterPhone && (
             <>
-              <dt className="text-gray-500">{t('sightingDetail.tipsterPhone')}</dt>
+              <dt className="text-gray-500">연락처</dt>
               <dd className="text-gray-900">
                 <a href={`tel:${sighting.tipsterPhone}`} className="text-primary-600 hover:underline">
                   {sighting.tipsterPhone}
@@ -279,7 +284,7 @@ export default function SightingDetailPage() {
       {/* 지도 */}
       {mapMarkers.length > 0 && (
         <div className="mb-6">
-          <h2 className="font-semibold text-lg mb-3">{t('sightingDetail.map')}</h2>
+          <h2 className="font-semibold text-lg mb-3">지도</h2>
           <div className="rounded-xl overflow-hidden border border-gray-200">
             <KakaoMap
               markers={mapMarkers}
@@ -292,7 +297,7 @@ export default function SightingDetailPage() {
       {/* 연결된 신고 */}
       {report && (
         <div className="bg-primary-50 rounded-xl border border-primary-100 p-5 mb-6">
-          <h2 className="font-semibold text-sm text-primary-800 mb-3">{t('sightingDetail.linkedReport')}</h2>
+          <h2 className="font-semibold text-sm text-primary-800 mb-3">연결된 신고</h2>
           <Link
             to={`/reports/${report.id}`}
             className="flex items-center gap-3 bg-white rounded-lg p-3 border border-primary-200 hover:border-primary-400 transition-colors"
@@ -316,7 +321,7 @@ export default function SightingDetailPage() {
       {/* AI 매칭 결과 */}
       {matches.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h2 className="font-semibold text-lg mb-4">{t('sightingDetail.matches')}</h2>
+          <h2 className="font-semibold text-lg mb-4">AI 매칭 결과</h2>
           <div className="space-y-3">
             {matches.map((m) => (
               <Link
@@ -326,14 +331,14 @@ export default function SightingDetailPage() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-sm font-medium ${m.confidence >= 0.8 ? 'text-green-600' : m.confidence >= 0.6 ? 'text-yellow-600' : 'text-gray-500'}`}>
-                    {t('sightingDetail.confidence')} {Math.round(m.confidence * 100)}%
+                    유사도 {Math.round(m.confidence * 100)}%
                   </span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     m.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
                     m.status === 'REJECTED' ? 'bg-gray-100 text-gray-500' :
                     'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {t(`sightingDetail.matchStatus.${m.status}`)}
+                    {t(`sighting.matchStatus.${m.status}`, { defaultValue: m.status })}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 line-clamp-2">{m.aiReasoning}</p>

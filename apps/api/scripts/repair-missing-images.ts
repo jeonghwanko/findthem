@@ -163,7 +163,7 @@ async function main() {
       continue;
     }
 
-    await prisma.reportPhoto.update({
+    await prisma.photo.update({
       where: { id: item.photoId },
       data: {
         photoUrl: result.photoUrl,
