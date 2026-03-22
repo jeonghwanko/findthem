@@ -88,26 +88,32 @@ export default function InviteLandingPage() {
           {t('invite.downloadTitle')}
         </h2>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 items-center">
           {/* Google Play */}
           <a
             href={GOOGLE_PLAY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-3.5 bg-black text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors"
+            className="inline-block hover:opacity-80 transition-opacity"
           >
-            <GooglePlayIcon />
-            {t('invite.googlePlay')}
+            <img
+              src="/badges/google-play-ko.png"
+              alt={t('invite.googlePlay')}
+              className="h-[60px] w-auto"
+            />
           </a>
 
           {/* App Store (Coming Soon) */}
           <button
             type="button"
             onClick={() => setShowComingSoon(true)}
-            className="flex items-center justify-center gap-3 w-full py-3.5 bg-black text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors"
+            className="inline-block hover:opacity-80 transition-opacity"
           >
-            <AppleIcon />
-            {t('invite.appStore')}
+            <img
+              src="/badges/app-store.svg"
+              alt={t('invite.appStore')}
+              className="h-[44px] w-auto"
+            />
           </button>
 
           {/* Web CTA */}
@@ -166,17 +172,6 @@ export default function InviteLandingPage() {
 }
 
 /* ---------- Inline SVG Icons ---------- */
-
-function GooglePlayIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M3.609 1.814a1.5 1.5 0 0 0-.609 1.2v17.972a1.5 1.5 0 0 0 .609 1.2l.1.063 10.065-10.065v-.237L3.71 1.751l-.1.063z" />
-      <path d="M17.125 15.528 13.774 12.184v-.237l3.351-3.344.076.043 3.972 2.256c1.134.644 1.134 1.698 0 2.342l-3.972 2.256-.076.028z" />
-      <path d="M17.201 15.485 13.774 12.065 3.609 22.186c.374.395 .992.444 1.69.05l11.902-6.751" />
-      <path d="M17.201 8.646 5.3 1.895c-.699-.394-1.316-.345-1.69.05l10.164 10.12 3.427-3.42z" />
-    </svg>
-  );
-}
 
 function AppleIcon({ className }: { className?: string }) {
   return (
