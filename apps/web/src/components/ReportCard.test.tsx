@@ -46,11 +46,6 @@ describe('ReportCard', () => {
     expect(screen.getByText(/서울시 강남구 역삼동/)).toBeDefined();
   });
 
-  it('특징을 렌더링한다', () => {
-    renderReportCard(createMockReport());
-    expect(screen.getByText(/갈색 푸들/)).toBeDefined();
-  });
-
   it('유형 라벨을 렌더링한다 (강아지)', () => {
     renderReportCard(createMockReport({ subjectType: 'DOG' }));
     expect(screen.getByText('강아지')).toBeDefined();
@@ -97,6 +92,6 @@ describe('ReportCard', () => {
     renderReportCard(createMockReport());
     const img = screen.getByRole('img');
     expect(img.getAttribute('src')).toBe('/uploads/thumbs/photo.jpg');
-    expect(img.getAttribute('alt')).toBe('초코 - 강아지 실종 사진');
+    expect(img.getAttribute('alt')).toBe('초코 - 강아지');
   });
 });

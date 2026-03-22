@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Camera, MapPin, Clock } from 'lucide-react';
 import type { Report } from '../api/client';
 import { formatTimeAgo, SUBJECT_TYPE_LABELS, type SubjectType } from '@findthem/shared';
 import { assetSrc } from '../utils/webOrigin';
@@ -18,6 +19,7 @@ interface ReportCardProps {
 }
 
 export default function ReportCard({ report }: ReportCardProps) {
+  const { t } = useTranslation();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const primaryPhoto = report.photos?.[0];
@@ -30,7 +32,7 @@ export default function ReportCard({ report }: ReportCardProps) {
   return (
     <Link
       to={`/reports/${report.id}`}
-      className="group block bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all overflow-hidden"
+      className="group block bg-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden"
     >
       {/* 이미지 */}
       <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
@@ -39,55 +41,53 @@ export default function ReportCard({ report }: ReportCardProps) {
             {!imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <img
               src={assetSrc(primaryPhoto.thumbnailUrl || primaryPhoto.photoUrl)}
-              alt={`${displayName} - ${subjectLabel} 실종 사진`}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0 scale-[1.02]'}`}
+              alt={`${displayName} - ${subjectLabel}`}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
             />
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label="사진 없음">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-300" role="img" aria-label={t('browse.noPhoto')}>
             <Camera className="w-8 h-8" aria-hidden="true" />
           </div>
         )}
 
         {/* 타입 배지 */}
-        <span className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+        <span className={`absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm ${badge.bg} ${badge.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} aria-hidden="true" />
           {subjectLabel}
         </span>
 
-        {/* 제보 수 뱃지 */}
+        {/* 제보 수 배지 */}
         {report._count && report._count.sightings > 0 && (
-          <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-primary-600 text-white shadow-sm">
-            제보 {report._count.sightings}건
+          <span className="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-sm">
+            {t('browse.sightingCount', { count: report._count.sightings })}
           </span>
         )}
 
         {/* FOUND 오버레이 */}
         {report.status === 'FOUND' && (
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
-            <span className="bg-white text-gray-900 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-              찾았습니다!
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="bg-white text-gray-900 text-sm font-bold px-4 py-1.5 rounded-full shadow-md">
+              {t('browse.found')}
             </span>
           </div>
         )}
       </div>
 
       {/* 텍스트 */}
-      <div className="p-3.5">
-        <h3 className="font-semibold text-gray-900 truncate text-sm">{displayName}</h3>
-        <p className="text-xs text-gray-400 mt-1 truncate flex items-center gap-1">
-          <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
-          <span>{report.lastSeenAddress}</span>
+      <div className="p-3">
+        <h3 className="font-semibold text-gray-900 truncate text-sm leading-snug">{displayName}</h3>
+        <p className="text-xs text-gray-400 mt-1.5 truncate flex items-center gap-1">
+          <MapPin className="w-3 h-3 shrink-0 text-gray-300" aria-hidden="true" />
+          <span className="truncate">{report.lastSeenAddress}</span>
         </p>
-        {report.features?.trim() && (
-          <p className="text-xs text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">{report.features}</p>
-        )}
-        <div className="mt-2.5 pt-2.5 border-t border-gray-100 text-xs text-gray-400">
+        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+          <Clock className="w-3 h-3 shrink-0 text-gray-300" aria-hidden="true" />
           <span>{timeAgo}</span>
-        </div>
+        </p>
       </div>
     </Link>
   );

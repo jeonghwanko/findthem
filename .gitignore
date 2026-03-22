@@ -23,3 +23,6 @@ docs/
 
 # IDE
 .vscode/
+
+# Store screenshots (generated)
+apps/web/resources/store-screenshots/

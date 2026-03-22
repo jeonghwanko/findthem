@@ -105,7 +105,7 @@
     "orDivider": "或"
   },
   "browse": {
-    "title": "失蹤報案列表",
+    "title": "瀏覽",
     "all": "全部",
     "viewAll": "全部",
     "viewReports": "報案",
@@ -114,15 +114,24 @@
     "filterType": "類型",
     "filterStatus": "狀態",
     "filterRegion": "地區",
+    "typeAll": "全部",
+    "typeDog": "狗",
+    "typeCat": "貓",
+    "phaseAll": "全部",
     "phaseSearching": "搜尋中",
     "phaseSightingReceived": "已收到線索",
     "phaseAnalysisDone": "分析完成",
     "phaseFound": "已找到",
+    "regionAll": "全部",
     "searchPlaceholder": "依姓名、特徵、地點搜尋...",
     "noResults": "查無結果",
     "loadError": "無法載入報案列表",
     "prev": "上一頁",
-    "next": "下一頁"
+    "next": "下一頁",
+    "gameButton": "玩遊戲贊助",
+    "sightingCount": "目擊{{count}}件",
+    "found": "已找到！",
+    "noPhoto": "無照片"
   },
   "myReports": {
     "title": "我的活動",

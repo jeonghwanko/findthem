@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { Search, Gamepad2 } from 'lucide-react';
+import { Search, Gamepad2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api, type Report, type ReportListResponse, type Sighting, type SightingListResponse } from '../api/client';
 import ReportCard from '../components/ReportCard';
 import SightingCard from '../components/SightingCard';
@@ -13,26 +13,6 @@ const BROWSE_PAGE_SIZE = 12;
 const REGIONS = [
   '', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종',
   '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
-];
-
-const VIEW_FILTERS = [
-  { value: 'all' as ViewMode, label: '전체' },
-  { value: 'reports' as ViewMode, label: '신고' },
-  { value: 'sightings' as ViewMode, label: '제보' },
-];
-
-const TYPE_FILTERS = [
-  { value: '', label: '전체' },
-  { value: 'DOG', label: '강아지' },
-  { value: 'CAT', label: '고양이' },
-];
-
-const PHASE_FILTERS = [
-  { value: '', label: '전체' },
-  { value: 'searching', label: '찾는 중' },
-  { value: 'sighting_received', label: '제보 접수' },
-  { value: 'analysis_done', label: '분석 완료' },
-  { value: 'found', label: '찾았어요' },
 ];
 
 type ViewMode = 'all' | 'reports' | 'sightings';
@@ -166,91 +146,121 @@ export default function BrowsePage() {
     : viewMode === 'sightings' ? sightings.length === 0
     : mergedItems.length === 0;
 
+  const VIEW_FILTERS = [
+    { value: 'all' as ViewMode, label: t('browse.viewAll') },
+    { value: 'reports' as ViewMode, label: t('browse.viewReports') },
+    { value: 'sightings' as ViewMode, label: t('browse.viewSightings') },
+  ];
+
+  const TYPE_FILTERS = [
+    { value: '', label: t('browse.typeAll') },
+    { value: 'DOG', label: t('browse.typeDog') },
+    { value: 'CAT', label: t('browse.typeCat') },
+  ];
+
+  const PHASE_FILTERS = [
+    { value: '', label: t('browse.phaseAll') },
+    { value: 'searching', label: t('browse.phaseSearching') },
+    { value: 'sighting_received', label: t('browse.phaseSightingReceived') },
+    { value: 'analysis_done', label: t('browse.phaseAnalysisDone') },
+    { value: 'found', label: t('browse.phaseFound') },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">찾기</h1>
+    <div className="max-w-5xl mx-auto px-4 pt-6 pb-28">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-xl font-bold text-gray-900">{t('browse.title')}</h1>
         <Link
           to="/game"
-          className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
+          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-semibold shadow-[0_4px_0_0_#b45309,0_6px_16px_rgba(180,83,9,0.3)] hover:shadow-[0_2px_0_0_#b45309,0_4px_10px_rgba(180,83,9,0.3)] hover:translate-y-[2px] active:shadow-none active:translate-y-[4px] transition-all duration-100 px-3.5 py-2"
         >
-          <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
-          <span className="text-xs">게임하고 후원하기</span>
+          <Gamepad2 className="w-4 h-4 drop-shadow-sm" aria-hidden="true" />
+          <span className="text-xs">{t('browse.gameButton')}</span>
         </Link>
       </div>
 
       {/* 필터 영역 */}
-      <div className="space-y-3 mb-6">
-        {/* 보기 필터 (신고/제보/전체) */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-          {VIEW_FILTERS.map((item) => (
-            <button
-              key={item.value}
-              onClick={() => handleViewChange(item.value)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === item.value ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+      <div className="space-y-2.5 mb-5">
+        {/* 뷰 + 종류 + 상태 — 한 줄에 묶기 */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* 보기 모드 탭 */}
+          <div className="flex gap-0.5 bg-gray-100 rounded-lg p-1">
+            {VIEW_FILTERS.map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleViewChange(item.value)}
+                className={`px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors min-h-[36px] ${
+                  viewMode === item.value
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 종류 필터 (제보 모드에서 숨김) */}
+          {showTypeFilters && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-gray-400 shrink-0">{t('browse.filterType')}</span>
+              <div className="flex gap-1">
+                {TYPE_FILTERS.map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() => setFilter(setType, item.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[32px] ${
+                      type === item.value
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* 종류 + 상태 필터 (제보 모드에서는 숨김) */}
-        {(showTypeFilters || showPhaseFilters) && (
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
-            {showTypeFilters && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 shrink-0">종류</span>
-                <div className="flex gap-1">
-                  {TYPE_FILTERS.map((item) => (
-                    <button
-                      key={item.value}
-                      onClick={() => setFilter(setType, item.value)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        type === item.value ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {showPhaseFilters && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 shrink-0">상태</span>
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                  {PHASE_FILTERS.map((item) => (
-                    <button
-                      key={item.value}
-                      onClick={() => setFilter(setPhase, item.value)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
-                        phase === item.value ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* 상태 필터 (제보 모드에서 숨김) — 가로 스크롤 */}
+        {showPhaseFilters && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-gray-400 shrink-0">{t('browse.filterStatus')}</span>
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+              {PHASE_FILTERS.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setFilter(setPhase, item.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap shrink-0 min-h-[32px] ${
+                    phase === item.value
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* 지역 필터 */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500 shrink-0">지역</span>
+        {/* 지역 필터 — 가로 스크롤 */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-gray-400 shrink-0">{t('browse.filterRegion')}</span>
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {REGIONS.map((r) => (
               <button
                 key={r}
                 onClick={() => setFilter(setRegion, r)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
-                  region === r ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap shrink-0 min-h-[32px] ${
+                  region === r
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {r || '전체'}
+                {r || t('browse.regionAll')}
               </button>
             ))}
           </div>
@@ -258,32 +268,34 @@ export default function BrowsePage() {
 
         {/* 검색 */}
         <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="이름, 특징으로 검색..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            placeholder={t('browse.searchPlaceholder')}
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-gray-900 placeholder:text-gray-400 transition-shadow"
           />
         </form>
       </div>
 
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+      {error && (
+        <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+      )}
 
       {/* 목록 */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: BROWSE_PAGE_SIZE }).map((_, i) => (
             <ReportCardSkeleton key={i} />
           ))}
         </div>
       ) : isEmpty ? (
-        <div className="text-center py-20 text-gray-400">
-          검색 결과가 없습니다
+        <div className="text-center py-20">
+          <p className="text-gray-400 text-sm">{t('browse.noResults')}</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {viewMode === 'reports' && reports.map((report) => (
               <ReportCard key={report.id} report={report} />
             ))}
@@ -298,27 +310,32 @@ export default function BrowsePage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
+            <div className="flex justify-center items-center gap-3 mt-8">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+                className="flex items-center gap-1 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                aria-label={t('browse.prev')}
               >
-                이전
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                {t('browse.prev')}
               </button>
-              <span className="text-sm text-gray-600">{page} / {totalPages}</span>
+              <span className="text-sm text-gray-500 tabular-nums">
+                {page} / {totalPages}
+              </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+                className="flex items-center gap-1 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                aria-label={t('browse.next')}
               >
-                다음
+                {t('browse.next')}
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           )}
         </>
       )}
-
     </div>
   );
 }

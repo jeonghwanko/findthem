@@ -105,7 +105,7 @@
     "orDivider": "または"
   },
   "browse": {
-    "title": "行方不明届一覧",
+    "title": "一覧",
     "all": "すべて",
     "viewAll": "すべて",
     "viewReports": "届出",
@@ -114,15 +114,24 @@
     "filterType": "種類",
     "filterStatus": "状態",
     "filterRegion": "地域",
+    "typeAll": "すべて",
+    "typeDog": "犬",
+    "typeCat": "猫",
+    "phaseAll": "すべて",
     "phaseSearching": "捜索中",
     "phaseSightingReceived": "目撃受付",
     "phaseAnalysisDone": "分析完了",
     "phaseFound": "発見済み",
+    "regionAll": "すべて",
     "searchPlaceholder": "名前、特徴、場所で検索...",
     "noResults": "検索結果がありません",
     "loadError": "一覧の読み込みに失敗しました",
     "prev": "前へ",
-    "next": "次へ"
+    "next": "次へ",
+    "gameButton": "ゲームで後援",
+    "sightingCount": "目撃{{count}}件",
+    "found": "発見済み！",
+    "noPhoto": "写真なし"
   },
   "myReports": {
     "title": "マイ活動",

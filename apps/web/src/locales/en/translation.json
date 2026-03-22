@@ -105,7 +105,7 @@
     "orDivider": "or"
   },
   "browse": {
-    "title": "Missing Reports",
+    "title": "Browse",
     "all": "All",
     "viewAll": "All",
     "viewReports": "Reports",
@@ -114,15 +114,24 @@
     "filterType": "Type",
     "filterStatus": "Status",
     "filterRegion": "Region",
+    "typeAll": "All",
+    "typeDog": "Dog",
+    "typeCat": "Cat",
+    "phaseAll": "All",
     "phaseSearching": "Searching",
     "phaseSightingReceived": "Sighting Received",
     "phaseAnalysisDone": "Analysis Done",
     "phaseFound": "Found",
+    "regionAll": "All",
     "searchPlaceholder": "Search by name, features, location...",
     "noResults": "No results found",
     "loadError": "Failed to load reports",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "gameButton": "Play & Sponsor",
+    "sightingCount": "{{count}} sightings",
+    "found": "Found!",
+    "noPhoto": "No photo"
   },
   "myReports": {
     "title": "My Activity",
