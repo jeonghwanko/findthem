@@ -207,11 +207,12 @@ export function registerAuthRoutes(router: Router) {
     const { userId } = req.user!; // requireAuth가 보장
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true, referredByUserId: true },
     });
     if (!user) throw new ApiError(404, ERROR_CODES.USER_NOT_FOUND);
 
-    res.json(user);
+    const { referredByUserId, ...rest } = user;
+    res.json({ ...rest, hasReferrer: !!referredByUserId });
   });
 
   // ── 내 정보 수정 ─────────────────────────────────────────────────────────
@@ -234,12 +235,13 @@ export function registerAuthRoutes(router: Router) {
       throw new ApiError(400, ERROR_CODES.NO_FIELDS_TO_UPDATE);
     }
 
-    const user = await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: userId },
       data,
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true, referredByUserId: true },
     });
-    res.json(user);
+    const { referredByUserId: ref, ...rest } = updated;
+    res.json({ ...rest, hasReferrer: !!ref });
   });
 
   // ── 프로필 이미지 업로드 ──────────────────────────────────────────────────
@@ -271,12 +273,13 @@ export function registerAuthRoutes(router: Router) {
       throw new ApiError(500, ERROR_CODES.SERVER_ERROR);
     }
 
-    const user = await prisma.user.update({
+    const imgUser = await prisma.user.update({
       where: { id: userId },
       data: { profileImage: photoUrl },
-      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true },
+      select: { id: true, name: true, phone: true, email: true, profileImage: true, provider: true, createdAt: true, referralCode: true, referredByUserId: true },
     });
-    res.json(user);
+    const { referredByUserId: imgRef, ...imgRest } = imgUser;
+    res.json({ ...imgRest, hasReferrer: !!imgRef });
   });
 
   // ── 레퍼럴 코드 발급 ─────────────────────────────────────────────────────

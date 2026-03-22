@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Users, Bell, BellOff } from 'lucide-react';
+import { User as UserIcon, Mail, Calendar, Shield, Save, Camera, Star, Gift, Users, Bell, BellOff, TicketCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { usePushNotification } from '../hooks/usePushNotification';
 import { api, type User } from '../api/client';
 import { MAX_FILE_SIZE } from '@findthem/shared';
@@ -28,6 +29,7 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
+  const { t } = useTranslation();
   const { subscribed, loading: pushLoading, isSupported, subscribe, unsubscribe } = usePushNotification();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email ?? '');
@@ -41,6 +43,10 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
   const { showXpToast } = useXpToast();
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSharingRef = useRef(false);
+  const [referralInput, setReferralInput] = useState('');
+  const [applyingReferral, setApplyingReferral] = useState(false);
+  const [referralApplied, setReferralApplied] = useState(user.hasReferrer ?? false);
+  const [referralError, setReferralError] = useState<string | null>(null);
 
   // 컴포넌트 unmount 시 타이머 정리
   useEffect(() => {
@@ -133,7 +139,7 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
     if (isSharingRef.current || !user.referralCode) return;
     isSharingRef.current = true;
     try {
-      const referralUrl = `${getWebOrigin()}?ref=${user.referralCode}`;
+      const referralUrl = `${getWebOrigin()}/invite?ref=${user.referralCode}`;
       const shareTitle = '찾아줘 — 함께 찾아요';
       const shareDesc = '실종된 반려동물/사람을 AI로 찾는 서비스에 함께해요!';
 
@@ -184,6 +190,31 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
       await claimShareReward();
     } finally {
       isSharingRef.current = false;
+    }
+  }
+
+  async function handleApplyReferral() {
+    const code = referralInput.trim().toUpperCase();
+    if (!/^[A-Z2-9]{8}$/.test(code) || applyingReferral) return;
+    if (user.referralCode && code === user.referralCode) {
+      setReferralError(t('errors.SELF_REFERRAL', { defaultValue: t('invite.applyAlready') }));
+      return;
+    }
+    setApplyingReferral(true);
+    setReferralError(null);
+    try {
+      const result = await api.post<{ applied: boolean }>('/auth/me/apply-referral', { referralCode: code });
+      if (result.applied) {
+        setReferralApplied(true);
+        setMessage({ type: 'success', text: t('invite.applySuccess') });
+      } else {
+        setReferralError(t('invite.applyAlready'));
+      }
+    } catch (err: unknown) {
+      const errCode = err instanceof Error ? err.message : '';
+      setReferralError(t(`errors.${errCode}`, { defaultValue: t('invite.applyAlready') }));
+    } finally {
+      setApplyingReferral(false);
     }
   }
 
@@ -334,6 +365,41 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
               {new Date(user.createdAt).toLocaleDateString()}
             </div>
+          </div>
+        )}
+
+        {/* 추천 코드 입력 (아직 추천인이 없는 경우) */}
+        {!referralApplied && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-indigo-700 mb-1.5">
+              <TicketCheck className="w-4 h-4" />
+              {t('invite.applyTitle')}
+            </div>
+            <p className="text-xs text-indigo-600/70 mb-2">{t('invite.applyDesc')}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={referralInput}
+                onChange={(e) => {
+                  setReferralInput(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8));
+                  setReferralError(null);
+                }}
+                placeholder={t('invite.applyPlaceholder')}
+                maxLength={8}
+                className="flex-1 px-3 py-2 border border-indigo-200 rounded-lg text-sm font-mono tracking-widest bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              <button
+                type="button"
+                onClick={() => void handleApplyReferral()}
+                disabled={applyingReferral || referralInput.length !== 8}
+                className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+              >
+                {applyingReferral ? '...' : t('invite.applySubmit')}
+              </button>
+            </div>
+            {referralError && (
+              <p className="text-xs text-red-500 mt-1.5">{referralError}</p>
+            )}
           </div>
         )}
 

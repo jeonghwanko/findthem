@@ -731,5 +731,29 @@
       "accessories": "配戴物",
       "features": "特徵"
     }
+  },
+  "invite": {
+    "badge": "朋友邀請你加入！",
+    "heroTitle": "AI幫你找回\n失蹤的家人",
+    "heroDesc": "只要上傳一張照片，AI就會自動比對分析，並在社群媒體上自動宣傳。一起，我們能更快找到他們。",
+    "featureMatchTitle": "AI圖片比對",
+    "featureMatchDesc": "AI自動比對目擊照片與失蹤照片",
+    "featurePromoTitle": "自動社群宣傳",
+    "featurePromoDesc": "自動發佈到KakaoTalk、X（Twitter）等平台",
+    "featureChatTitle": "聊天機器人舉報",
+    "featureChatDesc": "透過KakaoTalk/網頁聊天機器人輕鬆舉報",
+    "downloadTitle": "立即開始",
+    "googlePlay": "Google Play",
+    "appStore": "App Store",
+    "startWeb": "從網頁開始",
+    "comingSoonTitle": "準備中",
+    "comingSoonDesc": "App Store版本即將推出。\n請先試用網頁版！",
+    "comingSoonClose": "確認",
+    "applyTitle": "輸入推薦碼",
+    "applyDesc": "請輸入朋友給你的推薦碼",
+    "applyPlaceholder": "8位推薦碼",
+    "applySubmit": "套用",
+    "applySuccess": "推薦碼已成功套用！",
+    "applyAlready": "推薦碼已經套用過了"
   }
 }

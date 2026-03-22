@@ -30,6 +30,7 @@ const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage'));
 // GamePage: 게임 로직 포함으로 무거움
 const GamePage = lazy(() => import('../pages/GamePage'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
+const InviteLandingPage = lazy(() => import('../pages/InviteLandingPage'));
 
 interface RouteEntry {
   path: string;
@@ -85,5 +86,6 @@ export function userRoutes(ctx: UserRoutesContext): RouteEntry[] {
     { path: '/team', element: <TeamPage /> },
     { path: '/team/sponsor/success', element: <SponsorSuccessPage /> },
     { path: '/team/sponsor/:agentId', element: <SponsorPage /> },
+    { path: '/invite', element: <InviteLandingPage /> },
   ];
 }

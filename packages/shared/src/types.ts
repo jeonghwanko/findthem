@@ -31,6 +31,7 @@ export interface UserPublic {
   provider?: AuthProvider;
   createdAt?: string;
   referralCode?: string | null;
+  hasReferrer?: boolean;
 }
 
 export interface SightingPhotoAnalysis {

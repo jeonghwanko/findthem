@@ -286,6 +286,25 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE'
 | **TELEGRAM** | `/auth/telegram` → telegram.org OAuth → `/auth/callback#tgAuthResult` → 프론트 파싱 → `POST /auth/telegram/callback` | fragment 기반 (서버 직접 수신 불가) |
 | **APPLE** | `/auth/apple` → Apple 인증 → `POST /auth/apple/callback` (form_post) → `#token` | JWKS id_token 검증, 이름/이메일은 첫 로그인 시만 전달 |
 
+### OAuth 콜백 깜빡임 방지 구조
+
+소셜 로그인 후 `/auth/callback#token=xxx`로 돌아올 때 비로그인 UI가 순간 노출되는 문제를 방지하는 2단계 구조:
+
+```
+웹 OAuth (카카오/네이버/Apple):
+  브라우저 → /auth/callback#token=xxx (전체 페이지 로드)
+  1. useAuth 마운트: extractCallbackToken()으로 hash에서 토큰 즉시 추출 → localStorage 저장
+     → loading: true 유지한 채 /auth/me 호출 (비로그인 UI 노출 안 됨)
+  2. AuthCallbackPage: referral 처리 → navigate('/', { replace: true })
+  3. useAuth의 /auth/me 완료 → loading: false → 로그인된 홈 렌더
+
+네이티브 OAuth:
+  Universal Link → useNativeOAuth(appUrlOpen 이벤트) → 토큰 추출 → updateUser
+  useAuth의 extractCallbackToken()은 IS_NATIVE일 때 skip
+```
+
+**핵심**: `useAuth`가 `extractCallbackToken()`으로 hash 토큰을 **동기적으로** 추출하여 `loading: true`를 유지하므로, App.tsx의 로딩 스피너가 비로그인 Header 노출을 차단한다.
+
 ### 텔레그램 로그인 플로우 (특수)
 
 ```
@@ -294,8 +313,10 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE'
 3. 텔레그램: /auth/callback#tgAuthResult=<base64 JSON> 으로 리다이렉트
 4. AuthCallbackPage: fragment 파싱 → atob(tgAuthResult) → JSON → POST /api/auth/telegram/callback
 5. 백엔드: hash 검증 (SHA256 HMAC) → auth_date 만료 체크 → findOrCreateSocialUser → { token }
-6. 프론트: localStorage에 토큰 저장 → 홈으로 이동
+6. 프론트: localStorage에 토큰 저장 → navigate('/') (SPA 내비게이션)
 ```
+
+**주의**: 텔레그램 콜백은 `#tgAuthResult`이므로 `useAuth`의 `extractCallbackToken()`에 걸리지 않는다. `AuthCallbackPage`에서 별도 처리하며, 토큰 획득 후 `navigate`로 SPA 내비게이션한다.
 
 **주의사항:**
 - 텔레그램 `id`는 Int로 전달됨 → `String()`으로 변환 필수 (Prisma String 타입)
@@ -312,7 +333,8 @@ AuthProvider: 'LOCAL' | 'KAKAO' | 'NAVER' | 'TELEGRAM' | 'APPLE'
 - 소셜 로그인 시 프로필 이미지 저장: 카카오(`profile_image_url`), 네이버(`profile_image`), 텔레그램(`photo_url`) — 없으면 null
 - 재로그인 시 `name`, `profileImage` 최신값으로 갱신 (upsert update)
 - 프론트 콜백 페이지: `/auth/callback` (`AuthCallbackPage.tsx`) — `#token` 또는 `#tgAuthResult` 처리
-- **네이티브 앱 (iOS)**: Universal Link로 OAuth 콜백을 앱으로 인터셉트. `@capacitor/app`의 `appUrlOpen` 이벤트 → `AuthCallbackPage` 라우팅. AASA 파일: `public/.well-known/apple-app-site-association`
+- `applyPendingReferral()` — `useAuth.ts`에서 export, AuthCallbackPage에서 import (단일 정의, SSOT)
+- **네이티브 앱 (iOS)**: Universal Link로 OAuth 콜백을 앱으로 인터셉트. `@capacitor/app`의 `appUrlOpen` 이벤트 → `useNativeOAuth`에서 처리. AASA 파일: `public/.well-known/apple-app-site-association`
 
 **라우트**
 ```
@@ -336,6 +358,10 @@ POST   /api/auth/me/referral-code      레퍼럴 코드 발급 (requireAuth, 없
 - DB `User.referralCode String? @unique` — lazy 발급 (요청 시 최초 1회 생성)
 - `ensureReferralCode(userId)`: 원자적 `updateMany(where: { referralCode: null })` 패턴 → race condition 방지
 - 응답: `{ referralCode }` — ProfilePage에서 공유 UI 표시
+- **공유 URL**: `/invite?ref=CODE` → 초대 랜딩 페이지 (InviteLandingPage)
+- **랜딩 페이지**: 서비스 소개 + Google Play 다운로드 + App Store "준비중" 모달 + 웹 CTA
+- **코드 입력**: ProfilePage에서 `hasReferrer === false`인 유저에게 추천 코드 입력 섹션 표시
+- **`/auth/me` 응답**: `hasReferrer: boolean` 포함 (referredByUserId 존재 여부)
 
 **환경 변수**
 | 변수 | 용도 |

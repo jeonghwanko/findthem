@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api, type User } from '../api/client';
 import { TOKEN_STORAGE_KEY, FCM_TOKEN_STORAGE_KEY } from '@findthem/shared';
+import { IS_NATIVE } from '../utils/webOrigin';
 
 async function syncFcmToken() {
   const token = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
@@ -12,7 +13,7 @@ async function syncFcmToken() {
   }
 }
 
-async function applyPendingReferral() {
+export async function applyPendingReferral() {
   const referralCode = sessionStorage.getItem('referralCode');
   if (!referralCode) return;
   try {
@@ -24,6 +25,17 @@ async function applyPendingReferral() {
   }
 }
 
+/**
+ * 웹 OAuth 콜백 페이지에서 hash의 토큰을 동기적으로 추출.
+ * 네이티브는 useNativeOAuth가 appUrlOpen 이벤트로 별도 처리하므로 제외.
+ */
+function extractCallbackToken(): string | null {
+  if (IS_NATIVE) return null;
+  if (window.location.pathname !== '/auth/callback') return null;
+  const hash = window.location.hash.slice(1);
+  return new URLSearchParams(hash).get('token');
+}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
@@ -33,8 +45,18 @@ export function useAuth() {
   const [state, setState] = useState<AuthState>({ user: null, loading: true });
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    // localStorage 우선, 없으면 OAuth 콜백 hash에서 추출
+    const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const callbackToken = storedToken ? null : extractCallbackToken();
+    const token = storedToken ?? callbackToken;
+
+    if (callbackToken) {
+      localStorage.setItem(TOKEN_STORAGE_KEY, callbackToken);
+    }
+
     if (!token) {
+      // 텔레그램 콜백(#tgAuthResult)은 AuthCallbackPage에서 비동기 처리 —
+      // loading: false로 전환하되, 텔레그램 처리 완료 시 setUser로 복구됨
       setState({ user: null, loading: false });
       return;
     }

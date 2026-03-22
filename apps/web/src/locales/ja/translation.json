@@ -730,5 +730,29 @@
       "accessories": "装着物",
       "features": "特徴"
     }
+  },
+  "invite": {
+    "badge": "友達から招待されました！",
+    "heroTitle": "行方不明の家族を\nAIが探します",
+    "heroDesc": "写真1枚でAIが自動で比較分析し、SNSに自動掲載します。一緒なら、もっと早く見つけられます。",
+    "featureMatchTitle": "AI画像マッチング",
+    "featureMatchDesc": "目撃写真と失踪写真をAIが自動で比較分析します",
+    "featurePromoTitle": "自動SNS掲載",
+    "featurePromoDesc": "KakaoTalk、X（Twitter）などに自動で投稿します",
+    "featureChatTitle": "チャットボット通報",
+    "featureChatDesc": "KakaoTalk/Webチャットボットで簡単に通報できます",
+    "downloadTitle": "今すぐ始めましょう",
+    "googlePlay": "Google Play",
+    "appStore": "App Store",
+    "startWeb": "Webで始める",
+    "comingSoonTitle": "準備中です",
+    "comingSoonDesc": "App Store版は近日公開予定です。\nまずはWebからお試しください！",
+    "comingSoonClose": "確認",
+    "applyTitle": "紹介コード入力",
+    "applyDesc": "友達からもらった紹介コードを入力してください",
+    "applyPlaceholder": "8桁の紹介コード",
+    "applySubmit": "適用する",
+    "applySuccess": "紹介コードが適用されました！",
+    "applyAlready": "すでに紹介コードが適用されています"
   }
 }

@@ -731,5 +731,29 @@
       "accessories": "Accessories",
       "features": "Distinctive Features"
     }
+  },
+  "invite": {
+    "badge": "You've been invited!",
+    "heroTitle": "AI Finds Your\nMissing Family",
+    "heroDesc": "Upload a photo and AI automatically analyzes, matches, and promotes on social media. Together, we can find them faster.",
+    "featureMatchTitle": "AI Image Matching",
+    "featureMatchDesc": "AI automatically compares sighting photos with missing reports",
+    "featurePromoTitle": "Auto SNS Promotion",
+    "featurePromoDesc": "Automatically posts to KakaoTalk, X (Twitter), and more",
+    "featureChatTitle": "Chatbot Reporting",
+    "featureChatDesc": "Easily report sightings via KakaoTalk or web chatbot",
+    "downloadTitle": "Get Started Now",
+    "googlePlay": "Google Play",
+    "appStore": "App Store",
+    "startWeb": "Start on Web",
+    "comingSoonTitle": "Coming Soon",
+    "comingSoonDesc": "The App Store version is coming soon.\nTry the web version first!",
+    "comingSoonClose": "OK",
+    "applyTitle": "Enter Referral Code",
+    "applyDesc": "Enter a referral code from a friend",
+    "applyPlaceholder": "8-digit referral code",
+    "applySubmit": "Apply",
+    "applySuccess": "Referral code applied successfully!",
+    "applyAlready": "A referral code has already been applied"
   }
 }

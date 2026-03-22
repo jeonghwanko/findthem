@@ -751,5 +751,29 @@
       "accessories": "착용물",
       "features": "특이사항"
     }
+  },
+  "invite": {
+    "badge": "친구가 초대했어요!",
+    "heroTitle": "실종된 가족을\nAI가 찾아드립니다",
+    "heroDesc": "사진 한 장이면 AI가 자동으로 비교 분석하고, SNS에 자동 홍보합니다. 함께라면 더 빨리 찾을 수 있어요.",
+    "featureMatchTitle": "AI 이미지 매칭",
+    "featureMatchDesc": "제보 사진과 실종 사진을 AI가 자동으로 비교 분석합니다",
+    "featurePromoTitle": "자동 SNS 홍보",
+    "featurePromoDesc": "카카오톡, X(트위터)에 자동으로 게시합니다",
+    "featureChatTitle": "챗봇 제보",
+    "featureChatDesc": "카카오톡/웹 챗봇으로 쉽게 제보할 수 있습니다",
+    "downloadTitle": "지금 시작하세요",
+    "googlePlay": "Google Play",
+    "appStore": "App Store",
+    "startWeb": "웹으로 시작하기",
+    "comingSoonTitle": "준비중입니다",
+    "comingSoonDesc": "App Store 버전은 곧 출시됩니다.\n웹에서 먼저 시작해보세요!",
+    "comingSoonClose": "확인",
+    "applyTitle": "추천 코드 입력",
+    "applyDesc": "친구에게 받은 추천 코드를 입력하세요",
+    "applyPlaceholder": "8자리 추천 코드",
+    "applySubmit": "적용하기",
+    "applySuccess": "추천 코드가 적용되었습니다!",
+    "applyAlready": "이미 추천 코드가 적용되어 있습니다"
   }
 }
