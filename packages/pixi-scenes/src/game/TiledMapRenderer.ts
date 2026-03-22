@@ -83,8 +83,13 @@ export async function drawTiledScene(
   const tilesetTextures: Map<string, Texture> = new Map();
   const loadPromises = map.tilesets.map(async (ts) => {
     const url = toPublicUrl(ts.image);
-    const tex = await Assets.load(url) as Texture;
-    tilesetTextures.set(ts.image, tex);
+    try {
+      const tex = await Assets.load(url) as Texture;
+      tilesetTextures.set(ts.image, tex);
+    } catch {
+      // eslint-disable-next-line no-console
+      console.warn('[TiledMap] tileset load failed:', url);
+    }
   });
   await Promise.all(loadPromises);
 
@@ -123,8 +128,10 @@ export async function drawTiledScene(
     const sx = (localId % tileCols) * td;
     const sy = Math.floor(localId / tileCols) * td;
 
+    const source = srcTex.source;
+    source.alphaMode = 'premultiply-alpha-on-upload';
     const tex = new Texture({
-      source: srcTex.source,
+      source,
       frame: new Rectangle(sx, sy, td, td),
     });
     texCache.set(gid & 0x1FFFFFFF, tex);
