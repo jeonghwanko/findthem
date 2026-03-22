@@ -66,6 +66,7 @@ function mockBothResponses(reports: Report[], sightings: Sighting[]) {
       } as ReportListResponse);
     }
     return Promise.resolve({
+      items: sightings,
       sightings,
       total: sightings.length,
       page: 1,
@@ -244,15 +245,15 @@ describe('BrowsePage', () => {
   });
 
   describe('data 호환성', () => {
-    it('API가 reports 필드만 반환해도 동작한다', async () => {
+    it('API가 items 필드를 반환하면 정상 표시한다', async () => {
       mockApiGet.mockImplementation((url: string) => {
         if (typeof url === 'string' && url.startsWith('/reports')) {
           return Promise.resolve({
-            reports: [createMockReport()],
+            items: [createMockReport()],
             total: 1, page: 1, totalPages: 1,
           });
         }
-        return Promise.resolve({ sightings: [], total: 0, page: 1, totalPages: 1 });
+        return Promise.resolve({ items: [], total: 0, page: 1, totalPages: 1 });
       });
       await renderBrowsePage();
       await waitFor(() => {
