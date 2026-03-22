@@ -31,6 +31,12 @@ jobs:
       - name: web3-payment 패키지 빌드
         run: npm run build -w packages/web3-payment
 
+      - name: capacitor-iap 패키지 빌드
+        run: npm run build -w packages/capacitor-iap
+
+      - name: payments 패키지 빌드
+        run: npm run build -w packages/payments
+
       - name: Prisma 클라이언트 생성
         run: cd apps/api && npx prisma generate
 
@@ -58,12 +64,16 @@ jobs:
             apps/web/dist \
             packages/shared/dist \
             packages/web3-payment/dist \
+            packages/capacitor-iap/dist \
+            packages/payments/dist \
             package.json \
             package-lock.json \
             apps/api/package.json \
             apps/web/package.json \
             packages/shared/package.json \
             packages/web3-payment/package.json \
+            packages/capacitor-iap/package.json \
+            packages/payments/package.json \
             ecosystem.config.cjs \
             deploy/
 
