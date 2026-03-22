@@ -88,20 +88,20 @@ ALTER TABLE "ai_usage_log" ALTER COLUMN "id" SET DEFAULT uuid_generate_v7();
 -- AlterTable
 ALTER TABLE "chat_message" ALTER COLUMN "id" SET DEFAULT uuid_generate_v7(),
 DROP COLUMN "role",
-ADD COLUMN     "role" "chat_role" NOT NULL;
+ADD COLUMN     "role" "chat_role" NOT NULL DEFAULT 'USER';
 
 -- AlterTable
 ALTER TABLE "game_play" ALTER COLUMN "id" SET DEFAULT uuid_generate_v7();
 
 -- AlterTable
 ALTER TABLE "outreach_contact" DROP COLUMN "type",
-ADD COLUMN     "type" "outreach_contact_type" NOT NULL,
+ADD COLUMN     "type" "outreach_contact_type" NOT NULL DEFAULT 'JOURNALIST',
 DROP COLUMN "source",
 ADD COLUMN     "source" "outreach_source";
 
 -- AlterTable
 ALTER TABLE "outreach_request" DROP COLUMN "channel",
-ADD COLUMN     "channel" "outreach_channel" NOT NULL,
+ADD COLUMN     "channel" "outreach_channel" NOT NULL DEFAULT 'EMAIL',
 DROP COLUMN "status",
 ADD COLUMN     "status" "outreach_request_status" NOT NULL DEFAULT 'PENDING_APPROVAL';
 
@@ -116,7 +116,7 @@ ALTER TABLE "report" ADD COLUMN     "location" geography(Point,4326);
 
 -- AlterTable
 ALTER TABLE "sighting" ADD COLUMN     "location" geography(Point,4326),
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT now();
 
 -- AlterTable
 ALTER TABLE "sponsor" ADD COLUMN     "quoteId" TEXT,
@@ -135,12 +135,12 @@ ALTER COLUMN "phone" DROP NOT NULL;
 
 -- AlterTable
 ALTER TABLE "user_reward" DROP COLUMN "rewardType",
-ADD COLUMN     "rewardType" "reward_type" NOT NULL;
+ADD COLUMN     "rewardType" "reward_type" NOT NULL DEFAULT 'BADGE';
 
 -- AlterTable
 ALTER TABLE "xp_log" ALTER COLUMN "id" SET DEFAULT uuid_generate_v7(),
 DROP COLUMN "action",
-ADD COLUMN     "action" "xp_action" NOT NULL;
+ADD COLUMN     "action" "xp_action" NOT NULL DEFAULT 'AD_WATCH';
 
 -- DropTable
 DROP TABLE "report_photo";
