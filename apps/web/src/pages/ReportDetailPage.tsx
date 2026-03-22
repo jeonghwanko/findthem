@@ -67,7 +67,7 @@ export default function ReportDetailPage() {
     ])
       .then(([r, s]) => {
         setReport(r);
-        setSightings(s.items);
+        setSightings(s.items ?? []);
       })
       .catch(() => setLoading(false))
       .finally(() => setLoading(false));

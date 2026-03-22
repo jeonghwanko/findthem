@@ -5,7 +5,7 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('rateLimit');
 
-// ── Redis 연결 (실패 시 메모리 폴백) ──
+// ── Redis 연결 (실패 시 메모리 폴백, 재연결 루프 방지) ──
 let redis: InstanceType<typeof IORedis> | null = null;
 let useRedis = false;
 
@@ -14,12 +14,15 @@ try {
     maxRetriesPerRequest: 1,
     enableReadyCheck: false,
     lazyConnect: true,
+    retryStrategy: () => null, // 자동 재연결 비활성화 (메모리 폴백 사용)
   });
   redis.connect().then(() => {
     useRedis = true;
     log.info('Rate limiter: Redis connected');
   }).catch(() => {
     useRedis = false;
+    redis?.disconnect();
+    redis = null;
     log.warn('Rate limiter: Redis unavailable, using memory fallback');
   });
   redis.on('error', () => {
@@ -28,13 +31,8 @@ try {
       log.warn('Rate limiter: Redis connection lost, falling back to memory');
     }
   });
-  redis.on('connect', () => {
-    if (!useRedis) {
-      useRedis = true;
-      log.info('Rate limiter: Redis reconnected');
-    }
-  });
 } catch {
+  redis = null;
   log.warn('Rate limiter: Redis init failed, using memory fallback');
 }
 
@@ -47,18 +45,22 @@ setInterval(() => {
   for (const [key, entry] of memStore) {
     if (now > entry.resetAt) memStore.delete(key);
   }
-}, 60_000);
+}, 60_000).unref();
+
+// limiter별 고유 ID 생성 (key collision 방지)
+let limiterSeq = 0;
 
 export function rateLimit(options: { windowMs: number; max: number; message?: string }) {
   const windowSec = Math.ceil(options.windowMs / 1000);
+  const limiterId = ++limiterSeq;
 
   return async (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || 'unknown';
-    const key = `rl:${ip}:${options.max}:${windowSec}`;
+    const key = `rl:${limiterId}:${ip}:${windowSec}`;
 
     try {
       if (useRedis && redis) {
-        // Redis: INCR + EXPIRE 패턴 (sliding window 근사)
+        // Redis: INCR + EXPIRE 패턴 (fixed window)
         const count = await redis.incr(key);
         if (count === 1) {
           await redis.expire(key, windowSec);
@@ -96,7 +98,6 @@ export function rateLimit(options: { windowMs: number; max: number; message?: st
 /** 테스트 전용: rate limiter 스토어 초기화 */
 export function clearRateLimitStore() {
   memStore.clear();
-  // 테스트에서는 Redis를 사용하지 않으므로 메모리만 초기화
 }
 
 // 프리셋

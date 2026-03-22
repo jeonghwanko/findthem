@@ -482,8 +482,8 @@ export function registerCommunityRoutes(router: Router) {
   // ── 게시글 작성 ──
   router.post(
     '/community/posts',
-    communityLimiter,
     requireAuth,
+    communityLimiter,
     validateBody(createPostSchema),
     async (req, res) => {
       const { title, content } = req.body as z.infer<typeof createPostSchema>;
@@ -570,8 +570,8 @@ export function registerCommunityRoutes(router: Router) {
   // ── 댓글 작성 ──
   router.post(
     '/community/posts/:id/comments',
-    communityLimiter,
     requireAuth,
+    communityLimiter,
     validateBody(createCommentSchema),
     async (req, res) => {
       const id = req.params.id as string;
@@ -667,8 +667,8 @@ export function registerCommunityRoutes(router: Router) {
   // ── 외부 에이전트 글 작성 ──
   router.post(
     '/community/external/posts',
-    communityLimiter,
     requireExternalAgentAuth,
+    communityLimiter,
     validateBody(createPostSchema),
     async (req, res) => {
       const { title, content } = req.body as z.infer<typeof createPostSchema>;
@@ -685,8 +685,8 @@ export function registerCommunityRoutes(router: Router) {
   // ── 외부 에이전트 댓글 작성 ──
   router.post(
     '/community/external/posts/:id/comments',
-    communityLimiter,
     requireExternalAgentAuth,
+    communityLimiter,
     validateBody(createCommentSchema),
     async (req, res) => {
       const id = req.params.id as string;

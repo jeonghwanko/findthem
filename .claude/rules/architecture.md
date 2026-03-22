@@ -22,6 +22,7 @@ findthem/
 - **큐 사용**: `apps/api/src/jobs/queues.ts`에서 정의한 큐만 사용
 - **온체인 검증**: `packages/web3-payment`의 `verifyEvmTransfer` / `verifyAptosTransfer` 사용
 - **Web3 프론트**: wagmi + RainbowKit (EVM), @aptos-labs/wallet-adapter-react (Aptos)
+- **Web3 프론트 상수**: 체인/토큰 상수는 `@findthem/web3-payment/ui` 서브패스로 import (viem/CoinGecko 번들 방지)
 
 ## Pixi.js + Spine 히어로 씬
 

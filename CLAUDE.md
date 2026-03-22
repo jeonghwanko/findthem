@@ -50,6 +50,10 @@ npx cap run ios               # iOS 시뮬레이터 실행 (Mac 필요)
 npx cap open android          # Android Studio 열기
 npx cap open ios              # Xcode 열기 (Mac 필요)
 
+# 스플래시 이미지 재생성 (한국어 텍스트 포함, @napi-rs/canvas 필요)
+node apps/web/scripts/generate-splash.mjs
+npx @capacitor/assets generate --iconBackgroundColor "#ffffff" --splashBackgroundColor "#ffffff"
+
 # Android 릴리스 빌드 (JAVA_HOME 필수 — Android Studio JBR 21 사용)
 # ⚠️ 반드시 npm run build:native 실행 후 진행
 export JAVA_HOME="C:/Program Files/Android/Android Studio/jbr"

@@ -60,6 +60,18 @@ vi.mock('../src/db/client.js', () => {
   return { prisma: mock };
 });
 
+// ── IORedis Mock (rate limiter용, Redis 연결 방지) ──
+vi.mock('ioredis', () => {
+  const IORedis = vi.fn().mockImplementation(() => ({
+    connect: vi.fn().mockRejectedValue(new Error('mock')),
+    on: vi.fn(),
+    incr: vi.fn(),
+    expire: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+  return { default: IORedis };
+});
+
 // ── BullMQ Mock ──
 vi.mock('bullmq', () => {
   const Queue = vi.fn().mockImplementation(() => ({

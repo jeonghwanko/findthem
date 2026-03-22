@@ -315,6 +315,23 @@ export function registerSightingRoutes(router: Router) {
       ]);
 
       const total = Number(countRows[0]?.count ?? 0);
+      const sightingIds = rawRows.map((s) => s.id);
+
+      // 반경 검색 결과의 대표 사진 조회
+      const photosMap = new Map<string, { id: string; photoUrl: string; thumbnailUrl: string | null }[]>();
+      if (sightingIds.length > 0) {
+        const photos = await prisma.photo.findMany({
+          where: { sightingId: { in: sightingIds } },
+          select: { sightingId: true, id: true, photoUrl: true, thumbnailUrl: true },
+        });
+        for (const p of photos) {
+          if (!p.sightingId) continue;
+          const arr = photosMap.get(p.sightingId) ?? [];
+          arr.push({ id: p.id, photoUrl: p.photoUrl, thumbnailUrl: p.thumbnailUrl });
+          photosMap.set(p.sightingId, arr);
+        }
+      }
+
       const sightings = rawRows.map((s) => ({
         id: s.id,
         reportId: s.report_id,
@@ -324,8 +341,8 @@ export function registerSightingRoutes(router: Router) {
         lat: s.lat,
         lng: s.lng,
         createdAt: s.created_at,
-        photos: [],
-        distanceKm: Math.round(Number(s.distance_m) / 100) / 10, // m → km (소수 1자리)
+        photos: (photosMap.get(s.id) ?? []).slice(0, 1),
+        distanceKm: Math.round(s.distance_m / 100) / 10, // m → km (소수 1자리)
       }));
 
       return res.json({ items: sightings, total, page, totalPages: Math.ceil(total / limit) });

@@ -6,6 +6,7 @@ import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
 import { imageService } from '../services/imageService.js';
 import { rateLimit, chatMessageLimiter } from '../middlewares/rateLimit.js';
+// chatLimiter: 세션 생성용 (15분 20회), chatMessageLimiter: 메시지/업로드용 (분당 30)
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, LOCALE_VALUES, ERROR_CODES, MAX_FILE_SIZE, type Locale } from '@findthem/shared';
 
 const upload = multer({
