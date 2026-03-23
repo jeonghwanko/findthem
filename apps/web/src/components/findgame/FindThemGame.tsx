@@ -319,6 +319,8 @@ export default function FindThemGame({ open, onClose }: FindThemGameProps) {
               found={gameState.foundIds.size}
               total={gameState.round.targets.length}
               score={gameState.score}
+              targets={gameState.round.targets}
+              foundIds={gameState.foundIds}
             />
           )}
 

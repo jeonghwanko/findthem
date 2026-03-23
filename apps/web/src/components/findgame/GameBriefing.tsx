@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Play } from 'lucide-react';
 
 interface CharPortraitProps {
   charId: number;
   size?: number;
 }
 
-function CharPortrait({ charId, size = 64 }: CharPortraitProps) {
+export function CharPortrait({ charId, size = 64 }: CharPortraitProps) {
   const col = ((charId - 1) % 4);
   const row = Math.floor((charId - 1) / 4);
   const bgX = col * 96;
@@ -33,20 +33,8 @@ export interface GameBriefingProps {
   onReady: () => void;
 }
 
-const COUNTDOWN_START = 3;
-
 export default function GameBriefing({ targets, roundNumber, onReady }: GameBriefingProps) {
   const { t } = useTranslation();
-  const [countdown, setCountdown] = useState(COUNTDOWN_START);
-
-  useEffect(() => {
-    if (countdown <= 0) {
-      onReady();
-      return;
-    }
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown, onReady]);
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75 backdrop-blur-sm">
@@ -70,24 +58,24 @@ export default function GameBriefing({ targets, roundNumber, onReady }: GameBrie
               key={`${charId}-${idx}`}
               className="flex flex-col items-center gap-2"
             >
-              <div className="rounded-xl overflow-hidden border-2 border-white/30 bg-white/10 p-1">
+              <div className="rounded-xl overflow-hidden border-2 border-amber-400/60 bg-white/10 p-1.5 shadow-lg shadow-amber-400/20">
                 <CharPortrait charId={charId} size={64} />
               </div>
-              <span className="text-white/70 text-xs">
-                #{charId}
-              </span>
             </div>
           ))}
         </div>
 
-        {/* Countdown circle */}
-        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center">
-          <span className="text-white text-4xl font-extrabold tabular-nums">
-            {countdown}
-          </span>
-        </div>
+        <p className="text-white/60 text-sm text-center">{t('findGame.briefingHint')}</p>
 
-        <p className="text-white/50 text-xs">{t('findGame.briefingHint')}</p>
+        {/* Start button */}
+        <button
+          type="button"
+          onClick={onReady}
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg px-10 py-4 rounded-2xl shadow-lg shadow-green-500/30 hover:opacity-90 active:scale-95 transition-all"
+        >
+          <Play className="w-6 h-6" />
+          {t('findGame.start')}
+        </button>
       </div>
     </div>
   );

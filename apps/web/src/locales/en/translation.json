@@ -815,7 +815,8 @@
     "playButton": "Find Agent",
     "round": "Round {{n}}",
     "briefingTitle": "Find these characters!",
-    "briefingHint": "Drag to explore the village",
+    "briefingHint": "Drag to explore the village\nTap a character to find them!",
+    "start": "Start",
     "found": "found",
     "score": "Score",
     "result": {

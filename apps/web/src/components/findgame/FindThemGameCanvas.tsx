@@ -226,11 +226,16 @@ export default function FindThemGameCanvas({
     return () => {
       destroyed = true;
       if (app) {
-        app.ticker.stop();
-        for (const entry of chars) entry.char.dispose();
-        hintGfxMap.forEach((g) => g.destroy());
-        sparkles.forEach((s) => s.gfx.destroy());
-        app.destroy(false, { children: true });
+        try {
+          app.ticker?.stop();
+          for (const entry of chars) entry.char.dispose();
+          hintGfxMap.forEach((g) => g.destroy());
+          sparkles.forEach((s) => s.gfx.destroy());
+          app.destroy(false, { children: true });
+        } catch {
+          // app may be partially initialized
+        }
+        app = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

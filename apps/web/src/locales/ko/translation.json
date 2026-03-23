@@ -832,7 +832,8 @@
     "playButton": "에이전트 찾기",
     "round": "라운드 {{n}}",
     "briefingTitle": "이 캐릭터들을 찾아주세요!",
-    "briefingHint": "화면을 드래그해서 마을을 탐색하세요",
+    "briefingHint": "화면을 드래그해서 마을을 탐색하고\n캐릭터를 탭하면 발견!",
+    "start": "게임 시작",
     "found": "발견",
     "score": "점수",
     "result": {

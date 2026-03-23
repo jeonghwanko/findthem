@@ -813,7 +813,8 @@
     "playButton": "尋找特工",
     "round": "第 {{n}} 回合",
     "briefingTitle": "找到這些角色！",
-    "briefingHint": "拖動畫面探索村莊",
+    "briefingHint": "拖動畫面探索村莊\n點擊角色即可發現！",
+    "start": "開始遊戲",
     "found": "發現",
     "score": "分數",
     "result": {

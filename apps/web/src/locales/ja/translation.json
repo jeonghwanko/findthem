@@ -812,7 +812,8 @@
     "playButton": "エージェント探し",
     "round": "ラウンド {{n}}",
     "briefingTitle": "このキャラクターを見つけてください！",
-    "briefingHint": "ドラッグして村を探索しましょう",
+    "briefingHint": "ドラッグして村を探索し\nキャラクターをタップして発見！",
+    "start": "ゲーム開始",
     "found": "発見",
     "score": "スコア",
     "result": {

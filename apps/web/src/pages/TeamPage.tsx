@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Heart, ExternalLink, Gamepad2, ChevronDown, Maximize2, Minimize2, Search } from 'lucide-react';
@@ -7,8 +7,7 @@ import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
 import { AGENT_SKINS } from '../constants/agentSkins';
 import AgentActivityScene from '../components/AgentActivityScene';
-
-const FindThemGame = lazy(() => import('../components/findgame/FindThemGame'));
+import FindThemGame from '../components/findgame/FindThemGame';
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -612,11 +611,7 @@ export default function TeamPage() {
       </div>
 
       {/* 숨은 에이전트 찾기 미니게임 모달 */}
-      {findGameOpen && (
-        <Suspense fallback={null}>
-          <FindThemGame open={findGameOpen} onClose={() => setFindGameOpen(false)} />
-        </Suspense>
-      )}
+      <FindThemGame open={findGameOpen} onClose={() => setFindGameOpen(false)} />
     </div>
   );
 }
