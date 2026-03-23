@@ -121,14 +121,14 @@ async function findOrCreateSocialUser(params: {
 }
 
 /** 프론트엔드로 리다이렉트 시 토큰을 hash fragment로 전달 (query string 대비 보안 강화) */
-function redirectWithToken(res: import('express').Response, token: string) {
-  res.redirect(`${config.webOrigin}/auth/callback#token=${encodeURIComponent(token)}`);
-}
-
-/** 네이티브 앱에서 OAuth 시작 시 쿠키로 플래그 설정 (콜백에서 커스텀 URL 스킴 사용) */
-function setNativeCookie(req: import('express').Request, res: import('express').Response) {
-  if (req.query['native'] === '1') {
-    res.cookie('ft_native', '1', { httpOnly: true, maxAge: 5 * 60 * 1000, sameSite: 'lax' });
+function redirectWithToken(req: import('express').Request, res: import('express').Response, token: string) {
+  const stateParam = (req.query['state'] as string) ?? (req.body as Record<string, string>)?.['state'] ?? '';
+  const isNative = stateParam.endsWith(':native') || stateParam === 'native';
+  if (isNative) {
+    // 네이티브 앱: Custom URL Scheme으로 리다이렉트 (App Links 검증 불필요)
+    res.redirect(`com.findthem.app://auth/callback#token=${encodeURIComponent(token)}`);
+  } else {
+    res.redirect(`${config.webOrigin}/auth/callback#token=${encodeURIComponent(token)}`);
   }
 }
 
@@ -329,11 +329,12 @@ export function registerAuthRoutes(router: Router) {
 
   // 카카오 로그인 진입 (브라우저 리다이렉트)
   router.get('/auth/kakao', (req, res) => {
-    setNativeCookie(req, res);
+    const isNative = req.query['native'] === '1';
     const params = new URLSearchParams({
       client_id: config.kakaoRestApiKey,
       redirect_uri: config.kakaoRedirectUri,
       response_type: 'code',
+      ...(isNative ? { state: 'native' } : {}),
     });
     res.redirect(`https://kauth.kakao.com/oauth/authorize?${params.toString()}`);
   });
@@ -407,16 +408,17 @@ export function registerAuthRoutes(router: Router) {
     log.info({ userId: user.id, kakaoId }, 'Kakao login success');
 
     const token = signToken(user.id);
-    redirectWithToken(res, token);
+    redirectWithToken(req, res, token);
   });
 
   // ── Naver OAuth ───────────────────────────────────────────────────────────
 
   // 네이버 로그인 진입 (CSRF state를 쿠키에 저장)
   router.get('/auth/naver', (req, res) => {
-    setNativeCookie(req, res);
-    const state = crypto.randomBytes(16).toString('hex');
-    res.cookie('naver_oauth_state', state, {
+    const isNative = req.query['native'] === '1';
+    const csrfState = crypto.randomBytes(16).toString('hex');
+    const state = isNative ? `${csrfState}:native` : csrfState;
+    res.cookie('naver_oauth_state', csrfState, {
       httpOnly: true,
       maxAge: 5 * 60 * 1000, // 5분
       sameSite: 'lax',
@@ -442,7 +444,9 @@ export function registerAuthRoutes(router: Router) {
       log.warn('Naver callback: code or state missing');
       throw new ApiError(400, ERROR_CODES.OAUTH_FAILED);
     }
-    if (!savedState || state !== savedState) {
+    // state 형식: "{csrf}" 또는 "{csrf}:native"
+    const [csrfPart] = state.split(':');
+    if (!savedState || csrfPart !== savedState) {
       log.warn({ state, savedState }, 'Naver callback: state mismatch');
       throw new ApiError(400, ERROR_CODES.OAUTH_INVALID_STATE);
     }
@@ -520,16 +524,17 @@ export function registerAuthRoutes(router: Router) {
     log.info({ userId: user.id, naverId }, 'Naver login success');
 
     const token = signToken(user.id);
-    redirectWithToken(res, token);
+    redirectWithToken(req, res, token);
   });
 
   // ── Apple Sign in with Apple ──────────────────────────────────────────────
 
   // Apple 로그인 진입 (CSRF state를 쿠키에 저장)
   router.get('/auth/apple', (req, res) => {
-    setNativeCookie(req, res);
-    const state = crypto.randomBytes(16).toString('hex');
-    res.cookie('apple_oauth_state', state, {
+    const isNative = req.query['native'] === '1';
+    const csrfState = crypto.randomBytes(16).toString('hex');
+    const state = isNative ? `${csrfState}:native` : csrfState;
+    res.cookie('apple_oauth_state', csrfState, {
       httpOnly: true,
       maxAge: 5 * 60 * 1000, // 5분
       sameSite: 'none',       // Apple 콜백은 POST cross-origin이므로 none 필수
@@ -563,7 +568,8 @@ export function registerAuthRoutes(router: Router) {
       // CSRF state 검증
       // [C1] clearCookie는 state 검증 성공 후에 실행 — replay attack 방지를 위해 검증 실패 시 쿠키를 유지
       const savedState = parseCookieValue(req.headers.cookie, 'apple_oauth_state');
-      if (!savedState || state !== savedState) {
+      const [csrfPart] = (state ?? '').split(':');
+      if (!savedState || csrfPart !== savedState) {
         log.warn({ state, savedState }, 'Apple callback: state mismatch');
         return res.redirect(`${config.webOrigin}/login?error=apple_failed`);
       }
@@ -619,7 +625,7 @@ export function registerAuthRoutes(router: Router) {
       log.info({ userId: user.id, appleId }, 'Apple login success');
 
       const token = signToken(user.id);
-      return redirectWithToken(res, token);
+      return redirectWithToken(req, res, token);
     },
   );
 

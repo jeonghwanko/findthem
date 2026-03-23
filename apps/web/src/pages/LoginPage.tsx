@@ -41,7 +41,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
 
   function handleSocialLogin(provider: 'kakao' | 'naver' | 'apple') {
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api';
-    const url = `${apiBase}/auth/${provider}`;
+    const url = IS_NATIVE ? `${apiBase}/auth/${provider}?native=1` : `${apiBase}/auth/${provider}`;
     if (IS_NATIVE) {
       // 네이티브: SFSafariViewController / Chrome Custom Tabs (인앱 모달)
       // → Universal Link(iOS) / App Links(Android) 콜백 → useNativeOAuth에서 처리

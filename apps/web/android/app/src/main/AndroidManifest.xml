@@ -26,6 +26,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="union.pryzm.gg" android:pathPrefix="/auth/callback" />
             </intent-filter>
+
+            <!-- Custom URL Scheme: OAuth 콜백 (App Links 검증 불필요, 100% 동작) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.findthem.app" android:host="auth" android:pathPrefix="/callback" />
+            </intent-filter>
         </activity>
 
         <!-- AdMob App ID (실제 앱 ID) -->
