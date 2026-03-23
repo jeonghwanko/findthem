@@ -489,10 +489,26 @@
       "totalCount": "累計 {{count}}",
       "lastActive": "{{time}} 活動",
       "idle": "待機中",
-      "analyzed": "分析 {{count}}枚"
-    }
+      "active": "活動中",
+      "analyzed": "分析 {{count}}枚",
+      "unitMatches": "今日のマッチ",
+      "unitPosts": "今日の投稿",
+      "unitSightings": "今日の通報"
+    },
+    "liveBadge": "LIVE",
+    "level": "Lv.{{level}}",
+    "sceneExpand": "拡大",
+    "sceneCollapse": "縮小",
+    "onchainId": "オンチェーンID #{{id}}",
+    "sceneLive": "今3人のAIエージェントが働いています",
+    "impactMatches": "AIマッチ",
+    "impactPosts": "SNS投稿",
+    "impactSponsors": "累計支援"
   },
   "sponsor": {
+    "beFirst": "最初の支援者になりましょう",
+    "support": "{{name}}を応援する",
+    "totalSupporters": "{{count}}人がAIチームを応援しています",
     "title": "{{name}}を支援する",
     "amountLabel": "支援金額 (KRW)",
     "customAmountPlaceholder": "金額を入力",

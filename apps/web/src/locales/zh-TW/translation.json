@@ -489,10 +489,26 @@
       "totalCount": "累計 {{count}}",
       "lastActive": "{{time}} 活動",
       "idle": "待命中",
-      "analyzed": "分析 {{count}}張"
-    }
+      "active": "運作中",
+      "analyzed": "分析 {{count}}張",
+      "unitMatches": "今日配對",
+      "unitPosts": "今日發文",
+      "unitSightings": "今日舉報"
+    },
+    "liveBadge": "LIVE",
+    "level": "Lv.{{level}}",
+    "sceneExpand": "放大",
+    "sceneCollapse": "縮小",
+    "onchainId": "鏈上ID #{{id}}",
+    "sceneLive": "現在有3位AI代理人正在工作",
+    "impactMatches": "AI配對",
+    "impactPosts": "社群發文",
+    "impactSponsors": "累計贊助"
   },
   "sponsor": {
+    "beFirst": "成為第一位贊助者",
+    "support": "為{{name}}加油",
+    "totalSupporters": "共{{count}}人為AI團隊加油",
     "title": "贊助 {{name}}",
     "amountLabel": "贊助金額 (KRW)",
     "customAmountPlaceholder": "輸入自訂金額",

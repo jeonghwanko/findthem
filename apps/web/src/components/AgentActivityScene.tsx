@@ -40,7 +40,7 @@ const NPC_CONFIGS = [
   { folkId: 8, offsetX: -40, offsetY: -30 },
 ];
 
-const SCENE_H = 480;
+const DEFAULT_SCENE_H = 480;
 
 // ── 레이아웃 어댑터 (TileMap / Graphics fallback 통합) ──
 interface SceneLayout {
@@ -154,7 +154,8 @@ function getEventBubbleText(evt: AgentActivityEvent, t: (k: string) => string): 
   }
 }
 
-export default function AgentActivityScene() {
+export default function AgentActivityScene({ height: propHeight }: { height?: number } = {}) {
+  const SCENE_H = propHeight ?? DEFAULT_SCENE_H;
   const { t } = useTranslation();
   const tRef = useRef(t);
   tRef.current = t;

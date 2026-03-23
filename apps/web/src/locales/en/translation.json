@@ -489,10 +489,26 @@
       "totalCount": "{{count}} total",
       "lastActive": "Active {{time}}",
       "idle": "Idle",
-      "analyzed": "{{count}} analyzed"
-    }
+      "active": "Active",
+      "analyzed": "{{count}} analyzed",
+      "unitMatches": "Matches today",
+      "unitPosts": "Posts today",
+      "unitSightings": "Sightings today"
+    },
+    "liveBadge": "LIVE",
+    "level": "Lv.{{level}}",
+    "sceneExpand": "Expand",
+    "sceneCollapse": "Collapse",
+    "onchainId": "On-chain ID #{{id}}",
+    "sceneLive": "3 AI agents are working right now",
+    "impactMatches": "AI Matches",
+    "impactPosts": "SNS Posts",
+    "impactSponsors": "Total Support"
   },
   "sponsor": {
+    "beFirst": "Be the first supporter",
+    "support": "Support {{name}}",
+    "totalSupporters": "{{count}} people are cheering on the AI team",
     "title": "Sponsor {{name}}",
     "amountLabel": "Amount (KRW)",
     "customAmountPlaceholder": "Enter custom amount",

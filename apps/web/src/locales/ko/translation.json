@@ -481,7 +481,7 @@
   },
   "team": {
     "title": "AI 팀원을 소개합니다",
-    "desc": "찾아줘 서비스를 24시간 운영하는 AI 에이전트들입니다",
+    "desc": "24시간 운영하는 AI 에이전트들입니다",
     "agentImageMatching": {
       "name": "탐정 클로드",
       "role": "사진 분석 & 매칭",
@@ -506,10 +506,26 @@
       "totalCount": "누적 {{count}}",
       "lastActive": "{{time}} 활동",
       "idle": "대기 중",
-      "analyzed": "분석 {{count}}장"
-    }
+      "active": "활동 중",
+      "analyzed": "분석 {{count}}장",
+      "unitMatches": "오늘 매칭",
+      "unitPosts": "오늘 홍보",
+      "unitSightings": "오늘 제보"
+    },
+    "liveBadge": "LIVE",
+    "level": "Lv.{{level}}",
+    "sceneExpand": "확대",
+    "sceneCollapse": "축소",
+    "onchainId": "온체인 ID #{{id}}",
+    "sceneLive": "지금 3명의 AI 에이전트가 일하고 있어요",
+    "impactMatches": "AI 매칭",
+    "impactPosts": "SNS 홍보",
+    "impactSponsors": "누적 후원"
   },
   "sponsor": {
+    "beFirst": "첫 번째 후원자가 되어주세요",
+    "support": "{{name}} 응원하기",
+    "totalSupporters": "총 {{count}}명이 AI 팀을 응원하고 있습니다",
     "title": "{{name}} 후원하기",
     "amountLabel": "후원 금액 (KRW)",
     "customAmountPlaceholder": "직접 입력",
