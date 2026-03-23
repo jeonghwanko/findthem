@@ -17,7 +17,8 @@ app.use(cors({
   origin: [
     config.webOrigin,
     'capacitor://localhost',   // iOS Capacitor
-    'http://localhost',        // Android Capacitor
+    'http://localhost',        // Android Capacitor (legacy)
+    'https://localhost',       // Android Capacitor 7+ (기본 androidScheme: https)
   ],
   credentials: true,
 }));
