@@ -23,6 +23,9 @@
 13. AI 프로바이더 관리
 14. 후원 XP & 레벨 (Sponsor XP)
 15. 게임 (Game)
+16. 외부 에이전트 대화 (External Agent Conversation)
+17. 에이전트 활동 씬 (Agent Activity Scene)
+18. 광고 (Ad)
 
 ---
 
@@ -1021,10 +1024,21 @@ model GamePlay {
 
 ### AdMob 연동
 
-- **네이티브(iOS/Android)**: `useRewardAd.ts` → `@capacitor-community/admob` 리워드 광고
+- **네이티브(iOS/Android)**: `useRewardAd.ts` → `@capacitor-community/admob` 보상형 동영상 광고
 - **웹**: 광고 없이 바로 해금 (개발/테스트용)
+- 광고 시청 완료 시 `POST /users/me/ad-reward` → XP 50 지급 (`claimAdReward()`)
 - 백엔드 광고 검증 없음 (클라이언트 `usedAd` boolean 신뢰)
 - `$transaction`으로 일일 한도 원자적 체크
+
+### Ad Unit ID
+
+| 플랫폼 | Ad Unit ID |
+|--------|-----------|
+| Android | `ca-app-pub-3320768302064088/1583600125` |
+| iOS | `ca-app-pub-3320768302064088/5679662813` |
+| 테스트 (DEV) | `ca-app-pub-3940256099942544/5224354917` |
+
+상세 문서: [광고 배치 가이드](../../docs/ad-placements.md)
 
 ---
 
@@ -1082,6 +1096,47 @@ GET    /api/community/agent-activity   에이전트 활동 (공개, optionalAuth
 
 ---
 
+---
+
+## 18. 광고 (Ad)
+
+Google AdMob 보상형 동영상 광고. 네이티브(iOS/Android) 전용.
+
+### 광고 배치
+
+| 영역 | 페이지 | 보상 | XP | 일일 한도 |
+|------|--------|------|-----|----------|
+| 게임 추가 플레이 | GamePage | +2판 해금 | 50 | 1회 (=2판), 쿨다운 60초 |
+| 신고 부스트 | ReportDetailPage | SNS 재게시 | - | 3회/신고 |
+| 광고 XP | (확장 예정) | XP만 | 50 | 무제한, 쿨다운 60초 |
+
+### 핵심 훅: `useRewardAd`
+
+모든 광고 호출의 단일 진입점. `showRewardAd(): Promise<boolean>` — 시청 완료 `true`, 이탈 `false`.
+
+### 라우트
+
+```
+POST   /api/users/me/ad-reward     광고 XP 지급 (requireAuth, 쿨다운 60초)
+POST   /api/reports/:id/boost      광고 부스트 (requireAuth, 본인만, 3회/일)
+GET    /api/reports/:id/boost-status  부스트 잔여 횟수
+```
+
+### 환경변수
+
+| 변수 | 용도 |
+|------|------|
+| `VITE_ADMOB_REWARD_AD_ID_ANDROID` | Android 보상형 광고 Ad Unit ID |
+| `VITE_ADMOB_REWARD_AD_ID_IOS` | iOS 보상형 광고 Ad Unit ID |
+
+상세 문서: [광고 배치 가이드](../../docs/ad-placements.md)
+
+---
+
 ### TODO / 미완성 기능
 
 - SNS 게시물 FOUND 시 삭제 (cleanupJob 구현됨, promotionJob 연동 완료)
+- 별도 "광고 보고 XP 받기" 버튼 (홈/프로필 페이지)
+- 배너 광고 도입
+- 광고 시청 통계 관리자 대시보드
+- Google Play 공개 출시 후 AdMob 앱 인증 완료
