@@ -289,14 +289,41 @@ export const LEVEL_REWARDS: Record<number, { type: string; value: string; label:
 
 // ── 게임 ──
 
-/** 일일 무료 플레이 횟수 */
+/** 일일 무료 플레이 횟수 (계단 게임) */
 export const MAX_FREE_PLAYS_PER_DAY = 1;
 
-/** 광고 시청으로 추가 가능한 최대 플레이 횟수/일 */
+/** 광고 시청으로 추가 가능한 최대 플레이 횟수/일 (계단 게임) */
 export const MAX_AD_PLAYS_PER_DAY = 2;
 
 /** 점수 1점당 적립 XP (나중에 XP 지급 시 사용) */
 export const XP_PER_GAME_SCORE = 1;
+
+// ── 찾기 미니게임 ──
+
+/** 숨은 에이전트 찾기: 일일 무료 플레이 */
+export const FIND_GAME_FREE_PLAYS_PER_DAY = 3;
+
+/** 숨은 에이전트 찾기: 광고로 추가 가능한 최대 플레이/일 */
+export const FIND_GAME_AD_PLAYS_PER_DAY = 5;
+
+/** 찾기 게임 라운드 시간 (초) */
+export const FIND_GAME_ROUND_SECS = 25;
+
+/** 찾기 게임 기본 대상 수 */
+export const FIND_GAME_TARGET_COUNT = 3;
+
+/** 찾기 게임 최대 대상 수 */
+export const FIND_GAME_MAX_TARGETS = 5;
+
+/** 게임 타입 상수 */
+export const GAME_TYPES = { STAIR: 'stair', FIND: 'find' } as const;
+export type GameType = typeof GAME_TYPES[keyof typeof GAME_TYPES];
+
+/** 게임 타입별 플레이 한도 */
+export const GAME_LIMITS: Record<GameType, { free: number; ad: number }> = {
+  stair: { free: MAX_FREE_PLAYS_PER_DAY, ad: MAX_AD_PLAYS_PER_DAY },
+  find: { free: FIND_GAME_FREE_PLAYS_PER_DAY, ad: FIND_GAME_AD_PLAYS_PER_DAY },
+};
 
 // ── Zod enum 배열 상수 (SSOT) ──
 

@@ -107,6 +107,10 @@ export class FolkCharacter {
     this.currentDir = flip ? 'left' : 'right';
   }
 
+  setTint(color: number) {
+    this.sprite.tint = color;
+  }
+
   play(state: AnimState) {
     if (this.currentState === state) return;
     this.currentState = state;

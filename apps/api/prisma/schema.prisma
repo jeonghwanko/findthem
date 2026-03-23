@@ -807,12 +807,14 @@ model GamePlay {
   character String // agentId: 'image-matching' | 'promotion' | 'chatbot-alert'
   score     Int
   usedAd    Boolean  @default(false)
+  gameType  String   @default("stair") // 'stair' | 'find'
   playedAt  DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull) // P1: onDelete
 
   @@index([userId, playedAt])
   @@index([userId, usedAd, playedAt])
+  @@index([userId, gameType, playedAt])
   @@map("game_play")
 }
 

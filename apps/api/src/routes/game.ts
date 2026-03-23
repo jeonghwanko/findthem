@@ -3,12 +3,12 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { optionalAuth } from '../middlewares/auth.js';
 import { ApiError } from '../middlewares/errors.js';
-import { validateBody } from '../middlewares/validate.js';
+import { validateBody, validateQuery } from '../middlewares/validate.js';
 import {
   ERROR_CODES,
-  MAX_FREE_PLAYS_PER_DAY,
-  MAX_AD_PLAYS_PER_DAY,
   VALID_AGENT_IDS,
+  GAME_LIMITS,
+  GAME_TYPES,
 } from '@findthem/shared';
 import { utcDayStart } from '@findthem/shared';
 import { rateLimit } from '../middlewares/rateLimit.js';
@@ -16,53 +16,62 @@ import { createLogger } from '../logger.js';
 
 const log = createLogger('game');
 
+const gameTypeValues = [GAME_TYPES.STAIR, GAME_TYPES.FIND] as const;
+
+const statusQuerySchema = z.object({
+  gameType: z.enum(gameTypeValues).default(GAME_TYPES.STAIR),
+});
+
 const recordPlaySchema = z.object({
   character: z.enum(VALID_AGENT_IDS),
   score: z.number().int().min(0).max(999999),
   usedAd: z.boolean().default(false),
+  gameType: z.enum(gameTypeValues).default(GAME_TYPES.STAIR),
 });
 
 const gameLimiter = rateLimit({ windowMs: 60_000, max: 30 });
 
 export function registerGameRoutes(router: Router) {
   // GET /game/status — 오늘 플레이 현황 조회
-  router.get('/game/status', optionalAuth, async (req, res) => {
+  router.get('/game/status', optionalAuth, validateQuery(statusQuerySchema), async (req, res) => {
     const userId = req.user?.userId ?? null;
+    const { gameType } = req.query as z.infer<typeof statusQuerySchema>;
     const today = utcDayStart();
+    const limits = GAME_LIMITS[gameType];
 
     if (!userId) {
-      // 비로그인은 서버에서 추적 불가 → 0/0 반환, 프론트에서 localStorage로 관리
       res.json({
         freePlaysToday: 0,
         adPlaysToday: 0,
-        maxFreePlays: MAX_FREE_PLAYS_PER_DAY,
-        maxAdPlays: MAX_AD_PLAYS_PER_DAY,
-        remainingFree: MAX_FREE_PLAYS_PER_DAY,
-        remainingAd: MAX_AD_PLAYS_PER_DAY,
+        maxFreePlays: limits.free,
+        maxAdPlays: limits.ad,
+        remainingFree: limits.free,
+        remainingAd: limits.ad,
       });
       return;
     }
 
     const [freeCount, adCount] = await Promise.all([
-      prisma.gamePlay.count({ where: { userId, usedAd: false, playedAt: { gte: today } } }),
-      prisma.gamePlay.count({ where: { userId, usedAd: true, playedAt: { gte: today } } }),
+      prisma.gamePlay.count({ where: { userId, usedAd: false, gameType, playedAt: { gte: today } } }),
+      prisma.gamePlay.count({ where: { userId, usedAd: true, gameType, playedAt: { gte: today } } }),
     ]);
 
     res.json({
       freePlaysToday: freeCount,
       adPlaysToday: adCount,
-      maxFreePlays: MAX_FREE_PLAYS_PER_DAY,
-      maxAdPlays: MAX_AD_PLAYS_PER_DAY,
-      remainingFree: Math.max(0, MAX_FREE_PLAYS_PER_DAY - freeCount),
-      remainingAd: Math.max(0, MAX_AD_PLAYS_PER_DAY - adCount),
+      maxFreePlays: limits.free,
+      maxAdPlays: limits.ad,
+      remainingFree: Math.max(0, limits.free - freeCount),
+      remainingAd: Math.max(0, limits.ad - adCount),
     });
   });
 
   // POST /game/play — 플레이 기록 + 한도 체크 (원자적)
   router.post('/game/play', gameLimiter, optionalAuth, validateBody(recordPlaySchema), async (req, res) => {
-    const { character, score, usedAd } = req.body as z.infer<typeof recordPlaySchema>;
+    const { character, score, usedAd, gameType } = req.body as z.infer<typeof recordPlaySchema>;
     const userId = req.user?.userId ?? null;
     const today = utcDayStart();
+    const limits = GAME_LIMITS[gameType];
 
     if (!userId) {
       res.json({ ok: true, xpEarned: 0 });
@@ -72,26 +81,26 @@ export function registerGameRoutes(router: Router) {
     await prisma.$transaction(async (tx) => {
       if (usedAd) {
         const adCount = await tx.gamePlay.count({
-          where: { userId, usedAd: true, playedAt: { gte: today } },
+          where: { userId, usedAd: true, gameType, playedAt: { gte: today } },
         });
-        if (adCount >= MAX_AD_PLAYS_PER_DAY) {
+        if (adCount >= limits.ad) {
           throw new ApiError(429, ERROR_CODES.GAME_PLAY_LIMIT_REACHED);
         }
       } else {
         const freeCount = await tx.gamePlay.count({
-          where: { userId, usedAd: false, playedAt: { gte: today } },
+          where: { userId, usedAd: false, gameType, playedAt: { gte: today } },
         });
-        if (freeCount >= MAX_FREE_PLAYS_PER_DAY) {
+        if (freeCount >= limits.free) {
           throw new ApiError(429, ERROR_CODES.GAME_PLAY_LIMIT_REACHED);
         }
       }
 
       await tx.gamePlay.create({
-        data: { userId, character, score, usedAd },
+        data: { userId, character, score, usedAd, gameType },
       });
     });
 
-    log.info({ userId, character, score, usedAd }, 'Game play recorded');
+    log.info({ userId, character, score, usedAd, gameType }, 'Game play recorded');
     res.json({ ok: true, xpEarned: 0 });
   });
 }

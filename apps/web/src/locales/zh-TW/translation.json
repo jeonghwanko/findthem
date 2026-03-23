@@ -14,7 +14,8 @@
     "logout": "登出",
     "login": "登入",
     "community": "社群",
-    "profile": "我的資料"
+    "profile": "我的資料",
+    "notifications": "通知"
   },
   "home": {
     "heroBadge": "串聯線索，AI偵探",
@@ -791,5 +792,39 @@
     "applySubmit": "套用",
     "applySuccess": "推薦碼已成功套用！",
     "applyAlready": "推薦碼已經套用過了"
+  },
+  "notifications": {
+    "emptyTitle": "目前沒有通知",
+    "emptyDesc": "登錄報案後，可在此查看 AI 配對結果和目擊動態",
+    "emptyDescGuest": "登入後可即時查看 AI 配對結果及報案目擊情況",
+    "browseReports": "瀏覽報案列表",
+    "loginCta": "登入",
+    "loginBannerTitle": "登入以追蹤您的報案狀態",
+    "loginBannerDesc": "即時確認 AI 配對結果與目擊資訊",
+    "matchCount": "AI 配對 {{count}} 件",
+    "sightingCount": "目擊 {{count}} 件",
+    "noActivity": "尚無目擊資訊",
+    "sectionToday": "今日",
+    "sectionEarlier": "稍早",
+    "refresh": "重新整理",
+    "retry": "重試"
+  },
+  "findGame": {
+    "playButton": "尋找特工",
+    "round": "第 {{n}} 回合",
+    "briefingTitle": "找到這些角色！",
+    "briefingHint": "拖動畫面探索村莊",
+    "found": "發現",
+    "score": "分數",
+    "result": {
+      "title": "回合結束！",
+      "perfect": "全部找到了！",
+      "foundLabel": "發現",
+      "timeBonus": "時間獎勵",
+      "playAgain": "再玩一次",
+      "watchAdPlay": "看廣告再玩",
+      "noPlays": "今天的遊玩次數已用完",
+      "exit": "返回"
+    }
   }
 }

@@ -14,7 +14,8 @@
     "logout": "Logout",
     "login": "Login",
     "community": "Community",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "notifications": "Notifications"
   },
   "home": {
     "heroBadge": "Connecting Clues, AI Detective",
@@ -791,5 +792,41 @@
     "applySubmit": "Apply",
     "applySuccess": "Referral code applied successfully!",
     "applyAlready": "A referral code has already been applied"
+  },
+  "notifications": {
+    "emptyTitle": "No notifications",
+    "emptyDesc": "Register a report to track AI matching results and sighting updates here",
+    "emptyDescGuest": "Log in to see AI match results and sighting activity for your reports in real time",
+    "browseReports": "Browse Reports",
+    "loginCta": "Log In",
+    "loginBannerTitle": "Log in to track your reports",
+    "loginBannerDesc": "Check AI match results and new sightings in real time",
+    "matchCount": "{{count}} AI match",
+    "matchCount_other": "{{count}} AI matches",
+    "sightingCount": "{{count}} sighting",
+    "sightingCount_other": "{{count}} sightings",
+    "noActivity": "No sightings yet",
+    "sectionToday": "Today",
+    "sectionEarlier": "Earlier",
+    "refresh": "Refresh",
+    "retry": "Try again"
+  },
+  "findGame": {
+    "playButton": "Find Agent",
+    "round": "Round {{n}}",
+    "briefingTitle": "Find these characters!",
+    "briefingHint": "Drag to explore the village",
+    "found": "found",
+    "score": "Score",
+    "result": {
+      "title": "Round Over!",
+      "perfect": "Found them all!",
+      "foundLabel": "Found",
+      "timeBonus": "Time Bonus",
+      "playAgain": "Play Again",
+      "watchAdPlay": "Watch Ad & Play",
+      "noPlays": "No more plays available today",
+      "exit": "Back"
+    }
   }
 }

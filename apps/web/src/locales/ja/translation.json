@@ -14,7 +14,8 @@
     "logout": "ログアウト",
     "login": "ログイン",
     "community": "コミュニティ",
-    "profile": "マイページ"
+    "profile": "マイページ",
+    "notifications": "通知"
   },
   "home": {
     "heroBadge": "手がかりをつなぐ、AI探偵",
@@ -790,5 +791,39 @@
     "applySubmit": "適用する",
     "applySuccess": "紹介コードが適用されました！",
     "applyAlready": "すでに紹介コードが適用されています"
+  },
+  "notifications": {
+    "emptyTitle": "通知がありません",
+    "emptyDesc": "届出を登録すると、AIマッチング結果や目撃情報をここで確認できます",
+    "emptyDescGuest": "ログインすると、届出のAIマッチング結果や目撃情報をリアルタイムで確認できます",
+    "browseReports": "届出一覧を見る",
+    "loginCta": "ログイン",
+    "loginBannerTitle": "ログインして届出状況を確認",
+    "loginBannerDesc": "AIマッチング結果と目撃情報をリアルタイムで確認できます",
+    "matchCount": "AIマッチング {{count}}件",
+    "sightingCount": "目撃情報 {{count}}件",
+    "noActivity": "まだ目撃情報がありません",
+    "sectionToday": "今日",
+    "sectionEarlier": "以前",
+    "refresh": "更新",
+    "retry": "再試行"
+  },
+  "findGame": {
+    "playButton": "エージェント探し",
+    "round": "ラウンド {{n}}",
+    "briefingTitle": "このキャラクターを見つけてください！",
+    "briefingHint": "ドラッグして村を探索しましょう",
+    "found": "発見",
+    "score": "スコア",
+    "result": {
+      "title": "ラウンド終了！",
+      "perfect": "全員見つけました！",
+      "foundLabel": "発見",
+      "timeBonus": "タイムボーナス",
+      "playAgain": "もう一度",
+      "watchAdPlay": "広告を見てプレイ",
+      "noPlays": "本日のプレイ回数を使い切りました",
+      "exit": "戻る"
+    }
   }
 }

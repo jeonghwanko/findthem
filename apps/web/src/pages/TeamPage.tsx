@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Heart, ExternalLink, Gamepad2, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
+import { Heart, ExternalLink, Gamepad2, ChevronDown, Maximize2, Minimize2, Search } from 'lucide-react';
 import { formatTimeAgo } from '@findthem/shared';
 import { api, type SponsorPublic, type AgentId } from '../api/client';
 import { SponsorItemSkeleton } from '../components/Skeleton';
 import { AGENT_SKINS } from '../constants/agentSkins';
 import AgentActivityScene from '../components/AgentActivityScene';
+
+const FindThemGame = lazy(() => import('../components/findgame/FindThemGame'));
 
 type AgentTotals = Record<string, { krw: number; usdCents: number }>;
 
@@ -238,6 +240,7 @@ export default function TeamPage() {
   const [activityLoading, setActivityLoading] = useState(true);
   const [sceneExpanded, setSceneExpanded] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
+  const [findGameOpen, setFindGameOpen] = useState(false);
 
   // 씬 확장 시 body 스크롤 방지 + viewport 높이 추적
   useEffect(() => {
@@ -344,16 +347,28 @@ export default function TeamPage() {
           </div>
         )}
 
-        {/* 게임해서 후원 버튼 (씬 우하단) */}
-        <Link
-          to="/game"
-          className={`absolute z-10 flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3 ${
-            sceneExpanded ? 'right-3 bottom-3' : 'right-3 bottom-12'
-          }`}
-        >
-          <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
-          <span className="text-xs">{t('home.playToSponsor')}</span>
-        </Link>
+        {/* 게임 버튼 그룹 (씬 우하단) */}
+        <div className={`absolute z-10 flex flex-col gap-2 ${
+          sceneExpanded ? 'right-3 bottom-3' : 'right-3 bottom-12'
+        }`}>
+          {/* 숨은 에이전트 찾기 미니게임 */}
+          <button
+            type="button"
+            onClick={() => setFindGameOpen(true)}
+            className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-indigo-300 via-indigo-400 to-indigo-500 text-indigo-950 font-bold shadow-[0_6px_0_0_#3730a3,0_8px_20px_rgba(55,48,163,0.35)] hover:shadow-[0_3px_0_0_#3730a3,0_5px_14px_rgba(55,48,163,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#3730a3] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
+          >
+            <Search className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
+            <span className="text-xs">{t('findGame.playButton')}</span>
+          </button>
+          {/* 계단 게임 */}
+          <Link
+            to="/game"
+            className="flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 text-amber-900 font-bold shadow-[0_6px_0_0_#b45309,0_8px_20px_rgba(180,83,9,0.35)] hover:shadow-[0_3px_0_0_#b45309,0_5px_14px_rgba(180,83,9,0.35)] hover:translate-y-[3px] active:shadow-[0_0px_0_0_#b45309] active:translate-y-[6px] transition-all duration-100 px-5 py-3"
+          >
+            <Gamepad2 className="w-6 h-6 drop-shadow-sm" aria-hidden="true" />
+            <span className="text-xs">{t('home.playToSponsor')}</span>
+          </Link>
+        </div>
 
         {/* 하단 그라데이션 페이드 + 설명 텍스트 (축소 모드에서만) */}
         {!sceneExpanded && (
@@ -595,6 +610,13 @@ export default function TeamPage() {
           )}
         </div>
       </div>
+
+      {/* 숨은 에이전트 찾기 미니게임 모달 */}
+      {findGameOpen && (
+        <Suspense fallback={null}>
+          <FindThemGame open={findGameOpen} onClose={() => setFindGameOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { api } from './client.js';
+import type { GameType } from '@findthem/shared';
 
 export interface GameStatus {
   freePlaysToday: number;
@@ -9,16 +10,17 @@ export interface GameStatus {
   remainingAd: number;
 }
 
-export async function getGameStatus(): Promise<GameStatus> {
-  return api.get<GameStatus>('/game/status');
+export async function getGameStatus(gameType: GameType = 'stair'): Promise<GameStatus> {
+  return api.get<GameStatus>(`/game/status?gameType=${gameType}`);
 }
 
 export async function recordGamePlay(
   character: string,
   score: number,
   usedAd: boolean,
+  gameType: GameType = 'stair',
 ): Promise<{ ok: boolean; xpEarned: number }> {
-  return api.post('/game/play', { character, score, usedAd });
+  return api.post('/game/play', { character, score, usedAd, gameType });
 }
 
 interface AdRewardResult {

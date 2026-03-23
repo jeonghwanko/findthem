@@ -811,5 +811,39 @@
     "applySubmit": "적용하기",
     "applySuccess": "추천 코드가 적용되었습니다!",
     "applyAlready": "이미 추천 코드가 적용되어 있습니다"
+  },
+  "notifications": {
+    "emptyTitle": "알림이 없습니다",
+    "emptyDesc": "신고를 등록하면 매칭 결과와 제보 현황을 여기서 확인할 수 있어요",
+    "emptyDescGuest": "로그인하면 내 신고의 매칭 결과와 제보 현황을 실시간으로 확인할 수 있어요",
+    "browseReports": "신고 목록 보기",
+    "loginCta": "로그인",
+    "loginBannerTitle": "로그인하고 내 신고 현황을 확인하세요",
+    "loginBannerDesc": "AI 매칭 결과와 제보를 실시간으로 확인할 수 있어요",
+    "matchCount": "AI 매칭 {{count}}건",
+    "sightingCount": "제보 {{count}}건",
+    "noActivity": "아직 제보가 없습니다",
+    "sectionToday": "오늘",
+    "sectionEarlier": "이전",
+    "refresh": "새로고침",
+    "retry": "다시 시도"
+  },
+  "findGame": {
+    "playButton": "에이전트 찾기",
+    "round": "라운드 {{n}}",
+    "briefingTitle": "이 캐릭터들을 찾아주세요!",
+    "briefingHint": "화면을 드래그해서 마을을 탐색하세요",
+    "found": "발견",
+    "score": "점수",
+    "result": {
+      "title": "라운드 종료!",
+      "perfect": "전부 찾았어요!",
+      "foundLabel": "발견",
+      "timeBonus": "시간 보너스",
+      "playAgain": "다시 하기",
+      "watchAdPlay": "광고 보고 플레이",
+      "noPlays": "오늘 플레이 횟수를 모두 사용했어요",
+      "exit": "돌아가기"
+    }
   }
 }
